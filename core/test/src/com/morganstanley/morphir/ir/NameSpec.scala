@@ -38,6 +38,13 @@ object NameSpec
               val result = Name.fromString("ValueInUSD")
               assert(result, equalTo(Name(List("value", "in", "u", "s", "d"))))
             },
+            test("Are have a number in the middle") {
+              val result = Name.fromString("Nintendo64VideoGameSystem")
+              assert(
+                result,
+                equalTo(Name(List("nintendo", "64", "video", "game", "system")))
+              )
+            },
             test("Complete and utter nonsense") {
               assert(Name.fromString("_-%"), equalTo(Name(List.empty)))
             }
