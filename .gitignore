@@ -4,6 +4,8 @@ output/
 .DS_STORE
 .idea_modules
 .idea
+.ionide
+.vscode
 out/
 /.bloop/
 /.metals/
