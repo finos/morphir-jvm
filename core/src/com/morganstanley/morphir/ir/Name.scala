@@ -7,6 +7,9 @@ import scala.annotation.tailrec
 case class Name private[ir] (value: List[String]) extends AnyVal
 
 object Name {
+  def apply(firstWord: String, otherWords: String*): Name =
+    Name(firstWord :: otherWords.toList)
+
   def fromString(str: String): Name = {
     val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
     Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
