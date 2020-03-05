@@ -1,4 +1,4 @@
-package com.morganstanley.morphir.ir
+package morphir.ir
 
 case class Path(value: List[Name]) extends AnyVal {
   @inline def toList: List[Name] = value

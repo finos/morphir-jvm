@@ -1,5 +1,5 @@
-package com.morganstanley.morphir.ir.advanced
-import com.morganstanley.morphir.ir.{FQName, Name}
+package morphir.ir.advanced
+import morphir.ir.{FQName, Name}
 
 sealed trait Type[+Extra]
 object Type {

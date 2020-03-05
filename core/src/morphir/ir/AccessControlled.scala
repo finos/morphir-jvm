@@ -1,4 +1,4 @@
-package com.morganstanley.morphir.ir
+package morphir.ir
 sealed trait AccessControlled[+A] {
 
   def withPublicAccess: Option[A] = this match {

@@ -1,4 +1,4 @@
-package com.morganstanley.morphir.ir
+package morphir.ir
 
 import zio.test._
 import zio.test.Assertion._

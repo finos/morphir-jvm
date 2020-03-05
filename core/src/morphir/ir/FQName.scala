@@ -1,4 +1,4 @@
-package com.morganstanley.morphir.ir
+package morphir.ir
 
 case class FQName(packagePath: Path, modulePath: Path, localName: Name) {}
 

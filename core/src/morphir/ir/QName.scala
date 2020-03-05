@@ -1,4 +1,4 @@
-package com.morganstanley.morphir.ir
+package morphir.ir
 
 case class QName(modulePath: Path, localName: Name) {
   def toTuple: (Path, Name) = modulePath -> localName

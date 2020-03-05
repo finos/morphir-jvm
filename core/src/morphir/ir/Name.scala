@@ -1,4 +1,4 @@
-package com.morganstanley.morphir.ir
+package morphir.ir
 
 import scala.util.matching.Regex
 import java.nio.charset.StandardCharsets
