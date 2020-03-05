@@ -14,7 +14,15 @@ class CoreModule(val crossScalaVersion: String)
   object test extends Tests with MorphirTestModule {}
 }
 
-trait MorphirModule extends ScalafmtModule { this: ScalaModule => }
+trait MorphirModule extends ScalafmtModule with CrossScalaModule {
+  def scalacOptions =
+    Seq(
+      "-unchecked",
+      "-deprecation",
+      "-feature",
+      "-language:implicitConversions"
+    ) ++ Seq("-encoding", "utf8")
+}
 
 trait MorphirTestModule extends TestModule {
   def ivyDeps = Agg(
