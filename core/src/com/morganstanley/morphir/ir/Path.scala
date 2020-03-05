@@ -28,9 +28,9 @@ object Path {
 
   def isPrefixOf(prefix: Path, path: Path): Boolean = (prefix, path) match {
     // empty path is a prefix of any other path
-    case (Path.empty, _) => true
+    case (Path(Nil), _) => true
     // empty path has no prefixes except the empty prefix captured above
-    case (_, Path.empty) => false
+    case (_, Path(Nil)) => false
     case (Path(prefixHead :: prefixTail), Path(pathHead :: pathTail)) =>
       if (prefixHead == pathHead)
         isPrefixOf(Path(prefixTail), Path(pathTail))
