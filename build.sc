@@ -16,7 +16,7 @@ class CoreModule(val crossScalaVersion: String)
 
 trait MorphirModule extends ScalafmtModule { this: ScalaModule => }
 
-trait MorphirTestModule extends TestModule with ScalaModule {
+trait MorphirTestModule extends TestModule {
   def ivyDeps = Agg(
     ivy"org.scalatest::scalatest:3.1.1",
     ivy"dev.zio::zio-test:${Versions.zio}",
@@ -27,5 +27,5 @@ trait MorphirTestModule extends TestModule with ScalaModule {
 }
 
 object Versions {
-  val zio = "1.0.0-RC17"
+  val zio = "1.0.0-RC18"
 }
