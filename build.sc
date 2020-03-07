@@ -9,6 +9,7 @@ import mill.scalalib.scalafmt._
 import com.github.carueda.mill.JBuildInfo
 import contrib.scalapblib._
 import coursier.maven.MavenRepository
+import ammonite.ops._, ImplicitWd._
 
 val productVersion = "0.1.0"
 
@@ -52,10 +53,26 @@ class CoreModule(val crossScalaVersion: String)
 class CliModule(val crossScalaVersion: String)
     extends CrossScalaModule
     with MorphirCommonModule {
+
+  def mainClass = Some("morphir.Main")
   def ivyDeps = Agg(
     ivy"dev.zio::zio-config:${Versions.`zio-config`}",
     ivy"com.github.alexarchambault::case-app-refined:${Versions.`case-app`}"
   )
+
+  def moduleDeps = Seq(
+    morphir.daemon(crossScalaVersion)
+  )
+
+  def generatedSources = T {
+    Seq(PathRef(generateBuildInfoFile(productVersion)))
+  }
+
+  def compile = T {
+    generatedSources()
+    super.compile()
+  }
+
   object test extends Tests with MorphirTestModule {}
 }
 
@@ -64,15 +81,15 @@ class DaemonModule(val crossScalaVersion: String)
     with MorphirCommonModule
     with ScalaPBModule {
 
-  def repositories = super.repositories ++ Seq(
-    MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
-  )
   override def ivyDeps = T {
     super.ivyDeps() ++
       Agg(
+        ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.thesamet.scalapb::scalapb-runtime:${Versions.scalaPB}"
           .withConfiguration("protobuf"),
-        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-codegen:${Versions.zioGrpcVersion}"
+        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-codegen:${Versions.zioGrpcVersion}",
+        ivy"io.grpc:grpc-netty:${Versions.`grpc-netty`}"
+        //ivy"eu.timepit::refined:${Versions.refined}"
       )
   }
 
@@ -82,7 +99,28 @@ class DaemonModule(val crossScalaVersion: String)
   def scalaPBGrpc = true
 }
 
-trait MorphirCommonModule extends ScalafmtModule with ScalaModule {}
+trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
+  def repositories = super.repositories ++ Seq(
+    MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
+  )
+  def scalacOptions =
+    Seq(
+      "-deprecation", // Emit warning and location for usages of deprecated APIs.
+      "-explaintypes",
+      "-feature",
+      "-unchecked",
+      "-target:jvm-1.8",
+      "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
+      "-language:higherKinds", // Allow higher-kinded types
+      "-language:implicitConversions", // Allow definition of implicit functions called views
+      "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+      "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
+      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+      "-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
+      "-Ywarn-unused:privates", // Warn if a private member is unused.
+      "-Xlint:inaccessible" // Warn about inaccessible types in method signatures.
+    ) ++ Seq("-encoding", "utf-8")
+}
 
 trait MorphirBuildInfoModule extends JBuildInfo {
   def buildInfoMembers: T[Map[String, String]] = T {
@@ -109,4 +147,22 @@ object Versions {
   val `case-app` = "2.0.0-M13"
   val scalaPB = "0.10.0"
   val zioGrpcVersion = "0.0.0+51-4359117f-SNAPSHOT"
+  val `grpc-netty` = "1.27.2"
+  val refined = "0.9.13"
+}
+
+def generateBuildInfoFile(
+    productVersion: String = productVersion
+)(implicit ctx: mill.api.Ctx.Dest, ctxLog: mill.api.Ctx.Log) = {
+  val filename = "BuildInfo.scala"
+  val content = s"""
+  package morphir
+  object BuildInfo {
+    val appName = "morphir"
+    val productVersion = "$productVersion"
+  }
+  """
+  ctxLog.log.info(s"Writing $filename")
+  write(ctx.dest / filename, content)
+  ctx.dest / filename
 }

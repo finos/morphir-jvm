@@ -3,6 +3,7 @@ package morphir.cli.commands
 import zio._
 import zio.console
 import morphir.cli._
+import morphir.runtime._
 import caseapp.core.RemainingArgs
 
 object AboutCommand extends MorphirCommand[CliCommand.About] {

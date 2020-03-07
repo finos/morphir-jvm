@@ -8,7 +8,8 @@ import morphir.cli.CliCommand._
 import morphir.cli.commands._
 
 object Main extends CommandApp[CliCommand] with MorphirRuntime {
-  override def appName: String = "morphir"
+  override def appName: String = morphir.BuildInfo.appName
+  override def appVersion: String = morphir.BuildInfo.productVersion
   override def progName: String = appName
 
   override def run(
@@ -18,6 +19,8 @@ object Main extends CommandApp[CliCommand] with MorphirRuntime {
     val cmdLet: Cmdlet = options match {
       case command: About =>
         AboutCommand.run(command, remainingArgs)
+      case command: Server =>
+        ServerCommand.run(command, remainingArgs)
     }
 
     unsafeRun(cmdLet)

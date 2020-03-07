@@ -9,4 +9,5 @@ sealed abstract class CliCommand extends Product with Serializable
 
 object CliCommand {
   case class About() extends CliCommand
+  case class Server() extends CliCommand
 }
