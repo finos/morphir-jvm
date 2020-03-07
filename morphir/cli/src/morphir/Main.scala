@@ -8,6 +8,8 @@ import morphir.cli.CliCommand._
 import morphir.cli.commands._
 
 object Main extends CommandApp[CliCommand] with MorphirRuntime {
+  override def appName: String = "morphir"
+  override def progName: String = appName
 
   override def run(
       options: CliCommand,
