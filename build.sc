@@ -53,7 +53,8 @@ class CliModule(val crossScalaVersion: String)
     extends CrossScalaModule
     with MorphirCommonModule {
   def ivyDeps = Agg(
-    ivy"dev.zio::zio-config:${Versions.`zio-config`}"
+    ivy"dev.zio::zio-config:${Versions.`zio-config`}",
+    ivy"com.github.alexarchambault::case-app-refined:${Versions.`case-app`}"
   )
   object test extends Tests with MorphirTestModule {}
 }
@@ -105,6 +106,7 @@ trait MorphirTestModule extends TestModule {
 object Versions {
   val zio = "1.0.0-RC18-1"
   val `zio-config` = "1.0.0-RC12"
+  val `case-app` = "2.0.0-M13"
   val scalaPB = "0.10.0"
   val zioGrpcVersion = "0.0.0+51-4359117f-SNAPSHOT"
 }
