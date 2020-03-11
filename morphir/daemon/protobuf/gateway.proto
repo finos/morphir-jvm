@@ -23,5 +23,5 @@ message InitializeRequest {
 }
 
 message InitializeResponse {
-
+    int32 port = 1;
 }

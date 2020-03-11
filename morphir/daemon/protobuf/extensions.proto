@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package morphir;
 
-service FrontEndExtension {
-}
+// service FrontEndExtension {
+// }
 
-service IRRewriterExtension {
+// service IRRewriterExtension {
 
-}
+// }
 
-service BackEndExtension {
-}
+// service BackEndExtension {
+// }

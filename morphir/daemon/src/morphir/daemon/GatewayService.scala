@@ -6,7 +6,7 @@ import morphir.gateway._
 import morphir.gateway.GatewayGrpc.Gateway
 import morphir.runtime._
 import java.time.OffsetDateTime
-
+import zio._
 class GatewayService(
     startTime: OffsetDateTime,
     executionContext: ExecutionContext
@@ -18,4 +18,8 @@ class GatewayService(
       request: InitializeRequest
   ): Future[InitializeResponse] = ???
 
+}
+
+trait ZGateway {
+  def about(request: AboutRequest): Task[AboutRequest] = ???
 }

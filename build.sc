@@ -1,12 +1,11 @@
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scalapblib:$MILL_VERSION`
-import $ivy.`com.github.carueda::jbuildinfo:0.1.2`
-
+import $file.ScalaPBSupport
+import ScalaPBSupport.module._
 import mill._
 import mill.scalalib._
 import publish._
 import mill.scalalib.scalafmt._
-import com.github.carueda.mill.JBuildInfo
 import contrib.scalapblib._
 import coursier.maven.MavenRepository
 import ammonite.ops._, ImplicitWd._
@@ -79,7 +78,7 @@ class CliModule(val crossScalaVersion: String)
 class DaemonModule(val crossScalaVersion: String)
     extends CrossScalaModule
     with MorphirCommonModule
-    with ScalaPBModule {
+    with ZScalaPBModule {
 
   override def ivyDeps = T {
     super.ivyDeps() ++
@@ -87,16 +86,24 @@ class DaemonModule(val crossScalaVersion: String)
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.thesamet.scalapb::scalapb-runtime:${Versions.scalaPB}"
           .withConfiguration("protobuf"),
-        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-codegen:${Versions.zioGrpcVersion}",
+        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-codegen:${Versions.`zio-grpc`}",
+        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-core:${Versions.`zio-grpc`}",
         ivy"io.grpc:grpc-netty:${Versions.`grpc-netty`}"
         //ivy"eu.timepit::refined:${Versions.refined}"
       )
+  }
+
+  def scalaPBPluginArtifacts = T {
+    Seq(
+      "com.thesamet.scalapb.zio-grpc:protoc-gen-zio:0.1.0:default,classifier=unix,ext=sh,type=jar"
+    )
   }
 
   def scalaPBIncludePath = Seq(scalaPBUnpackProto())
 
   def scalaPBVersion = Versions.scalaPB
   def scalaPBGrpc = true
+  def scalaPBZio = true
 }
 
 trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
@@ -122,15 +129,6 @@ trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
     ) ++ Seq("-encoding", "utf-8")
 }
 
-trait MorphirBuildInfoModule extends JBuildInfo {
-  def buildInfoMembers: T[Map[String, String]] = T {
-    Map(
-      "name" -> "some name",
-      "version" -> productVersion
-    )
-  }
-}
-
 trait MorphirTestModule extends TestModule {
   def ivyDeps = Agg(
     ivy"org.scalatest::scalatest:3.1.1",
@@ -142,12 +140,13 @@ trait MorphirTestModule extends TestModule {
 }
 
 object Versions {
+  val `grpc-netty` = "1.27.2"
+  val scalaPB = "0.10.1"
   val zio = "1.0.0-RC18-1"
   val `zio-config` = "1.0.0-RC12"
   val `case-app` = "2.0.0-M13"
-  val scalaPB = "0.10.0"
-  val zioGrpcVersion = "0.0.0+51-4359117f-SNAPSHOT"
-  val `grpc-netty` = "1.27.2"
+  val `zio-grpc` = "0.1.0+4-629d4bbe-SNAPSHOT"
+  val `protoc-gen-zio` = "protoc-gen-zio"
   val refined = "0.9.13"
 }
 

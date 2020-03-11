@@ -5,25 +5,25 @@ import scala.concurrent.Future
 import morphir.gateway.{InitializeRequest, InitializeResponse}
 import scala.concurrent.{ExecutionContext, Future}
 import io.grpc.{Server, ServerBuilder}
-import morphir.internal.grpc.GrpcServer
 import morphir.gateway.GatewayGrpc
 import zio._
 import zio.clock._
 import io.grpc.ServerServiceDefinition
 import java.time.OffsetDateTime
+import morphir.daemon.Daemon.DaemonInfo
 
 class Daemon private (port: Int, executionContext: ExecutionContext) {
-  def run: ZIO[Clock, Throwable, OffsetDateTime] =
-    for {
-      startTime <- clock.currentDateTime
-      gateway <- ZIO.effect(
-        Daemon.gatewayServiceDefinition(startTime, executionContext)
-      )
-      server <- GrpcServer.make(port, gateway)
+  // def run: ZIO[Clock, Throwable, DaemonInfo] =
+  //   for {
+  //     startTime <- clock.currentDateTime
+  //     gateway <- ZIO.effect(
+  //       Daemon.gatewayServiceDefinition(startTime, executionContext)
+  //     )
+  //     server <- GrpcServer.make(port, gateway)
 
-      _ <- server.run
+  //     _ <- server.run
 
-    } yield startTime
+  //   } yield startTime
 }
 
 object Daemon {
@@ -39,4 +39,9 @@ object Daemon {
       new GatewayService(startTime, executionContext),
       executionContext
     )
+
+  case class DaemonInfo(
+      startTime: OffsetDateTime,
+      requestShutdown: Unit => UIO[Boolean]
+  )
 }
