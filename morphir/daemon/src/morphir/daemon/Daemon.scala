@@ -1,47 +1,32 @@
 package morphir.daemon
-import morphir.gateway.GatewayGrpc.Gateway
 import morphir.gateway.{AboutRequest, AboutResponse}
 import scala.concurrent.Future
 import morphir.gateway.{InitializeRequest, InitializeResponse}
-import scala.concurrent.{ExecutionContext, Future}
-import io.grpc.{Server, ServerBuilder}
 import morphir.gateway.GatewayGrpc
 import zio._
-import zio.clock._
-import io.grpc.ServerServiceDefinition
+import zio.clock.Clock
+import zio.console._
+import zio.duration._
+import io.grpc.{ServerBuilder, ServerServiceDefinition}
 import java.time.OffsetDateTime
-import morphir.daemon.Daemon.DaemonInfo
+import scalapb.zio_grpc.Server
+import morphir.gateway.ZioGateway.Gateway
 
-class Daemon private (port: Int, executionContext: ExecutionContext) {
-  // def run: ZIO[Clock, Throwable, DaemonInfo] =
-  //   for {
-  //     startTime <- clock.currentDateTime
-  //     gateway <- ZIO.effect(
-  //       Daemon.gatewayServiceDefinition(startTime, executionContext)
-  //     )
-  //     server <- GrpcServer.make(port, gateway)
+object Daemon extends App {
 
-  //     _ <- server.run
+  def serverWait: ZIO[Console with Clock, Throwable, Unit] =
+    for {
+      _ <- putStrLn("Server is running. Press Ctrl-C to stop.")
+      _ <- (putStr(".") *> ZIO.sleep(1.second)).forever
+    } yield ()
 
-  //   } yield startTime
-}
-
-object Daemon {
-
-  def make(port: Int, executionContext: ExecutionContext): UIO[Daemon] =
-    UIO.effectTotal(new Daemon(port, executionContext))
-
-  def gatewayServiceDefinition(
-      startTime: OffsetDateTime,
-      executionContext: ExecutionContext
-  ): ServerServiceDefinition =
-    GatewayGrpc.bindService(
-      new GatewayService(startTime, executionContext),
-      executionContext
+  def serverLive(port: Int): ZLayer.NoDeps[Nothing, Server] =
+    Clock.live >>> gateway.live >>> Server.live[Gateway](
+      ServerBuilder.forPort(port)
     )
 
-  case class DaemonInfo(
-      startTime: OffsetDateTime,
-      requestShutdown: Unit => UIO[Boolean]
-  )
+  def run(args: List[String]) = myAppLogic.fold(_ => 1, _ => 0)
+
+  val myAppLogic =
+    serverWait.provideLayer(serverLive(8080) ++ Console.live ++ Clock.live)
 }
