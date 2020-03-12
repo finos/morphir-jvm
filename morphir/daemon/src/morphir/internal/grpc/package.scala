@@ -1,3 +1,5 @@
 package morphir.internal
-
-package object grpc {}
+import zio.Has
+package object grpc {
+  type GrpcServer = Has[GrpcServer.Service]
+}

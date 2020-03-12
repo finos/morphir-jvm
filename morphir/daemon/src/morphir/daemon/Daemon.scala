@@ -11,22 +11,30 @@ import io.grpc.{ServerBuilder, ServerServiceDefinition}
 import java.time.OffsetDateTime
 import scalapb.zio_grpc.Server
 import morphir.gateway.ZioGateway.Gateway
+import scalapb.zio_grpc.ZBindableService
+import morphir.internal.grpc.GrpcServer
 
 object Daemon extends App {
 
-  def serverWait: ZIO[Console with Clock, Throwable, Unit] =
+  def serverWait(port: Int): ZIO[Console with Clock, Throwable, Unit] =
     for {
-      _ <- putStrLn("Server is running. Press Ctrl-C to stop.")
-      _ <- (putStr(".") *> ZIO.sleep(1.second)).forever
+      _ <- putStrLn(
+        s"Server is running @ localhost:${port}. Press Ctrl-C to stop."
+      )
+      _ <- (putStr(
+        s"Server is running @ localhost:${port}. Press Ctrl-C to stop."
+      ) *> ZIO.sleep(60.second)).forever
     } yield ()
 
-  def serverLive(port: Int): ZLayer.NoDeps[Nothing, Server] =
-    Clock.live >>> gateway.live >>> Server.live[Gateway](
+  def serverLive(port: Int): ZLayer[Console, Nothing, GrpcServer] =
+    (gateway.live ++ Console.live ++ Clock.live) >>> GrpcServer.live[Gateway](
       ServerBuilder.forPort(port)
     )
 
-  def run(args: List[String]) = myAppLogic.fold(_ => 1, _ => 0)
+  def run(args: List[String]) = live(8080).fold(_ => 1, _ => 0)
 
-  val myAppLogic =
-    serverWait.provideLayer(serverLive(8080) ++ Console.live ++ Clock.live)
+  def live(port: Int) =
+    serverWait(port).provideLayer(
+      serverLive(port) ++ Console.live ++ Clock.live
+    )
 }
