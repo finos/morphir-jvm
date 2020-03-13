@@ -3,7 +3,7 @@ package morphir.ir
 import zio.test._
 import zio.test.Assertion._
 import zio.test.environment._
-import scala.language.implicitConversions
+
 object NameSpec extends DefaultRunnableSpec {
   def spec =
     suite("NameSpec")(
