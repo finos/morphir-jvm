@@ -12,7 +12,18 @@ class CommandLine(arguments: Seq[String]) extends ScallopConf(arguments) {
   printedName = BuildInfo.appName
   shortSubcommandsHelp(true)
   val generate = new Subcommand("generate") {
+    banner {
+      """Usage: morphir generate
+      |""".stripMargin
+    }
     val scala = new Subcommand("scala") {
+      banner {
+        """Usage: morphir generate scala [Options] <model-path>
+        |Options:
+        |""".stripMargin
+      }
+
+      val output = opt[Path](argName = "output-path")
       val modelPath = trailArg[Path](required = true)
     }
     addSubcommand(scala)

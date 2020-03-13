@@ -8,6 +8,8 @@ import caseapp.core.RemainingArgs
 import morphir.cli
 import morphir.runtime._
 import zio.stream.Sink
+import morphir.sdk.ModelLoader
+import java.nio.file.Paths
 
 object Main {
 
@@ -16,7 +18,7 @@ object Main {
       for {
         cmdLine <- CommandLine.make(args.toIndexedSeq)
         exitCode <- handleCommands(cmdLine).provideLayer(
-          Cli.live ++ Blocking.live ++ Console.live
+          ModelLoader.live ++ Cli.live ++ Blocking.live ++ Console.live
         )
       } yield exitCode
 
@@ -42,7 +44,21 @@ object Main {
             .orElseSucceed(ExitCode.Failure) *> UIO.succeed(ExitCode.Success)
         case commandLine.elm :: commandLine.elm.gen :: Nil =>
           putStrLn(s"morphir elm gen>") *> UIO.succeed(ExitCode.Success)
-        case commandLine.generate :: subcommand :: Nil => ???
+        case commandLine.generate :: commandLine.generate.scala :: Nil =>
+          (for {
+            modelPath <- ZIO.fromOption(
+              commandLine.generate.scala.modelPath.toOption
+            )
+            outputPath <- ZIO.succeed(
+              commandLine.generate.scala.output.toOption getOrElse Paths.get(
+                "."
+              )
+            )
+            _ <- cli.generateScala(modelPath, outputPath)
+          } yield ()).orElseSucceed(ExitCode.Failure) *> UIO.succeed(
+            ExitCode.Success
+          )
+
         case _ =>
           ZIO.effect(commandLine.printHelp()) *> UIO.succeed(ExitCode.Failure)
       }

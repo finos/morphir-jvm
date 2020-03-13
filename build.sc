@@ -29,7 +29,8 @@ class CoreModule(val crossScalaVersion: String)
   def publishVersion = productVersion
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:1.0.0",
-    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}"
+    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}",
+    ivy"dev.zio::zio-streams:${Versions.zio}"
   )
 
   def pomSettings = PomSettings(
