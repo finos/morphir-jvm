@@ -30,7 +30,8 @@ class CoreModule(val crossScalaVersion: String)
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:1.0.0",
     ivy"dev.zio::zio-nio:${Versions.`zio-nio`}",
-    ivy"dev.zio::zio-streams:${Versions.zio}"
+    ivy"dev.zio::zio-streams:${Versions.zio}",
+    ivy"dev.zio::zio-test:${Versions.zio}"
   )
 
   def pomSettings = PomSettings(

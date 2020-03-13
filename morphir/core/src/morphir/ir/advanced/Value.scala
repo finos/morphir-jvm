@@ -70,6 +70,21 @@ object Value {
       extra: X
   ) extends Value[X](extra)
   case class Unit[X](extra: X) extends Value[X](extra)
+
+  case class Declaration[X](inputs: List[(Name, Type[X])], output: Type[X])
+
+  sealed abstract class Definition[X]
+  object Definition {
+    case class TypedDefinition[X](
+        valueType: Type[X],
+        argumentNames: List[Name],
+        body: Value[X]
+    ) extends Definition[X]
+
+    case class UntypedDefinition[X](argumentNames: List[Name], body: Value[X])
+        extends Definition[X]
+  }
+
 }
 
 sealed abstract class Literal {

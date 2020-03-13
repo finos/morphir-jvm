@@ -4,9 +4,17 @@ import scala.util.matching.Regex
 import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 
+import upickle.default.{readwriter, ReadWriter => RW, macroRW}
+import upickle.default._
+import zio.test.Gen
+
 case class Name private[ir] (value: List[String]) extends AnyVal
 
 object Name {
+  implicit val readWriter: RW[Name] =
+    readwriter[List[String]]
+      .bimap[Name](name => name.value, value => Name(value))
+
   def apply(firstWord: String, otherWords: String*): Name =
     Name(firstWord :: otherWords.toList)
 
@@ -66,5 +74,59 @@ object Name {
             }
       }
     process(List.empty, List.empty, words)
+  }
+
+  val fuzzName: Gen[zio.random.Random with zio.test.Sized, Name] = {
+    val fuzzWord = {
+      val choices =
+        Seq(
+          "area",
+          "benchmark",
+          "book",
+          "business",
+          "company",
+          "country",
+          "currency",
+          "day",
+          "description",
+          "entity",
+          "fact",
+          "family",
+          "from",
+          "government",
+          "group",
+          "home",
+          "id",
+          "job",
+          "left",
+          "lot",
+          "market",
+          "minute",
+          "money",
+          "month",
+          "name",
+          "number",
+          "owner",
+          "parent",
+          "part",
+          "problem",
+          "rate",
+          "right",
+          "state",
+          "source",
+          "system",
+          "time",
+          "title",
+          "to",
+          "valid",
+          "week",
+          "work",
+          "world",
+          "year"
+        ).map(Gen.const(_))
+      Gen.oneOf(choices: _*)
+    }
+
+    Gen.listOf(fuzzWord).map(lst => lst.take(3)).map(fromList(_))
   }
 }

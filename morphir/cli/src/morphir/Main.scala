@@ -5,7 +5,6 @@ import zio.console._
 import caseapp.core.app.CommandApp
 import morphir.cli._
 import caseapp.core.RemainingArgs
-import morphir.cli
 import morphir.runtime._
 import zio.stream.Sink
 import morphir.sdk.ModelLoader
