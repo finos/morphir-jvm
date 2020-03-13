@@ -120,6 +120,16 @@ object NameSpec extends DefaultRunnableSpec {
 
           }
         },
+        testM(
+          "Explicitly encoding and decoding a name should yield an equivalent value"
+        ) {
+          check(Name.fuzzName) { givenName =>
+            assert(Name.decodeName(Name.encodeName(givenName)))(
+              equalTo(givenName)
+            )
+
+          }
+        },
         testM("A Name should encode as expected") {
           check(Name.fuzzName) { givenName =>
             assert(write(givenName))(equalTo(write(givenName.value)))

@@ -79,6 +79,12 @@ object Name {
     process(List.empty, List.empty, words)
   }
 
+  def encodeName(name: Name): ujson.Value =
+    writeJs(name)
+
+  def decodeName(json: ujson.Value) =
+    read[Name](json)
+
   val fuzzName: Gen[zio.random.Random with zio.test.Sized, Name] = {
     val fuzzWord = {
       val choices =
