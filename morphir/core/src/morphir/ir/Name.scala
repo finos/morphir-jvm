@@ -23,6 +23,9 @@ object Name {
     Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
   }
 
+  def fromStrings(head: String, rest: String*): Name =
+    Name(head :: (rest.toList))
+
   implicit def fromList(words: List[String]): Name =
     Name(words)
 

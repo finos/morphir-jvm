@@ -4,6 +4,8 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.environment._
 
+import upickle.default._
+
 object NameSpec extends DefaultRunnableSpec {
   def spec =
     suite("NameSpec")(
@@ -107,6 +109,35 @@ object NameSpec extends DefaultRunnableSpec {
         test("When the name is from a camelCase string") {
           val sut = Name.fromString("ValueInUSD")
           assert(Name.toHumanWords(sut))(equalTo(List("value", "in", "USD")))
+        }
+      ),
+      suite("Name encoding/decoding")(
+        testM("Encoding and decoding a name should yield an equivalent value") {
+          check(Name.fuzzName) { givenName =>
+            assert(read[Name](writeJs(givenName)))(
+              equalTo(givenName)
+            )
+
+          }
+        },
+        testM("A Name should encode as expected") {
+          check(Name.fuzzName) { givenName =>
+            assert(write(givenName))(equalTo(write(givenName.value)))
+          }
+        },
+        test(
+          """Given a Name whose value is ["delta","sigma","theta"] it should encode correctly"""
+        ) {
+          assert(write(Name.fromStrings("delta", "sigma", "theta")))(
+            equalTo("""["delta","sigma","theta"]""")
+          )
+        },
+        test(
+          """Given a Name whose value is ["sigma","gamma","ro"] it should encode correctly"""
+        ) {
+          assert(write(Name.fromStrings("sigma", "gamma", "ro")))(
+            equalTo("""["sigma","gamma","ro"]""")
+          )
         }
       )
     )
