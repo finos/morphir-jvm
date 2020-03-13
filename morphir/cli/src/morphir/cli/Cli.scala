@@ -37,7 +37,8 @@ object Cli {
                 args ++ Array("--output", filePath.toFile().getAbsolutePath())
               )
           })
-          result <- Command("cat", ".gitignore").linesStream
+          args <- ZStream.fromEffect(argsRef.get)
+          result <- Command("morphir-elm", args.toIndexedSeq: _*).linesStream
         } yield result)
 
     }
