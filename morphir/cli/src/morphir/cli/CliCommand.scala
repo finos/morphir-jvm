@@ -1,16 +1,13 @@
 package morphir.cli
 
-import zio._
-import caseapp.core.RemainingArgs
-import morphir.runtime._
-import caseapp._
 import java.nio.file.Path
 
-sealed abstract class CliCommand extends Product with Serializable
+sealed trait CliCommand
 
 object CliCommand {
-  case class Generate(
-      @ExtraName("i") @ValueDescription("Path to morphir model") input: Path,
-      scalaOutput: Option[Path]
+  case class ElmMake(
+      projectDir: Option[Path] = None,
+      output: Option[Path],
+      help: Boolean = false
   ) extends CliCommand
 }

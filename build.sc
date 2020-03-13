@@ -58,6 +58,7 @@ class CliModule(val crossScalaVersion: String)
   def ivyDeps = Agg(
     ivy"org.rogach::scallop:${Versions.scallop}",
     ivy"dev.zio::zio-nio:${Versions.`zio-nio`}",
+    ivy"dev.zio::zio-process:${Versions.`zio-process`}",
     ivy"com.github.alexarchambault::case-app-refined:${Versions.`case-app`}"
   )
 
@@ -82,6 +83,7 @@ class ScalaBackendModule(val crossScalaVersion: String)
     with MorphirCommonModule {
 
   def ivyDeps = Agg(
+    ivy"dev.zio::zio-streams:${Versions.zio}",
     ivy"dev.zio::zio-nio:${Versions.`zio-nio`}"
   )
   def moduleDeps = Seq(
@@ -100,6 +102,7 @@ trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
       "-feature",
       "-unchecked",
       "-target:jvm-1.8",
+      "-language:reflectiveCalls",
       "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
       "-language:higherKinds", // Allow higher-kinded types
       "-language:implicitConversions", // Allow definition of implicit functions called views
@@ -127,6 +130,7 @@ object Versions {
   val scalaPB = "0.10.1"
   val zio = "1.0.0-RC18-2"
   val `zio-nio` = "1.0.0-RC4"
+  val `zio-process` = "0.0.1"
   val `zio-config` = "1.0.0-RC12"
   val `case-app` = "2.0.0-M13"
   val `zio-grpc` = "0.1.0+4-629d4bbe-SNAPSHOT"
