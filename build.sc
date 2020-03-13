@@ -17,7 +17,7 @@ object morphir extends Module {
 
   object cli extends Cross[CliModule]("2.12.10", "2.13.1") {}
 
-  object daemon extends Cross[DaemonModule]("2.12.10", "2.13.1") {}
+  object scala extends Cross[ScalaBackendModule]("2.12.10", "2.13.1") {}
 
 }
 
@@ -28,7 +28,8 @@ class CoreModule(val crossScalaVersion: String)
 
   def publishVersion = productVersion
   def ivyDeps = Agg(
-    ivy"com.lihaoyi::upickle:1.0.0"
+    ivy"com.lihaoyi::upickle:1.0.0",
+    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}"
   )
 
   def pomSettings = PomSettings(
@@ -55,12 +56,13 @@ class CliModule(val crossScalaVersion: String)
 
   def mainClass = Some("morphir.Main")
   def ivyDeps = Agg(
-    ivy"dev.zio::zio-config:${Versions.`zio-config`}",
+    ivy"org.rogach::scallop:${Versions.scallop}",
+    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}",
     ivy"com.github.alexarchambault::case-app-refined:${Versions.`case-app`}"
   )
 
   def moduleDeps = Seq(
-    morphir.daemon(crossScalaVersion)
+    morphir.core(crossScalaVersion)
   )
 
   def generatedSources = T {
@@ -75,35 +77,16 @@ class CliModule(val crossScalaVersion: String)
   object test extends Tests with MorphirTestModule {}
 }
 
-class DaemonModule(val crossScalaVersion: String)
+class ScalaBackendModule(val crossScalaVersion: String)
     extends CrossScalaModule
-    with MorphirCommonModule
-    with ZScalaPBModule {
+    with MorphirCommonModule {
 
-  override def ivyDeps = T {
-    super.ivyDeps() ++
-      Agg(
-        ivy"dev.zio::zio-streams:${Versions.zio}",
-        ivy"com.thesamet.scalapb::scalapb-runtime:${Versions.scalaPB}"
-          .withConfiguration("protobuf"),
-        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-codegen:${Versions.`zio-grpc`}",
-        ivy"com.thesamet.scalapb.zio-grpc::zio-grpc-core:${Versions.`zio-grpc`}",
-        ivy"io.grpc:grpc-netty:${Versions.`grpc-netty`}"
-        //ivy"eu.timepit::refined:${Versions.refined}"
-      )
-  }
-
-  def scalaPBPluginArtifacts = T {
-    Seq(
-      "com.thesamet.scalapb.zio-grpc:protoc-gen-zio:0.1.0:default,classifier=unix,ext=sh,type=jar"
-    )
-  }
-
-  def scalaPBIncludePath = Seq(scalaPBUnpackProto())
-
-  def scalaPBVersion = Versions.scalaPB
-  def scalaPBGrpc = true
-  def scalaPBZio = true
+  def ivyDeps = Agg(
+    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}"
+  )
+  def moduleDeps = Seq(
+    morphir.core(crossScalaVersion)
+  )
 }
 
 trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
@@ -142,12 +125,14 @@ trait MorphirTestModule extends TestModule {
 object Versions {
   val `grpc-netty` = "1.27.2"
   val scalaPB = "0.10.1"
-  val zio = "1.0.0-RC18-1"
+  val zio = "1.0.0-RC18-2"
+  val `zio-nio` = "1.0.0-RC4"
   val `zio-config` = "1.0.0-RC12"
   val `case-app` = "2.0.0-M13"
   val `zio-grpc` = "0.1.0+4-629d4bbe-SNAPSHOT"
   val `protoc-gen-zio` = "protoc-gen-zio"
   val refined = "0.9.13"
+  val scallop = "3.4.0"
 }
 
 def generateBuildInfoFile(
