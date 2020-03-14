@@ -17,4 +17,8 @@ trait BaseSpec { this: DefaultRunnableSpec =>
       assert(write(sut))(equalTo(json))
     }
   }
+
+  def checkDecodesFromJSON[T: Reader](json: String, expected: T) = {
+    assert(read[T](json))(equalTo(expected))
+  }
 }

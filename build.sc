@@ -17,7 +17,8 @@ object morphir extends Module {
 
   object cli extends Cross[CliModule]("2.12.10", "2.13.1") {}
 
-  object scala extends Cross[ScalaBackendModule]("2.12.10", "2.13.1") {}
+  object scala
+      extends Cross[ScalaBackendModule]("2.11.12", "2.12.10", "2.13.1") {}
 
 }
 
