@@ -16,7 +16,7 @@ object Path {
 
   implicit val readWriter: RW[Path] =
     readwriter[List[Name]]
-      .bimap[Path](name => name.value, value => Path(value))
+      .bimap[Path](path => path.value, names => Path(names))
 
   implicit val empty: Path = Path(List.empty)
 

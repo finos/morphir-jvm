@@ -90,17 +90,17 @@ object PathSpec extends DefaultRunnableSpec {
       },
       checkEncodesTo(
         Path.fromNames(
-          Name.fromStrings("alpha"),
-          Name.fromStrings("beta"),
-          Name.fromStrings("gamma")
+          Name.name("alpha"),
+          Name.name("beta"),
+          Name.name("gamma")
         ),
         """[["alpha"],["beta"],["gamma"]]"""
       ),
       checkEncodesTo(
         Path.fromNames(
-          Name.fromStrings("alpha", "omega"),
-          Name.fromStrings("beta", "delta"),
-          Name.fromStrings("gamma")
+          Name.name("alpha", "omega"),
+          Name.name("beta", "delta"),
+          Name.name("gamma")
         ),
         """[["alpha","omega"],["beta","delta"],["gamma"]]"""
       )

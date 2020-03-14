@@ -138,14 +138,14 @@ object NameSpec extends DefaultRunnableSpec {
         test(
           """Given a Name whose value is ["delta","sigma","theta"] it should encode correctly"""
         ) {
-          assert(write(Name.fromStrings("delta", "sigma", "theta")))(
+          assert(write(Name.name("delta", "sigma", "theta")))(
             equalTo("""["delta","sigma","theta"]""")
           )
         },
         test(
           """Given a Name whose value is ["sigma","gamma","ro"] it should encode correctly"""
         ) {
-          assert(write(Name.fromStrings("sigma", "gamma", "ro")))(
+          assert(write(Name.name("sigma", "gamma", "ro")))(
             equalTo("""["sigma","gamma","ro"]""")
           )
         }
