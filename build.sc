@@ -13,7 +13,7 @@ import ammonite.ops._, ImplicitWd._
 val productVersion = "0.1.0"
 
 object morphir extends Module {
-  object core extends Cross[CoreModule]("2.12.10", "2.13.1") {}
+  object core extends Cross[CoreModule]("2.11.12", "2.12.10", "2.13.1") {}
 
   object cli extends Cross[CliModule]("2.12.10", "2.13.1") {}
 
@@ -28,11 +28,10 @@ class CoreModule(val crossScalaVersion: String)
 
   def publishVersion = productVersion
   def ivyDeps = Agg(
-    ivy"com.lihaoyi::upickle:1.0.0",
-    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}",
+    ivy"com.lihaoyi::upickle:${Versions.upickle(crossScalaVersion)}",
     ivy"dev.zio::zio-streams:${Versions.zio}",
     ivy"dev.zio::zio-test:${Versions.zio}"
-  )
+  ) //++ (if (crossScalaVersion.startsWith("2.11") Agg[Dep].empty, else Agg(ivy"dev.zio::zio-nio:${Versions.zio}"))
 
   def pomSettings = PomSettings(
     description = "Morphir core package",
@@ -97,24 +96,43 @@ trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
   def repositories = super.repositories ++ Seq(
     MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
   )
-  def scalacOptions =
-    Seq(
-      "-deprecation", // Emit warning and location for usages of deprecated APIs.
-      "-explaintypes",
-      "-feature",
-      "-unchecked",
-      "-target:jvm-1.8",
-      "-language:reflectiveCalls",
-      "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
-      "-language:higherKinds", // Allow higher-kinded types
-      "-language:implicitConversions", // Allow definition of implicit functions called views
-      "-unchecked", // Enable additional warnings where generated code depends on assumptions.
-      "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
-      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
-      "-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
-      "-Ywarn-unused:privates", // Warn if a private member is unused.
-      "-Xlint:inaccessible" // Warn about inaccessible types in method signatures.
-    ) ++ Seq("-encoding", "utf-8")
+  def scalacOptions = T {
+    if (scalaVersion().startsWith("2.11")) {
+      Seq(
+        "-deprecation", // Emit warning and location for usages of deprecated APIs.
+        "-explaintypes",
+        "-feature",
+        "-unchecked",
+        "-target:jvm-1.8",
+        "-language:reflectiveCalls",
+        "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
+        "-language:higherKinds", // Allow higher-kinded types
+        "-language:implicitConversions", // Allow definition of implicit functions called views
+        "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+        "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
+        "-Xfatal-warnings" // Fail the compilation if there are any warnings.
+      ) ++ Seq("-encoding", "utf-8")
+
+    } else {
+      Seq(
+        "-deprecation", // Emit warning and location for usages of deprecated APIs.
+        "-explaintypes",
+        "-feature",
+        "-unchecked",
+        "-target:jvm-1.8",
+        "-language:reflectiveCalls",
+        "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
+        "-language:higherKinds", // Allow higher-kinded types
+        "-language:implicitConversions", // Allow definition of implicit functions called views
+        "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+        "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
+        "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+        "-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
+        "-Ywarn-unused:privates", // Warn if a private member is unused.
+        "-Xlint:inaccessible" // Warn about inaccessible types in method signatures.
+      ) ++ Seq("-encoding", "utf-8")
+    }
+  }
 }
 
 trait MorphirTestModule extends TestModule {
@@ -139,6 +157,8 @@ object Versions {
   val `protoc-gen-zio` = "protoc-gen-zio"
   val refined = "0.9.13"
   val scallop = "3.4.0"
+  def upickle(scalaVersion: String) =
+    if (scalaVersion.startsWith("2.11")) "0.7.4" else "1.0.0"
 }
 
 def generateBuildInfoFile(

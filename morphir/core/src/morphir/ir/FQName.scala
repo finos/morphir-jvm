@@ -30,4 +30,10 @@ object FQName {
   def fromTuple(value: (Path, Path, Name)): FQName =
     FQName(value._1, value._2, value._3)
 
+  def encodeFQName(instance: FQName): ujson.Value =
+    writeJs(instance)
+
+  def decodeFQName(json: ujson.Value): FQName =
+    read[FQName](json)
+
 }
