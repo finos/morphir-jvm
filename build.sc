@@ -53,7 +53,9 @@ class CoreModule(val crossScalaVersion: String)
 
 class CliModule(val crossScalaVersion: String)
     extends CrossScalaModule
-    with MorphirCommonModule {
+    with MorphirCommonModule
+    with PublishModule {
+  def publishVersion = productVersion
 
   def mainClass = Some("morphir.Main")
   def ivyDeps = Agg(
@@ -76,19 +78,49 @@ class CliModule(val crossScalaVersion: String)
     super.compile()
   }
 
+  def pomSettings = PomSettings(
+    description = "Morphir CLI package",
+    organization = "morphir",
+    url = "https://github.com/MorganStanley/morphir-jvm",
+    licenses = Seq(License.`Apache-2.0`),
+    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
+    developers = Seq(
+      Developer(
+        "DamianReeves",
+        "Damian Reeves",
+        "https://github.com/DamianReeves"
+      )
+    )
+  )
+
   object test extends Tests with MorphirTestModule {}
 }
 
 class ScalaBackendModule(val crossScalaVersion: String)
     extends CrossScalaModule
-    with MorphirCommonModule {
-
+    with MorphirCommonModule
+    with PublishModule {
+  def publishVersion = productVersion
   def ivyDeps = Agg(
-    ivy"dev.zio::zio-streams:${Versions.zio}",
-    ivy"dev.zio::zio-nio:${Versions.`zio-nio`}"
+    ivy"dev.zio::zio-streams:${Versions.zio}"
   )
   def moduleDeps = Seq(
     morphir.core(crossScalaVersion)
+  )
+
+  def pomSettings = PomSettings(
+    description = "Morphir Scala bindings package",
+    organization = "morphir",
+    url = "https://github.com/MorganStanley/morphir-jvm",
+    licenses = Seq(License.`Apache-2.0`),
+    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
+    developers = Seq(
+      Developer(
+        "DamianReeves",
+        "Damian Reeves",
+        "https://github.com/DamianReeves"
+      )
+    )
   )
 }
 
