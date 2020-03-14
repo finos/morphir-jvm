@@ -37,6 +37,9 @@ object Path {
   def fromNames(name: Name, rest: Name*): Path =
     Path(name :: (rest.toList))
 
+  def path(name: Name, rest: Name*): Path =
+    fromNames(name, rest: _*)
+
   def toList(path: Path): List[Name] = path.value
 
   def isPrefixOf(prefix: Path, path: Path): Boolean = (prefix, path) match {
