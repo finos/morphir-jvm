@@ -8,7 +8,9 @@ import upickle.default.{readwriter, ReadWriter => RW, macroRW}
 import upickle.default._
 import zio.test.Gen
 
-case class Name private[ir] (value: List[String]) extends AnyVal
+case class Name private[ir] (value: List[String]) extends AnyVal {
+  override def toString: String = value.mkString("[", ",", "]")
+}
 
 object Name {
   implicit val readWriter: RW[Name] =

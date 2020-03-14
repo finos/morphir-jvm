@@ -5,6 +5,8 @@ import zio.test.Assertion._
 import zio.test.environment._
 import scala.language.implicitConversions
 
+import upickle.default._
+
 object PathSpec extends DefaultRunnableSpec {
 
   def spec = suite("PathSpec")(
@@ -76,7 +78,37 @@ object PathSpec extends DefaultRunnableSpec {
 
         assert(Path.isPrefixOf(prefix = prefix, path = sut))(isTrue)
       }
+    ),
+    suite("Path: Encoding and Decoding")(
+      testM(
+        "Path when encoded and then decoded should be equivalent to the original"
+      ) {
+        check(Gen.listOfBounded(1, 3)(Name.fuzzName)) { names =>
+          val sut = Path.fromList(names)
+          assert(Path.decodePath(Path.encodePath(sut)))(equalTo(sut))
+        }
+      },
+      checkEncodesTo(
+        Path.fromNames(
+          Name.fromStrings("alpha"),
+          Name.fromStrings("beta"),
+          Name.fromStrings("gamma")
+        ),
+        """[["alpha"],["beta"],["gamma"]]"""
+      ),
+      checkEncodesTo(
+        Path.fromNames(
+          Name.fromStrings("alpha", "omega"),
+          Name.fromStrings("beta", "delta"),
+          Name.fromStrings("gamma")
+        ),
+        """[["alpha","omega"],["beta","delta"],["gamma"]]"""
+      )
     )
   )
 
+  def checkEncodesTo(sut: Path, expectedJsonText: String) =
+    test(s"Given Path: $sut it should encode to: $expectedJsonText") {
+      assert(write(Path.encodePath(sut)))(equalTo(expectedJsonText))
+    }
 }
