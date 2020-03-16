@@ -8,7 +8,12 @@ import upickle.default.{readwriter, ReadWriter => RW, macroRW}
 import upickle.default._
 import zio.test.Gen
 
-case class Name private[ir] (value: List[String]) extends AnyVal
+case class Name private[ir] (value: List[String]) extends AnyVal {
+  override def toString: String = value.mkString("[", ",", "]")
+
+  def jsonEncode: ujson.Value =
+    writeJs(this)
+}
 
 object Name {
   implicit val readWriter: RW[Name] =
@@ -22,6 +27,9 @@ object Name {
     val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
     Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
   }
+
+  def name(head: String, rest: String*): Name =
+    Name(head :: (rest.toList))
 
   implicit def fromList(words: List[String]): Name =
     Name(words)
@@ -75,6 +83,12 @@ object Name {
       }
     process(List.empty, List.empty, words)
   }
+
+  def encodeName(name: Name): ujson.Value =
+    name.jsonEncode
+
+  def decodeName(json: ujson.Value) =
+    read[Name](json)
 
   val fuzzName: Gen[zio.random.Random with zio.test.Sized, Name] = {
     val fuzzWord = {
