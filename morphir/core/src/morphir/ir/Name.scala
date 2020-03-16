@@ -10,6 +10,9 @@ import zio.test.Gen
 
 case class Name private[ir] (value: List[String]) extends AnyVal {
   override def toString: String = value.mkString("[", ",", "]")
+
+  def jsonEncode: ujson.Value =
+    writeJs(this)
 }
 
 object Name {
@@ -82,7 +85,7 @@ object Name {
   }
 
   def encodeName(name: Name): ujson.Value =
-    writeJs(name)
+    name.jsonEncode
 
   def decodeName(json: ujson.Value) =
     read[Name](json)

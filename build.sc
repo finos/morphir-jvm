@@ -13,12 +13,17 @@ import ammonite.ops._, ImplicitWd._
 val productVersion = "0.1.0"
 
 object morphir extends Module {
-  object core extends Cross[CoreModule]("2.11.12", "2.12.10", "2.13.1") {}
+  import Versions.{scala211, scala212, scala213}
+  object core extends Cross[CoreModule](scala211, scala212, scala213) {}
 
-  object cli extends Cross[CliModule]("2.12.10", "2.13.1") {}
+  object cli extends Cross[CliModule](scala212, scala213) {}
 
-  object scala
-      extends Cross[ScalaBackendModule]("2.11.12", "2.12.10", "2.13.1") {}
+  object scala extends Cross[ScalaBackendModule](scala211, scala212, scala213) {}
+
+  object sdk extends Module {
+    object core extends Cross[CoreSdkModule](scala211, scala212, scala213)
+    object json extends Cross[JsonSdkModule](scala211, scala212, scala213)
+  }
 
 }
 
@@ -32,22 +37,14 @@ class CoreModule(val crossScalaVersion: String)
     ivy"com.lihaoyi::upickle:${Versions.upickle(crossScalaVersion)}",
     ivy"dev.zio::zio-streams:${Versions.zio}",
     ivy"dev.zio::zio-test:${Versions.zio}"
-  ) //++ (if (crossScalaVersion.startsWith("2.11") Agg[Dep].empty, else Agg(ivy"dev.zio::zio-nio:${Versions.zio}"))
-
-  def pomSettings = PomSettings(
-    description = "Morphir core package",
-    organization = "morphir",
-    url = "https://github.com/MorganStanley/morphir-jvm",
-    licenses = Seq(License.`Apache-2.0`),
-    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
-    developers = Seq(
-      Developer(
-        "DamianReeves",
-        "Damian Reeves",
-        "https://github.com/DamianReeves"
-      )
-    )
   )
+
+  def moduleDeps = Seq(
+    morphir.sdk.core(crossScalaVersion),
+    morphir.sdk.json(crossScalaVersion)
+  )
+
+  def pomSettings = PublishSettings.pomSettings("Morphir core package")
 
   object test extends Tests with MorphirTestModule {}
 }
@@ -79,20 +76,7 @@ class CliModule(val crossScalaVersion: String)
     super.compile()
   }
 
-  def pomSettings = PomSettings(
-    description = "Morphir CLI package",
-    organization = "morphir",
-    url = "https://github.com/MorganStanley/morphir-jvm",
-    licenses = Seq(License.`Apache-2.0`),
-    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
-    developers = Seq(
-      Developer(
-        "DamianReeves",
-        "Damian Reeves",
-        "https://github.com/DamianReeves"
-      )
-    )
-  )
+  def pomSettings = PublishSettings.pomSettings("Morphir CLI package")
 
   object test extends Tests with MorphirTestModule {}
 }
@@ -109,20 +93,38 @@ class ScalaBackendModule(val crossScalaVersion: String)
     morphir.core(crossScalaVersion)
   )
 
-  def pomSettings = PomSettings(
-    description = "Morphir Scala bindings package",
-    organization = "morphir",
-    url = "https://github.com/MorganStanley/morphir-jvm",
-    licenses = Seq(License.`Apache-2.0`),
-    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
-    developers = Seq(
-      Developer(
-        "DamianReeves",
-        "Damian Reeves",
-        "https://github.com/DamianReeves"
-      )
-    )
+  def pomSettings =
+    PublishSettings.pomSettings("Morphir Scala bindings package")
+}
+
+class JsonSdkModule(val crossScalaVersion: String)
+    extends CrossScalaModule
+    with MorphirCommonModule
+    with PublishModule {
+
+  def publishVersion = productVersion
+
+  def ivyDeps = Agg(
+    ivy"com.lihaoyi::upickle:${Versions.upickle(crossScalaVersion)}"
   )
+
+  def moduleDeps = Seq(
+    morphir.sdk.core(crossScalaVersion)
+  )
+
+  def pomSettings = PublishSettings.pomSettings("Morphir SDK  for JSON")
+}
+
+class CoreSdkModule(val crossScalaVersion: String)
+    extends CrossScalaModule
+    with MorphirCommonModule
+    with PublishModule {
+
+  def publishVersion = productVersion
+
+  def pomSettings = PublishSettings.pomSettings("Morphir SDK core")
+
+  object test extends Tests with MorphirTestModule {}
 }
 
 trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
@@ -170,15 +172,19 @@ trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
 
 trait MorphirTestModule extends TestModule {
   def ivyDeps = Agg(
-    ivy"org.scalatest::scalatest:3.1.1",
     ivy"dev.zio::zio-test:${Versions.zio}",
     ivy"dev.zio::zio-test-sbt:${Versions.zio}"
   )
   def testFrameworks =
-    Seq("org.scalatest.tools.Framework", "zio.test.sbt.ZTestFramework")
+    Seq("zio.test.sbt.ZTestFramework")
 }
 
 object Versions {
+
+  val scala211 = "2.11.12"
+  val scala212 = "2.12.10"
+  val scala213 = "2.13.1"
+
   val `grpc-netty` = "1.27.2"
   val scalaPB = "0.10.1"
   val zio = "1.0.0-RC18-2"
@@ -192,6 +198,23 @@ object Versions {
   val scallop = "3.4.0"
   def upickle(scalaVersion: String) =
     if (scalaVersion.startsWith("2.11")) "0.7.4" else "1.0.0"
+}
+
+object PublishSettings {
+  def pomSettings(description: String) = PomSettings(
+    description = description,
+    organization = "org.morphir",
+    url = "https://github.com/MorganStanley/morphir-jvm",
+    licenses = Seq(License.`Apache-2.0`),
+    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
+    developers = Seq(
+      Developer(
+        "DamianReeves",
+        "Damian Reeves",
+        "https://github.com/DamianReeves"
+      )
+    )
+  )
 }
 
 def generateBuildInfoFile(
