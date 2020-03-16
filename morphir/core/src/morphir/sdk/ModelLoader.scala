@@ -8,21 +8,17 @@ import ujson.Readable
 
 import zio._
 import zio.blocking.Blocking
-import zio.nio.file.Files
-import zio.nio.core.file.Path
+import morphir.internal.io.file.Files._
 
 object ModelLoader {
   trait Service {
-    def loadJsonFromFile(path: Path): ZIO[Blocking, IOException, ujson.Value]
-    def loadJsonFromFile(path: JPath): ZIO[Blocking, IOException, ujson.Value] =
-      loadJsonFromFile(Path.fromJava(path))
+    def loadJsonFromFile(path: JPath): ZIO[Blocking, IOException, ujson.Value]
   }
 
   val live = ZLayer.succeed(
     new Service {
-      def loadJsonFromFile(path: Path) =
-        Files
-          .readAllBytes(path)
+      def loadJsonFromFile(path: JPath) =
+        readAllBytes(path)
           .map(chunks =>
             read[ujson.Value](Readable.fromByteArray(chunks.toArray))
           )

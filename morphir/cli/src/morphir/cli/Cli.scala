@@ -43,17 +43,17 @@ object Cli {
           help: Boolean = false
       ) =
         (for {
-          argsRef <- ZStream.fromEffect(Ref.make[Array[String]](Array.empty))
+          argsRef <- ZStream.fromEffect(Ref.make[Array[String]](Array("make")))
           _ <- ZStream.fromEffect(ZIO.whenCase(projectDir) {
             case Some(dir) =>
               argsRef.update(args =>
-                args ++ Array("--project-dir", dir.toFile().getAbsolutePath())
+                args ++ Array("-p", dir.toFile().getAbsolutePath())
               )
           })
           _ <- ZStream.fromEffect(ZIO.whenCase(output) {
             case Some(filePath) =>
               argsRef.update(args =>
-                args ++ Array("--output", filePath.toFile().getAbsolutePath())
+                args ++ Array("-o", filePath.toFile().getAbsolutePath())
               )
           })
           args <- ZStream.fromEffect(argsRef.get)

@@ -1,9 +1,35 @@
 package morphir.ir.advanced
 import morphir.ir.{FQName, Name}
+import upickle.default.{readwriter, ReadWriter => RW, macroRW}
+import upickle.default._
 
-sealed trait Type[+Extra]
+sealed abstract class Type[Extra] {
+  def jsonEncode(implicit extraEncoder: Writer[Extra]): ujson.Value = ujson.Null
+}
+
 object Type {
-  case class Variable[A](name: Name, extra: A) extends Type[A]
+  val typeKey = "@type"
+
+  case class Variable[A](name: Name, extra: A) extends Type[A] {
+
+    override def jsonEncode(
+        implicit extraEncoder: Writer[A]
+    ): ujson.Value =
+      ujson.Obj(
+        typeTag("variable"),
+        "name" -> name.jsonEncode,
+        "extra" -> writeJs(extra)
+      )
+
+  }
+
+  object Variable {
+    implicit def readWriter[X: ReadWriter]: RW[Variable[X]] =
+      readwriter[ujson.Value].bimap[Variable[X]](
+        variable => variable.jsonEncode,
+        json => ???
+      )
+  }
   case class Reference[A](
       typeName: FQName,
       typeParameters: List[Type[A]],
@@ -59,4 +85,10 @@ object Type {
     case class CustomTypeDefinition[X](typeParams: List[Name], typeExp: Type[X])
         extends Definition[X]
   }
+
+  case class Constructor[X](name: Name, args: List[(Name, Type[X])])
+  case class Constructors[X](items: List[Constructor[X]]) extends AnyVal
+
+  def typeTag(tag: String) =
+    typeKey -> ujson.Str(tag)
 }
