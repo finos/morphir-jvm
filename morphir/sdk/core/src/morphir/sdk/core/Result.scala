@@ -5,11 +5,18 @@ sealed abstract class Result[+E, +A] extends Product with Serializable {
 
   def isErr: Boolean
 
-  def flatMap[A1, E1 >: E](fn: A => Result[E1, A1]): Result[E1, A1]
+  def flatMap[A1, E1 >: E](fn: A => Result[E1, A1]): Result[E1, A1] =
+    this match {
+      case Result.Ok(value) => fn(value)
+      case _                => this.asInstanceOf[Result[E, A1]]
+    }
 
   def getOrElse[A1 >: A](fallbackValue: A1): A1
 
-  def map[A1](fn: A => A1): Result[E, A1]
+  def map[A1](fn: A => A1): Result[E, A1] = this match {
+    case Result.Ok(value) => Result.Ok(fn(value))
+    case _                => this.asInstanceOf[Result[E, A1]]
+  }
 
   def mapError[E1 >: E](fn: E => E1): Result[E1, A]
 
@@ -17,40 +24,32 @@ sealed abstract class Result[+E, +A] extends Product with Serializable {
 
 object Result {
 
-  case class Ok[E, A](value: A) extends Result[E, A] {
+  case class Ok[+E, +A](value: A) extends Result[E, A] {
 
     def isOk: Boolean = true
 
     def isErr: Boolean = false
 
-    def flatMap[A1, E1 >: E](fn: A => Result[E1, A1]): Result[E1, A1] =
-      fn(value)
-
     def getOrElse[A1 >: A](fallbackValue: A1): A1 = value
-
-    def map[B](fn: A => B): Result[E, B] =
-      Ok(fn(value))
 
     def mapError[E1 >: E](fn: E => E1): Result[E1, A] =
       this.asInstanceOf[Result[E1, A]]
+
+    def withErr[E1 >: E]: Result[E1, A] = this
   }
 
-  case class Err[E, A](error: E) extends Result[E, A] {
+  case class Err[+E, +A](error: E) extends Result[E, A] {
 
     def isOk: Boolean = false
 
     def isErr: Boolean = true
 
-    def flatMap[A1, E1 >: E](fn: A => Result[E1, A1]): Result[E1, A1] =
-      error.asInstanceOf[Result[E, A1]]
-
     def getOrElse[A1 >: A](fallbackValue: A1): A1 = fallbackValue
-
-    def map[A1](fn: A => A1): Result[E, A1] =
-      error.asInstanceOf[Result[E, A1]]
 
     def mapError[E1 >: E](fn: E => E1): Result[E1, A] =
       Err(fn(error))
+
+    def withOk[A1 >: A]: Result[E, A1] = this
   }
 
   def andThen[E, A, B](fn: A => Result[E, B]): Result[E, A] => Result[E, B] =
@@ -127,9 +126,25 @@ object Result {
                   err.asInstanceOf[Result[E, V]]
               }
 
+  def mapError[E, E1, A](fn: E => E1): Result[E, A] => Result[E1, A] =
+    (result: Result[E, A]) =>
+      result match {
+        case Err(error) => Err(fn(error))
+        case _          => result.asInstanceOf[Result[E1, A]]
+      }
+
   def toMaybe[E, A](result: Result[E, A]): Maybe[A] =
     result match {
       case Ok(value) => Maybe.just(value)
       case _         => Maybe.nothing
     }
+
+  def fromMaybe[E, A](errorValue: => E): Maybe[A] => Result[E, A] =
+    (maybeValue: Maybe[A]) =>
+      maybeValue match {
+        case Maybe.Nothing     => Result.Err(errorValue)
+        case Maybe.Just(value) => Result.Ok(value)
+      }
+
+  def unit[E]: Result[E, Unit] = Result.Ok(())
 }
