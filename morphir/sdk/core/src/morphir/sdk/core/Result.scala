@@ -1,5 +1,4 @@
-package morphir.sdk
-
+package morphir.sdk.core
 sealed abstract class Result[+E, +A] extends Product with Serializable {
 
   def isOk: Boolean
@@ -127,4 +126,10 @@ object Result {
                 case (_, _, _, _, err @ Err(_)) =>
                   err.asInstanceOf[Result[E, V]]
               }
+
+  def toMaybe[E, A](result: Result[E, A]): Maybe[A] =
+    result match {
+      case Ok(value) => Maybe.just(value)
+      case _         => Maybe.nothing
+    }
 }
