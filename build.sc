@@ -113,6 +113,7 @@ class JsonSdkModule(val crossScalaVersion: String)
   )
 
   def pomSettings = PublishSettings.pomSettings("Morphir SDK  for JSON")
+  object test extends Tests with MorphirTestModule {}
 }
 
 class CoreSdkModule(val crossScalaVersion: String)
@@ -124,7 +125,11 @@ class CoreSdkModule(val crossScalaVersion: String)
 
   def pomSettings = PublishSettings.pomSettings("Morphir SDK core")
 
-  object test extends Tests with MorphirTestModule {}
+  object test extends Tests with MorphirTestModule {
+    def ivyDeps = super.ivyDeps() ++ Agg(
+      ivy"com.vdurmont:emoji-java:5.1.1"
+    )
+  }
 }
 
 trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
@@ -170,7 +175,7 @@ trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
   }
 }
 
-trait MorphirTestModule extends TestModule {
+trait MorphirTestModule extends MorphirCommonModule with TestModule {
   def ivyDeps = Agg(
     ivy"dev.zio::zio-test:${Versions.zio}",
     ivy"dev.zio::zio-test-sbt:${Versions.zio}"
