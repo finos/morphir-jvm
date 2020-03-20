@@ -3,7 +3,7 @@ package morphir.sdk.json
 import zio.test._
 import zio.test.Assertion._
 import zio.test.environment._
-import morphir.sdk.json.Decode.{Decoder, DecodeResult, Error}
+import morphir.sdk.json.Decode.{Error}
 import morphir.sdk.core.Result
 import morphir.sdk.core.Result.Err
 import upickle.default._
