@@ -191,6 +191,98 @@ object DecodeSpec extends DefaultRunnableSpec {
         )
       )
     ),
+    suite("""Decoding using a "oneOf" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeString(Decode.oneOf(Decode.int, Decode.`null`(0)))("null")(
+          equalTo(DecodeResult.ok(0))
+        ),
+        testDecodeString(Decode.oneOf(Decode.int, Decode.`null`(0)))("42")(
+          equalTo(DecodeResult.ok(42))
+        ),
+        testDecodeString(Decode.oneOf(Decode.int, Decode.`null`(0)))("false")(
+          equalTo(
+            Result.Err[Error, Int](
+              Error.oneOf(
+                Decode.Error.Failure("Expecting an INT", ujson.Bool(false)),
+                Decode.Error.Failure("Expecting null", ujson.Bool(false))
+              )
+            )
+          )
+        )
+      )
+    ),
+    suite("""Decoding using a "field" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeString(Decode.field("name")(Decode.string))(
+          """{"name":"John Smith"}"""
+        )(
+          equalTo(DecodeResult.ok("John Smith"))
+        ),
+        testDecodeJsonValue(Decode.field("age")(Decode.string))(
+          ujson.read("""{"name":"John Smith"}""")
+        )(jsonValue =>
+          equalTo(
+            DecodeResult.errorExpecting(
+              "an OBJECT with a field named 'age'",
+              jsonValue
+            )
+          )
+        )
+      )
+    ),
+    suite("""Decoding using a "map" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeString(
+          Decode.map((i: Int) => i.toString)(Decode.int)
+        )("42", Some("mapping decoder"))(
+          equalTo(DecodeResult.ok("42"))
+        ),
+        testDecodeString(
+          Decode.map[String, Boolean] {
+            case "Y" | "y" | "true" | "True" => true
+            case _                           => false
+          }(Decode.string)
+        )("\"Y\"", Some("mapping decoder"))(
+          equalTo(DecodeResult.ok(true))
+        )
+      )
+    ),
+    suite("""Decoding using a "map2" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeJsonValue(
+          Decode.map2(Point)(Decode.field("x")(Decode.float))(
+            Decode.field("y")(Decode.float)
+          )
+        )(ujson.read("""{"x": 3, "y":4}"""))(_ =>
+          equalTo(DecodeResult.ok(Point(3, 4)))
+        )
+      )
+    ),
+    suite("""Decoding using a "map3" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeJsonValue(
+          Decode.map3(Person)(Decode.decodeField("firstName", Decode.string))(
+            Decode.decodeField("lastName", Decode.string)
+          )(Decode.decodeField("age", Decode.float))
+        )(
+          ujson.read("""{"firstName": "John", "lastName": "Doe", "age":30.5}""")
+        )(_ => equalTo(DecodeResult.ok(Person("John", "Doe", 30.5f)))),
+        testDecodeJsonValue(
+          Decode.map3(Person)(Decode.decodeField("firstName", Decode.string))(
+            Decode.decodeField("lastName", Decode.string)
+          )(Decode.decodeField("age", Decode.float))
+        )(
+          ujson.read("""{"firstName": "John", "lastName": "Doe", "sex":"M"}""")
+        )(jsonValue =>
+          equalTo(
+            DecodeResult.errorExpecting(
+              "an OBJECT with a field named 'age'",
+              jsonValue
+            )
+          )
+        )
+      )
+    ),
     suite("Calling indent")(
       test("Should work for things with windows style line endings.") {
         val original = "Line1\r\nLine2\r\nLine3"
@@ -207,11 +299,14 @@ object DecodeSpec extends DefaultRunnableSpec {
     )
   )
 
-  def testDecodeString[A](decoder: Decoder[A])(json: String)(
+  def testDecodeString[A](
+      decoder: Decoder[A]
+  )(json: String, decoderName: Option[String] = None)(
       assertion: Assertion[DecodeResult[A]]
   ) = {
     test(
-      s"Decoding json: $json with decoder:$decoder should satisfy assertion that the result is: $assertion"
+      s"""Decoding json: $json with decoder: "${decoderName getOrElse (decoder
+        .toString())}" should satisfy assertion that the result is: $assertion"""
     ) {
       val result = Decode.decodeString(decoder)(json)
       assert(result)(assertion)
@@ -231,5 +326,23 @@ object DecodeSpec extends DefaultRunnableSpec {
       assert(result)(assertion(input))
     }
   }
+
+  def testDecodeJsonValue[A](
+      decoder: Decoder[A]
+  )(jsonValue: ujson.Value, decoderName: Option[String] = None)(
+      getAssertion: ujson.Value => Assertion[DecodeResult[A]]
+  ) = {
+    val assertion = getAssertion(jsonValue)
+    test(
+      s"""Decoding json: $jsonValue with decoder: "${decoderName getOrElse (decoder
+        .toString())}" should satisfy assertion that the result is: $assertion"""
+    ) {
+      val result = Decode.decodeValue(decoder)(jsonValue)
+      assert(result)(assertion)
+    }
+  }
+
   case class Widget(name: String)
+  case class Point(x: Float, y: Float)
+  case class Person(firstName: String, lastName: String, age: Float)
 }
