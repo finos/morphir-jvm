@@ -283,6 +283,21 @@ object DecodeSpec extends DefaultRunnableSpec {
         )
       )
     ),
+    suite("""Decoding using a "field" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeJsonValue(Decode.list(Decode.int))(ujson.read("[1,2,3,4]"))(
+          _ => equalTo(DecodeResult.ok(List(1, 2, 3, 4)))
+        ),
+        testDecodeJsonValue(Decode.list(Decode.bool))(
+          ujson.read("[true,false]")
+        )(_ => equalTo(DecodeResult.ok(List(true, false)))),
+        testDecodeJsonValue(Decode.list(Decode.int))(
+          ujson.read("{}")
+        )(jsonValue =>
+          equalTo(DecodeResult.errorExpecting("a LIST", jsonValue))
+        )
+      )
+    ),
     suite("Calling indent")(
       test("Should work for things with windows style line endings.") {
         val original = "Line1\r\nLine2\r\nLine3"

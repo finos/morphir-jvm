@@ -1,10 +1,13 @@
 package morphir.sdk.json
 
+import morphir.internal.collection.decorators._
 import morphir.sdk.core.Result
 import morphir.sdk.core.Result.{Err, Ok}
-import scala.util.control.NonFatal
 import morphir.sdk.json.Decode.Decoder.Succeed
 import morphir.sdk.core.Maybe
+
+import scala.util.control.NonFatal
+
 object Decode {
 
   type Value = ujson.Value
@@ -84,6 +87,9 @@ object Decode {
       otherDecoders: Decoder[A]*
   ): Decoder[A] =
     Decoder.OneOf(List(firstDecoder) ++ otherDecoders)
+
+  def list[A](decoder: Decoder[A]): Decoder[List[A]] =
+    Decoder.ListDecoder(decoder)
 
   def map[A, V](fn: A => V)(decoder: Decoder[A]): Decoder[V] =
     Decoder.Map(fn, decoder)
@@ -433,6 +439,37 @@ object Decode {
       def decodeValue(
           jsonValue: morphir.sdk.json.Decode.Value
       ): DecodeResult[morphir.sdk.core.Maybe[A]] = ???
+    }
+
+    private[Decode] case class ListDecoder[A](decoder: Decoder[A])
+        extends Decoder[List[A]] {
+      def decodeValue(
+          jsonValue: morphir.sdk.json.Decode.Value
+      ): DecodeResult[List[A]] = {
+        jsonValue match {
+          case ujson.Arr(elements) =>
+            elements
+              .foldSomeLeft(DecodeResult.ok(List.empty[A])) {
+                case (result, jsonValue) =>
+                  result match {
+                    case Err(_) => None
+                    case Ok(elements) =>
+                      decoder.decodeValue(jsonValue) match {
+                        case Ok(element) =>
+                          Some(DecodeResult.ok(element :: elements))
+                        case Err(error) =>
+                          Some(
+                            DecodeResult
+                              .err(Error.Index(elements.length, error))
+                          )
+                      }
+                  }
+              }
+              .map(_.reverse)
+          case _ =>
+            DecodeResult.errorExpecting("a LIST", jsonValue)
+        }
+      }
     }
 
     private[Decode] case class Map[A, V](fn: A => V, decoder: Decoder[A])
