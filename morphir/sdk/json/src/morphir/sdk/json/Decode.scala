@@ -5,6 +5,7 @@ import morphir.sdk.core.Result
 import morphir.sdk.core.Result.{Err, Ok}
 import morphir.sdk.json.Decode.Decoder.Succeed
 import morphir.sdk.core.Maybe
+import morphir.sdk.core.Dict
 
 import scala.util.control.NonFatal
 import scala.reflect.ClassTag
@@ -118,7 +119,8 @@ object Decode {
   def array[A: ClassTag](decoder: Decoder[A]): Decoder[Array[A]] =
     Decoder.ArrayDecoder(decoder)
 
-  def dict[A](decoder: Decoder[A]) = ???
+  def dict[A](decoder: Decoder[A]): Decoder[Dict.Dict[String, A]] =
+    map(Dict.fromList[String, A])(keyValuePairs((decoder)))
 
   def keyValuePairs[A](decoder: Decoder[A]): Decoder[List[(String, A)]] =
     Decoder.KeyValuePairs(decoder)
