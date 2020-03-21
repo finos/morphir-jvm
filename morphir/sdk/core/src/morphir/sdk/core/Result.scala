@@ -52,6 +52,10 @@ object Result {
     def withOk[A1 >: A]: Result[E, A1] = this
   }
 
+  def ok[A](value: A): Result[Nothing, A] = Ok(value)
+
+  def err[E](error: E): Result[E, Nothing] = Err(error)
+
   def andThen[E, A, B](fn: A => Result[E, B]): Result[E, A] => Result[E, B] =
     (result: Result[E, A]) => result.flatMap(fn)
 
