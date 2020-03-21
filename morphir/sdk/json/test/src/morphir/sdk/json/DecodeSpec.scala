@@ -463,6 +463,39 @@ object DecodeSpec extends DefaultRunnableSpec {
         )
       )
     ),
+    suite("""Decoding using an "at" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeJsonValue(Decode.at("person", "name")(Decode.string))(
+          ujson.read("""{ "person": { "name": "tom", "age": 42 } }""")
+        )(_ => equalTo(DecodeResult.ok("tom"))),
+        testDecodeJsonValue(Decode.at("person", "age")(Decode.int))(
+          ujson.read("""{ "person": { "name": "tom", "age": 42 } }""")
+        )(_ => equalTo(DecodeResult.ok(42)))
+      )
+    ),
+    suite("""Decoding using an "oneOrMore" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeJsonValue(
+          Decode
+            .oneOrMore((a: Int) => (lst: List[Int]) => (a, lst))(Decode.int)
+        )(
+          ujson.read("[1,2,3]")
+        )(_ => equalTo(DecodeResult.ok((1, List(2, 3))))),
+        testDecodeJsonValue(
+          Decode
+            .oneOrMore((a: Int) => (lst: List[Int]) => (a, lst))(Decode.int)
+        )(
+          ujson.read("[]")
+        )(jsonValue =>
+          equalTo(
+            DecodeResult
+              .err(
+                Error.Failure("an ARRAY with at least ONE element", jsonValue)
+              )
+          )
+        )
+      )
+    ),
     suite("Calling indent")(
       test("Should work for things with windows style line endings.") {
         val original = "Line1\r\nLine2\r\nLine3"

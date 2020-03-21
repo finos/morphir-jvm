@@ -91,6 +91,12 @@ object Decode {
   def decodeField[A](field: String, decoder: Decoder[A]): Decoder[A] =
     Decoder.Field(field, decoder)
 
+  def at[A](fields: String*)(decoder: Decoder[A]): Decoder[A] =
+    at(fields.toList)(decoder)
+
+  def at[A](fields: List[String])(decoder: Decoder[A]): Decoder[A] =
+    fields.foldRight(decoder)((fld, fieldDecoder) => field(fld)(fieldDecoder))
+
   def index[A](idx: Int)(decoder: Decoder[A]): Decoder[A] =
     Decoder.Index(idx, decoder)
 
@@ -116,6 +122,21 @@ object Decode {
 
   def keyValuePairs[A](decoder: Decoder[A]): Decoder[List[(String, A)]] =
     Decoder.KeyValuePairs(decoder)
+
+  def oneOrMore[A, V](
+      toValue: A => List[A] => V
+  )(decoder: Decoder[A]): Decoder[V] = {
+
+    andThen(oneOrMoreHelp(toValue))(list(decoder))
+  }
+
+  private def oneOrMoreHelp[A, V](
+      toValue: A => List[A] => V
+  )(xs: List[A]): Decoder[V] =
+    xs match {
+      case Nil     => fail("an ARRAY with at least ONE element")
+      case y :: ys => succeed(toValue(y)(ys))
+    }
 
   def maybe[A](decoder: Decoder[A]): Decoder[Maybe[A]] =
     oneOf(map((a: A) => Maybe.just(a))(decoder), Decode.succeed(Maybe.Nothing))
