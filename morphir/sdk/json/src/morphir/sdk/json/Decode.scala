@@ -9,6 +9,7 @@ import morphir.sdk.core.Maybe
 import scala.util.control.NonFatal
 import scala.reflect.ClassTag
 import scala.collection.mutable
+import ujson.Arr
 
 object Decode {
 
@@ -57,6 +58,14 @@ object Decode {
   def fail[A](message: => String): Decoder[A] =
     Decoder.Fail(message)
 
+  def andThen[A, B](fn: A => Decoder[B])(decoder: Decoder[A]): Decoder[B] =
+    Decoder.AndThen(fn, decoder)
+
+  def `lazy`[A](thunk: () => Decoder[A]): Decoder[A] =
+    andThen((_: Unit) => thunk())(succeed(()))
+
+  @inline def lzy[A](thunk: () => Decoder[A]): Decoder[A] = `lazy`(thunk)
+
   /** Decode a `null` value into some actual value */
   def `null`[A](value: => A): Decoder[A] =
     Decoder.Null(value)
@@ -78,8 +87,12 @@ object Decode {
 
   def field[A](field: String)(decoder: Decoder[A]): Decoder[A] =
     Decoder.Field(field, decoder)
+
   def decodeField[A](field: String, decoder: Decoder[A]): Decoder[A] =
     Decoder.Field(field, decoder)
+
+  def index[A](idx: Int)(decoder: Decoder[A]): Decoder[A] =
+    Decoder.Index(idx, decoder)
 
   def oneOf[A](decoders: List[Decoder[A]]): Decoder[A] =
     Decoder.OneOf(decoders)
@@ -401,6 +414,20 @@ object Decode {
       }
     }
 
+    private[Decode] case class AndThen[A, B](
+        fn: A => Decoder[B],
+        decoder: Decoder[A]
+    ) extends Decoder[B] {
+
+      def decodeValue(
+          jsonValue: morphir.sdk.json.Decode.Value
+      ): DecodeResult[B] =
+        decoder
+          .decodeValue(jsonValue)
+          .flatMap(a => fn(a).decodeValue(jsonValue))
+
+    }
+
     private[Decode] case class OneOf[A](decoders: List[Decoder[A]])
         extends Decoder[A] {
       def decodeValue(
@@ -448,6 +475,27 @@ object Decode {
             )
         }
 
+    }
+
+    private[Decode] case class Index[A](index: Int, decoder: Decoder[A])
+        extends Decoder[A] {
+      def decodeValue(
+          jsonValue: morphir.sdk.json.Decode.Value
+      ): DecodeResult[A] = {
+        jsonValue match {
+          case Arr(items) if index >= items.length =>
+            DecodeResult.errorExpecting(
+              s"a LONGER array. Need index '$index' but only see '${items.length}' enties",
+              jsonValue
+            )
+          case Arr(items) =>
+            decoder.decodeValue(items(index)) match {
+              case Err(error) => DecodeResult.err(Error.Index(index, error))
+              case res        => res
+            }
+          case _ => DecodeResult.errorExpecting("an ARRAY", jsonValue)
+        }
+      }
     }
 
     private[Decode] case class ListDecoder[A](decoder: Decoder[A])

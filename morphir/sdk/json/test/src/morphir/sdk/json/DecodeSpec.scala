@@ -424,6 +424,45 @@ object DecodeSpec extends DefaultRunnableSpec {
         )
       )
     ),
+    suite("""Decoding using an "index" Decoder:""")(
+      suite("Should work as expected")(
+        //decodeString (index 0 string) json  == Ok "alice"
+        testDecodeJsonString(
+          Decode.index(0)(Decode.string),
+          """["alice", "bob", "chuck"]"""
+        )(_ => equalTo(DecodeResult.ok("alice"))),
+        //decodeString (index 1 string) json  == Ok "bob"
+        testDecodeJsonString(
+          Decode.index(1)(Decode.string),
+          """["alice", "bob", "chuck"]"""
+        )(_ => equalTo(DecodeResult.ok("bob"))),
+        //decodeString (index 3 string) json  == Ok "chuck"
+        testDecodeJsonString(
+          Decode.index(2)(Decode.string),
+          """["alice", "bob", "chuck"]"""
+        )(_ => equalTo(DecodeResult.ok("chuck"))),
+        // decodeString (index 3 string) json  == Err ...
+        testDecodeJsonString(
+          Decode.index(3)(Decode.string),
+          """["alice", "bob", "chuck"]"""
+        )(jsonValue =>
+          equalTo(
+            DecodeResult.errorExpecting(
+              "a LONGER array. Need index '3' but only see '3' enties",
+              jsonValue
+            )
+          )
+        ),
+        testDecodeJsonString(
+          Decode.index(1)(Decode.string),
+          "{}"
+        )(jsonValue =>
+          equalTo(
+            DecodeResult.errorExpecting("an ARRAY", jsonValue)
+          )
+        )
+      )
+    ),
     suite("Calling indent")(
       test("Should work for things with windows style line endings.") {
         val original = "Line1\r\nLine2\r\nLine3"
