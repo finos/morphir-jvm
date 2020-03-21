@@ -7,6 +7,7 @@ import morphir.sdk.json.Decode.{Error}
 import morphir.sdk.core.Result
 import morphir.sdk.core.Result.Err
 import upickle.default._
+import morphir.sdk.core.Maybe
 
 object DecodeSpec extends DefaultRunnableSpec {
   def spec = suite("json.Decode Spec")(
@@ -283,7 +284,7 @@ object DecodeSpec extends DefaultRunnableSpec {
         )
       )
     ),
-    suite("""Decoding using a "field" Decoder:""")(
+    suite("""Decoding using a "list" Decoder:""")(
       suite("Should work as expected")(
         testDecodeJsonValue(Decode.list(Decode.int))(ujson.read("[1,2,3,4]"))(
           _ => equalTo(DecodeResult.ok(List(1, 2, 3, 4)))
@@ -295,6 +296,131 @@ object DecodeSpec extends DefaultRunnableSpec {
           ujson.read("{}")
         )(jsonValue =>
           equalTo(DecodeResult.errorExpecting("a LIST", jsonValue))
+        )
+      )
+    ),
+    suite("""Decoding using a "array" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeJsonValue(Decode.array(Decode.int))(ujson.read("[1,2,3,4]"))(
+          _ =>
+            isCase(
+              "Ok",
+              (result: DecodeResult[Array[Int]]) =>
+                result match {
+                  case Result.Ok(items) => Some(items)
+                  case Result.Err(_)    => None
+                },
+              equalTo(Array(1, 2, 3, 4))
+            )
+        ),
+        testDecodeJsonValue(Decode.array(Decode.bool))(
+          ujson.read("[true,false]")
+        )(_ =>
+          isCase(
+            "Ok",
+            (result: DecodeResult[Array[Boolean]]) =>
+              result match {
+                case Result.Ok(items) => Some(items)
+                case Result.Err(_)    => None
+              },
+            equalTo(Array(true, false))
+          )
+        ),
+        testDecodeJsonValue(Decode.array(Decode.int))(
+          ujson.read("{}")
+        )(jsonValue =>
+          equalTo(DecodeResult.errorExpecting("an ARRAY", jsonValue))
+        )
+      )
+    ),
+    suite("""Decoding using a "nullable" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeString(Decode.nullable(Decode.int))("13")(
+          equalTo(DecodeResult.ok(Maybe.Just(13)))
+        ),
+        testDecodeString(Decode.nullable(Decode.int))("42")(
+          equalTo(DecodeResult.ok(Maybe.Just(42)))
+        ),
+        testDecodeString(Decode.nullable(Decode.int))("null")(
+          equalTo(DecodeResult.ok(Maybe.Nothing))
+        ),
+        testDecodeString(Decode.nullable(Decode.int))("true")(
+          equalTo(
+            DecodeResult.err(
+              Error.oneOf(
+                Error.Failure("Expecting null", ujson.read("true")),
+                Error.Failure("Expecting an INT", ujson.read("true"))
+              )
+            )
+          )
+        )
+      )
+    ),
+    suite("""Decoding using a "keyValuePairs" Decoder:""")(
+      suite("Should work as expected")(
+        testDecodeString(Decode.keyValuePairs(Decode.int))(
+          """{"alice":42, "bob":99}"""
+        )(
+          equalTo(DecodeResult.ok(List("alice" -> 42, "bob" -> 99)))
+        ),
+        testDecodeString(Decode.keyValuePairs(Decode.int))(
+          "null"
+        )(
+          equalTo(DecodeResult.errorExpecting("an OBJECT", ujson.Null))
+        ),
+        testDecodeString(Decode.keyValuePairs(Decode.int))(
+          "[]"
+        )(
+          equalTo(DecodeResult.errorExpecting("an OBJECT", ujson.Arr()))
+        )
+      )
+    ),
+    suite("""Decoding using a "maybe" Decoder:""")(
+      suite("Should work as expected")(
+        //json = """{ "name": "tom", "age": 42 }"""
+
+        // decodeString (maybe (field "age"    int  )) json == Ok (Just 42)
+        testDecodeJsonString(
+          Decode.maybe(Decode.field("age")(Decode.int)),
+          """{"name":"tom", "age":42}""",
+          Some("maybe field age as int")
+        )(_ => equalTo(DecodeResult.ok(Maybe.just(42)))),
+        //decodeString (maybe (field "name"   int  )) json == Ok Nothing
+        testDecodeJsonString(
+          Decode.maybe(Decode.field("name")(Decode.int)),
+          """{"name":"tom", "age":42}""",
+          Some("maybe field name as int")
+        )(_ => equalTo(DecodeResult.ok(Maybe.Nothing))),
+        //    decodeString (maybe (field "height" float)) json == Ok Nothing
+        testDecodeJsonString(
+          Decode.maybe(Decode.field("height")(Decode.float)),
+          """{"name":"tom", "age":42}""",
+          Some("maybe field height as float")
+        )(_ => equalTo(DecodeResult.ok(Maybe.Nothing))),
+        // decodeString (field "age"    (maybe int  )) json == Ok (Just 42)
+        testDecodeJsonString(
+          Decode.field("age")(Decode.maybe(Decode.int)),
+          """{"name":"tom", "age":42}""",
+          Some("field age maybe int")
+        )(_ => equalTo(DecodeResult.ok(Maybe.just(42)))),
+        //decodeString (field "name"   (maybe int  )) json == Ok Nothing
+        testDecodeJsonString(
+          Decode.field("name")(Decode.maybe(Decode.int)),
+          """{"name":"tom", "age":42}""",
+          Some("field name maybe int")
+        )(_ => equalTo(DecodeResult.ok(Maybe.Nothing))),
+        //decodeString (field "height" (maybe float)) json == Err ...
+        testDecodeJsonString(
+          Decode.field("height")(Decode.maybe(Decode.int)),
+          """{"name":"tom", "age":42}""",
+          Some("field height maybe float")
+        )(jsonValue =>
+          equalTo(
+            DecodeResult.errorExpecting(
+              "an OBJECT with a field named 'height'",
+              jsonValue
+            )
+          )
         )
       )
     ),
@@ -323,6 +449,25 @@ object DecodeSpec extends DefaultRunnableSpec {
       s"""Decoding json: $json with decoder: "${decoderName getOrElse (decoder
         .toString())}" should satisfy assertion that the result is: $assertion"""
     ) {
+      val result = Decode.decodeString(decoder)(json)
+      assert(result)(assertion)
+    }
+  }
+
+  def testDecodeJsonString[A](
+      decoder: Decoder[A],
+      json: String,
+      decoderName: Option[String] = None
+  )(
+      getAssertion: ujson.Value => Assertion[DecodeResult[A]]
+  ) = {
+    val jsonValue = ujson.read(json)
+    val assertion = getAssertion(jsonValue)
+    test(
+      s"""Decoding json: $json with decoder: "${decoderName getOrElse (decoder
+        .toString())}" should satisfy assertion that the result is: $assertion"""
+    ) {
+
       val result = Decode.decodeString(decoder)(json)
       assert(result)(assertion)
     }

@@ -7,6 +7,8 @@ import morphir.sdk.json.Decode.Decoder.Succeed
 import morphir.sdk.core.Maybe
 
 import scala.util.control.NonFatal
+import scala.reflect.ClassTag
+import scala.collection.mutable
 
 object Decode {
 
@@ -88,8 +90,22 @@ object Decode {
   ): Decoder[A] =
     Decoder.OneOf(List(firstDecoder) ++ otherDecoders)
 
+  def nullable[A](decoder: Decoder[A]): Decoder[Maybe[A]] =
+    oneOf(`null`(Maybe.Nothing), map((a: A) => Maybe.just(a))(decoder))
+
   def list[A](decoder: Decoder[A]): Decoder[List[A]] =
     Decoder.ListDecoder(decoder)
+
+  def array[A: ClassTag](decoder: Decoder[A]): Decoder[Array[A]] =
+    Decoder.ArrayDecoder(decoder)
+
+  def dict[A](decoder: Decoder[A]) = ???
+
+  def keyValuePairs[A](decoder: Decoder[A]): Decoder[List[(String, A)]] =
+    Decoder.KeyValuePairs(decoder)
+
+  def maybe[A](decoder: Decoder[A]): Decoder[Maybe[A]] =
+    oneOf(map((a: A) => Maybe.just(a))(decoder), Decode.succeed(Maybe.Nothing))
 
   def map[A, V](fn: A => V)(decoder: Decoder[A]): Decoder[V] =
     Decoder.Map(fn, decoder)
@@ -434,13 +450,6 @@ object Decode {
 
     }
 
-    private[Decode] case class Nullable[A](decoder: Decoder[A])
-        extends Decoder[Maybe[A]] {
-      def decodeValue(
-          jsonValue: morphir.sdk.json.Decode.Value
-      ): DecodeResult[morphir.sdk.core.Maybe[A]] = ???
-    }
-
     private[Decode] case class ListDecoder[A](decoder: Decoder[A])
         extends Decoder[List[A]] {
       def decodeValue(
@@ -468,6 +477,67 @@ object Decode {
               .map(_.reverse)
           case _ =>
             DecodeResult.errorExpecting("a LIST", jsonValue)
+        }
+      }
+    }
+
+    private[Decode] case class ArrayDecoder[A: ClassTag](decoder: Decoder[A])
+        extends Decoder[Array[A]] {
+      def decodeValue(
+          jsonValue: morphir.sdk.json.Decode.Value
+      ): DecodeResult[Array[A]] = {
+        jsonValue match {
+          case ujson.Arr(elements) =>
+            elements
+              .foldSomeLeft(DecodeResult.ok(mutable.ArrayBuffer.empty[A])) {
+                case (result, jsonValue) =>
+                  result match {
+                    case Err(_) => None
+                    case Ok(elements) =>
+                      decoder.decodeValue(jsonValue) match {
+                        case Ok(element) =>
+                          Some(DecodeResult.ok(elements += element))
+                        case Err(error) =>
+                          Some(
+                            DecodeResult
+                              .err(Error.Index(elements.length, error))
+                          )
+                      }
+                  }
+              }
+              .map(_.toArray)
+          case _ =>
+            DecodeResult.errorExpecting("an ARRAY", jsonValue)
+        }
+      }
+    }
+
+    private[Decode] case class KeyValuePairs[A](decoder: Decoder[A])
+        extends Decoder[List[(String, A)]] {
+      def decodeValue(
+          jsonValue: morphir.sdk.json.Decode.Value
+      ): DecodeResult[List[(String, A)]] = {
+        jsonValue match {
+          case ujson.Obj(items) =>
+            items.toSeq
+              .foldSomeLeft(DecodeResult.ok(List.empty[(String, A)])) {
+                case (result, (key, value)) =>
+                  result match {
+                    case Err(_) => None
+                    case Ok(elements) =>
+                      decoder.decodeValue(value) match {
+                        case Ok(element) =>
+                          Some(DecodeResult.ok((key -> element) :: elements))
+                        case Err(error) =>
+                          Some(
+                            DecodeResult
+                              .err(Error.Index(elements.length, error))
+                          )
+                      }
+                  }
+              }
+              .map(_.reverse)
+          case _ => DecodeResult.errorExpecting("an OBJECT", jsonValue)
         }
       }
     }
