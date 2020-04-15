@@ -1,11 +1,28 @@
 package org.morphir.sdk.core
 
+import scala.language.implicitConversions
+
 object Maybe {
 
-  val Nothing: Nothing = None
-  val Just: Some.type = Some
+  sealed abstract class Maybe[+A] extends Product with Serializable {
 
-  def nothing[A]: Maybe[A] = Nothing.asInstanceOf[Maybe[A]]
+    def get: A
+
+    def map[B](fn: A => B): Maybe[B] = this match {
+      case Just(value) => Just(fn(value))
+      case Nothing     => Nothing
+    }
+  }
+
+  case class Just[+A](value: A) extends Maybe[A] {
+    def get: A = value
+  }
+
+  case object Nothing extends Maybe[scala.Nothing] {
+    def get: scala.Nothing = throw new NoSuchElementException("Nothing.get")
+  }
+
+  val nothing: Maybe[scala.Nothing] = Nothing
 
   def just[A](value: A): Maybe[A] = Some(value)
 
@@ -71,12 +88,17 @@ object Maybe {
   def withDefault[A, A1 >: A](defaultValue: A1) =
     (maybeValue: Maybe[A]) =>
       maybeValue match {
-        case _: Maybe.Nothing => defaultValue
-        case Just(value)      => value
+        case _: Maybe.Nothing.type => defaultValue
+        case Just(value)           => value
       }
 
-  type Just[+A] = Some[A]
+  implicit def toOption[A](maybe: Maybe[A]): Option[A] = maybe match {
+    case Just(value) => Some(value)
+    case Nothing     => None
+  }
 
-  type Nothing = None.type
-
+  implicit def fromOption[A](option: Option[A]): Maybe[A] = option match {
+    case Some(value) => Just(value)
+    case None        => Nothing
+  }
 }

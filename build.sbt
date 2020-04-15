@@ -6,7 +6,9 @@ inThisBuild(
   List(
     organization := "org.morphir",
     homepage := Some(url("https://morgan-stanley.github.io/morphir-jvm/")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    licenses := List(
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
+    ),
     developers := List(
       Developer(
         "DamianReeves",
@@ -28,7 +30,10 @@ inThisBuild(
 )
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+addCommandAlias(
+  "check",
+  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
+)
 
 val zioVersion = "1.0.0-RC18-2"
 
@@ -36,11 +41,18 @@ lazy val root = project
   .in(file("."))
   .settings(
     skip in publish := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    unusedCompileDependenciesFilter -= moduleFilter(
+      "org.scala-js",
+      "scalajs-library"
+    )
   )
   .aggregate(
     morphirSdkCoreJS,
     morphirSdkCoreJVM,
+    morphirSdkJsonJS,
+    morphirSdkJsonJVM,
+    morphirCoreJS,
+    morphirCoreJVM,
     morphirCliJS,
     morphirCliJVM
   )
@@ -52,29 +64,73 @@ lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
   .settings(buildInfoSettings("morphir.sdk"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % "test",
-      "dev.zio" %% "zio-test-sbt" % zioVersion % "test"
+      "dev.zio" %%% "zio" % zioVersion,
+      //"io.estatico" %%% "newtype" % "0.4.3",
+      "dev.zio" %%% "zio-test" % zioVersion % "test",
+      "dev.zio" %%% "zio-test-sbt" % zioVersion % "test"
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val morphirSdkCoreJS = morphirSdkCore.js
-  .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val morphirSdkCoreJVM = morphirSdkCore.jvm
   .settings(dottySettings)
 
+lazy val morphirSdkJson = crossProject(JSPlatform, JVMPlatform)
+  .in(file("morphir/sdk/json"))
+  .dependsOn(morphirSdkCore)
+  .settings(stdSettings("morphirSdkJson"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("morphir.sdk.json"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio" % zioVersion,
+      "dev.zio" %%% "zio-test" % zioVersion % "test",
+      "dev.zio" %%% "zio-test-sbt" % zioVersion % "test"
+    )
+  )
+  .settings(upickleSettings("1.0.0"))
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+
+lazy val morphirSdkJsonJS = morphirSdkJson.js
+
+lazy val morphirSdkJsonJVM = morphirSdkJson.jvm
+  .settings(dottySettings)
+
+lazy val morphirCore = crossProject(JSPlatform, JVMPlatform)
+  .in(file("morphir/core"))
+  .dependsOn(morphirSdkCore, morphirSdkJson)
+  .settings(stdSettings("morphirCore"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("morphir.core"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio" % zioVersion,
+      "dev.zio" %%% "zio-test" % zioVersion,
+      "dev.zio" %%% "zio-test-sbt" % zioVersion % "test"
+    )
+  )
+  .settings(upickleSettings("1.0.0"))
+  //.settings(macroExpansionSettings)
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+
+lazy val morphirCoreJS = morphirCore.js
+
+lazy val morphirCoreJVM = morphirCore.jvm
+  .settings(dottySettings)
+  .settings(zioNioSettings("1.0.0-RC6"))
+
 lazy val morphirCli = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir/cli"))
-  .dependsOn(morphirSdkCore)
+  .dependsOn(morphirCore, morphirSdkJson, morphirSdkCore)
   .settings(stdSettings("morphirCli"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("morphir.cli"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % "test",
+      "dev.zio" %% "zio" % zioVersion,
+      "dev.zio" %% "zio-test" % zioVersion % "test",
       "dev.zio" %% "zio-test-sbt" % zioVersion % "test"
     )
   )
@@ -99,8 +155,12 @@ lazy val docs = project
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(root),
     target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
     cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value
+    docusaurusCreateSite := docusaurusCreateSite
+      .dependsOn(unidoc in Compile)
+      .value,
+    docusaurusPublishGhpages := docusaurusPublishGhpages
+      .dependsOn(unidoc in Compile)
+      .value
   )
   .dependsOn(root)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

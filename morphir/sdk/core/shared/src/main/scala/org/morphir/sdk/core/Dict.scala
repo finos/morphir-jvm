@@ -1,4 +1,5 @@
 package org.morphir.sdk.core
+import Maybe._
 
 object Dict {
   sealed abstract class Dict[K, +V]

@@ -174,8 +174,8 @@ trait MorphirCommonModule extends ScalafmtModule with ScalaModule {
   def platformSegment: String
 
   def sources = T.sources(
-    millSourcePath / "src",
-    millSourcePath / s"src-$platformSegment"
+    millSourcePath / "scala",
+    millSourcePath / s"scala-$platformSegment"
   )
 
 }

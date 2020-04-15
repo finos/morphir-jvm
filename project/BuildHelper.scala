@@ -401,6 +401,38 @@ object BuildHelper {
     libraryDependencies += "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-RC5" % Test
   )
 
+  def upickleSettings(version: String = "1.0.0") = Seq(
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, x)) if x <= 12 =>
+          Seq(
+            "com.lihaoyi" %% "upickle" % "0.7.4"
+          )
+        case _ =>
+          Seq(
+            "com.lihaoyi" %%% "upickle" % version
+          )
+      }
+    }
+  )
+
+  def zioNioSettings(version: String = "1.0.0-RC6") = Seq(
+    libraryDependencies ++= {
+      if (isDotty.value) {
+        Seq("dev.zio" % "zio-nio_2.13" % version)
+      } else {
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, x)) =>
+            Seq(
+              "dev.zio" %% "zio-nio" % version
+            )
+          case _ =>
+            Seq.empty
+        }
+      }
+    }
+  )
+
   implicit class ModuleHelper(p: Project) {
     def module: Project = p.in(file(p.id)).settings(stdSettings(p.id))
   }

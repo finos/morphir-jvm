@@ -6,9 +6,10 @@ import zio.test.Assertion._
 object MaybeSpec extends DefaultRunnableSpec {
   def spec = suite("MaybeSpec")(
     suite("Just specs")(
-      testM("Just should be an alias for Some") {
+      testM("Just should be convertible to Some") {
         check(Gen.alphaNumericChar) { input =>
-          assert(Maybe.Just(input))(equalTo(Some(input)))
+          val maybe = Maybe.Just(input)
+          assert(Maybe.toOption(maybe))(isSome(equalTo(input)))
         }
       },
       suite("Calling withDefault")(
