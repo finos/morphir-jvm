@@ -9,43 +9,24 @@ import org.morphir.sdk.core.Dict
 import scala.util.control.NonFatal
 import scala.reflect.ClassTag
 import scala.collection.mutable
-import ujson.Arr
+import cats.syntax.either._
+import io.circe._
+import io.circe.parser._
 
 object Decode {
 
-  type Value = ujson.Value
+  type Value = Encode.Value
   type DecodeResult[A] = Result[Error, A]
 
-  def decodeString[A](decoder: Decoder[A])(input: String): DecodeResult[A] = {
-    try {
-      val json = ujson.read(input)
-      decodeValue(decoder)(json)
-    } catch {
-      case err: MatchError =>
-        Error.asErrorResult(
-          Error.Failure(
-            s"A MatchError was encounterd while decoding: " + err
-              .getLocalizedMessage(),
-            ujson.Str(input)
-          )
-        )
-      case err: ujson.ParseException =>
-        Error.asErrorResult(
-          Error.Failure(
-            "This is not valid JSON ! Error: " + err
-              .getLocalizedMessage(),
-            ujson.Str(input)
-          )
-        )
-      case NonFatal(err) =>
-        Error.asErrorResult(
-          Error.Failure(
-            s"Error encountered while decoding. Error: " + err.toString(),
-            ujson.Str(input)
-          )
-        )
+  def parse(input: String): DecodeResult[Json] =
+    parser.parse(input) match {
+      case Right(value) => Result.ok(value)
+      case Left(failure) =>
+        Result.err(Error.Failure(failure.message, Json.fromString(input)))
     }
-  }
+
+  def decodeString[A](decoder: Decoder[A])(input: String): DecodeResult[A] =
+    parse(input).flatMap(decodeValue(decoder)(_))
 
   def decodeValue[A](decoder: Decoder[A])(jsonValue: Value): DecodeResult[A] = {
     decoder.decodeValue(jsonValue)
@@ -400,8 +381,8 @@ object Decode {
           jsonValue: org.morphir.sdk.json.Decode.Value
       ): DecodeResult[String] =
         jsonValue match {
-          case ujson.Str(value) => DecodeResult.ok(value)
-          case _                => DecodeResult.errorExpecting("a STRING", jsonValue)
+          case Json.JString(value) => DecodeResult.ok(value)
+          case _                   => DecodeResult.errorExpecting("a STRING", jsonValue)
         }
     }
     private[Decode] case object Bool extends Decoder[Boolean] {
@@ -409,29 +390,43 @@ object Decode {
           jsonValue: org.morphir.sdk.json.Decode.Value
       ): DecodeResult[Boolean] =
         jsonValue match {
-          case ujson.Bool(value) => DecodeResult.ok(value)
-          case _                 => DecodeResult.errorExpecting("a BOOL", jsonValue)
+          case Json.JBoolean(value) => DecodeResult.ok(value)
+          case _                    => DecodeResult.errorExpecting("a BOOL", jsonValue)
         }
     }
     private[Decode] case object Int extends Decoder[Int] {
       def decodeValue(
           jsonValue: org.morphir.sdk.json.Decode.Value
-      ): DecodeResult[Int] = jsonValue match {
-        case ujson.Num(value)
-            if (scala.Int.MinValue <= value && value <= scala.Int.MaxValue && value.isWhole) =>
-          DecodeResult.ok(value.toInt)
-
-        case _ => DecodeResult.errorExpecting("an INT", jsonValue)
+      ): DecodeResult[Int] = {
+        lazy val error = DecodeResult.errorExpecting("an INT", jsonValue)
+        jsonValue match {
+          case Json.JNumber(value) =>
+            val number = value.toDouble
+            if (scala.Int.MinValue <= number && number <= scala.Int.MaxValue && number.isWhole)
+              DecodeResult.ok(number.toInt)
+            else
+              error
+          case _ => error
+        }
       }
     }
+
     private[Decode] case object Float extends Decoder[Float] {
       def decodeValue(
           jsonValue: org.morphir.sdk.json.Decode.Value
-      ): DecodeResult[Float] = jsonValue match {
-        case ujson.Num(value)
-            if (scala.Float.MinValue <= value && value <= scala.Float.MaxValue) =>
-          DecodeResult.ok(value.toFloat)
-        case _ => DecodeResult.errorExpecting("a FLOAT", jsonValue)
+      ): DecodeResult[Float] = {
+
+        lazy val error = DecodeResult.errorExpecting("a FLOAT", jsonValue)
+
+        jsonValue match {
+          case Json.JNumber(value) =>
+            val number = value.toDouble
+            if (scala.Float.MinValue <= number && number <= scala.Float.MaxValue)
+              DecodeResult.ok(number.toFloat)
+            else
+              error
+          case _ => error
+        }
       }
     }
 
@@ -485,17 +480,21 @@ object Decode {
         extends Decoder[A] {
       def decodeValue(
           jsonValue: org.morphir.sdk.json.Decode.Value
-      ): DecodeResult[A] =
+      ): DecodeResult[A] = {
+        lazy val error = DecodeResult.errorExpecting(
+          s"an OBJECT with a field named '$field'",
+          jsonValue
+        )
         jsonValue match {
-          case value @ ujson.Obj(fields) if fields.contains(field) =>
-            decoder.decodeValue(value(field))
-          case _ =>
-            DecodeResult.errorExpecting(
-              s"an OBJECT with a field named '$field'",
-              jsonValue
-            )
+          case Json.JObject(fields) if fields.contains(field) =>
+            val fieldValue: Option[Decode.Value] = fields(field)
+            fieldValue match {
+              case None         => error
+              case Some(result) => decoder.decodeValue(result)
+            }
+          case _ => error
         }
-
+      }
     }
 
     private[Decode] case class Index[A](index: Int, decoder: Decoder[A])

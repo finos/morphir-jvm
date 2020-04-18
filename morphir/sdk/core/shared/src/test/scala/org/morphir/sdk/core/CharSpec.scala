@@ -101,17 +101,17 @@ object CharSpec extends DefaultRunnableSpec {
     )
   )
 
-  def toCodeTests(cases: (Char, Int)*) =
+  def toCodeTests(cases: (Char.Char, Int)*) =
     cases.map {
       case (input, expectedCode) =>
         test(
-          s"Given a Char: '$input' caliing toCode should return '$expectedCode'"
+          s"Given a Char: '$input' calliing toCode should return '$expectedCode'"
         ) {
           assert(Char.toCode(input))(equalTo(expectedCode))
         }
     }
 
-  def isUpperTests(cases: (Char, Boolean)*) =
+  def isUpperTests(cases: (Char.Char, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -121,7 +121,7 @@ object CharSpec extends DefaultRunnableSpec {
         }
     }
 
-  def isLowerTests(cases: (Char, Boolean)*) =
+  def isLowerTests(cases: (Char.Char, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -131,7 +131,7 @@ object CharSpec extends DefaultRunnableSpec {
         }
     }
 
-  def isAlphaTests(cases: (Char, Boolean)*) =
+  def isAlphaTests(cases: (Char.Char, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -141,7 +141,7 @@ object CharSpec extends DefaultRunnableSpec {
         }
     }
 
-  def isAlphaNumTests(cases: (Char, Boolean)*) =
+  def isAlphaNumTests(cases: (Char.Char, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -151,7 +151,7 @@ object CharSpec extends DefaultRunnableSpec {
         }
     }
 
-  def isDigitTests(cases: (Char, Boolean)*) =
+  def isDigitTests(cases: (Char.Char, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -161,7 +161,7 @@ object CharSpec extends DefaultRunnableSpec {
         }
     }
 
-  def isOctDigitTests(cases: (Char, Boolean)*) =
+  def isOctDigitTests(cases: (Char.Char, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(

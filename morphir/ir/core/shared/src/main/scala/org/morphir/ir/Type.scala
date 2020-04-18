@@ -1,12 +1,8 @@
 package org.morphir.ir
 
 import org.morphir.ir.Type.Declaration.CustomTypeDeclaration
-import org.morphir.sdk.json.{Encode => JE}
-import upickle.default.{readwriter, ReadWriter => RW, _}
 
-sealed abstract class Type[Extra] {
-  def jsonEncode(implicit extraEncoder: Writer[Extra]): ujson.Value = ujson.Null
-}
+sealed abstract class Type[Extra] {}
 
 object Type {
   val typeKey = "@type"
@@ -38,29 +34,9 @@ object Type {
       ctors: Constructors[X]
     ) => CustomTypeDeclaration(typeParams, ctors)
 
-  case class Variable[A](name: Name, extra: A) extends Type[A] {
+  case class Variable[A](name: Name, extra: A) extends Type[A] {}
 
-    override def jsonEncode(
-        implicit extraEncoder: Writer[A]
-    ): ujson.Value =
-      ujson.Obj(
-        typeTag("variable"),
-        "name" -> name.jsonEncode,
-        "extra" -> writeJs(extra)
-      )
-
-  }
-
-  object Variable {
-    implicit def readWriter[X: RW]: RW[Variable[X]] =
-      readwriter[ujson.Value].bimap[Variable[X]](
-        variable => variable.jsonEncode,
-        jsonDecode[X]
-      )
-
-    def jsonDecode[X](json: JE.Value)(implicit extraDecoder: Reader[X]) = ???
-
-  }
+  object Variable {}
   case class Reference[A](
       typeName: FQName,
       typeParameters: List[Type[A]],

@@ -1,5 +1,6 @@
 package org.morphir.sdk.core
 import Maybe._
+import scala.language.implicitConversions
 
 sealed abstract class Result[+E, +A] extends Product with Serializable {
 
@@ -147,6 +148,22 @@ object Result {
     case Maybe.Just(value) => Result.Ok(value)
     case Maybe.Nothing     => Result.Err(errorValue)
   }
+
+  def fromOption[E, A](errorValue: => E): Option[A] => Result[E, A] = {
+    case Some(value) => Result.Ok(value)
+    case None        => Result.Err(errorValue)
+  }
+
+  def fromEither[E, A](either: Either[E, A]): Result[E, A] = either match {
+    case Left(err)    => Result.Err(err)
+    case Right(value) => Result.Ok(value)
+  }
+
+  implicit def resultFromEither[E, A](either: Either[E, A]): Result[E, A] =
+    either match {
+      case Left(err)    => Result.Err(err)
+      case Right(value) => Result.Ok(value)
+    }
 
   def unit[E]: Result[E, Unit] = Result.Ok(())
 }
