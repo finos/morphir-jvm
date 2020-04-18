@@ -1,4 +1,4 @@
-package org.morphir.sdk.core
+package org.morphir.sdk
 
 object List {
   type List[+A] = scala.List[A]

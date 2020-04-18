@@ -1,4 +1,4 @@
-package org.morphir.sdk.core
+package org.morphir.sdk
 
 object Int {
   type Int = scala.BigInt

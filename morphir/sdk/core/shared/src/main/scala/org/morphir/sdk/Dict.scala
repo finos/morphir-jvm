@@ -1,4 +1,5 @@
-package org.morphir.sdk.core
+package org.morphir.sdk
+
 import Maybe._
 
 object Dict {

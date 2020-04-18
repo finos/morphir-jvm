@@ -1,6 +1,9 @@
-package org.morphir.sdk.core
+package org.morphir.sdk
+
+import org.morphir.sdk.Maybe.Maybe
+
 import scala.util.matching.{Regex => RE}
-import org.morphir.sdk.core.Maybe._
+import Maybe._
 
 object Regex {
 

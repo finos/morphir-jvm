@@ -1,6 +1,6 @@
-package org.morphir.sdk.core
+package org.morphir.sdk
 
-import org.morphir.sdk.core.Maybe.Maybe
+import Maybe.Maybe
 import zio.test._
 import zio.test.Assertion._
 

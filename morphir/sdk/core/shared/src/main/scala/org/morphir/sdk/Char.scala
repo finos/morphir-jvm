@@ -1,4 +1,4 @@
-package org.morphir.sdk.core
+package org.morphir.sdk
 
 //TODO: We need to think how we want to represent chars as Elm chars support full unicode
 //    : but java cannot store full unicode in a single char

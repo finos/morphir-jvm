@@ -1,12 +1,10 @@
-package org.morphir.sdk.core
-
-import org.morphir.sdk.core.platform.{MaybeCompanion, MaybeP}
+package org.morphir.sdk
 
 import scala.language.implicitConversions
 
-object Maybe extends MaybeCompanion {
+object Maybe {
 
-  sealed abstract class Maybe[+A] extends MaybeP[A] { self =>
+  sealed abstract class Maybe[+A] extends MaybeLike[A] { self =>
 
     def get: A
 
@@ -209,4 +207,8 @@ object Maybe extends MaybeCompanion {
       case Some(value) => Just(value)
       case None        => Nothing
     }
+
+  /** An implicit conversion that converts an option to an iterable value */
+  implicit def maybe2Iterable[A](xo: Maybe[A]): Iterable[A] =
+    MaybeLike.maybe2Iterable(xo)
 }
