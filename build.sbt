@@ -35,6 +35,10 @@ addCommandAlias(
   "check",
   "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 )
+addCommandAlias(
+  "testSdkCore",
+  ";  +morphirSdkCoreJVM/test ; morphirSdkCoreJS/test"
+)
 
 lazy val root = project
   .in(file("."))
@@ -72,6 +76,7 @@ lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val morphirSdkCoreJS = morphirSdkCore.js
+  .settings(testJsSettings)
 
 lazy val morphirSdkCoreJVM = morphirSdkCore.jvm
   .settings(dottySettings)
