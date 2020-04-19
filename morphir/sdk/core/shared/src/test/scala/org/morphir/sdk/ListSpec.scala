@@ -5,6 +5,108 @@ import zio.test.Assertion._
 
 object ListSpec extends DefaultRunnableSpec {
   def spec = suite("ListSpec")(
+    suite("List.all spec")(
+      test(
+        "all - should return true if all members meet the predicate condition"
+      ) {
+        def isEven(n: Int) = Int.modBy(2)(n) == 0
+        assert(List.all(isEven)(List(2, 4)))(isTrue)
+      },
+      test(
+        "all - should return false if any member DOES NOT meet the predicate condition"
+      ) {
+        def isEven(n: Int) = Int.modBy(2)(n) == 0
+        assert(List.all(isEven)(List(2, 3)))(isFalse)
+      },
+      test(
+        "all - should return true if the list is empty"
+      ) {
+        def isEven(n: Int) = Int.modBy(2)(n) == 0
+        assert(List.all(isEven)(List.empty))(isTrue)
+      }
+    ),
+    suite("List.any spec")(
+      test(
+        "any - should return true if any members meet the predicate condition"
+      ) {
+        def isEven(n: Int) = Int.modBy(2)(n) == 0
+        assert(List.any(isEven)(List(2, 3)))(isTrue)
+      },
+      test(
+        "any - should return false if none of the members meet the predicate condition"
+      ) {
+        def isEven(n: Int) = Int.modBy(2)(n) == 0
+        assert(List.any(isEven)(List(1, 3)))(isFalse)
+      },
+      test(
+        "any - should return false if the list is empty"
+      ) {
+        def isEven(n: Int) = Int.modBy(2)(n) == 0
+        assert(List.any(isEven)(List.empty))(isFalse)
+      }
+    ),
+    suite("List.append spec")(
+      test("append should combine 2 lists") {
+        assert(List.append(List(1, 1, 2))(List(3, 5, 8)))(
+          equalTo(List(1, 1, 2, 3, 5, 8))
+        )
+      }
+    ),
+    suite("List.concat spec")(
+      test("concat - should concatenate many lists") {
+        assert(List.concat(List(List(1, 2), List(3), List(4, 5))))(
+          equalTo(List(1, 2, 3, 4, 5))
+        )
+      }
+    ),
+    suite("List.concatMap spec")(
+      test("concatMap - should map and flatten a list") {
+        def doubleIt(n: Int) = List(n * 2)
+        val xs = List(1, 2, 3, 4, 5)
+        assert(List.concatMap(doubleIt)(xs))(
+          equalTo(List.concat(List.map(doubleIt)(xs)))
+        )
+      }
+    ),
+    suite("List.intersperse specs")(
+      test("intersperse - should place the value between all elements") {
+        assert(List.intersperse("on")(List("turtles", "turtles", "turtles")))(
+          equalTo(List("turtles", "on", "turtles", "on", "turtles"))
+        )
+      },
+      test("intersperse - should place the value between all elements(2)") {
+        assert(List.intersperse(",")(List("A", "B", "C", "D")))(
+          equalTo(List("A", ",", "B", ",", "C", ",", "D"))
+        )
+      }
+    ),
+    suite("List.filter spec")(
+      test("filter should remove items that don't satisfy the given predicate") {
+        val sut = List(1, 2, 3, 4, 5, 6)
+        def isEven(n: Int) = n % 2 == 0
+        assert(List.filter(isEven)(sut))(equalTo(List(2, 4, 6)))
+      }
+    ),
+    suite("List.filterMap spec")(
+      test("filterMap should filter out non-ints") {
+        val sut = List("3", "hi", "12", "4th", "May")
+        assert(List.filterMap(String.toInt)(sut))(equalTo(List(3, 12)))
+      }
+    ),
+    suite("List.foldl spec")(
+      test("foldl should reduce a list from the left") {
+        assert(List.foldl(List.cons[Int])(List.empty[Int])(List(1, 2, 3)))(
+          equalTo(List(3, 2, 1))
+        )
+      }
+    ),
+    suite("List.foldr spec")(
+      test("foldr should reduce a list from the right") {
+        assert(List.foldr(List.cons[Int])(List.empty[Int])(List(1, 2, 3)))(
+          equalTo(List(1, 2, 3))
+        )
+      }
+    ),
     suite("List.map2 spec")(
       test("Given lists of the same length") {
         val xs = List(1, 2, 3, 4, 5)
@@ -32,7 +134,7 @@ object ListSpec extends DefaultRunnableSpec {
         )
       }
     ),
-    suite("List.map3 spec")(
+    suite("List.map3 specs")(
       test("Given lists of the same length") {
         val xs = List(1, 2, 3, 4, 5)
         val ys = List('A', 'B', 'C', 'D', 'E')
@@ -85,6 +187,21 @@ object ListSpec extends DefaultRunnableSpec {
         )(
           equalTo(List(("alice", 2, 'F'), ("bob", 5, 'M'), ("chuck", 7, 'M')))
         )
+      }
+    ),
+    suite("List.member spcs")(
+      test(
+        "member should return false when the List does not contains the item"
+      ) {
+        assert(List.member(9)(List(1, 2, 3, 4)))(equalTo(false))
+      },
+      test("member should return true when the List contains the item") {
+        assert(List.member(4)(List(1, 2, 3, 4)))(equalTo(true))
+      }
+    ),
+    suite("List.reverse specs")(
+      test("reverse should reverse a list") {
+        assert(List.reverse(List(1, 2, 3, 4)))(equalTo(List(4, 3, 2, 1)))
       }
     )
   )
