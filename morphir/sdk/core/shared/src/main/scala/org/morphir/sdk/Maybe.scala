@@ -1,6 +1,7 @@
 package org.morphir.sdk
 
 import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 object Maybe {
 
@@ -207,6 +208,11 @@ object Maybe {
       case Some(value) => Just(value)
       case None        => Nothing
     }
+
+  implicit def fromTry[A](aTry: Try[A]): Maybe[A] = aTry match {
+    case Success(value) => Just(value)
+    case Failure(_)     => Nothing
+  }
 
   /** An implicit conversion that converts an option to an iterable value */
   implicit def maybe2Iterable[A](xo: Maybe[A]): Iterable[A] =

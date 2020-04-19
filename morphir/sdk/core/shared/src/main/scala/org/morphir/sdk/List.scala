@@ -54,7 +54,7 @@ object List {
     case lst @ Nil      => lst
     case lst @ _ :: Nil => lst
     case lst =>
-      lst.take(xs.length - 1).flatMap(x => List(x, elem)).concat(List(xs.last))
+      lst.take(xs.length - 1).flatMap(x => List(x, elem)) ++ List(xs.last)
   }
 
   @inline def length[A](xs: List[A]): Int = xs.length

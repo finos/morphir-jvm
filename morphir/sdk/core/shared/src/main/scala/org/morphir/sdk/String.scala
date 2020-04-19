@@ -9,5 +9,5 @@ object String {
     int.toString
 
   @inline def toInt(text: String): Maybe[Int] =
-    text.toIntOption
+    StringOps.toInt(text)
 }
