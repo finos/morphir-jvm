@@ -2,9 +2,11 @@ import BuildHelper._
 import Dependencies._
 import explicitdeps.ExplicitDepsPlugin.autoImport.moduleFilterRemoveValue
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import xerial.sbt.Sonatype._
 
 inThisBuild(
   List(
+    publishMavenStyle := true,
     organization := "org.morphir",
     homepage := Some(url("https://morgan-stanley.github.io/morphir-jvm/")),
     licenses := List(
@@ -16,6 +18,14 @@ inThisBuild(
         "Damian Reeves",
         "957246+DamianReeves@users.noreply.github.com",
         url("http://damianreeves.com")
+      )
+    ),
+    sonatypeProjectHosting := Some(
+      GitHubHosting(
+        "Morgan-Stanley",
+        "morphir-jvm",
+        "user@example.com",
+        "957246+DamianReeves@users.noreply.github.com"
       )
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
@@ -51,13 +61,13 @@ lazy val root = project
   )
   .aggregate(
     morphirSdkCoreJS,
-    morphirSdkCoreJVM,
+    morphirSdkCoreJVM
     //morphirSdkJsonJS,
     //morphirSdkJsonJVM,
-    morphirIRCoreJS,
-    morphirIRCoreJVM,
-    morphirCliJS,
-    morphirCliJVM
+//    morphirIRCoreJS,
+//    morphirIRCoreJVM,
+//    morphirCliJS,
+//    morphirCliJVM
   )
 
 lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
@@ -103,49 +113,49 @@ lazy val morphirSdkCoreJVM = morphirSdkCore.jvm
 //lazy val morphirSdkJsonJVM = morphirSdkJson.jvm
 //  .settings(dottySettings)
 
-lazy val morphirIRCore = crossProject(JSPlatform, JVMPlatform)
-  .in(file("morphir/ir/core"))
-  .dependsOn(morphirSdkCore)
-  .settings(stdSettings("morphirIRCore"))
-  .settings(crossProjectSettings)
-  .settings(buildInfoSettings("morphir.ir.core"))
-  .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio" % Versions.zio,
-      "dev.zio" %%% "zio-test" % Versions.zio,
-      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
-    )
-  )
-  .settings(upickleSettings("1.0.0"))
-  //.settings(macroExpansionSettings)
-  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
-
-lazy val morphirIRCoreJS = morphirIRCore.js
-
-lazy val morphirIRCoreJVM = morphirIRCore.jvm
-  .settings(dottySettings)
-  .settings(zioNioSettings("1.0.0-RC6"))
-
-lazy val morphirCli = crossProject(JSPlatform, JVMPlatform)
-  .in(file("morphir/cli"))
-  .dependsOn(morphirIRCore, morphirSdkCore)
-  .settings(stdSettings("morphirCli"))
-  .settings(crossProjectSettings)
-  .settings(buildInfoSettings("morphir.cli"))
-  .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % Versions.zio,
-      "dev.zio" %% "zio-test" % Versions.zio % "test",
-      "dev.zio" %% "zio-test-sbt" % Versions.zio % "test"
-    )
-  )
-  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
-
-lazy val morphirCliJS = morphirCli.js
-  .settings(scalaJSUseMainModuleInitializer := true)
-
-lazy val morphirCliJVM = morphirCli.jvm
-  .settings(dottySettings)
+//lazy val morphirIRCore = crossProject(JSPlatform, JVMPlatform)
+//  .in(file("morphir/ir/core"))
+//  .dependsOn(morphirSdkCore)
+//  .settings(stdSettings("morphirIRCore"))
+//  .settings(crossProjectSettings)
+//  .settings(buildInfoSettings("morphir.ir.core"))
+//  .settings(
+//    libraryDependencies ++= Seq(
+//      "dev.zio" %%% "zio" % Versions.zio,
+//      "dev.zio" %%% "zio-test" % Versions.zio,
+//      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
+//    )
+//  )
+//  .settings(upickleSettings("1.0.0"))
+//  //.settings(macroExpansionSettings)
+//  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+//
+//lazy val morphirIRCoreJS = morphirIRCore.js
+//
+//lazy val morphirIRCoreJVM = morphirIRCore.jvm
+//  .settings(dottySettings)
+//  .settings(zioNioSettings("1.0.0-RC6"))
+//
+//lazy val morphirCli = crossProject(JSPlatform, JVMPlatform)
+//  .in(file("morphir/cli"))
+//  .dependsOn(morphirIRCore, morphirSdkCore)
+//  .settings(stdSettings("morphirCli"))
+//  .settings(crossProjectSettings)
+//  .settings(buildInfoSettings("morphir.cli"))
+//  .settings(
+//    libraryDependencies ++= Seq(
+//      "dev.zio" %% "zio" % Versions.zio,
+//      "dev.zio" %% "zio-test" % Versions.zio % "test",
+//      "dev.zio" %% "zio-test-sbt" % Versions.zio % "test"
+//    )
+//  )
+//  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+//
+//lazy val morphirCliJS = morphirCli.js
+//  .settings(scalaJSUseMainModuleInitializer := true)
+//
+//lazy val morphirCliJVM = morphirCli.jvm
+//  .settings(dottySettings)
 
 lazy val docs = project
   .in(file("morphir-jvm-docs"))
@@ -169,3 +179,16 @@ lazy val docs = project
   )
   .dependsOn(root)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+
+// Remove all additional repository other than Maven Central from POM
+//ThisBuild / pomIncludeRepository := { _ => false }
+////ThisBuild / publishTo := {
+////  val nexus = "https://oss.sonatype.org/"
+////  if (isSnapshot.value)
+////    Some("snapshots" at nexus + "content/repositories/snapshots")
+////  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+////}
+//ThisBuild / publishTo := sonatypePublishToBundle.value
+//ThisBuild / publishMavenStyle := true
+
+// gpg --keyserver pool.sks-keyservers.net --send-keys F0D9DBF7DD76AD6FB9E51E0930E64443530F4AA0
