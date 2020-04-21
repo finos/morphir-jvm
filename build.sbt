@@ -62,9 +62,9 @@ lazy val root = project
 
 lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir/sdk/core"))
-  .settings(stdSettings("morphirSdkCore"))
+  .settings(stdSettings("morphir-sdk-core"))
   .settings(crossProjectSettings)
-  .settings(buildInfoSettings("morphir.sdk"))
+  .settings(buildInfoSettings("morphir.sdk.core"))
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio" % Versions.zio,
