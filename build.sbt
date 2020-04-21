@@ -2,11 +2,9 @@ import BuildHelper._
 import Dependencies._
 import explicitdeps.ExplicitDepsPlugin.autoImport.moduleFilterRemoveValue
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
-import xerial.sbt.Sonatype._
 
 inThisBuild(
   List(
-    publishMavenStyle := true,
     organization := "org.morphir",
     homepage := Some(url("https://morgan-stanley.github.io/morphir-jvm/")),
     licenses := List(
@@ -18,14 +16,6 @@ inThisBuild(
         "Damian Reeves",
         "957246+DamianReeves@users.noreply.github.com",
         url("http://damianreeves.com")
-      )
-    ),
-    sonatypeProjectHosting := Some(
-      GitHubHosting(
-        "Morgan-Stanley",
-        "morphir-jvm",
-        "user@example.com",
-        "957246+DamianReeves@users.noreply.github.com"
       )
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
