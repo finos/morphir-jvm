@@ -18,9 +18,23 @@ jobs:
       with:
         java-version: 1.8
 
-    - name: Run tests
-      run: ./sbt "+ test"
-    
+
+    - name: Cache SBT ivy cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.ivy2/cache
+        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-ivy-cache-
+
+    - name: Cache SBT
+      uses: actions/cache@v1
+      with:
+        path: ~/.sbt
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-
+                
     - name: Publish
       uses: DamianReeves/sbt-maven-publish@master
       with:

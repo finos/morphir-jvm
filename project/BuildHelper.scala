@@ -16,6 +16,11 @@ object BuildHelper {
   private val Scala213 = "2.13.1"
   val DottyVersion = "0.23.0-RC1"
 
+  val isCIBuild: Boolean = {
+    val res = sys.env.getOrElse("CI", "false")
+    res.toBoolean
+  }
+
   def buildInfoSettings(packageName: String) =
     Seq(
       buildInfoKeys := Seq[BuildInfoKey](
