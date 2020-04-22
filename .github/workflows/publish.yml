@@ -24,7 +24,7 @@ jobs:
       with:
         sonatype-username: ${{ secrets.SONATYPE_USERNAME }}
         sonatype-password: ${{ secrets.SONATYPE_PASSWORD }}
-        pgp-secret: $$ {{ secrets.PGP_SECRET }}
-        pgp-passphrase: $$ {{ secrets.PGP_PASSPHRASE }}
+        pgp-secret: ${{ secrets.PGP_SECRET }}
+        pgp-passphrase: ${{ secrets.PGP_PASSPHRASE }}
         pgp-passphrase-variable-name: "PGP_PASSWORD"
-        pgp-public-key: $$ {{ secrets.PGP_PUBLIC_KEY }}
+        pgp-public-key: ${{ secrets.PGP_PUBLIC_KEY }}
