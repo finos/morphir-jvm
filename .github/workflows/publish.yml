@@ -8,6 +8,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      PGP_PASSWORD: ${{ secrets.PGP_PASSPHRASE }}
 
     steps:
     - uses: actions/checkout@v2
@@ -28,3 +30,4 @@ jobs:
         pgp-passphrase: ${{ secrets.PGP_PASSPHRASE }}
         pgp-passphrase-variable-name: "PGP_PASSWORD"
         pgp-public-key: ${{ secrets.PGP_PUBLIC_KEY }}
+        
