@@ -19,8 +19,8 @@ inThisBuild(
       )
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc"),
+    pgpPublicRing := Path.userHome / "tmp" / "public.asc",
+    pgpSecretRing := Path.userHome / "tmp" / "secret.asc",
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/morgan-stanley/morphir-jvm/"),
