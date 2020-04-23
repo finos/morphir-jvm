@@ -34,7 +34,24 @@ jobs:
         key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
         restore-keys: |
           ${{ runner.os }}-sbt-
-                
+
+    # Runs a set of commands using the runners shell
+    - name: Update .bashrc
+      shell: pwsh
+      run: |
+        $bashrcHome = Join-Path $env:HOME ".bashrc"
+        $content = @"
+        
+        #=======================================
+        # Fix GPG signing issue
+        #=======================================
+        
+        export GPG_TTY=$(tty)
+        
+        "@
+        Add-Content $bashrcHome $content
+
+
     - name: Publish
       uses: DamianReeves/sbt-maven-publish@master
       with:
