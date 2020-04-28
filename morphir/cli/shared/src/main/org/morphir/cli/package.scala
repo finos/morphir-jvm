@@ -1,4 +1,4 @@
-package morphir
+package org.morphir
 
 import java.nio.file.{Path => JPath}
 

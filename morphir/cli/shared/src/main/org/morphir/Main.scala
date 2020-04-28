@@ -1,13 +1,13 @@
-package morphir
+package org.morphir
 import zio._
 import zio.blocking.Blocking
 import zio.console._
 import caseapp.core.app.CommandApp
-import morphir.cli._
+import org.morphir.cli._
 import caseapp.core.RemainingArgs
-import morphir.runtime._
+import org.morphir.runtime._
 import zio.stream.Sink
-import morphir.sdk.ModelLoader
+import org.morphir.sdk.ModelLoader
 import java.nio.file.Paths
 
 object Main {

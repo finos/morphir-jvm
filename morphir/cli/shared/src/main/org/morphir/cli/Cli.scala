@@ -1,4 +1,4 @@
-package morphir.cli
+package org.morphir.cli
 
 import java.nio.file.{Path => JPath}
 import zio._

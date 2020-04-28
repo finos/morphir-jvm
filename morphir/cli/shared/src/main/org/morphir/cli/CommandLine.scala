@@ -3,7 +3,7 @@ package morphir.cli
 import org.rogach.scallop._
 import java.nio.file.{Path, Paths}
 import upickle.default
-import morphir.BuildInfo
+import org.morphir.BuildInfo
 import zio._
 import org.rogach.scallop.exceptions.ScallopException
 
