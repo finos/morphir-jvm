@@ -1,6 +1,7 @@
 package org.morphir.toolbox.core
 
-import java.io.{File, IOException}
+import java.io.{ File, IOException }
+import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 
 import org.morphir.core.newtype._
@@ -14,7 +15,7 @@ object ManifestFile extends Newtype[File] {
   val DefaultName: String = "morphir.toml"
 
   def fromDirectory(
-      workspaceDir: WorkspaceDir
+    workspaceDir: WorkspaceDir
   ): ZIO[Any, Throwable, ManifestFile] =
     workspaceDir
       .join(DefaultName)
@@ -32,37 +33,40 @@ object ManifestFile extends Newtype[File] {
       else ZIO.effect(ManifestFile(file))
     }
 
-  implicit class RichManifestFile(val manifestFile: ManifestFile)
-      extends AnyVal {
+  implicit class RichManifestFile(val manifestFile: ManifestFile) extends AnyVal {
 
     def toPath: UIO[Path] = ZIO.effectTotal {
       val file = ManifestFile.unwrap(manifestFile)
       Path.fromJava(file.toPath)
     }
 
-    def readAllBytes: ZIO[Blocking, IOException, Chunk[Byte]] = {
+    def readAllBytes: ZIO[Blocking, IOException, Chunk[Byte]] =
       for {
         path <- toPath
         data <- Files.readAllBytes(path)
       } yield data
-    }
 
     def readAllText: ZIO[Blocking, IOException, String] =
-      readAllBytes.map(_.mkString)
+      readAllBytes.map(chunk => new String(chunk.toArray, StandardCharsets.UTF_8))
 
     def load: ZIO[Blocking, Throwable, WorkspaceSettings] =
       for {
-        contents <- readAllText
-        path <- toPath
+        contents     <- readAllText
+        path         <- toPath
         absolutePath <- path.toAbsolutePath
         settings <- ZIO
-          .fromEither(WorkspaceSettings.fromToml(contents))
-          .mapError(e =>
-            Errors.ManifestFileParseError(
-              e,
-              s"Failed to parse the morphir workspace manifest file at: $absolutePath."
-            )
-          )
+                     .fromEither(WorkspaceSettings.fromToml(contents))
+                     .mapError { e =>
+                       val (_, message) = e
+                       Errors.ManifestFileParseError(
+                         e,
+                         s"""Failed to parse the morphir workspace manifest file at: $absolutePath.
+                            |Cause:
+                            |$message
+                            |Contents:
+                            |$contents""".stripMargin
+                       )
+                     }
       } yield settings
   }
 }

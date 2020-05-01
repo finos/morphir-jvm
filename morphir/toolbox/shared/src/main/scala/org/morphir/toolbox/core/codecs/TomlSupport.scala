@@ -1,6 +1,6 @@
 package org.morphir.toolbox.core.codecs
 
-import java.nio.file.Path
+import java.nio.file.{ Path, Paths }
 
 import org.morphir.toolbox.core.ProjectPath
 import toml._
@@ -14,9 +14,9 @@ trait TomlSupport {
 
   implicit val pathCodec: Codec[Path] = Codec {
     case (Value.Str(value), _, _) =>
-      if (value.isBlank)
+      if (value.trim.isEmpty)
         Left(List.empty -> s"A non-empty path is expected $value provided")
-      else Right(Path.of(value))
+      else Right(Paths.get(value))
     case (value, _, _) =>
       Left(List.empty -> s"A path is expected, $value provided")
   }

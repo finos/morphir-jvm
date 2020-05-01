@@ -1,12 +1,12 @@
 package org.morphir.toolbox.core
 
-import java.nio.file.Path
+import java.nio.file.{ Path, Paths }
 
 import zio._
 
 final case class WorkspaceDir private (path: Path) extends AnyVal {
   def /[R](segment: String): RIO[R, WorkspaceDir] =
-    RIO.effect(Path.of(path.toString, segment).toFile).flatMap { file =>
+    RIO.effect(Paths.get(path.toString, segment).toFile).flatMap { file =>
       if (file.isDirectory) Task.effect(WorkspaceDir(file.toPath))
       else
         RIO.fail(
@@ -18,10 +18,10 @@ final case class WorkspaceDir private (path: Path) extends AnyVal {
     }
 
   def join(segments: String*): UIO[Path] =
-    ZIO.succeed(Path.of(path.toString, segments: _*))
+    ZIO.succeed(Paths.get(path.toString, segments: _*))
 
   def joinPath(segments: String*): Path =
-    Path.of(path.toString, segments: _*)
+    Paths.get(path.toString, segments: _*)
 
 }
 

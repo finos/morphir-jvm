@@ -61,8 +61,6 @@ lazy val root = project
     morphirToolboxJS,
     morphirToolboxJVM,
     morphirCliJVM
-//    morphirBindingElmJS,
-//    morphirBindingElmJVM
   )
 
 lazy val morphirCore = crossProject(JSPlatform, JVMPlatform)
@@ -86,8 +84,8 @@ lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
   .settings(buildInfoSettings("morphir.sdk.core"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio" % Versions.zio,
-      "dev.zio" %%% "zio-test" % Versions.zio % "test",
+      "dev.zio" %%% "zio"          % Versions.zio,
+      "dev.zio" %%% "zio-test"     % Versions.zio % "test",
       "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
     )
   )
@@ -148,17 +146,19 @@ lazy val morphirSdkCoreJVM = morphirSdkCore.jvm
 lazy val morphirToolbox = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir/toolbox"))
   .dependsOn(morphirCore)
-  .settings(stdSettings("morphir-toolbox"))
+  .settings(stdSettings("morphir-toolbox", Some(Seq(ScalaVersions.Scala212, ScalaVersions.Scala213))))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("org.morphir.toolbox"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-streams" % Versions.zio,
-      "io.circe" %%% "circe-generic" % Versions.circe,
-      "io.circe" %%% "circe-parser" % Versions.circe,
-      "dev.zio" %%% "zio-test" % Versions.zio % "test",
-      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test",
-      "tech.sparse" %%% "toml-scala" % "0.2.2"
+      "dev.zio"     %%% "zio-streams"   % Versions.zio,
+      "io.circe"    %%% "circe-generic" % Versions.circe,
+      "io.circe"    %%% "circe-parser"  % Versions.circe,
+      "dev.zio"     %%% "zio-test"      % Versions.zio % "test",
+      "dev.zio"     %%% "zio-test-sbt"  % Versions.zio % "test",
+      "com.lihaoyi" %%% "pprint"        % "0.5.9",
+      "com.lihaoyi" %%% "fansi"         % "0.2.9",
+      "tech.sparse" %%% "toml-scala"    % "0.2.2"
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
@@ -166,9 +166,9 @@ lazy val morphirToolbox = crossProject(JSPlatform, JVMPlatform)
 lazy val morphirToolboxJS = morphirToolbox.js
   .settings(testJsSettings)
   .settings(zioNioSettings("1.0.0-RC6"))
+  .settings(scalaJSModuleKind := ModuleKind.CommonJSModule)
 
 lazy val morphirToolboxJVM = morphirToolbox.jvm
-  .settings(dottySettings)
   .settings(zioNioSettings("1.0.0-RC6"))
   .settings(
     libraryDependencies ++= Seq(
@@ -179,20 +179,22 @@ lazy val morphirToolboxJVM = morphirToolbox.jvm
 lazy val morphirCli = crossProject(JVMPlatform)
   .in(file("morphir/cli"))
   .dependsOn(morphirToolbox)
-  .settings(stdSettings("morphir-cli"))
+  .settings(stdSettings("morphir-cli", Some(Seq(ScalaVersions.Scala213, ScalaVersions.Scala212))))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("org.morphir.cli"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % Versions.zio,
-      "dev.zio" %% "zio-test" % Versions.zio % "test",
-      "dev.zio" %% "zio-test-sbt" % Versions.zio % "test"
+      "dev.zio"      %% "zio"            % Versions.zio,
+      "dev.zio"      %% "zio-test"       % Versions.zio % "test",
+      "dev.zio"      %% "zio-test-sbt"   % Versions.zio % "test",
+      "dev.zio"      %% "zio-logging"    % "0.2.8",
+      "com.monovore" %% "decline-effect" % "1.2.0",
+      "com.lihaoyi"  %% "pprint"         % "0.5.9"
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val morphirCliJVM = morphirCli.jvm
-  .settings(dottySettings)
 
 lazy val docs = project
   .in(file("morphir-jvm-docs"))

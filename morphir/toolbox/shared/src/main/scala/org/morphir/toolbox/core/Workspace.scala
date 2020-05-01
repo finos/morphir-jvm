@@ -3,19 +3,21 @@ package org.morphir.toolbox.core
 import java.io.File
 import java.nio.file.Path
 
-import org.morphir.toolbox.workspace.config.{ProjectSettings, WorkspaceSettings}
+import org.morphir.toolbox.workspace.config.{ ProjectSettings, WorkspaceSettings }
 import org.morphir.toolbox.core.ManifestFile._
 import zio._
 import zio.blocking.Blocking
 
 case class Workspace(
-    rootDir: WorkspaceDir,
-    projects: Map[ProjectName, Project]
+  rootDir: WorkspaceDir,
+  projectMap: Map[ProjectName, Project]
 ) {
   def manifestFile: Task[File] =
     rootDir
       .join(Workspace.WorkspaceFilename)
       .flatMap(p => ZIO.effect(p.toFile))
+
+  def projects: UIO[List[Project]] = UIO.succeed(projectMap.values.toList)
 
 }
 
@@ -23,7 +25,7 @@ object Workspace {
   val WorkspaceFilename = "morphir.toml"
 
   def fromSettings(
-      settings: WorkspaceSettings
+    settings: WorkspaceSettings
   )(implicit workspaceDir: WorkspaceDir): UIO[Workspace] =
     for {
       dir <- ZIO.succeed(workspaceDir)
@@ -34,19 +36,19 @@ object Workspace {
       }
     } yield Workspace(dir, projects)
 
-  def load(path: Path): ZIO[Blocking, Throwable, Workspace] =
+  def load(path: Option[Path] = None): ZIO[Blocking, Throwable, Workspace] =
     for {
       workspacePath <- WorkspacePath.from(path)
-      workspaceDir <- WorkspaceDir.fromPath(workspacePath)
-      manifestFile <- ManifestFile.fromPath(workspacePath)
-      settings <- manifestFile.load
-      workspace <- fromSettings(settings)(workspaceDir)
+      workspaceDir  <- WorkspaceDir.fromPath(workspacePath)
+      manifestFile  <- ManifestFile.fromPath(workspacePath)
+      settings      <- manifestFile.load
+      workspace     <- fromSettings(settings)(workspaceDir)
     } yield workspace
 
   private[core] def createProject(
-      settigs: ProjectSettings,
-      name: String,
-      workspaceDir: WorkspaceDir
+    settigs: ProjectSettings,
+    name: String,
+    workspaceDir: WorkspaceDir
   ): Project = {
     val projectName = ProjectName(name, settigs.name)
     val projectDir =
