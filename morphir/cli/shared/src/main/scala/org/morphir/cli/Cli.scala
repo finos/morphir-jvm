@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import com.monovore.decline._
 import org.morphir.toolbox.cli.CliCommand
-import org.morphir.toolbox.cli.commands.WorkspaceInfoCommand
+import org.morphir.toolbox.cli.commands.{ BuildCommand, WorkspaceInfoCommand }
 import zio.{ IO, ZIO }
 
 object Cli {
@@ -16,11 +16,11 @@ object Cli {
     buildCommand orElse projectCommand orElse workspaceCommand
   )
 
-  lazy val buildCommand: Opts[CliCommand.Build] = Opts
+  lazy val buildCommand: Opts[BuildCommand] = Opts
     .subcommand("build", help = "Build the workspace")(
       workspaceOpt.orNone
     )
-    .map(CliCommand.Build)
+    .map(BuildCommand)
 
   lazy val projectCommand: Opts[CliCommand.ProjectList] = Opts.subcommand("project", help = "Work with projects")(
     Opts

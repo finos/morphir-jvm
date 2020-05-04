@@ -10,10 +10,6 @@ abstract class CliCommand extends Product {
 
 object CliCommand {
 
-  final case class Build(workspacePath: Option[Path]) extends CliCommand {
-    val execute: ZIO[CliEnv, Nothing, ExitCode] =
-      console.putStrLn(s"Executed: $this") *> ExitCode.success
-  }
   final case class ProjectList(workspacePath: Option[Path]) extends CliCommand {
     val execute: ZIO[CliEnv, Nothing, ExitCode] =
       console.putStrLn(s"Executed: $this") *> ExitCode.success

@@ -2,8 +2,9 @@ package org.morphir.toolbox.cli.commands
 
 import java.nio.file.Path
 
+import fansi.Color
 import org.morphir.toolbox.cli.{ CliCommand, CliEnv, ExitCode }
-import org.morphir.toolbox.core.{ Project, SourceFile }
+import org.morphir.toolbox.core.{ Binding, Bindings, Project }
 import org.morphir.toolbox.workspace
 import zio._
 import zio.console.Console
@@ -29,22 +30,33 @@ final case class WorkspaceInfoCommand(workspacePath: Option[Path]) extends CliCo
 
   private def reportProjectInfo(project: Project): ZIO[Console, Nothing, Unit] =
     for {
-      _ <- console.putStrLn(pprint.apply(s"|-Project:").render)
+      _ <- console.putStrLn(s"|-${Color.Green("Project")}:")
       _ <- console.putStrLn(s" \\")
-      _ <- console.putStrLn(s"  |-Name: ${project.name}")
-      _ <- console.putStrLn(s"  |-Dir: ${project.projectDir}")
-      _ <- console.putStrLn(s"  +-Sources: ")
-      _ <- reportSources(project.sources)
+      _ <- console.putStrLn(s"  |-${Color.Yellow("Name")}: ${Color.Blue(project.name.toString)}")
+      _ <- console.putStrLn(s"  |-${Color.Yellow("Dir")}: ${Color.Blue(project.projectDir.toString)}")
+      _ <- console.putStrLn(s"  +-${Color.Yellow("Bindings")}: ")
+      _ <- reportBindings(project.bindings)
     } yield ()
 
-  private def reportSources(sources: Seq[SourceFile[Any]]) =
+  private def reportBindings(bindings: Bindings) =
+    ZStream.fromIterable(bindings.value.values).foreach(reportBinding)
+
+  private def reportBinding(binding: Binding) =
+    for {
+      _ <- console.putStrLn(s"    |-${Color.Yellow("Binding")}:")
+      _ <- console.putStrLn(s"      \\-${Color.Yellow("Name")}: ${Color.Blue(binding.name.toString)}")
+      _ <- console.putStrLn(s"      |-${Color.Yellow("Sources")}:")
+      _ <- reportSources(binding.srcDirs)
+    } yield ()
+
+  private def reportSources(sources: Seq[Path]) =
     for {
       _ <- ZStream.fromIterable(sources).foreach(reportSourceInfo)
     } yield ()
 
-  private def reportSourceInfo(source: SourceFile[Any]): ZIO[Console, Nothing, Unit] =
+  private def reportSourceInfo(sourceDir: Path): ZIO[Console, Nothing, Unit] =
     for {
-      _ <- console.putStrLn(s"${source.path}")
+      _ <- console.putStrLn(s"        - ${Color.Blue(sourceDir.toAbsolutePath.toString)}")
     } yield ()
 
 }

@@ -1,7 +1,7 @@
 package org.morphir.toolbox.core
 
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{ Path, Paths }
 
 import org.morphir.toolbox.workspace.config.{ ProjectSettings, WorkspaceSettings }
 import org.morphir.toolbox.core.ManifestFile._
@@ -46,16 +46,24 @@ object Workspace {
     } yield workspace
 
   private[core] def createProject(
-    settigs: ProjectSettings,
+    settings: ProjectSettings,
     name: String,
     workspaceDir: WorkspaceDir
   ): Project = {
-    val projectName = ProjectName(name, settigs.name)
-    val projectDir =
-      settigs.projectDir getOrElse ProjectPath.of(projectName.resolvedName)
-    val projectPath = ProjectPath(
-      workspaceDir.joinPath(projectDir.path.toString)
-    )
-    Project(projectName, projectPath, List.empty, List.empty)
+    val projectName = ProjectName(name, settings.name)
+    val projectDir = {
+      val prjPath: ProjectPath = settings.projectDir getOrElse ProjectPath.of(projectName.resolvedName)
+      workspaceDir.joinPath(prjPath.path)
+    }
+    val projectPath = ProjectPath(projectDir)
+    val bindings: Map[String, Binding] = settings.bindings.map {
+      case (name, bindingSettings) =>
+        name -> Binding(
+          name,
+          bindingSettings.srcDirs.map(dir => Paths.get(projectDir.toString, dir.toString)),
+          outDir = Paths.get(projectDir.toString, bindingSettings.outDir.toString)
+        )
+    }
+    Project(projectName, projectPath, Bindings(bindings), List.empty, List.empty)
   }
 }
