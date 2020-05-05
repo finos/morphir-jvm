@@ -1,6 +1,5 @@
-import sbt._
+import sbt.{ Def, _ }
 import sbt.Keys._
-
 import explicitdeps.ExplicitDepsPlugin.autoImport._
 import sbtcrossproject.CrossPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
@@ -11,10 +10,17 @@ import scalafix.sbt.ScalafixPlugin.autoImport.scalafixSemanticdb
 
 object BuildHelper {
 
-  private val Scala211 = "2.11.12"
-  private val Scala212 = "2.12.10"
-  private val Scala213 = "2.13.1"
-  val DottyVersion = "0.23.0-RC1"
+  object ScalaVersions {
+    val Scala211 = "2.11.12"
+    val Scala212 = "2.12.10"
+    val Scala213 = "2.13.1"
+    val Dotty    = "0.23.0-RC1"
+  }
+
+  private val Scala211     = ScalaVersions.Scala211
+  private val Scala212     = ScalaVersions.Scala212
+  private val Scala213     = ScalaVersions.Scala213
+  private val DottyVersion = ScalaVersions.Dotty
 
   val isCIBuild: Boolean = {
     val res = sys.env.getOrElse("CI", "false")
@@ -118,22 +124,20 @@ object BuildHelper {
     }
 
   def platformSpecificSources(
-      platform: String,
-      conf: String,
-      baseDirectory: File
+    platform: String,
+    conf: String,
+    baseDirectory: File
   )(versions: String*) =
-    List("scala" :: versions.toList.map("scala-" + _): _*)
-      .map { version =>
-        baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
-      }
-      .filter(_.exists)
+    List("scala" :: versions.toList.map("scala-" + _): _*).map { version =>
+      baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
+    }.filter(_.exists)
 
   def crossPlatformSources(
-      scalaVer: String,
-      platform: String,
-      conf: String,
-      baseDir: File,
-      isDotty: Boolean
+    scalaVer: String,
+    platform: String,
+    conf: String,
+    baseDir: File,
+    isDotty: Boolean
   ) =
     CrossVersion.partialVersion(scalaVer) match {
       case Some((2, x)) if x <= 11 =>
@@ -187,26 +191,26 @@ object BuildHelper {
   lazy val crossProjectSettings = Seq(
     Compile / unmanagedSourceDirectories ++= {
       val platform = crossProjectPlatform.value.identifier
-      val baseDir = baseDirectory.value
+      val baseDir  = baseDirectory.value
       val scalaVer = scalaVersion.value
-      val isDot = isDotty.value
+      val isDot    = isDotty.value
 
       crossPlatformSources(scalaVer, platform, "main", baseDir, isDot)
     },
     Test / unmanagedSourceDirectories ++= {
       val platform = crossProjectPlatform.value.identifier
-      val baseDir = baseDirectory.value
+      val baseDir  = baseDirectory.value
       val scalaVer = scalaVersion.value
-      val isDot = isDotty.value
+      val isDot    = isDotty.value
 
       crossPlatformSources(scalaVer, platform, "test", baseDir, isDot)
     }
   )
 
-  def stdSettings(prjName: String) = Seq(
+  def stdSettings(prjName: String, customScalaVersions: Option[Seq[String]] = None) = Seq(
     name := s"$prjName",
     scalacOptions := stdOptions,
-    crossScalaVersions := Seq(Scala213, Scala212, Scala211),
+    crossScalaVersions := customScalaVersions getOrElse Seq(Scala213, Scala212, Scala211),
     scalaVersion in ThisBuild := crossScalaVersions.value.head,
     scalacOptions := stdOptions ++ extraOptions(
       scalaVersion.value,
@@ -396,7 +400,7 @@ object BuildHelper {
         if (isDotty.value) Seq()
         else
           Seq(
-            "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+            "org.scala-lang" % "scala-reflect"  % scalaVersion.value % "provided",
             "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
           )
       }

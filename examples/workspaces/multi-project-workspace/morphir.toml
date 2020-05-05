@@ -1,0 +1,5 @@
+[projects.globalco-shared]
+projectDir = "models/shared-domain"
+
+[projects.globalco-order-taking]
+projectDir = "models/order-taking"

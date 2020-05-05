@@ -16,3 +16,6 @@ mill.iml
 bsp.log
 contrib/bsp/test/
 lowered.hnir
+models/order-taking/elm.json
+models/shared-domain/elm-stuff/
+models/shared-domain/elm.json

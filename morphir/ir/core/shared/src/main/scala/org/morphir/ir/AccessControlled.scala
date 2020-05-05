@@ -10,6 +10,8 @@ object AccessControlled {
 
   sealed abstract class AccessControlled[A] extends Product with Serializable {
 
+    def value: A
+
     def encodeToJson(implicit encoder: Writer[A]): ujson.Value
 
     def withPublicAccess: Option[A] = this match {
