@@ -1,12 +1,12 @@
-package org.morphir.ir
-
+package morphir.ir
 import zio.test._
 import zio.test.Assertion._
-//import scala.language.implicitConversions
+import morphir.ir.codec.PathCodec._
+import morphir.ir.fuzzer.NameFuzzer._
+import morphir.ir.json.JsonFacade
+import morphir.ir.testing.JsonSpec
 
-import upickle.default._
-
-object PathSpec extends DefaultRunnableSpec {
+object PathSpec extends DefaultRunnableSpec with JsonSpec {
 
   def spec = suite("PathSpec")(
     suite("Creating a Path from a String")(
@@ -60,19 +60,19 @@ object PathSpec extends DefaultRunnableSpec {
     ),
     suite("Checking if one Path is a prefix of another should:")(
       test("""Return true: Given path is "foo/bar" and prefix is "foo" """) {
-        val sut = Path.fromString("foo/bar")
+        val sut    = Path.fromString("foo/bar")
         val prefix = Path.fromString("foo")
 
         assert(Path.isPrefixOf(prefix = prefix, path = sut))(isTrue)
       },
       test("""Return false: Given path is "foo/foo" and prefix is "bar" """) {
-        val sut = Path.fromString("foo/foo")
+        val sut    = Path.fromString("foo/foo")
         val prefix = Path.fromString("bar")
 
         assert(Path.isPrefixOf(prefix = prefix, path = sut))(isFalse)
       },
       test("""Return true: Given equal paths""") {
-        val sut = Path.fromString("foo/bar/baz")
+        val sut    = Path.fromString("foo/bar/baz")
         val prefix = sut
 
         assert(Path.isPrefixOf(prefix = prefix, path = sut))(isTrue)
@@ -82,9 +82,9 @@ object PathSpec extends DefaultRunnableSpec {
       testM(
         "Path when encoded and then decoded should be equivalent to the original"
       ) {
-        check(Gen.listOfBounded(1, 3)(Name.fuzzName)) { names =>
+        check(Gen.listOfBounded(1, 3)(fuzzName)) { names =>
           val sut = Path.fromList(names)
-          assert(Path.decodePath(Path.encodePath(sut)))(equalTo(sut))
+          checkCodecIsWellBehaved(sut)
         }
       },
       checkEncodesTo(
@@ -106,8 +106,8 @@ object PathSpec extends DefaultRunnableSpec {
     )
   )
 
-  def checkEncodesTo(sut: Path, expectedJsonText: String) =
+  def checkEncodesTo(sut: Path, expectedJsonText: String): ZSpec[Any, Nothing] =
     test(s"Given Path: $sut it should encode to: $expectedJsonText") {
-      assert(write(Path.encodePath(sut)))(equalTo(expectedJsonText))
+      assert(JsonFacade.encode(sut, 0))(equalTo(expectedJsonText))
     }
 }

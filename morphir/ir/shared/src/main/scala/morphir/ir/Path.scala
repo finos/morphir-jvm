@@ -1,9 +1,6 @@
-package org.morphir.ir
+package morphir.ir
 
-import upickle.default.{readwriter, ReadWriter => RW}
-import upickle.default._
-
-case class Path(value: List[Name]) extends AnyVal {
+case class Path(value: List[Name]) {
   @inline def toList: List[Name] = value
 
   def mapSegments[A](fn: Name => A): List[A] =
@@ -14,10 +11,6 @@ case class Path(value: List[Name]) extends AnyVal {
 }
 
 object Path {
-
-  implicit val readWriter: RW[Path] =
-    readwriter[List[Name]]
-      .bimap[Path](path => path.value, names => Path(names))
 
   implicit val empty: Path = Path(List.empty)
 
@@ -36,13 +29,14 @@ object Path {
     Path(names)
 
   def fromNames(name: Name, rest: Name*): Path =
-    Path(name :: (rest.toList))
+    Path(name :: rest.toList)
 
   def path(name: Name, rest: Name*): Path =
     fromNames(name, rest: _*)
 
   def toList(path: Path): List[Name] = path.value
 
+  @scala.annotation.tailrec
   def isPrefixOf(prefix: Path, path: Path): Boolean = (prefix, path) match {
     // empty path is a prefix of any other path
     case (Path(Nil), _) => true
@@ -54,11 +48,4 @@ object Path {
       else
         false
   }
-
-  def encodePath(path: Path): ujson.Value =
-    writeJs(path)
-
-  def decodePath(json: ujson.Value): Path =
-    read[Path](json)
-
 }

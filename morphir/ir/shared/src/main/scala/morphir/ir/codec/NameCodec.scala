@@ -4,8 +4,12 @@ import io.circe.{ Decoder, Encoder }
 import morphir.ir.Name
 
 trait NameCodec {
-  implicit val encodeName: Encoder[Name] = Encoder.encodeList(Encoder.encodeString).contramap(name => name)
-  implicit val decodeName: Decoder[Name] = Decoder.decodeList(Decoder.decodeString).map(Name.fromList)
+
+  implicit def encodeName(implicit stringEncoder: Encoder[String] = Encoder.encodeString): Encoder[Name] =
+    Encoder.encodeList(stringEncoder).contramap(identity)
+
+  implicit def decodeName(implicit stringDecoder: Decoder[String] = Decoder.decodeString): Decoder[Name] =
+    Decoder.decodeList(stringDecoder).map(Name.fromList)
 }
 
 object NameCodec extends NameCodec
