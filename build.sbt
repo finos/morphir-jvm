@@ -50,30 +50,30 @@ lazy val root = project
     )
   )
   .aggregate(
-    morphirCoreJS,
     morphirCoreJVM,
+    morphirCoreJS,
+    morphirIoJVM,
+    morphirIoJS,
+    morphirIRJVM,
+    morphirIRJS,
     morphirSdkCoreJS,
     morphirSdkCoreJVM,
-    //morphirSdkJsonJS,
-    //morphirSdkJsonJVM,
-//    morphirIRCoreJS,
-//    morphirIRCoreJVM,
     morphirToolboxJS,
     morphirToolboxJVM,
+    morphirEngineJVM,
+    morphirEngineJS,
     morphirCliJVM
   )
 
-lazy val morphirCore = crossProject(JSPlatform, JVMPlatform)
+lazy val morphirCore = crossProject(JVMPlatform, JSPlatform)
   .in(file("morphir/core"))
   .settings(stdSettings("morphir-core"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("morphir.core"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"  %%% "zio-streams"  % Versions.zio,
-      "io.circe" %%% "circe-parser" % Versions.circe,
-      "dev.zio"  %%% "zio-test"     % Versions.zio % "test",
-      "dev.zio"  %%% "zio-test-sbt" % Versions.zio % "test"
+      "dev.zio" %%% "zio-test"     % Versions.zio % "test",
+      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
@@ -82,6 +82,30 @@ lazy val morphirCoreJS = morphirCore.js
   .settings(testJsSettings)
 
 lazy val morphirCoreJVM = morphirCore.jvm
+  .settings(dottySettings)
+
+lazy val morphirIo = crossProject(JVMPlatform, JSPlatform)
+  .in(file("morphir/io"))
+  .dependsOn(morphirCore)
+  .settings(stdSettings("morphir-io", Some(Seq(ScalaVersions.Scala212, ScalaVersions.Scala213))))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("morphir.io"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio"  %%% "zio-streams"   % Versions.zio,
+      "io.circe" %%% "circe-core"    % Versions.circe,
+      "io.circe" %%% "circe-generic" % Versions.circe,
+      "io.circe" %%% "circe-parser"  % Versions.circe,
+      "dev.zio"  %%% "zio-test"      % Versions.zio % "test",
+      "dev.zio"  %%% "zio-test-sbt"  % Versions.zio % "test"
+    )
+  )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+
+lazy val morphirIoJS = morphirIo.js
+  .settings(testJsSettings)
+
+lazy val morphirIoJVM = morphirIo.jvm
   .settings(dottySettings)
 
 lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
@@ -105,51 +129,30 @@ lazy val morphirSdkCoreJS = morphirSdkCore.js
 lazy val morphirSdkCoreJVM = morphirSdkCore.jvm
   .settings(dottySettings)
 
-//lazy val morphirSdkJson = crossProject(JSPlatform, JVMPlatform)
-//  .in(file("morphir/sdk/json"))
-//  .dependsOn(morphirSdkCore)
-//  .settings(stdSettings("morphirSdkJson"))
-//  .settings(crossProjectSettings)
-//  .settings(buildInfoSettings("morphir.sdk.json"))
-//  .settings(
-//    libraryDependencies ++= Seq(
-//      "dev.zio" %%% "zio" % Versions.zio,
-//      "io.circe" %%% "circe-generic" % Versions.circe,
-//      "io.circe" %%% "circe-parser" % Versions.circe,
-//      "dev.zio" %%% "zio-test" % Versions.zio % "test",
-//      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
-//    )
-//  )
-//  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+lazy val morphirIR = crossProject(JVMPlatform, JSPlatform)
+  .in(file("morphir/ir"))
+  .dependsOn(morphirCore)
+  .settings(stdSettings("morphir-ir", Some(Seq(ScalaVersions.Scala212, ScalaVersions.Scala213))))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("morphir.ir"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio"  %%% "zio-streams"   % Versions.zio,
+      "io.circe" %%% "circe-core"    % Versions.circe,
+      "io.circe" %%% "circe-generic" % Versions.circe,
+      "io.circe" %%% "circe-parser"  % Versions.circe,
+      "dev.zio"  %%% "zio-test"      % Versions.zio,
+      "dev.zio"  %%% "zio-test-sbt"  % Versions.zio % "test"
+    )
+  )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
-//lazy val morphirSdkJsonJS = morphirSdkJson.js
-//
-//lazy val morphirSdkJsonJVM = morphirSdkJson.jvm
-//  .settings(dottySettings)
+lazy val morphirIRJVM = morphirIR.jvm
+  .settings(dottySettings)
+//.settings(zioNioSettings("1.0.0-RC6"))
 
-//lazy val morphirIRCore = crossProject(JSPlatform, JVMPlatform)
-//  .in(file("morphir/ir/core"))
-//  .dependsOn(morphirSdkCore)
-//  .settings(stdSettings("morphir-ir-core"))
-//  .settings(crossProjectSettings)
-//  .settings(buildInfoSettings("morphir.ir.core"))
-//  .settings(
-//    libraryDependencies ++= Seq(
-//      "dev.zio" %%% "zio" % Versions.zio,
-//      "dev.zio" %%% "zio-test" % Versions.zio,
-//      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
-//    )
-//  )
-//  .settings(upickleSettings("1.0.0"))
-//  //.settings(macroExpansionSettings)
-//  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
-//
-//lazy val morphirIRCoreJS = morphirIRCore.js
-//  .settings(testJsSettings)
-//
-//lazy val morphirIRCoreJVM = morphirIRCore.jvm
-//  .settings(dottySettings)
-//  .settings(zioNioSettings("1.0.0-RC6"))
+lazy val morphirIRJS = morphirIR.js
+  .settings(testJsSettings)
 
 lazy val morphirToolbox = crossProject(JSPlatform, JVMPlatform)
   .in(file("morphir/toolbox"))
@@ -160,6 +163,7 @@ lazy val morphirToolbox = crossProject(JSPlatform, JVMPlatform)
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio"     %%% "zio-streams"   % Versions.zio,
+      "io.circe"    %%% "circe-core"    % Versions.circe,
       "io.circe"    %%% "circe-generic" % Versions.circe,
       "io.circe"    %%% "circe-parser"  % Versions.circe,
       "dev.zio"     %%% "zio-test"      % Versions.zio % "test",
@@ -183,6 +187,40 @@ lazy val morphirToolboxJVM = morphirToolbox.jvm
       "io.github.soc" % "directories" % "11"
     )
   )
+
+lazy val morphirEngine = crossProject(JVMPlatform, JSPlatform)
+  .in(file("morphir/engine"))
+  .dependsOn(morphirCore, morphirIo)
+  .settings(stdSettings("morphir-engine", Some(Seq(ScalaVersions.Scala212, ScalaVersions.Scala213))))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("morphir.engine"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio"     %%% "zio-streams"   % Versions.zio,
+      "io.circe"    %%% "circe-core"    % Versions.circe,
+      "io.circe"    %%% "circe-generic" % Versions.circe,
+      "io.circe"    %%% "circe-parser"  % Versions.circe,
+      "dev.zio"     %%% "zio-test"      % Versions.zio % "test",
+      "dev.zio"     %%% "zio-test-sbt"  % Versions.zio % "test",
+      "com.lihaoyi" %%% "pprint"        % "0.5.9",
+      "com.lihaoyi" %%% "fansi"         % "0.2.9",
+      "tech.sparse" %%% "toml-scala"    % "0.2.2"
+    )
+  )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+
+lazy val morphirEngineJVM = morphirEngine.jvm
+  .settings(zioNioSettings("1.0.0-RC6"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.soc" % "directories" % "11"
+    )
+  )
+
+lazy val morphirEngineJS = morphirEngine.js
+  .settings(testJsSettings)
+  .settings(zioNioSettings("1.0.0-RC6"))
+  .settings(scalaJSModuleKind := ModuleKind.CommonJSModule)
 
 lazy val morphirCli = crossProject(JVMPlatform)
   .in(file("morphir/cli"))
@@ -226,6 +264,27 @@ lazy val docs = project
   )
   .dependsOn(root)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+//lazy val morphirSdkJson = crossProject(JSPlatform, JVMPlatform)
+//  .in(file("morphir/sdk/json"))
+//  .dependsOn(morphirSdkCore)
+//  .settings(stdSettings("morphirSdkJson"))
+//  .settings(crossProjectSettings)
+//  .settings(buildInfoSettings("morphir.sdk.json"))
+//  .settings(
+//    libraryDependencies ++= Seq(
+//      "dev.zio" %%% "zio" % Versions.zio,
+//      "io.circe" %%% "circe-generic" % Versions.circe,
+//      "io.circe" %%% "circe-parser" % Versions.circe,
+//      "dev.zio" %%% "zio-test" % Versions.zio % "test",
+//      "dev.zio" %%% "zio-test-sbt" % Versions.zio % "test"
+//    )
+//  )
+//  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+
+//lazy val morphirSdkJsonJS = morphirSdkJson.js
+//
+//lazy val morphirSdkJsonJVM = morphirSdkJson.jvm
+//  .settings(dottySettings)
 
 // Remove all additional repository other than Maven Central from POM
 //ThisBuild / pomIncludeRepository := { _ => false }
