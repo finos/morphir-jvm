@@ -1,4 +1,4 @@
-package morphir.toolbox.io
+package morphir.core.io.file
 
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -7,12 +7,12 @@ import io.circe.{ Decoder, Encoder }
 
 import scala.annotation.tailrec
 
-sealed trait Path[+B, +T, +S] {
+sealed trait FileSystemPath[+B, +T, +S] {
   def isAbsolute: Boolean
   def isRelative: Boolean = !isAbsolute
 }
 
-object Path {
+object FileSystemPath {
   sealed trait Relative
   sealed trait Absolute
 
@@ -66,52 +66,57 @@ object Path {
     implicit val order: Order[DirName] = Order.by(_.value)
   }
 
-  private case object Current extends Path[Nothing, Nothing, Nothing] {
+  private case object Current extends FileSystemPath[Nothing, Nothing, Nothing] {
     def isAbsolute = false
   }
 
-  private case object Root extends Path[Nothing, Nothing, Nothing] {
+  private case object Root extends FileSystemPath[Nothing, Nothing, Nothing] {
     def isAbsolute = true
   }
 
-  private final case class InternalParent[B, T, S](parent: Path[B, T, S]) extends Path[B, T, S] {
+  private final case class InternalParent[B, T, S](parent: FileSystemPath[B, T, S]) extends FileSystemPath[B, T, S] {
     def isAbsolute: Boolean = parent.isAbsolute
   }
 
-  private final case class InternalDir[B, T, S](parent: Path[B, T, S], name: DirName) extends Path[B, T, S] {
+  private final case class InternalDir[B, T, S](parent: FileSystemPath[B, T, S], name: DirName)
+      extends FileSystemPath[B, T, S] {
     def isAbsolute: Boolean = parent.isAbsolute
   }
 
-  private final case class InternalFile[B, T, S](parent: Path[B, T, S], name: FileName) extends Path[B, T, S] {
+  private final case class InternalFile[B, T, S](parent: FileSystemPath[B, T, S], name: FileName)
+      extends FileSystemPath[B, T, S] {
     def isAbsolute: Boolean = parent.isAbsolute
   }
 
-  type RelativeFile[S] = Path[Relative, File, S]
-  type AbsoluteFile[S] = Path[Absolute, File, S]
-  type RelativeDir[S]  = Path[Relative, Dir, S]
-  type AbsoluteDir[S]  = Path[Absolute, Dir, S]
+  type RelativeFile[S] = FileSystemPath[Relative, File, S]
+  type AbsoluteFile[S] = FileSystemPath[Absolute, File, S]
+  type RelativeDir[S]  = FileSystemPath[Relative, Dir, S]
+  type AbsoluteDir[S]  = FileSystemPath[Absolute, Dir, S]
 
   def currentDir[S]: RelativeDir[S]             = Current
   def rootDir[S]: AbsoluteDir[S]                = Root
   def file[S](name: String): RelativeFile[S]    = file1[S](FileName(name))
   def file1[S](name: FileName): RelativeFile[S] = InternalFile(Current, name)
 
-  def fileName[B, S](path: Path[B, File, S]): FileName = path match {
+  def fileName[B, S](path: FileSystemPath[B, File, S]): FileName = path match {
     case InternalFile(_, name) => name
     case _                     => sys.error("impossible!")
   }
 
-  def dir[S](name: String): Path[Relative, Dir, S]   = dir1[S](DirName(name))
-  def dir1[S](name: DirName): Path[Relative, Dir, S] = InternalDir(Current, name)
-  def dirname[B, S](path: Path[B, Dir, S]): Option[DirName] = path match {
+  def dir[S](name: String): FileSystemPath[Relative, Dir, S]   = dir1[S](DirName(name))
+  def dir1[S](name: DirName): FileSystemPath[Relative, Dir, S] = InternalDir(Current, name)
+  def dirname[B, S](path: FileSystemPath[B, Dir, S]): Option[DirName] = path match {
     case InternalDir(_, name) => Some(name)
     case _                    => None
   }
 
-  implicit class PathOps[B, T, S](path: Path[B, T, S]) {
-    def relativeTo[SS](dir: Path[B, Dir, SS]): Option[Path[Relative, T, SS]] = {
+  implicit class PathOps[B, T, S](path: FileSystemPath[B, T, S]) {
+    def relativeTo[SS](dir: FileSystemPath[B, Dir, SS]): Option[FileSystemPath[Relative, T, SS]] = {
       @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
-      def go[TT](p1: Path[B, TT, S], p2: Path[B, Dir, SS]): Option[Path[Relative, TT, SS]] =
+      def go[TT](
+        p1: FileSystemPath[B, TT, S],
+        p2: FileSystemPath[B, Dir, SS]
+      ): Option[FileSystemPath[Relative, TT, SS]] =
         if (identicalPath(p1, p2)) Some(Current)
         else
           peel(p1) match {
@@ -123,15 +128,15 @@ object Path {
               }
             case Some((p1p, v)) =>
               go(p1p, p2).map(p =>
-                p </> v.fold[Path[Relative, TT, SS]](InternalDir(Current, _), InternalFile(Current, _))
+                p </> v.fold[FileSystemPath[Relative, TT, SS]](InternalDir(Current, _), InternalFile(Current, _))
               )
           }
       go(canonicalize(path), canonicalize(dir))
     }
   }
 
-  implicit class DirOps[B, S](dir: Path[B, Dir, S]) {
-    def </>[T](rel: Path[Relative, T, S]): Path[B, T, S] =
+  implicit class DirOps[B, S](dir: FileSystemPath[B, Dir, S]) {
+    def </>[T](rel: FileSystemPath[Relative, T, S]): FileSystemPath[B, T, S] =
       (dir, rel) match {
         case (Current, Current)              => Current
         case (Root, Current)                 => Root
@@ -152,20 +157,22 @@ object Path {
       }
 
     // NB: scala doesn't cotton to `<..>`
-    def <::>[T](rel: Path[Relative, T, S]): Path[B, T, Unsandboxed] =
+    def <::>[T](rel: FileSystemPath[Relative, T, S]): FileSystemPath[B, T, Unsandboxed] =
       parentDir1(dir) </> unsandbox(rel)
 
-    @inline def up[T](rel: Path[Relative, T, S]): Path[B, T, Unsandboxed] =
+    @inline def up[T](rel: FileSystemPath[Relative, T, S]): FileSystemPath[B, T, Unsandboxed] =
       <::>(rel)
   }
 
-  implicit class FileOps[B, S](file: Path[B, File, S]) {
+  implicit class FileOps[B, S](file: FileSystemPath[B, File, S]) {
     // NB: scala doesn't cotton to `<.>`
-    def <:>(ext: String): Path[B, File, S] =
+    def <:>(ext: String): FileSystemPath[B, File, S] =
       renameFile(file, name => name.changeExtension(_ => ext))
   }
 
-  def refineType[B, T, S](path: Path[B, T, S]): Either[Path[B, Dir, S], Path[B, File, S]] = path match {
+  def refineType[B, T, S](
+    path: FileSystemPath[B, T, S]
+  ): Either[FileSystemPath[B, Dir, S], FileSystemPath[B, File, S]] = path match {
     case Current            => Left(Current)
     case Root               => Left(Root)
     case InternalParent(p)  => Left(InternalParent(unsafeCoerceType(p)))
@@ -173,24 +180,25 @@ object Path {
     case InternalDir(p, d)  => Left(InternalDir(unsafeCoerceType(p), d))
   }
 
-  def maybeDir[B, T, S](path: Path[B, T, S]): Option[Path[B, Dir, S]] =
+  def maybeDir[B, T, S](path: FileSystemPath[B, T, S]): Option[FileSystemPath[B, Dir, S]] =
     refineType(path).swap.toOption
 
-  def maybeFile[B, T, S](path: Path[B, T, S]): Option[Path[B, File, S]] =
+  def maybeFile[B, T, S](path: FileSystemPath[B, T, S]): Option[FileSystemPath[B, File, S]] =
     refineType(path).toOption
 
   @scala.annotation.tailrec
-  def peel[B, T, S](path: Path[B, T, S]): Option[(Path[B, Dir, S], Either[DirName, FileName])] = path match {
-    case Current => None
-    case Root    => None
-    case p @ InternalParent(_) =>
-      val (c, p1) = canonicalize1(p)
-      if (c) peel(p1) else None
-    case InternalDir(p, d)  => Some(unsafeCoerceType(p) -> Left(d))
-    case InternalFile(p, f) => Some(unsafeCoerceType(p) -> Right(f))
-  }
+  def peel[B, T, S](path: FileSystemPath[B, T, S]): Option[(FileSystemPath[B, Dir, S], Either[DirName, FileName])] =
+    path match {
+      case Current => None
+      case Root    => None
+      case p @ InternalParent(_) =>
+        val (c, p1) = canonicalize1(p)
+        if (c) peel(p1) else None
+      case InternalDir(p, d)  => Some(unsafeCoerceType(p) -> Left(d))
+      case InternalFile(p, f) => Some(unsafeCoerceType(p) -> Right(f))
+    }
 
-  def depth[B, T, S](path: Path[B, T, S]): Int = path match {
+  def depth[B, T, S](path: FileSystemPath[B, T, S]): Int = path match {
     case Current            => 0
     case Root               => 0
     case InternalParent(p)  => depth(p) - 1
@@ -198,18 +206,18 @@ object Path {
     case InternalDir(p, _)  => depth(p) + 1
   }
 
-  def identicalPath[B, T, S, BB, TT, SS](p1: Path[B, T, S], p2: Path[BB, TT, SS]): Boolean =
+  def identicalPath[B, T, S, BB, TT, SS](p1: FileSystemPath[B, T, S], p2: FileSystemPath[BB, TT, SS]): Boolean =
     p1.show == p2.show
 
-  def parentDir[B, T, S](path: Path[B, T, S]): Option[Path[B, Dir, S]] =
+  def parentDir[B, T, S](path: FileSystemPath[B, T, S]): Option[FileSystemPath[B, Dir, S]] =
     peel(path).map(_._1)
 
-  def fileParent[B, S](file: Path[B, File, S]): Path[B, Dir, S] = file match {
+  def fileParent[B, S](file: FileSystemPath[B, File, S]): FileSystemPath[B, Dir, S] = file match {
     case InternalFile(p, _) => unsafeCoerceType(p)
     case _                  => sys.error("impossible!")
   }
 
-  def unsandbox[B, T, S](path: Path[B, T, S]): Path[B, T, Unsandboxed] = path match {
+  def unsandbox[B, T, S](path: FileSystemPath[B, T, S]): FileSystemPath[B, T, Unsandboxed] = path match {
     case Current            => Current
     case Root               => Root
     case InternalParent(p)  => InternalParent(unsandbox(p))
@@ -217,13 +225,16 @@ object Path {
     case InternalFile(p, f) => InternalFile(unsandbox(p), f)
   }
 
-  def sandbox[B, T, S](dir: Path[B, Dir, Sandboxed], path: Path[B, T, S]): Option[Path[Relative, T, Sandboxed]] =
+  def sandbox[B, T, S](
+    dir: FileSystemPath[B, Dir, Sandboxed],
+    path: FileSystemPath[B, T, S]
+  ): Option[FileSystemPath[Relative, T, Sandboxed]] =
     path relativeTo dir
 
-  def parentDir1[B, T, S](path: Path[B, T, S]): Path[B, Dir, Unsandboxed] =
+  def parentDir1[B, T, S](path: FileSystemPath[B, T, S]): FileSystemPath[B, Dir, Unsandboxed] =
     InternalParent(unsafeCoerceType(unsandbox(path)))
 
-  private def unsafeCoerceType[B, T, TT, S](path: Path[B, T, S]): Path[B, TT, S] = path match {
+  private def unsafeCoerceType[B, T, TT, S](path: FileSystemPath[B, T, S]): FileSystemPath[B, TT, S] = path match {
     case Current            => Current
     case Root               => Root
     case InternalParent(p)  => InternalParent(unsafeCoerceType(p))
@@ -231,22 +242,22 @@ object Path {
     case InternalFile(p, f) => InternalFile(unsafeCoerceType(p), f)
   }
 
-  def renameFile[B, S](path: Path[B, File, S], f: FileName => FileName): Path[B, File, S] =
+  def renameFile[B, S](path: FileSystemPath[B, File, S], f: FileName => FileName): FileSystemPath[B, File, S] =
     path match {
       case InternalFile(p, f0) => InternalFile(p, f(f0))
       case p                   => p
     }
 
-  def renameDir[B, S](path: Path[B, Dir, S], f: DirName => DirName): Path[B, Dir, S] =
+  def renameDir[B, S](path: FileSystemPath[B, Dir, S], f: DirName => DirName): FileSystemPath[B, Dir, S] =
     path match {
       case InternalDir(p, d) => InternalDir(p, f(d))
       case p                 => p
     }
 
-  def canonicalize[B, T, S](path: Path[B, T, S]): Path[B, T, S] =
+  def canonicalize[B, T, S](path: FileSystemPath[B, T, S]): FileSystemPath[B, T, S] =
     canonicalize1(path)._2
 
-  private def canonicalize1[B, T, S](path: Path[B, T, S]): (Boolean, Path[B, T, S]) =
+  private def canonicalize1[B, T, S](path: FileSystemPath[B, T, S]): (Boolean, FileSystemPath[B, T, S]) =
     path match {
       case Current                            => false -> Current
       case Root                               => false -> Root
@@ -270,10 +281,10 @@ object Path {
     parentDir: => X,
     dirName: String => X,
     fileName: String => X,
-    path: Path[_, _, _]
+    path: FileSystemPath[_, _, _]
   ): NonEmptyList[X] = {
     @tailrec
-    def go(xs: NonEmptyList[X], at: Path[_, _, _]): NonEmptyList[X] = {
+    def go(xs: NonEmptyList[X], at: FileSystemPath[_, _, _]): NonEmptyList[X] = {
       val tl = xs.head :: xs.tail
 
       at match {
@@ -298,7 +309,7 @@ object Path {
   val windowsCodec: PathCodec = PathCodec placeholder '\\'
 
   final case class PathCodec(separator: Char, escape: String => String, unescape: String => String) {
-    def unsafePrintPath(path: Path[_, _, _]): String = {
+    def unsafePrintPath(path: FileSystemPath[_, _, _]): String = {
       val s: String = flatten("", ".", "..", escape, escape, path)
         .intercalate(separator.toString)
 
@@ -308,7 +319,7 @@ object Path {
       }
     }
 
-    def printPath[B, T](path: Path[B, T, Sandboxed]): String =
+    def printPath[B, T](path: FileSystemPath[B, T, Sandboxed]): String =
       unsafePrintPath(path)
 
     def parsePath[Z](
@@ -323,7 +334,7 @@ object Path {
       val isDir =
         List(separator.toString, s"$separator.", s"$separator..").exists(str.endsWith) || str === "." || str === ".."
 
-      def folder[B, S](base: Path[B, Dir, S], segments: String): Path[B, Dir, S] = segments match {
+      def folder[B, S](base: FileSystemPath[B, Dir, S], segments: String): FileSystemPath[B, Dir, S] = segments match {
         case ""   => base
         case "."  => base
         case ".." => InternalParent(base)
@@ -346,30 +357,31 @@ object Path {
 
     }
 
-    val parseRelFile: String => Option[RelativeFile[Unsandboxed]] =
+    val parseRelativeFile: String => Option[RelativeFile[Unsandboxed]] =
       parsePath[Option[RelativeFile[Unsandboxed]]](Some(_), _ => None, _ => None, _ => None)
 
-    val parseAbsFile: String => Option[AbsoluteFile[Unsandboxed]] =
+    val parseAbsoluteFile: String => Option[AbsoluteFile[Unsandboxed]] =
       parsePath[Option[AbsoluteFile[Unsandboxed]]](_ => None, Some(_), _ => None, _ => None)
 
-    val parseRelDir: String => Option[RelativeDir[Unsandboxed]] =
+    val parseRelativeDir: String => Option[RelativeDir[Unsandboxed]] =
       parsePath[Option[RelativeDir[Unsandboxed]]](_ => None, _ => None, Some(_), _ => None)
 
-    val parseAbsDir: String => Option[AbsoluteDir[Unsandboxed]] =
+    val parseAbsoluteDir: String => Option[AbsoluteDir[Unsandboxed]] =
       parsePath[Option[AbsoluteDir[Unsandboxed]]](_ => None, _ => None, _ => None, Some(_))
 
-    private def asDir[B, S](path: Path[B, File, S]): Path[B, Dir, S] = path match {
+    private def asDir[B, S](path: FileSystemPath[B, File, S]): FileSystemPath[B, Dir, S] = path match {
       case InternalFile(p, FileName(n)) => InternalDir(unsafeCoerceType(p), DirName(n))
       case _                            => sys.error("impossible!")
     }
 
-    val parseRelAsDir: String => Option[RelativeDir[Unsandboxed]] =
+    val parseRelativeAsDir: String => Option[RelativeDir[Unsandboxed]] =
       parsePath[Option[RelativeDir[Unsandboxed]]](p => Some(asDir(p)), _ => None, Some(_), _ => None)
 
-    val parseAbsAsDir: String => Option[AbsoluteDir[Unsandboxed]] =
+    val parseAbsoluteAsDir: String => Option[AbsoluteDir[Unsandboxed]] =
       parsePath[Option[AbsoluteDir[Unsandboxed]]](_ => None, p => Some(asDir(p)), _ => None, Some(_))
 
-    implicit def encodePath[B, T, S]: Encoder[Path[B, T, S]] = Encoder.encodeString.contramap(p => unsafePrintPath(p))
+    implicit def encodeFileSystemPath[B, T, S]: Encoder[FileSystemPath[B, T, S]] =
+      Encoder.encodeString.contramap(p => unsafePrintPath(p))
   }
 
   object PathCodec {
@@ -390,8 +402,8 @@ object Path {
     private val $dotdot$ = "$dotdot$"
   }
 
-  implicit def pathShow[B, T, S]: Show[Path[B, T, S]] = new Show[Path[B, T, S]] {
-    override def show(t: Path[B, T, S]): String = t match {
+  implicit def pathShow[B, T, S]: Show[FileSystemPath[B, T, S]] = new Show[FileSystemPath[B, T, S]] {
+    override def show(t: FileSystemPath[B, T, S]): String = t match {
       case Current                      => "currentDir"
       case Root                         => "rootDir"
       case InternalParent(p)            => show"parentDir($p)"

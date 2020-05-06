@@ -1,10 +1,10 @@
-package morphir.toolbox.io
+package morphir.core.io.file
 
 import zio.test.Assertion.equalTo
 import zio.test.{ assert, suite, test, DefaultRunnableSpec }
 
-object WindowsPathSpec extends DefaultRunnableSpec {
-  import Path._
+object WindowsFileSystemPathSpec extends DefaultRunnableSpec {
+  import FileSystemPath._
   import windowsCodec._
 
   def spec = suite("Posix print path specs")(

@@ -1,10 +1,10 @@
-package morphir.toolbox.io
+package morphir.core.io.file
 
 import zio.test.Assertion.{ equalTo, isNone, isSome }
 import zio.test.{ assert, suite, test, DefaultRunnableSpec }
 
-object PosixPathSpec extends DefaultRunnableSpec {
-  import Path._
+object PosixFileSystemPathSpec extends DefaultRunnableSpec {
+  import FileSystemPath._
   import posixCodec._
 
   def spec =
@@ -33,124 +33,124 @@ object PosixPathSpec extends DefaultRunnableSpec {
         suite("parseRelFile")(
           suite("should successfully parse")(
             test("simple file name with extension")(
-              assert(parseRelFile("image.png"))(isSome(equalTo(file("image.png"))))
+              assert(parseRelativeFile("image.png"))(isSome(equalTo(file("image.png"))))
             ),
             test("preceded with current directory")(
-              assert(parseRelFile("./image.png"))(isSome(equalTo(file("image.png"))))
+              assert(parseRelativeFile("./image.png"))(isSome(equalTo(file("image.png"))))
             ),
             test("path with two segments")(
-              assert(parseRelFile("foo/image.png"))(isSome(equalTo(dir("foo") </> file("image.png"))))
+              assert(parseRelativeFile("foo/image.png"))(isSome(equalTo(dir("foo") </> file("image.png"))))
             ),
             test("preceded by a parent directory reference")(
-              assert(parseRelFile("../foo/image.png"))(
+              assert(parseRelativeFile("../foo/image.png"))(
                 isSome(equalTo(currentDir <::> dir("foo") </> file("image.png")))
               )
             )
           ),
           suite("should fail parse")(
             test("with a leading /")(
-              assert(parseRelFile("/foo/image.png"))(isNone)
+              assert(parseRelativeFile("/foo/image.png"))(isNone)
             ),
             test("with a trailing /")(
-              assert(parseRelFile("foo/"))(isNone)
+              assert(parseRelativeFile("foo/"))(isNone)
             ),
             test(".")(
-              assert(parseRelFile("."))(isNone)
+              assert(parseRelativeFile("."))(isNone)
             ),
             test("foo/..")(
-              assert(parseRelFile("foo/.."))(isNone)
+              assert(parseRelativeFile("foo/.."))(isNone)
             )
           )
         ),
         suite("parseAbsFile")(
           suite("should successfully parse")(
             test("a simple filename with extensions as long as there is a leading /")(
-              assert(parseAbsFile("/image.png"))(isSome(equalTo(rootDir </> file("image.png"))))
+              assert(parseAbsoluteFile("/image.png"))(isSome(equalTo(rootDir </> file("image.png"))))
             ),
             test("a path with two segments")(
-              assert(parseAbsFile("/foo/image.png"))(isSome(equalTo(rootDir </> dir("foo") </> file("image.png"))))
+              assert(parseAbsoluteFile("/foo/image.png"))(isSome(equalTo(rootDir </> dir("foo") </> file("image.png"))))
             )
           ),
           suite("fail to parse")(
             test("with a trailing /")(
-              assert(parseAbsFile("/foo/"))(isNone)
+              assert(parseAbsoluteFile("/foo/"))(isNone)
             ),
             test("with no leading /")(
-              assert(parseAbsFile("foo/image.png"))(isNone)
+              assert(parseAbsoluteFile("foo/image.png"))(isNone)
             ),
             test("/.")(
-              assert(parseAbsFile("/."))(isNone)
+              assert(parseAbsoluteFile("/."))(isNone)
             ),
             test("/foo/..")(
-              assert(parseAbsFile("/foo/.."))(isNone)
+              assert(parseAbsoluteFile("/foo/.."))(isNone)
             )
           )
         ),
         suite("parseRelDir")(
           suite("should successfully parse")(
             test("empty string")(
-              assert(parseRelDir(""))(isSome(equalTo(currentDir[Unsandboxed])))
+              assert(parseRelativeDir(""))(isSome(equalTo(currentDir[Unsandboxed])))
             ),
             test("./../")(
-              assert(parseRelDir("./../"))(isSome(equalTo(currentDir <::> currentDir)))
+              assert(parseRelativeDir("./../"))(isSome(equalTo(currentDir <::> currentDir)))
             ),
             test("segment with trailing /")(
-              assert(parseRelDir("foo/"))(isSome(equalTo(dir("foo"))))
+              assert(parseRelativeDir("foo/"))(isSome(equalTo(dir("foo"))))
             ),
             test("segment with trailing .")(
-              assert(parseRelDir("foo/."))(isSome(equalTo(dir("foo") </> currentDir)))
+              assert(parseRelativeDir("foo/."))(isSome(equalTo(dir("foo") </> currentDir)))
             ),
             test("two segments with trailing /")(
-              assert(parseRelDir("foo/bar/"))(isSome(equalTo(dir("foo") </> dir("bar"))))
+              assert(parseRelativeDir("foo/bar/"))(isSome(equalTo(dir("foo") </> dir("bar"))))
             ),
             test("two segments starting with a reference to current directory")(
-              assert(parseRelDir("./foo/bar/"))(isSome(equalTo(currentDir </> dir("foo") </> dir("bar"))))
+              assert(parseRelativeDir("./foo/bar/"))(isSome(equalTo(currentDir </> dir("foo") </> dir("bar"))))
             )
           ),
           suite("fail to parse")(
             test("leading with a /")(
-              assert(parseRelDir("/foo/"))(isNone)
+              assert(parseRelativeDir("/foo/"))(isNone)
             ),
             test("simple name")(
-              assert(parseRelDir("foo"))(isNone)
+              assert(parseRelativeDir("foo"))(isNone)
             )
           )
         ),
         suite("parseRelAsDir")(
           test("./foo/bar")(
-            assert(parseRelAsDir("./foo/bar"))(isSome(equalTo(dir("foo") </> dir("bar"))))
+            assert(parseRelativeAsDir("./foo/bar"))(isSome(equalTo(dir("foo") </> dir("bar"))))
           ),
           test("./foo/bar/")(
-            assert(parseRelAsDir("./foo/bar/"))(isSome(equalTo(dir("foo") </> dir("bar"))))
+            assert(parseRelativeAsDir("./foo/bar/"))(isSome(equalTo(dir("foo") </> dir("bar"))))
           )
         ),
         suite("parseAbsDir")(
           suite("should successfully parse")(
             test("/")(
-              assert(parseAbsDir("/"))(isSome(equalTo(rootDir[Unsandboxed])))
+              assert(parseAbsoluteDir("/"))(isSome(equalTo(rootDir[Unsandboxed])))
             ),
             test("/foo/")(
-              assert(parseAbsDir("/foo/"))(isSome(equalTo(rootDir </> dir("foo"))))
+              assert(parseAbsoluteDir("/foo/"))(isSome(equalTo(rootDir </> dir("foo"))))
             ),
             test("/foo/bar/")(
-              assert(parseAbsDir("/foo/bar/"))(isSome(equalTo(rootDir </> dir("foo") </> dir("bar"))))
+              assert(parseAbsoluteDir("/foo/bar/"))(isSome(equalTo(rootDir </> dir("foo") </> dir("bar"))))
             )
           ),
           suite("should fail to parse")(
             test("/foo")(
-              assert(parseAbsDir("/foo"))(isNone)
+              assert(parseAbsoluteDir("/foo"))(isNone)
             ),
             test("foo")(
-              assert(parseAbsDir("foo"))(isNone)
+              assert(parseAbsoluteDir("foo"))(isNone)
             )
           )
         ),
         suite("parseAbsAsDir")(
           test("/foo/bar/")(
-            assert(parseAbsAsDir("/foo/bar/"))(isSome(equalTo(rootDir </> dir("foo") </> dir("bar"))))
+            assert(parseAbsoluteAsDir("/foo/bar/"))(isSome(equalTo(rootDir </> dir("foo") </> dir("bar"))))
           ),
           test("/foo/bar")(
-            assert(parseAbsAsDir("/foo/bar"))(isSome(equalTo(rootDir </> dir("foo") </> dir("bar"))))
+            assert(parseAbsoluteAsDir("/foo/bar"))(isSome(equalTo(rootDir </> dir("foo") </> dir("bar"))))
           )
         )
       )

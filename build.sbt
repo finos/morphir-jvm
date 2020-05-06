@@ -68,6 +68,14 @@ lazy val morphirCore = crossProject(JSPlatform, JVMPlatform)
   .settings(stdSettings("morphir-core"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("morphir.core"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio"  %%% "zio-streams"  % Versions.zio,
+      "io.circe" %%% "circe-parser" % Versions.circe,
+      "dev.zio"  %%% "zio-test"     % Versions.zio % "test",
+      "dev.zio"  %%% "zio-test-sbt" % Versions.zio % "test"
+    )
+  )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val morphirCoreJS = morphirCore.js
