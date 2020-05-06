@@ -1,10 +1,12 @@
 package morphir.ir
+import cats.implicits._
 import zio.test._
 import zio.test.Assertion._
 import morphir.ir.fuzzer.NameFuzzer._
 import morphir.ir.codec.NameCodec._
 import morphir.ir.json.JsonFacade
 import morphir.ir.testing.JsonSpec
+import morphir.ir.typeclass.instances.NameInstances._
 
 object NameSpec extends DefaultRunnableSpec with JsonSpec {
   def spec =
@@ -116,9 +118,7 @@ object NameSpec extends DefaultRunnableSpec with JsonSpec {
           check(fuzzName)(givenName => checkCodecIsWellBehaved(givenName))
         },
         testM("A Name should encode as expected") {
-          check(fuzzName)(givenName =>
-            assert(JsonFacade.encode(givenName, 0))(equalTo(givenName.map(s => '"' + s + '"').mkString("[", ",", "]")))
-          )
+          check(fuzzName)(givenName => assert(JsonFacade.encode(givenName, 0))(equalTo(givenName.show)))
         },
         test(
           """Given a Name whose value is ["delta","sigma","theta"] it should encode correctly"""
