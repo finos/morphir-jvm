@@ -1,12 +1,12 @@
-package org.morphir.ir
-
+package morphir.ir
+import morphir.ir.Name.name
+import morphir.ir.QName.qName
+import morphir.ir.codec.AllCodecs
+import morphir.ir.fuzzer.AllFuzzers
+import morphir.ir.testing.JsonSpec
 import zio.test._
-//import scala.language.implicitConversions
-import morphir.testing.BaseSpec
 
-import Name.name
-import QName.qName
-object QNameSpec extends DefaultRunnableSpec with BaseSpec {
+object QNameSpec extends DefaultRunnableSpec with JsonSpec with AllCodecs with AllFuzzers {
 
   def spec = suite("QNameSpec")(
     suite("Encoding/Decoding a QName")(
@@ -21,17 +21,20 @@ object QNameSpec extends DefaultRunnableSpec with BaseSpec {
       testEncodesToJSON(
         qName(morphirIRAdvancedModulePath, name("type")),
         """[[["morphir"],["i","r"],["advanced"]],["type"]]"""
+      ),
+      testM("should work in a well-behaved manner")(
+        check(fuzzQName)(checkCodecIsWellBehaved(_))
       )
     )
   )
 
-  val morphirIRModulePath =
+  val morphirIRModulePath: Path =
     Path.fromNames(
       name("morphir"),
       name("i", "r")
     )
 
-  val morphirIRAdvancedModulePath =
+  val morphirIRAdvancedModulePath: Path =
     Path.fromNames(
       name("morphir"),
       name("i", "r"),

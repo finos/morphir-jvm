@@ -3,8 +3,8 @@ package morphir.ir.fuzzer
 import morphir.ir.Name
 import zio.test.Gen
 
-trait NameFuzzer {
-  val fuzzName: Gen[zio.random.Random with zio.test.Sized, Name] = {
+trait NameFuzzers {
+  implicit val fuzzName: Fuzzer[Name] = {
     val fuzzWord = {
       val choices =
         Seq(
@@ -59,4 +59,4 @@ trait NameFuzzer {
   }
 }
 
-object NameFuzzer extends NameFuzzer
+object NameFuzzers extends NameFuzzers

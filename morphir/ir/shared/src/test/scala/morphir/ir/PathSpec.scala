@@ -1,12 +1,12 @@
 package morphir.ir
+import morphir.ir.codec.PathCodec
 import zio.test._
 import zio.test.Assertion._
-import morphir.ir.codec.PathCodec._
-import morphir.ir.fuzzer.NameFuzzer._
+import morphir.ir.fuzzer.NameFuzzers._
 import morphir.ir.json.JsonFacade
 import morphir.ir.testing.JsonSpec
 
-object PathSpec extends DefaultRunnableSpec with JsonSpec {
+object PathSpec extends DefaultRunnableSpec with JsonSpec with PathCodec {
 
   def spec = suite("PathSpec")(
     suite("Creating a Path from a String")(

@@ -2,7 +2,7 @@ package morphir.ir
 import cats.implicits._
 import zio.test._
 import zio.test.Assertion._
-import morphir.ir.fuzzer.NameFuzzer._
+import morphir.ir.fuzzer.NameFuzzers._
 import morphir.ir.codec.NameCodec._
 import morphir.ir.json.JsonFacade
 import morphir.ir.testing.JsonSpec

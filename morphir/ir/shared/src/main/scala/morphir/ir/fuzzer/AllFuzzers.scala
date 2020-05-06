@@ -1,3 +1,3 @@
 package morphir.ir.fuzzer
 
-trait AllFuzzers extends NameFuzzer
+trait AllFuzzers extends NameFuzzers with PathFuzzers with QNameFuzzers with FQNameFuzzers

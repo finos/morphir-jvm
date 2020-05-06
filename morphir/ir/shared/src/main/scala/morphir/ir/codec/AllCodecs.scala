@@ -1,3 +1,3 @@
 package morphir.ir.codec
 
-trait AllCodecs extends PathCodec with NameCodec
+trait AllCodecs extends PathCodec with NameCodec with QNameCodec with FQNameCodec
