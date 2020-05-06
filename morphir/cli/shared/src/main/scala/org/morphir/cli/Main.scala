@@ -1,6 +1,6 @@
 package org.morphir.cli
 
-import org.morphir.toolbox.workspace.WorkspaceModule
+import morphir.toolbox.workspace.WorkspaceModule
 import zio._
 
 object Main extends App {

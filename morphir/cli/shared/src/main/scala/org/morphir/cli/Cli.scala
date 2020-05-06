@@ -3,8 +3,8 @@ package org.morphir.cli
 import java.nio.file.Path
 
 import com.monovore.decline._
-import org.morphir.toolbox.cli.CliCommand
-import org.morphir.toolbox.cli.commands.{ BuildCommand, WorkspaceInfoCommand }
+import morphir.toolbox.cli.CliCommand
+import morphir.toolbox.cli.commands.{ BuildCommand, WorkspaceInfoCommand }
 import zio.{ IO, ZIO }
 
 object Cli {
