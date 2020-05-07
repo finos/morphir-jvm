@@ -5,11 +5,8 @@ import cats.data.ValidatedNel
 import io.circe.syntax._
 import io.circe.parser._
 import io.circe._
-import morphir.ir.json.JsonFacade
 import zio.test._
 import zio.test.Assertion._
-
-import scala.reflect.ClassTag
 
 trait JsonSpec { this: DefaultRunnableSpec =>
   def checkCodecIsWellBehaved[A](
@@ -30,14 +27,14 @@ trait JsonSpec { this: DefaultRunnableSpec =>
     zio.test.assert(decoded)(assertion)
   }
 
-  def testEncodesToJSON[T](sut: T, json: String)(
-    implicit encoder: Encoder[T],
-    tag: ClassTag[T]
-  ): ZSpec[Any, Nothing] = {
-    val typeName = tag.runtimeClass.getSimpleName
-    test(s"Given $typeName: $sut it should encode to: $json") {
-      assert(JsonFacade.encode(sut, 0))(equalTo(json))
-    }
-  }
+  def assertEncodesToExpectedCompactJsonString[A](
+    value: A
+  )(expected: String)(implicit encoder: Encoder[A]): TestResult =
+    assert(value.asJson.noSpaces)(equalTo(expected))
+
+  def assertEncodesAsExpected[A](
+    value: A
+  )(assertion: Assertion[String])(implicit encoder: Encoder[A]): TestResult =
+    assert(value.asJson.noSpaces)(assertion)
 
 }

@@ -19,7 +19,7 @@ object Path {
 
   def fromString(str: String): Path = {
     val separatorRegex = """[^\w\s]+""".r
-    fromList(separatorRegex.split(str).map(Name.fromString).toList)
+    fromList(separatorRegex.split(str).toList.map(Name.fromString))
   }
 
   def toString(nameToString: Name => String, sep: String, path: Path): String =
