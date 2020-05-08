@@ -7,6 +7,8 @@ import scala.collection.immutable
 sealed trait ExprKind {
   def isTypeExpr: Boolean
   final def isValueExpr: Boolean = !isTypeExpr
+  def entryName: String
+  def tag: String = entryName
 }
 
 sealed abstract class TypeExprKind extends EnumEntry with ExprKind with Product with Serializable {

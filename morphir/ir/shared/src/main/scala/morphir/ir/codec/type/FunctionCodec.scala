@@ -9,7 +9,7 @@ private[ir] trait FunctionCodec {
   ): Encoder[Type.Function[A]] =
     Encoder
       .encodeTuple4[TypeExprKind, A, Type[A], Type[A]]
-      .contramap(ft => (ft.typeExprKind, ft.attributes, ft.argumentType, ft.returnType))
+      .contramap(ft => (ft.kind, ft.attributes, ft.argumentType, ft.returnType))
 
   implicit def decodeFunctionType[A](
     implicit teKindDecoder: Decoder[TypeExprKind],

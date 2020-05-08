@@ -5,6 +5,8 @@ import io.circe.{Decoder, Encoder, Json}
 sealed trait ExprKind:
   def isTypeExpr: Boolean
   final def isValueExpr: Boolean = !isTypeExpr
+  def entryName: String
+  def tag: String = entryName
 
 enum TypeExprKind           extends  ExprKind:
     case Variable           extends TypeExprKind

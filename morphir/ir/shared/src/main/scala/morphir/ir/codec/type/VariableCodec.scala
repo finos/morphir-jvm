@@ -9,7 +9,7 @@ private[ir] trait VariableCodec extends NameCodec {
   implicit def encodeVariable[A](
     implicit attributesEncoder: Encoder[A]
   ): Encoder[Variable[A]] =
-    Encoder.encodeTuple3[TypeExprKind, A, Name].contramap(exp => (exp.typeExprKind, exp.attributes, exp.name))
+    Encoder.encodeTuple3[TypeExprKind, A, Name].contramap(exp => (exp.kind, exp.attributes, exp.name))
 
   implicit def decodeVariable[A](
     implicit attributesDecoder: Decoder[A]

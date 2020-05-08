@@ -12,7 +12,7 @@ private[ir] trait ReferenceCodec {
   ): Encoder[Reference[A]] =
     Encoder
       .encodeTuple4[TypeExprKind, A, FQName, List[Type[A]]]
-      .contramap(x => (x.typeExprKind, x.attributes, x.typeName, x.typeParameters))
+      .contramap(x => (x.kind, x.attributes, x.typeName, x.typeParameters))
 
   implicit def decodeReferenceType[A](
     implicit attributesDecoder: Decoder[A],

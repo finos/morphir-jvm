@@ -1,9 +1,18 @@
 package morphir.ir
 
 import morphir.ir.codec.{ `type` => typeCodec }
-sealed abstract class Type[+A](val typeExprKind: TypeExprKind) extends Product with Serializable {
+
+sealed abstract class Expr[+K <: ExprKind, +A](val kind: K) extends Product with Serializable {
+  final def tag: String = kind.tag
   def attributes: A
-  final def typeExprTag: String = typeExprKind.entryName
+}
+
+sealed abstract class Type[+A](kind: TypeExprKind) extends Expr[TypeExprKind, A](kind) {
+  final def isTypeExpr: Boolean = true
+}
+
+sealed abstract class Value[+A](kind: ValueExprKind) extends Expr[ValueExprKind, A](kind) {
+  final def isTypeExpr: Boolean = false
 }
 
 object Type extends typeCodec.TypeCoproductCodec {
@@ -51,4 +60,10 @@ object Type extends typeCodec.TypeCoproductCodec {
 
   final case class Field[+A](name: Name, fieldType: Type[A])
   object Field extends typeCodec.FieldCodec
+}
+
+object Value {
+
+  final case class Specification[+A]()
+  final case class Definition[+A]()
 }
