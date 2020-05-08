@@ -5,10 +5,11 @@ import cats.data.ValidatedNel
 import io.circe.syntax._
 import io.circe.parser._
 import io.circe._
+import morphir.ir.json.JsonFacade
 import zio.test._
 import zio.test.Assertion._
 
-trait JsonSpec { this: DefaultRunnableSpec =>
+trait JsonSpec extends JsonFacade { this: DefaultRunnableSpec =>
   def checkCodecIsWellBehaved[A](
     value: A
   )(implicit encoder: Encoder[A], decoder: Decoder[A]): TestResult = {

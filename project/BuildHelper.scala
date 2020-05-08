@@ -406,6 +406,17 @@ object BuildHelper {
       }
   )
 
+  def enumeratumSettings(version: String = "1.6.0") = Seq(
+    libraryDependencies ++= {
+      if (isDotty.value) Seq()
+      else
+        Seq(
+          "com.beachape" %%% "enumeratum"       % version,
+          "com.beachape" %%% "enumeratum-circe" % version
+        )
+    }
+  )
+
   def testJsSettings = Seq(
     libraryDependencies += "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-RC5" % Test
   )

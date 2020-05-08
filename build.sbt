@@ -145,6 +145,7 @@ lazy val morphirIR = crossProject(JVMPlatform, JSPlatform)
       "dev.zio"  %%% "zio-test-sbt"  % Versions.zio % "test"
     )
   )
+  .settings(enumeratumSettings())
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val morphirIRJVM = morphirIR.jvm
