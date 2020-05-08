@@ -23,6 +23,16 @@ sealed abstract class AccessControlled[+A] extends Product with Serializable {
       case Public(value)  => Public(fn(value))
       case Private(value) => Private(fn(value))
     }
+
+  def flatMap[B](fn: A => AccessControlled[B]): AccessControlled[B] = this match {
+    case Public(value)  => fn(value)
+    case Private(value) => fn(value)
+  }
+
+  def fold[B](whenPublic: A => B, whenPrivate: A => B): B = this match {
+    case Public(value)  => whenPublic(value)
+    case Private(value) => whenPrivate(value)
+  }
 }
 
 object AccessControlled extends AccessControlledCodec {
@@ -49,7 +59,9 @@ object AccessControlled extends AccessControlledCodec {
       Decoder.decodeTuple2[String, A].emap {
         case ("Public", value) => Right(Public(value))
         case ("Private", value) =>
-          Left(s"Private is an invalid access controlled type for the public access controlled object: $value.")
+          Left(
+            s"An access type of private is not a valid access controlled type for the public access controlled object: $value."
+          )
         case (ac, value) => Left(s"Unknown access controlled type: $ac for value: $value")
       }
   }
@@ -68,9 +80,11 @@ object AccessControlled extends AccessControlledCodec {
       stringDecoder: Decoder[String]
     ): Decoder[Private[A]] =
       Decoder.decodeTuple2[String, A].emap {
-        case ("Private", value) => Right(Private(value))
-        case ("Public", value) =>
-          Left(s"Public is an invalid access controlled type for the public access controlled object: $value.")
+        case ("private", value) => Right(Private(value))
+        case ("public", value) =>
+          Left(
+            s"An access type of public is not a valid access controlled type for the public access controlled object: $value."
+          )
         case (ac, value) => Left(s"Unknown access controlled type: $ac for value: $value")
       }
   }

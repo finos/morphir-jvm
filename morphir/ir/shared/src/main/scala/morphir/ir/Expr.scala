@@ -9,36 +9,54 @@ sealed abstract class Expr[+K <: ExprKind, +A](val kind: K) extends Product with
 
 sealed abstract class Type[+A](kind: TypeExprKind) extends Expr[TypeExprKind, A](kind) {
   final def isTypeExpr: Boolean = true
+  def mapAttributes[B](f: A => B): Type[B]
 }
 
 object Type extends typeCodec.TypeCoproductCodec {
 
-  final case class Variable[+A](attributes: A, name: Name) extends Type[A](TypeExprKind.Variable)
-  object Variable                                          extends typeCodec.VariableCodec
+  final case class Variable[+A](attributes: A, name: Name) extends Type[A](TypeExprKind.Variable) {
+    override def mapAttributes[B](f: A => B): Type[B] = Variable[B](f(attributes), name)
+  }
+  object Variable extends typeCodec.VariableCodec
 
   final case class Reference[+A](attributes: A, typeName: FQName, typeParameters: List[Type[A]])
-      extends Type[A](TypeExprKind.Reference)
+      extends Type[A](TypeExprKind.Reference) {
+    def mapAttributes[B](f: A => B): Type[B] =
+      Reference(f(attributes), typeName, typeParameters.map(t => t.mapAttributes(f)))
+  }
 
   object Reference extends typeCodec.ReferenceCodec
 
-  final case class Tuple[+A](attributes: A, elementTypes: List[Type[A]]) extends Type[A](TypeExprKind.Tuple)
-  object Tuple                                                           extends typeCodec.TupleCodec
+  final case class Tuple[+A](attributes: A, elementTypes: List[Type[A]]) extends Type[A](TypeExprKind.Tuple) {
+    def mapAttributes[B](f: A => B): Type[B] = Tuple(f(attributes), elementTypes.map(e => e.mapAttributes(f)))
+  }
+  object Tuple extends typeCodec.TupleCodec
 
-  final case class Record[+A](attributes: A, fieldTypes: List[Field[A]]) extends Type[A](TypeExprKind.Record)
-  object Record                                                          extends typeCodec.RecordCodec
+  final case class Record[+A](attributes: A, fieldTypes: List[Field[A]]) extends Type[A](TypeExprKind.Record) {
+    def mapAttributes[B](f: A => B): Type[B] = Record(f(attributes), fieldTypes.map(field => field.mapAttributes(f)))
+  }
+  object Record extends typeCodec.RecordCodec
 
   final case class ExtensibleRecord[+A](attributes: A, variableName: Name, fieldTypes: List[Field[A]])
-      extends Type[A](TypeExprKind.ExtensibleRecord)
+      extends Type[A](TypeExprKind.ExtensibleRecord) {
+    def mapAttributes[B](f: A => B): Type[B] =
+      ExtensibleRecord(f(attributes), variableName, fieldTypes.map(field => field.mapAttributes(f)))
+  }
   object ExtensibleRecord extends typeCodec.ExtensibleRecordCodec
 
   final case class Function[+A](attributes: A, argumentType: Type[A], returnType: Type[A])
-      extends Type[A](TypeExprKind.Function)
+      extends Type[A](TypeExprKind.Function) {
+    def mapAttributes[B](f: A => B): Type[B] =
+      Function(f(attributes), argumentType.mapAttributes(f), returnType.mapAttributes(f))
+  }
   object Function extends typeCodec.FunctionCodec
 
-  final case class Unit[+A](attributes: A) extends Type[A](TypeExprKind.Unit)
-  object Unit                              extends typeCodec.UnitCodec
+  final case class Unit[+A](attributes: A) extends Type[A](TypeExprKind.Unit) {
+    def mapAttributes[B](f: A => B): Type[B] = Unit(f(attributes))
+  }
+  object Unit extends typeCodec.UnitCodec
 
-  sealed abstract class Specification[+A] extends Product with Serializable
+  sealed abstract class Specification[+A] extends Product with Serializable {}
   object Specification {
     final case class TypeAliasSpecification[+A](typeParams: List[Name], typeExp: Type[A]) extends Specification[A]
     final case class OpaqueTypeSpecification(typeParams: List[Name])                      extends Specification[Nothing]
@@ -47,18 +65,44 @@ object Type extends typeCodec.TypeCoproductCodec {
 
   }
 
-  sealed abstract class Definition[+A] extends Product with Serializable
+  sealed abstract class Definition[+A] extends Product with Serializable {
+    def toSpecification: Specification[A]
+  }
   object Definition {
-    final case class TypeAliasDefinition[+A](typeParams: List[Type[A]], typeExp: Type[A]) extends Definition[A]
+
+    final case class TypeAliasDefinition[+A](typeParams: List[Name], typeExp: Type[A]) extends Definition[A] {
+      def toSpecification: Specification[A] = Specification.TypeAliasSpecification(typeParams, typeExp)
+    }
+
     final case class CustomTypeDefinition[+A](typeParams: List[Name], ctors: AccessControlled[Constructors[A]])
-        extends Definition[A]
+        extends Definition[A] {
+      def toSpecification: Specification[A] =
+        ctors.fold(
+          constructors => Specification.CustomTypeSpecification(typeParams, constructors),
+          _ => Specification.OpaqueTypeSpecification(typeParams)
+        )
+    }
   }
 
-  final case class Constructors[+A](ctors: List[Constructor[A]]) extends AnyVal
+  final case class Constructors[+A](constructors: List[Constructor[A]]) extends AnyVal {
+    def mapAttributes[B](f: A => B): Constructors[B] =
+      Constructors(constructors.map(constructor => constructor.mapAttributes(f)))
+  }
 
-  final case class Constructor[+A](name: Name, args: List[(Name, Type[A])])
+  final case class Constructor[+A](name: Name, args: List[(Name, Type[A])]) {
+    def mapAttributes[B](f: A => B): Constructor[B] =
+      Constructor(name, args.map { case (name, argType) => name -> argType.mapAttributes(f) })
+  }
 
-  final case class Field[+A](name: Name, fieldType: Type[A])
+  final case class Field[+A](name: Name, fieldType: Type[A]) {
+    def map[B](f: (Name, Type[A]) => (Name, Type[B])): Field[B] = {
+      val (newName, newType) = f(name, fieldType)
+      Field(newName, newType)
+    }
+    def mapFieldName(f: Name => Name): Field[A]          = copy(name = f(name))
+    def mapFieldType[B](f: Type[A] => Type[B]): Field[B] = copy(fieldType = f(fieldType))
+    def mapAttributes[B](f: A => B): Field[B]            = Field(name, fieldType.mapAttributes(f))
+  }
   object Field extends typeCodec.FieldCodec
 }
 

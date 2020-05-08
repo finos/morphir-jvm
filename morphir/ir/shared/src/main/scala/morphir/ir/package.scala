@@ -7,10 +7,15 @@ import morphir.ir.typeclass.instances.NameInstances
 package object ir {
 
   val ModulePath: Module.ModulePath.type = Module.ModulePath
-  type ModulePath                  = Module.ModulePath
-  type Name                        = Name.WrappedType
+  type ModulePath = Module.ModulePath
+
+  type Name = Name.WrappedType
+
   type PublicAccessControlled[+A]  = AccessControlled.Public[A]
   type PrivateAccessControlled[+A] = AccessControlled.Private[A]
+
+  type Package = MorphirPackage.type
+  val Package: Package = MorphirPackage
 
   type Parameter[+A]     = (Name, Type[A])
   type ParameterList[+A] = List[Parameter[A]]
