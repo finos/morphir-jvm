@@ -14,5 +14,5 @@ private[ir] trait VariableCodec extends NameCodec {
   implicit def decodeVariable[A](
     implicit attributesDecoder: Decoder[A]
   ): Decoder[Variable[A]] =
-    Decoder.decodeTuple3[String, A, Name].map { case (_, attributes, name) => Variable(name, attributes) }
+    Decoder.decodeTuple3[String, A, Name].map { case (_, attributes, name) => Variable(attributes, name) }
 }

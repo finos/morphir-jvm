@@ -13,7 +13,7 @@ object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
       test("Should encode to a JSON array")(
         assert {
           import io.circe.Encoder._
-          val sut = Variable(name("morphir", "test", "model", "foo"), ("one", 2))
+          val sut = Variable(("one", 2), name("morphir", "test", "model", "foo"))
           encodeAsJson(sut)
         }(
           equalTo(
@@ -36,7 +36,7 @@ object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
       test("A type variable should encode to a JSON array where the first element is the tag name")(
         assert {
           import io.circe.Encoder._
-          val sut = Variable(name("morphir", "test", "model", "foo"), ())
+          val sut = Variable((), name("morphir", "test", "model", "foo"))
           encodeAsJson(sut).asArray
         }(
           isSome(hasFirst(equalTo(Json.fromString("Variable"))))

@@ -18,6 +18,6 @@ private[ir] trait FunctionCodec {
     Decoder
       .decodeTuple4[TypeExprKind, A, Type[A], Type[A]]
       .map {
-        case (_, attributes, argumentType, returnType) => Type.Function(argumentType, returnType, attributes)
+        case (_, attributes, argumentType, returnType) => Type.Function(attributes, argumentType, returnType)
       }
 }

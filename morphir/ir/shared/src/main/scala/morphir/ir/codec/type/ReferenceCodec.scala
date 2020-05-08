@@ -20,6 +20,6 @@ private[ir] trait ReferenceCodec {
   ): Decoder[Reference[A]] =
     Decoder
       .decodeTuple4[String, A, FQName, List[Type[A]]]
-      .map { case (_, attributes, typeName, typeParameters) => Reference(typeName, typeParameters, attributes) }
+      .map { case (_, attributes, typeName, typeParameters) => Reference(attributes, typeName, typeParameters) }
 
 }
