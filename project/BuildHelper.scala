@@ -155,7 +155,7 @@ object BuildHelper {
     crossScalaVersions += DottyVersion,
     scalacOptions ++= {
       if (isDotty.value)
-        Seq("-noindent")
+        Seq()
       else
         Seq()
     },
