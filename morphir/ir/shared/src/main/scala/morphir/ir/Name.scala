@@ -12,47 +12,28 @@ final case class Name(value: List[String]) extends AnyVal {
   def mapSegments(f: String => String): Name =
     Name(value.map(f))
 
-  override def toString: String = Name.toKebabCase(this)
-}
+  override def toString: String = toKebabCase
 
-object Name extends NameCodec with NameInstances {
-
-  def apply(firstWord: String, otherWords: String*): Name =
-    Name(firstWord :: otherWords.toList)
-
-  def fromString(str: String): Name = {
-    val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
-    Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
-  }
-
-  def name(head: String, rest: String*): Name =
-    Name(head :: rest.toList)
-
-  def fromList(words: List[String]): Name =
-    Name(words)
-
-  def toList(name: Name): List[String] = name.value
-
-  def toTitleCase(name: Name): String =
-    toList(name)
-      .map(_.capitalize)
-      .mkString("")
-
-  def toCamelCase(name: Name): String =
-    toList(name) match {
+  def toCamelCase: String =
+    value match {
       case Nil => ""
       case head :: tail =>
         (head :: tail.map(_.capitalize)).mkString("")
     }
 
-  def toSnakeCase(name: Name): String =
-    toHumanWords(name).mkString("_")
+  def toKebabCase: String =
+    toHumanWords.mkString("-")
 
-  def toKebabCase(name: Name): String =
-    toHumanWords(name).mkString("-")
+  def toSnakeCase: String =
+    toHumanWords.mkString("_")
 
-  def toHumanWords(name: Name): List[String] = {
-    val words                        = toList(name)
+  def toTitleCase: String =
+    value
+      .map(_.capitalize)
+      .mkString("")
+
+  def toHumanWords: List[String] = {
+    val words                        = value
     val join: List[String] => String = abbrev => abbrev.map(_.toUpperCase()).mkString("")
 
     @tailrec
@@ -79,4 +60,33 @@ object Name extends NameCodec with NameInstances {
       }
     process(List.empty, List.empty, words)
   }
+}
+
+object Name extends NameCodec with NameInstances {
+
+  def apply(firstWord: String, otherWords: String*): Name =
+    Name(firstWord :: otherWords.toList)
+
+  def fromString(str: String): Name = {
+    val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
+    Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
+  }
+
+  def name(head: String, rest: String*): Name =
+    Name(head :: rest.toList)
+
+  def fromList(words: List[String]): Name =
+    Name(words)
+
+  def toList(name: Name): List[String] = name.value
+
+  @inline def toTitleCase(name: Name): String = name.toTitleCase
+
+  @inline def toCamelCase(name: Name): String = name.toCamelCase
+
+  @inline def toSnakeCase(name: Name): String = name.toSnakeCase
+
+  @inline def toKebabCase(name: Name): String = name.toKebabCase
+
+  @inline def toHumanWords(name: Name): List[String] = name.toHumanWords
 }
