@@ -9,8 +9,6 @@ package object ir {
   val ModulePath: Module.ModulePath.type = Module.ModulePath
   type ModulePath = Module.ModulePath
 
-  type Name = Name.WrappedType
-
   type PublicAccessControlled[+A]  = AccessControlled.Public[A]
   type PrivateAccessControlled[+A] = AccessControlled.Private[A]
 

@@ -5,11 +5,11 @@ import morphir.ir.Name
 
 trait NameCodec {
 
-  implicit def encodeName(implicit stringEncoder: Encoder[String] = Encoder.encodeString): Encoder[Name] =
-    Encoder.encodeList(stringEncoder).contramap(identity)
+  implicit val encodeName: Encoder[Name] =
+    Encoder.encodeList(Encoder.encodeString).contramap(_.value)
 
-  implicit def decodeName(implicit stringDecoder: Decoder[String] = Decoder.decodeString): Decoder[Name] =
-    Decoder.decodeList(stringDecoder).map(Name.fromList)
+  implicit val decodeName: Decoder[Name] =
+    Decoder.decodeList(Decoder.decodeString).map(Name.fromList)
 }
 
 object NameCodec extends NameCodec

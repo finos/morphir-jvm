@@ -1,10 +1,21 @@
 package morphir.ir
 
-import morphir.core.newtype.Subtype
+import morphir.ir.codec.NameCodec
+import morphir.ir.typeclass.instances.NameInstances
 
 import scala.annotation.tailrec
 
-object Name extends Subtype[List[String]] {
+final case class Name(value: List[String]) extends AnyVal {
+  def ::(segment: String): Name =
+    Name(segment :: value)
+
+  def mapSegments(f: String => String): Name =
+    Name(value.map(f))
+
+  override def toString: String = Name.toKebabCase(this)
+}
+
+object Name extends NameCodec with NameInstances {
 
   def apply(firstWord: String, otherWords: String*): Name =
     Name(firstWord :: otherWords.toList)
@@ -20,7 +31,7 @@ object Name extends Subtype[List[String]] {
   def fromList(words: List[String]): Name =
     Name(words)
 
-  def toList(name: Name): List[String] = name
+  def toList(name: Name): List[String] = name.value
 
   def toTitleCase(name: Name): String =
     toList(name)
