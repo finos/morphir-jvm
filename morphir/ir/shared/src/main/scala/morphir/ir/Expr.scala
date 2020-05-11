@@ -242,8 +242,11 @@ object Value {
     }
   }
 
-  final case class Specification[+A](inputs: ParameterList[A], output: Type[A])
+  final case class Specification[+A](inputs: ParameterList[A], output: Type[A]) {
+    def mapAttributes[B](f: A => B): Specification[B] = Specification(inputs.mapAttributes(f), output.mapAttributes(f))
+  }
   final case class Definition[+A](valueType: Option[Type[A]], arguments: ArgumentList[A], body: Value[A]) {
-    def mapAttributes[B](f: A => B): Definition[B] = ???
+    def mapAttributes[B](f: A => B): Definition[B] =
+      Definition(valueType.map(_.mapAttributes(f)), arguments.mapAttributes(f), body.mapAttributes(f))
   }
 }
