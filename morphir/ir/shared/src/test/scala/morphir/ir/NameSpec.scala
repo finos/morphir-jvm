@@ -15,43 +15,49 @@ object NameSpec extends DefaultRunnableSpec with JsonSpec {
         suite("Name should be creatable from a single word that:")(
           test("Starts with a capital letter") {
             assert(Name.fromString("Marco"))(
-              equalTo(Name(List("marco")))
+              equalTo(Name("marco"))
             )
           },
           test("Is all lowercase") {
-            assert(Name.fromString("polo"))(equalTo(Name(List("polo"))))
+            assert(Name.fromString("polo"))(equalTo(Name("polo")))
           }
         ),
         suite("Name should be creatable from compound words that:")(
           test("Are formed from a snake case word") {
             assert(Name.fromString("super_mario_world"))(
-              equalTo(Name(List("super", "mario", "world")))
+              equalTo(Name("super", "mario", "world"))
             )
           },
           test("Contain many kinds of word delimiters") {
             assert(Name.fromString("fooBar_baz 123"))(
-              equalTo(Name(List("foo", "bar", "baz", "123")))
+              equalTo(Name("foo", "bar", "baz", "123"))
             )
           },
           test("Are formed from a camel-cased string") {
             assert(Name.fromString("valueInUSD"))(
-              equalTo(Name(List("value", "in", "u", "s", "d")))
+              equalTo(Name("value", "in", "u", "s", "d"))
             )
           },
           test("Are formed from a title-cased string") {
 
             assert(Name.fromString("ValueInUSD"))(
-              equalTo(Name(List("value", "in", "u", "s", "d")))
+              equalTo(Name("value", "in", "u", "s", "d"))
+            )
+          },
+          test("Are formed from a title-cased string (2)") {
+
+            assert(Name("ValueInUSD"))(
+              equalTo(Name("value", "in", "u", "s", "d"))
             )
           },
           test("Are have a number in the middle") {
 
             assert(Name.fromString("Nintendo64VideoGameSystem"))(
-              equalTo(Name(List("nintendo", "64", "video", "game", "system")))
+              equalTo(Name("nintendo", "64", "video", "game", "system"))
             )
           },
           test("Complete and utter nonsense") {
-            assert(Name.fromString("_-%"))(equalTo(Name(List.empty)))
+            assert(Name.fromString("_-%"))(equalTo(Name("")))
           }
         )
       ),

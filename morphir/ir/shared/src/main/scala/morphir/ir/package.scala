@@ -24,10 +24,16 @@ package object ir {
   type RecordField[+A]  = (Name, Value[A])
   type RecordFields[+A] = List[RecordField[A]]
 
-  type PatternMatchCase[+A]  = (Value.Pattern[A], Value[A])
+  type Pattern[+A] = Value.Pattern[A]
+
+  type PatternMatchCase[+A]  = (Pattern[A], Value[A])
   type PatternMatchCases[+A] = List[PatternMatchCase[A]]
 
+  type PatternList[+A] = List[Pattern[A]]
+
   type LiteralValue[+A] = Literal[A]
+
+  type ValueExprList[+A] = List[Value[A]]
 
   object implicits extends AllCodecs with AllFuzzers with NameInstances
 }

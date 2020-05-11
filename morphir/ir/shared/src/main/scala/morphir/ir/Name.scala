@@ -5,14 +5,21 @@ import morphir.ir.typeclass.instances.NameInstances
 
 import scala.annotation.tailrec
 
-final case class Name(value: List[String]) extends AnyVal {
+final case class Name private (value: List[String]) extends AnyVal {
+
   def ::(segment: String): Name =
     Name(segment :: value)
+
+  def ++(other: Name): Name = Name(value ++ other.value)
+
+  def /(other: Name): Path = Path(this, other)
 
   def mapSegments(f: String => String): Name =
     Name(value.map(f))
 
-  override def toString: String = toKebabCase
+  @inline def segments: List[String] = value
+
+  override def toString: String = toTitleCase
 
   def toCamelCase: String =
     value match {
@@ -22,17 +29,17 @@ final case class Name(value: List[String]) extends AnyVal {
     }
 
   def toKebabCase: String =
-    toHumanWords.mkString("-")
+    humanize.mkString("-")
 
   def toSnakeCase: String =
-    toHumanWords.mkString("_")
+    humanize.mkString("_")
 
   def toTitleCase: String =
     value
       .map(_.capitalize)
       .mkString("")
 
-  def toHumanWords: List[String] = {
+  def humanize: List[String] = {
     val words                        = value
     val join: List[String] => String = abbrev => abbrev.map(_.toUpperCase()).mkString("")
 
@@ -65,7 +72,7 @@ final case class Name(value: List[String]) extends AnyVal {
 object Name extends NameCodec with NameInstances {
 
   def apply(firstWord: String, otherWords: String*): Name =
-    Name(firstWord :: otherWords.toList)
+    (firstWord :: otherWords.toList).map(fromString).reduce(_ ++ _)
 
   def fromString(str: String): Name = {
     val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
@@ -88,5 +95,5 @@ object Name extends NameCodec with NameInstances {
 
   @inline def toKebabCase(name: Name): String = name.toKebabCase
 
-  @inline def toHumanWords(name: Name): List[String] = name.toHumanWords
+  @inline def toHumanWords(name: Name): List[String] = name.humanize
 }

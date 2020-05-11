@@ -1,10 +1,14 @@
 package morphir.ir
 
+import morphir.ir.typeclass.instances.QNameInstances
+
 case class QName(modulePath: Path, localName: Name) {
   def toTuple: (Path, Name) = modulePath -> localName
+
+  //override def toString: String = mod
 }
 
-object QName {
+object QName extends QNameInstances {
 
   @inline def toTuple(qname: QName): (Path, Name) = qname.toTuple
   def fromTuple(tuple: (Path, Name)): QName       = QName(tuple._1, tuple._2)

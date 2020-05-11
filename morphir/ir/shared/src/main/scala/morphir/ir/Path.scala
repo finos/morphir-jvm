@@ -1,16 +1,21 @@
 package morphir.ir
 
+import morphir.ir.typeclass.instances.PathInstances
+
 case class Path(value: List[Name]) {
   @inline def toList: List[Name] = value
 
   def mapSegments[A](fn: Name => A): List[A] =
     value.map(fn)
 
+  def allSegments: List[String] =
+    value.flatMap(n => n.value)
+
   override def toString: String =
-    value.mkString("[", ",", "]")
+    value.mkString(".")
 }
 
-object Path {
+object Path extends PathInstances {
 
   implicit val empty: Path = Path(List.empty)
 
