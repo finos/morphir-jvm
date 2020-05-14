@@ -6,7 +6,7 @@ import zio.stream._
 
 object Parser {
   trait Service {
-    def parseFiles(files: Chunk[VFile[Any]]): Stream[ParserError, VFile[Any]]
+    def parseFiles(files: Chunk[VFile]): Stream[ParserError, VFile]
   }
 
 }

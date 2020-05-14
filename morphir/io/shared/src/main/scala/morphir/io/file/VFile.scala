@@ -1,29 +1,28 @@
 package morphir.io.file
 
-import java.nio.charset.{ Charset, StandardCharsets }
-
 import zio._
 
-sealed abstract class VFile[+T] {
-  def path: UnrestrictedFsPath[T]
-  def text(encoding: Charset = StandardCharsets.UTF_8): ZIO[Any, Throwable, Option[String]]
+sealed abstract class VFile {
+  def path: VFilePath
+  def text: ZIO[Any, Throwable, Option[String]]
 }
 
 object VFile {
 
-  def apply[S](path: FilePath[S], contents: String): VFile[S] =
+  def apply(path: VFilePath, contents: String): VFile =
     VFileInternal(path, VFileContents.Text(contents))
 
-  def make[S](path: FilePath[S], contents: String): UIO[VFile[S]] = ZIO.succeed(VFile(path, contents))
-  def makeM[S](path: UIO[FilePath[S]], contents: Task[Option[String]]): UIO[VFile[S]] =
+  def make(path: VFilePath, contents: String): UIO[VFile] = ZIO.succeed(VFile(path, contents))
+
+  def makeM[S](path: UIO[VFilePath], contents: Task[Option[String]]): UIO[VFile] =
     path.map(p => VFileInternal(p, VFileContents.Delayed(contents)))
-  def makeM[S](path: FilePath[S], contents: Task[Option[String]]): UIO[VFile[S]] =
+
+  def makeM(path: VFilePath, contents: Task[Option[String]]): UIO[VFile] =
     ZIO.succeed(VFileInternal(path, VFileContents.Delayed(contents)))
 
-  private[file] final case class VFileInternal[S](path: UnrestrictedFsPath[S], contents: VFileContents)
-      extends VFile[S] {
+  private[file] final case class VFileInternal(path: VFilePath, contents: VFileContents) extends VFile {
 
-    override def text(encoding: Charset): ZIO[Any, Throwable, Option[String]] = contents match {
+    override def text: ZIO[Any, Throwable, Option[String]] = contents match {
       case VFileContents.Text(contents) => ZIO.succeed(Option(contents))
       case VFileContents.Delayed(get)   => get
     }
