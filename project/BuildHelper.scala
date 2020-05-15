@@ -155,7 +155,7 @@ object BuildHelper {
     crossScalaVersions += DottyVersion,
     scalacOptions ++= {
       if (isDotty.value)
-        Seq("-noindent")
+        Seq()
       else
         Seq()
     },
@@ -404,6 +404,17 @@ object BuildHelper {
             "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
           )
       }
+  )
+
+  def enumeratumSettings(version: String = "1.6.0") = Seq(
+    libraryDependencies ++= {
+      if (isDotty.value) Seq()
+      else
+        Seq(
+          "com.beachape" %%% "enumeratum"       % version,
+          "com.beachape" %%% "enumeratum-circe" % version
+        )
+    }
   )
 
   def testJsSettings = Seq(

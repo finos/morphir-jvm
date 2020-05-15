@@ -1,57 +1,21 @@
 package org.morphir.cli
 
-import java.nio.file.Path
-
 import com.monovore.decline._
-import org.morphir.toolbox.cli.CliCommand
-import org.morphir.toolbox.cli.commands.{ BuildCommand, WorkspaceInfoCommand }
-import zio.{ IO, ZIO }
+import org.morphir.cli.commands.{ CliCommand, ElmCompileCommand, ElmMakeCommand, HelpCommand }
+import zio._
 
 object Cli {
 
-  def parse(args: Seq[String]): IO[Help, CliCommand] =
-    ZIO.fromEither(Cli.rootCommand.parse(args))
+  def parse(args: Seq[String]): ZIO[CliEnv, Nothing, CliCommand] =
+    ZIO.fromEither(Cli.rootCommand.parse(args)).fold((help: Help) => HelpCommand(help), identity)
 
   lazy val rootCommand: Command[CliCommand] = Command("morphir", "Morphir CLI")(
-    buildCommand orElse projectCommand orElse workspaceCommand
+    elmCommand
   )
 
-  lazy val buildCommand: Opts[BuildCommand] = Opts
-    .subcommand("build", help = "Build the workspace")(
-      workspaceOpt.orNone
+  lazy val elmCommand: Opts[CliCommand] =
+    Opts.subcommand("elm", help = "Access Elm tooling")(
+      ElmMakeCommand.Cli.command orElse ElmCompileCommand.Cli.command
     )
-    .map(BuildCommand)
-
-  lazy val projectCommand: Opts[CliCommand.ProjectList] = Opts.subcommand("project", help = "Work with projects")(
-    Opts
-      .subcommand(name = "list", help = "List projects in the workspace")(
-        workspaceOpt.orNone
-      )
-      .map(CliCommand.ProjectList)
-  )
-
-  lazy val workspaceCommand: Opts[CliCommand] =
-    Opts.subcommand("workspace", help = "Work wth workspaces") {
-      val initCmd = Opts
-        .subcommand("init", help = "Initialize a workspace")(
-          workspaceOpt.orNone
-        )
-        .map(CliCommand.WorkspaceInit)
-
-      val infoCmd = Opts
-        .subcommand("info", help = "Get information about a workspace")(
-          workspaceOpt.orNone
-        )
-        .map(WorkspaceInfoCommand)
-
-      infoCmd orElse initCmd
-    }
-
-  private lazy val workspaceOpt = Opts.option[Path](
-    "workspace",
-    short = "w",
-    metavar = "workspace-path",
-    help = "The path to the workspace folder or manifest file."
-  )
 
 }
