@@ -1,8 +1,8 @@
 package morphir.io.file
 
-import zio._
-import zio.test.Assertion.{ equalTo, isSome }
-import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
+import zio.ZIO
+import zio.test._
+import zio.test.Assertion._
 
 object VFileSpec extends DefaultRunnableSpec {
   def spec = suite("VFile Spec")(
@@ -24,7 +24,19 @@ object VFileSpec extends DefaultRunnableSpec {
         )
       ),
       suite("From resource")(
-        )
+        testM("It should be possible to read a VFile from a resource")(
+          VFile.fromResource("models/hello/src/elm/Hello.elm").use { file =>
+            assertM(file.text)(isSome(equalTo("""module Hello exposing (..)
+                                                |
+                                                |
+                                                |main : String
+                                                |main =
+                                                |    "Hello World"
+                                                |
+                                                |""".stripMargin)))
+          }
+        ) //@@ zio.test.TestAspect.ignore
+      )
     )
   )
 }
