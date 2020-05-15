@@ -1,0 +1,7 @@
+{
+  "name": "GlobalCo",
+  "sourceDirectory": "src/elm",
+  "exposedModules": [
+    "OrderTaking.OrderInput"
+  ]
+}
