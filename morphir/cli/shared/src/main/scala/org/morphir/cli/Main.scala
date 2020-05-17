@@ -1,6 +1,6 @@
 package org.morphir.cli
 
-import org.morphir.cli.workspace.Workspace
+import org.morphir.workspace.Workspace
 import zio._
 import zio.clock.Clock
 import zio.console.Console

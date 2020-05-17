@@ -1,7 +1,8 @@
-package org.morphir.cli
+package org.morphir
 
-import org.morphir.cli.workspace.Workspace.ProjectDir
-import zio._
+import org.morphir.workspace.project.model.ProjectDir
+import zio.{ Has, ZIO }
+
 package object workspace {
   type Workspace = Has[Workspace.Service]
 

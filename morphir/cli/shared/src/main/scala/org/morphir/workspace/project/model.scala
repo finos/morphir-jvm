@@ -1,24 +1,12 @@
-package org.morphir.cli.workspace
+package org.morphir.workspace.project
 
 import java.nio.file.{ Path, Paths }
 
 import io.estatico.newtype.macros.newtype
-import zio._
-
+import zio.{ Task, ZIO }
 import scala.language.implicitConversions
 
-object Workspace {
-  trait Service {
-    def resolveProjectDir(maybeProjectDir: Option[ProjectDir]): UIO[ProjectDir]
-  }
-
-  val live: ULayer[Workspace] = ZLayer.succeed(LiveWorkspace())
-
-  private case class LiveWorkspace() extends Service {
-    def resolveProjectDir(maybeProjectDir: Option[ProjectDir]): UIO[ProjectDir] =
-      UIO.succeed(maybeProjectDir.getOrElse(ProjectDir.fromWorkingDir))
-  }
-
+object model {
   @newtype case class ProjectDir(rawPath: String) {
     def absolutePath: Path         = Paths.get(rawPath).toAbsolutePath
     def toAbsolutePath: Task[Path] = ZIO.effect(absolutePath)

@@ -2,7 +2,7 @@ package org.morphir.cli.commands
 
 import cats.implicits._
 import org.morphir.cli.{ CliAction, ExitCode }
-import org.morphir.cli.workspace.Workspace.{ OutputDir, ProjectDir }
+import org.morphir.workspace.project.model.{ OutputDir, ProjectDir }
 import zio._
 import zio.blocking.Blocking
 import zio.process

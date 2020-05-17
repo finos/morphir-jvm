@@ -115,6 +115,7 @@ lazy val morphirCli = crossProject(JVMPlatform)
       "dev.zio"      %% "zio-logging"         % "0.2.8",
       "dev.zio"      %% "zio-config"          % "1.0.0-RC17",
       "dev.zio"      %% "zio-config-magnolia" % "1.0.0-RC17",
+      "dev.zio"      %% "zio-config-typesafe" % "1.0.0-RC17",
       "dev.zio"      %% "zio-process"         % "0.0.3",
       "dev.zio"      %% "zio-logging"         % "0.2.8",
       "io.estatico"  %% "newtype"             % "0.4.4",
