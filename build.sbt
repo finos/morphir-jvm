@@ -35,6 +35,7 @@ addCommandAlias(
   "check",
   "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 )
+
 addCommandAlias(
   "testSdkCore",
   ";  +morphirSdkCoreJVM/test ; morphirSdkCoreJS/test"
