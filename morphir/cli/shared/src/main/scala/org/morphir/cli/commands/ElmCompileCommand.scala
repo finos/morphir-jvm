@@ -5,7 +5,7 @@ import cats.implicits._
 import io.estatico.newtype.macros.newtype
 import org.morphir.cli.CliAction
 import org.morphir.cli.commands.ElmCompileCommand._
-import org.morphir.cli.workspace.Workspace.{ OutputDir, ProjectDir }
+import org.morphir.workspace.project.model.{ OutputDir, ProjectDir }
 
 import scala.language.implicitConversions
 
