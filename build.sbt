@@ -52,7 +52,9 @@ lazy val root = project
   .aggregate(
     morphirIRJVM,
     morphirIRJS,
-    morphirCliJVM
+    morphirCliJVM,
+    morphirSdkCoreJVM,
+    morphirSdkCoreJS
   )
 
 lazy val morphirSdkCore = crossProject(JSPlatform, JVMPlatform)
@@ -82,7 +84,7 @@ lazy val morphirIR = crossProject(JVMPlatform, JSPlatform)
   .settings(buildInfoSettings("morphir.ir"))
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalameta" %%% "scalameta"     % "4.3.10",
+      "org.scalameta" %%% "scalameta"     % Versions.scalameta,
       "dev.zio"       %%% "zio-streams"   % Versions.zio,
       "io.circe"      %%% "circe-core"    % Versions.circe,
       "io.circe"      %%% "circe-generic" % Versions.circe,
@@ -110,17 +112,17 @@ lazy val morphirCli = crossProject(JVMPlatform)
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio"      %% "zio"                 % Versions.zio,
+      "dev.zio"      %% "zio-logging"         % Versions.zioLogging,
+      "dev.zio"      %% "zio-config"          % Versions.zioConfig,
+      "dev.zio"      %% "zio-config-magnolia" % Versions.zioConfig,
+      "dev.zio"      %% "zio-config-typesafe" % Versions.zioConfig,
+      "dev.zio"      %% "zio-process"         % Versions.zioProcess,
+      "dev.zio"      %% "zio-logging"         % Versions.zioLogging,
+      "io.estatico"  %% "newtype"             % Versions.newtype,
+      "com.monovore" %% "decline-effect"      % Versions.decline,
+      "com.lihaoyi"  %% "pprint"              % Versions.pprint,
       "dev.zio"      %% "zio-test"            % Versions.zio % "test",
-      "dev.zio"      %% "zio-test-sbt"        % Versions.zio % "test",
-      "dev.zio"      %% "zio-logging"         % "0.2.8",
-      "dev.zio"      %% "zio-config"          % "1.0.0-RC17",
-      "dev.zio"      %% "zio-config-magnolia" % "1.0.0-RC17",
-      "dev.zio"      %% "zio-config-typesafe" % "1.0.0-RC17",
-      "dev.zio"      %% "zio-process"         % "0.0.3",
-      "dev.zio"      %% "zio-logging"         % "0.2.8",
-      "io.estatico"  %% "newtype"             % "0.4.4",
-      "com.monovore" %% "decline-effect"      % "1.2.0",
-      "com.lihaoyi"  %% "pprint"              % "0.5.9"
+      "dev.zio"      %% "zio-test-sbt"        % Versions.zio % "test"
     )
   )
   .settings(macroExpansionSettings)
@@ -128,7 +130,7 @@ lazy val morphirCli = crossProject(JVMPlatform)
 
 lazy val morphirCliJVM = morphirCli.jvm.settings(
   libraryDependencies ++= Seq(
-    "io.github.soc" % "directories" % "11"
+    "io.github.soc" % "directories" % Versions.directories
   )
 )
 

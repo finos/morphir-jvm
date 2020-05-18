@@ -14,6 +14,10 @@ sealed abstract class Type[+A](kind: TypeExprKind) extends Expr[TypeExprKind, A]
 
 object Type extends typeCodec.TypeCoproductCodec {
 
+  def record[A](fieldTypes: Field[A]*)(attributes: A): Record[A] = Record(attributes, fieldTypes.toList)
+  def record(fieldTypes: Field[scala.Unit]*): Record[scala.Unit] = Record((), fieldTypes.toList)
+  def field[A](name: Name, fieldType: Type[A]): Field[A]         = Field(name, fieldType)
+
   final case class Variable[+A](attributes: A, name: Name) extends Type[A](TypeExprKind.Variable) {
     override def mapAttributes[B](f: A => B): Type[B] = Variable[B](f(attributes), name)
   }
