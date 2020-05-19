@@ -45,7 +45,23 @@ object Deps {
   }
 }
 
-trait MorphirPublishModule extends GitVersionedPublishModule {}
+trait MorphirPublishModule extends GitVersionedPublishModule {
+  def packageDescription = T(artifactName())
+  def pomSettings = PomSettings(
+    description = packageDescription(),
+    organization = "org.morphir",
+    url = "https://github.com/MorganStanley/morphir-jvm",
+    licenses = Seq(License.`Apache-2.0`),
+    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
+    developers = Seq(
+      Developer(
+        "DamianReeves",
+        "Damian Reeves",
+        "https://github.com/DamianReeves"
+      )
+    )
+  )
+}
 
 trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixModule with TpolecatModule {
 
