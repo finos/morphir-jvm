@@ -406,7 +406,7 @@ object BuildHelper {
       }
   )
 
-  def enumeratumSettings(version: String = "1.6.0") = Seq(
+  def enumeratumSettings(version: String = Dependencies.Versions.enumeratum) = Seq(
     libraryDependencies ++= {
       if (isDotty.value) Seq()
       else

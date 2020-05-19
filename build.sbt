@@ -51,6 +51,7 @@ lazy val root = project
   .aggregate(
     morphirIRJVM,
     morphirIRJS,
+    morphirScalaJVM,
     morphirCliJVM,
     morphirSdkCoreJVM,
     morphirSdkCoreJS
@@ -83,13 +84,12 @@ lazy val morphirIR = crossProject(JVMPlatform, JSPlatform)
   .settings(buildInfoSettings("morphir.ir"))
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalameta" %%% "scalameta"     % Versions.scalameta,
-      "dev.zio"       %%% "zio-streams"   % Versions.zio,
-      "io.circe"      %%% "circe-core"    % Versions.circe,
-      "io.circe"      %%% "circe-generic" % Versions.circe,
-      "io.circe"      %%% "circe-parser"  % Versions.circe,
-      "dev.zio"       %%% "zio-test"      % Versions.zio,
-      "dev.zio"       %%% "zio-test-sbt"  % Versions.zio % "test"
+      "dev.zio"  %%% "zio-streams"   % Versions.zio,
+      "io.circe" %%% "circe-core"    % Versions.circe,
+      "io.circe" %%% "circe-generic" % Versions.circe,
+      "io.circe" %%% "circe-parser"  % Versions.circe,
+      "dev.zio"  %%% "zio-test"      % Versions.zio,
+      "dev.zio"  %%% "zio-test-sbt"  % Versions.zio % "test"
     )
   )
   .settings(enumeratumSettings())
@@ -97,10 +97,27 @@ lazy val morphirIR = crossProject(JVMPlatform, JSPlatform)
 
 lazy val morphirIRJVM = morphirIR.jvm
   .settings(dottySettings)
-//.settings(zioNioSettings("1.0.0-RC6"))
 
 lazy val morphirIRJS = morphirIR.js
   .settings(testJsSettings)
+
+lazy val morphirScala = crossProject(JVMPlatform)
+  .in(file("morphir/scala"))
+  .dependsOn(morphirIR)
+  .settings(stdSettings("morphir-scala", Some(Seq(ScalaVersions.Scala212, ScalaVersions.Scala213))))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("org.morphir.lang.scala"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalameta" %%% "scalameta"    % Versions.scalameta,
+      "dev.zio"       %%% "zio-test"     % Versions.zio,
+      "dev.zio"       %%% "zio-test-sbt" % Versions.zio % "test"
+    )
+  )
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
+
+lazy val morphirScalaJVM = morphirIR.jvm
+  .settings(dottySettings)
 
 lazy val morphirCli = crossProject(JVMPlatform)
   .in(file("morphir/cli"))

@@ -3,7 +3,7 @@ package org.morphir.workspace.config
 import java.io.File
 
 import com.typesafe.config.ConfigFactory
-import izumi.reflect.Tags.Tag
+import izumi.reflect.Tag
 import zio.config.magnolia.DeriveConfigDescriptor.descriptor
 import zio.config.typesafe._
 import zio.config.{ ConfigSource, _ }
