@@ -1,7 +1,6 @@
 package org.morphir.sdk
 
-import scala.language.implicitConversions
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 object Maybe {
 
@@ -15,7 +14,7 @@ object Maybe {
     @inline final def orNull[A1 >: A](implicit ev: Null <:< A1): A1 =
       this getOrElse ev(null)
 
-    def isEmpty: Boolean = this eq Nothing
+    def isEmpty: Boolean   = this eq Nothing
     def isDefined: Boolean = !isEmpty
 
     @inline final def fold[B](ifEmpty: => B)(f: A => B): B =
@@ -37,9 +36,9 @@ object Maybe {
     def withFilter(fn: A => Boolean): WithFilter = new WithFilter((fn))
 
     /** We need a whole WithFilter class to honor the "doesn't create a new
-      *  collection" contract even though it seems unlikely to matter much in a
-      *  collection with max size 1.
-      */
+     *  collection" contract even though it seems unlikely to matter much in a
+     *  collection with max size 1.
+     */
     class WithFilter(p: A => Boolean) {
       def map[B](f: A => B): Maybe[B] = self filter p map f
       def flatMap[B](f: A => Maybe[B]): Maybe[B] =
@@ -66,7 +65,7 @@ object Maybe {
       if (!isEmpty) pf.lift(this.get) else None
 
     @inline final def orElse[B >: A](
-        alternative: => Maybe[B]
+      alternative: => Maybe[B]
     ): Maybe[B] =
       if (isEmpty) alternative else this
 
@@ -76,15 +75,14 @@ object Maybe {
       if (isEmpty || that.isEmpty) Nothing else Just((this.get, that.get))
 
     final def unzip[A1, A2](
-        implicit asPair: A <:< (A1, A2)
-    ): (Maybe[A1], Maybe[A2]) = {
+      implicit asPair: A <:< (A1, A2)
+    ): (Maybe[A1], Maybe[A2]) =
       if (isEmpty)
         (Nothing, Nothing)
       else {
         val e = asPair(this.get)
         (Just(e._1), Just(e._2))
       }
-    }
 
     def iterator: Iterator[A] =
       if (isEmpty) collection.Iterator.empty
@@ -126,7 +124,7 @@ object Maybe {
   val nothing: Maybe[scala.Nothing] = Nothing
 
   def just[A](value: A): Maybe[A] = Some(value)
-  def empty[A]: Maybe[A] = Nothing
+  def empty[A]: Maybe[A]          = Nothing
 
   def map[A, A1](fn: A => A1)(maybe: Maybe[A]): Maybe[A1] =
     maybe match {
@@ -135,7 +133,7 @@ object Maybe {
     }
 
   def map2[A, B, V](
-      fn: A => B => V
+    fn: A => B => V
   )(maybeA: Maybe[A])(maybeB: Maybe[B]): Maybe[V] =
     (maybeA, maybeB) match {
       case (Just(a), Just(b)) => Just(fn(a)(b))
@@ -143,7 +141,7 @@ object Maybe {
     }
 
   def map3[A, B, C, V](
-      fn: A => B => C => V
+    fn: A => B => C => V
   ): Maybe[A] => Maybe[B] => Maybe[C] => Maybe[
     V
   ] =
@@ -156,7 +154,7 @@ object Maybe {
           }
 
   def map4[A, B, C, D, V](
-      fn: A => B => C => D => V
+    fn: A => B => C => D => V
   ): Maybe[A] => Maybe[B] => Maybe[C] => Maybe[
     D
   ] => Maybe[V] =
@@ -170,7 +168,7 @@ object Maybe {
             }
 
   def map5[A, B, C, D, E, V](
-      fn: A => B => C => D => E => V
+    fn: A => B => C => D => E => V
   ): Maybe[A] => Maybe[B] => Maybe[C] => Maybe[
     D
   ] => Maybe[E] => Maybe[V] =
@@ -186,7 +184,7 @@ object Maybe {
               }
 
   def andThen[A, B](
-      fn: A => Maybe[B]
+    fn: A => Maybe[B]
   )(maybeA: Maybe[A]): Maybe[B] =
     maybeA match {
       case Just(value) => fn(value)
@@ -194,7 +192,7 @@ object Maybe {
     }
 
   def withDefault[A, A1 >: A](
-      defaultValue: A1
+    defaultValue: A1
   )(maybeValue: Maybe[A]): A1 =
     maybeValue match {
       case _: Maybe.Nothing.type => defaultValue

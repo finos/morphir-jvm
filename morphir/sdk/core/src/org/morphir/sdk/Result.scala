@@ -1,7 +1,6 @@
 package org.morphir.sdk
 
 import Maybe._
-import scala.language.implicitConversions
 
 sealed abstract class Result[+E, +A] extends Product with Serializable {
 
@@ -67,7 +66,7 @@ object Result {
     (result: Result[E, A]) => result.map(fn)
 
   def map2[E, A, B, V](
-      fn: A => B => V
+    fn: A => B => V
   ): Result[E, A] => Result[E, B] => Result[E, V] =
     (resA: Result[E, A]) =>
       (resB: Result[E, B]) =>
@@ -78,7 +77,7 @@ object Result {
         }
 
   def map3[E, A, B, C, V](
-      fn: A => B => C => V
+    fn: A => B => C => V
   ): Result[E, A] => Result[E, B] => Result[E, C] => Result[E, V] =
     (resA: Result[E, A]) =>
       (resB: Result[E, B]) =>
@@ -91,7 +90,7 @@ object Result {
           }
 
   def map4[E, A, B, C, D, V](
-      fn: A => B => C => D => V
+    fn: A => B => C => D => V
   ): Result[E, A] => Result[E, B] => Result[E, C] => Result[E, D] => Result[
     E,
     V
@@ -109,7 +108,7 @@ object Result {
             }
 
   def map5[E, A1, A2, A3, A4, A5, V](
-      fn: A1 => A2 => A3 => A4 => A5 => V
+    fn: A1 => A2 => A3 => A4 => A5 => V
   ): Result[E, A1] => Result[E, A2] => Result[E, A3] => Result[E, A4] => Result[
     E,
     A5

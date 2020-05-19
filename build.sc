@@ -121,7 +121,7 @@ trait MorphirTestModule extends ScalaModule with TestModule {
 object morphir extends Module {
   import Deps._
   object ir extends Module {
-    object jvm extends Cross[JvmMorphirIrModule](Deps.Versions.scala212, Deps.Versions.scala213)
+    object jvm extends Cross[JvmMorphirIrModule](Versions.scala212, Versions.scala213)
     class JvmMorphirIrModule(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
@@ -139,10 +139,32 @@ object morphir extends Module {
       }
     }
   }
-//   object sdk extends Module {
 
-//     object core extends Module
-//   }
+  object scala extends Module {
+
+    object jvm extends Cross[JvmMorphirScalaModule](Versions.scala212, Versions.scala213)
+    class JvmMorphirScalaModule(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
+      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+      def ivyDeps = Agg(
+        ivy"org.scalameta::scalameta:${Versions.scalameta}"
+      )
+
+      object test extends Tests {
+        def crossScalaVersion = JvmMorphirScalaModule.this.crossScalaVersion
+      }
+    }
+  }
+  object sdk extends Module {
+
+    object core extends Module {
+      object jvm extends Cross[JvmMorphirSdkCore](Versions.scala212, Versions.scala211, Versions.scala213)
+      class JvmMorphirSdkCore(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
+        object test extends Tests {
+          def crossScalaVersion = JvmMorphirSdkCore.this.crossScalaVersion
+        }
+      }
+    }
+  }
 
 //   object workspace extends Module
 }
