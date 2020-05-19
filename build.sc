@@ -168,10 +168,45 @@ object morphir extends Module {
     }
   }
 
+  object workspace extends Module {
+    object jvm extends Cross[JvmMorphirWorkspace](Versions.scala212, Versions.scala213)
+    class JvmMorphirWorkspace(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
+      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+      def ivyDeps = Agg(
+        ivy"dev.zio::zio:${Versions.zio}",
+        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+        ivy"dev.zio::zio-config:${Versions.zioConfig}",
+        ivy"dev.zio::zio-config-magnolia:${Versions.zioConfig}",
+        ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
+        ivy"dev.zio::zio-process:${Versions.zioProcess}",
+        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+        ivy"io.estatico::newtype:${Versions.newtype}",
+        ivy"com.monovore::decline-effect:${Versions.decline}",
+        ivy"com.lihaoyi::pprint:${Versions.pprint}",
+        ivy"org.scalameta::scalameta:${Versions.scalameta}"
+      )
+
+      def scalacOptions = super.scalacOptions() ++ (
+        if (crossScalaVersion.startsWith("2.13")) Seq("-Ymacro-annotations") else Seq.empty
+      )
+
+      def scalacPluginIvyDeps =
+        super.scalacPluginIvyDeps() ++
+          (if (crossScalaVersion.startsWith("2.12"))
+             Agg(ivy"org.scalamacros:::paradise:${Versions.macroParadise}")
+           else
+             Agg.empty)
+
+      object test extends Tests {
+        def crossScalaVersion = JvmMorphirWorkspace.this.crossScalaVersion
+      }
+    }
+  }
+
   object cli extends Module {
     object jvm extends Cross[JvmMorphirCli](Versions.scala212, Versions.scala213)
     class JvmMorphirCli(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
-      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion), morphir.workspace.jvm(crossScalaVersion))
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-logging:${Versions.zioLogging}",
