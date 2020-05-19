@@ -4,8 +4,6 @@ import io.estatico.newtype.macros.newtype
 import org.morphir.workspace.project.ElmProject.{ ExposedModuleNames, PackageName }
 import org.morphir.workspace.config.project.SourceDirectory
 
-import scala.language.implicitConversions
-
 case class ElmProject(name: PackageName, sourceDirectory: SourceDirectory, exposedModules: ExposedModuleNames) {}
 
 object ElmProject {

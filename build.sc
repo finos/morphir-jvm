@@ -29,18 +29,19 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-    val zio         = "1.0.0-RC19"
-    val zioConfig   = "1.0.0-RC18"
-    val zioLogging  = "0.2.9"
-    val zioNio      = "1.0.0-RC6"
-    val zioProcess  = "0.0.4"
-    val circe       = "0.13.0"
-    val newtype     = "0.4.4"
-    val decline     = "1.2.0"
-    val pprint      = "0.5.9"
-    val scalameta   = "4.3.10"
-    val directories = "11"
-    val enumeratum  = "1.6.1"
+    val zio           = "1.0.0-RC19"
+    val zioConfig     = "1.0.0-RC18"
+    val zioLogging    = "0.2.9"
+    val zioNio        = "1.0.0-RC6"
+    val zioProcess    = "0.0.4"
+    val circe         = "0.13.0"
+    val newtype       = "0.4.4"
+    val decline       = "1.2.0"
+    val pprint        = "0.5.9"
+    val scalameta     = "4.3.10"
+    val directories   = "11"
+    val enumeratum    = "1.6.1"
+    val macroParadise = "2.1.1"
   }
 }
 
@@ -72,6 +73,7 @@ trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixM
 
 trait CommonJvmModule extends MorphirCommonModule {
   def platformSegment = "jvm"
+  def crossScalaVersion: String
 
   def millSourcePath = super.millSourcePath / os.up
   trait Tests extends super.Tests with MorphirTestModule {
@@ -166,5 +168,39 @@ object morphir extends Module {
     }
   }
 
-//   object workspace extends Module
+  object cli extends Module {
+    object jvm extends Cross[JvmMorphirCli](Versions.scala212, Versions.scala213)
+    class JvmMorphirCli(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
+      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+      def ivyDeps = Agg(
+        ivy"dev.zio::zio:${Versions.zio}",
+        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+        ivy"dev.zio::zio-config:${Versions.zioConfig}",
+        ivy"dev.zio::zio-config-magnolia:${Versions.zioConfig}",
+        ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
+        ivy"dev.zio::zio-process:${Versions.zioProcess}",
+        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+        ivy"io.estatico::newtype:${Versions.newtype}",
+        ivy"com.monovore::decline-effect:${Versions.decline}",
+        ivy"com.lihaoyi::pprint:${Versions.pprint}",
+        ivy"org.scalameta::scalameta:${Versions.scalameta}"
+      )
+
+      def scalacOptions = super.scalacOptions() ++ (
+        if (crossScalaVersion.startsWith("2.13")) Seq("-Ymacro-annotations") else Seq.empty
+      )
+
+      def scalacPluginIvyDeps =
+        super.scalacPluginIvyDeps() ++
+          (if (crossScalaVersion.startsWith("2.12"))
+             Agg(ivy"org.scalamacros:::paradise:${Versions.macroParadise}")
+           else
+             Agg.empty)
+
+      object test extends Tests {
+        def crossScalaVersion = JvmMorphirCli.this.crossScalaVersion
+      }
+    }
+  }
 }
+//   object workspace extends Module

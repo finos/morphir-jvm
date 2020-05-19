@@ -5,8 +5,6 @@ import java.nio.file.{ Path, Paths }
 import io.estatico.newtype.macros.newtype
 import zio._
 
-import scala.language.implicitConversions
-
 object Workspace {
   trait Service {
     def resolveProjectDir(maybeProjectDir: Option[ProjectDir]): UIO[ProjectDir]

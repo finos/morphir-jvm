@@ -3,8 +3,6 @@ package org.morphir.workspace.config
 import io.estatico.newtype.macros.newtype
 import zio.config._, ConfigDescriptor._
 
-import scala.language.implicitConversions
-
 object project {
 
   final case class ProjectProperties(sourceDirectory: SourceDirectory)

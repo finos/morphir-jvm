@@ -7,8 +7,6 @@ import org.morphir.cli.CliAction
 import org.morphir.cli.commands.ElmCompileCommand._
 import org.morphir.workspace.project.model.{ OutputDir, ProjectDir }
 
-import scala.language.implicitConversions
-
 case class ElmCompileCommand(
   name: PackageName,
   sourceDirectory: SourceDirectory,

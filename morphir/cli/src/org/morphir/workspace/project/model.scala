@@ -4,7 +4,6 @@ import java.nio.file.{ Path, Paths }
 
 import io.estatico.newtype.macros.newtype
 import zio.{ Task, ZIO }
-import scala.language.implicitConversions
 
 object model {
   @newtype case class ProjectDir(rawPath: String) {
