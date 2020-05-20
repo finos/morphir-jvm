@@ -17,11 +17,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: Pull all history with tags for correct versionning
       run: git fetch --prune --unshallow
-    - name: Checks
-      run: |
-        git config --global user.name "CI"
-        ./mill all __.checkFormat "__.fix --check" __.docJar __.test
-
     - name: Set up JDK 1.8
       uses: actions/setup-java@v1
       with:
@@ -52,7 +47,7 @@ jobs:
     - name: Publish
       if: github.ref == 'refs/heads/master' || github.event_name == 'release'
       run: |
-        echo "${{ secrets.PGP_SECRET }}" > private.key0
+        echo "${{ secrets.PGP_SECRET }}" > private.key
         gpg --batch --yes --import private.key
         rm private.key
 
