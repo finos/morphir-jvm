@@ -26,19 +26,16 @@ object ResultSpec extends DefaultRunnableSpec {
     ),
     suite("Calling flatMap")(
       testM("Given an Ok value, then it should invoke the mapping function") {
-        check(Gen.alphaNumericString, Gen.int(1, 200)) {
-          (product, quantity) =>
-            val orderItem = OrderItem(product, quantity)
-            val input = Result.Ok(orderItem).withErr[String]
-            assert(
-              input.flatMap((oi: OrderItem) =>
-                Result.Ok(Product(oi.product)).withErr[String]
-              )
-            )(
-              equalTo(
-                Result.Ok(Product(product)).withErr[String]
-              )
+        check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
+          val orderItem = OrderItem(product, quantity)
+          val input     = Result.Ok(orderItem).withErr[String]
+          assert(
+            input.flatMap((oi: OrderItem) => Result.Ok(Product(oi.product)).withErr[String])
+          )(
+            equalTo(
+              Result.Ok(Product(product)).withErr[String]
             )
+          )
         }
       },
       test("Given an Err value, then it should return the original error") {
@@ -50,19 +47,16 @@ object ResultSpec extends DefaultRunnableSpec {
     ),
     suite("Calling andThen")(
       testM("Given an Ok value, then it should invoke the mapping function") {
-        check(Gen.alphaNumericString, Gen.int(1, 200)) {
-          (product, quantity) =>
-            val orderItem = OrderItem(product, quantity)
-            val input = Result.Ok(orderItem).withErr[String]
-            assert(
-              Result.andThen((oi: OrderItem) =>
-                Result.Ok(Product(oi.product)).withErr[String]
-              )(input)
-            )(
-              equalTo(
-                Result.Ok(Product(product)).withErr[String]
-              )
+        check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
+          val orderItem = OrderItem(product, quantity)
+          val input     = Result.Ok(orderItem).withErr[String]
+          assert(
+            Result.andThen((oi: OrderItem) => Result.Ok(Product(oi.product)).withErr[String])(input)
+          )(
+            equalTo(
+              Result.Ok(Product(product)).withErr[String]
             )
+          )
         }
       },
       test("Given an Err value, then it should return the original error") {

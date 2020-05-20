@@ -1,6 +1,6 @@
 package org.morphir.sdk
 
-import org.morphir.sdk.NonEmptyListModule.NonEmptyList.{Cons, Single}
+import org.morphir.sdk.NonEmptyListModule.NonEmptyList.{ Cons, Single }
 
 import scala.annotation.tailrec
 
@@ -15,8 +15,7 @@ object NonEmptyListModule {
   }
 
   object NonEmptyList {
-    final case class Cons[+A](head: A, tail: NonEmptyList[A])
-        extends NonEmptyList[A]
-    final case class Single[+A](head: A) extends NonEmptyList[A]
+    final case class Cons[+A](head: A, tail: NonEmptyList[A]) extends NonEmptyList[A]
+    final case class Single[+A](head: A)                      extends NonEmptyList[A]
   }
 }

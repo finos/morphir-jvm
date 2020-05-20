@@ -7,20 +7,20 @@ object CharSpec extends DefaultRunnableSpec {
   def spec = suite("CharSpec")(
     suite("Char.toCode specs")(
       toCodeTests(
-        Char.from('A') -> 65,
-        Char.from('B') -> 66,
+        Char.from('A')     -> 65,
+        Char.from('B')     -> 66,
         Char.from(0x1F603) -> 0x1F603,
-        Char.from(120506) -> 0x1D6BA
+        Char.from(120506)  -> 0x1D6BA
       ): _*
     ),
     suite("Char.isUpper specs")(
       isUpperTests(
-        Char.from('A') -> true,
-        Char.from('B') -> true,
-        Char.from('Z') -> true,
-        Char.from('0') -> false,
-        Char.from('a') -> false,
-        Char.from('-') -> false,
+        Char.from('A')     -> true,
+        Char.from('B')     -> true,
+        Char.from('Z')     -> true,
+        Char.from('0')     -> false,
+        Char.from('a')     -> false,
+        Char.from('-')     -> false,
         Char.from(0x1D6BA) -> false
       ): _*
     ),
@@ -92,7 +92,7 @@ object CharSpec extends DefaultRunnableSpec {
         s"Given a character calliing isHexDigit should return true only for hex digits"
       ) {
         check(Gen.anyUnicodeChar) { input =>
-          val sut = Char.from(input)
+          val sut      = Char.from(input)
           val expected = "0123456789abcdefABCDEF".contains(input)
           assert(Char.isHexDigit(sut))(equalTo(expected))
         }

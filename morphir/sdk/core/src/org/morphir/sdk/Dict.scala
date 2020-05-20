@@ -4,7 +4,7 @@ import Maybe._
 
 object Dict {
   sealed abstract class Dict[K, +V]
-  private case object EmptyDict extends Dict[Any, Nothing]
+  private case object EmptyDict                              extends Dict[Any, Nothing]
   private case class DictImpl[K, +V](val wrapped: Map[K, V]) extends Dict[K, V]
 
   def empty[K, V]: Dict[K, V] = EmptyDict.asInstanceOf[Dict[K, V]]

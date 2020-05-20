@@ -8,7 +8,7 @@ package object decorators {
     new IteratorDecorator[A](it)
 
   implicit def IterableDecorator[Repr](
-      coll: Repr
+    coll: Repr
   )(implicit traversable: IsTraversableLike[Repr]) =
     new IterableDecorator(traversable.conversion(coll))
 }

@@ -2,10 +2,7 @@ package org.morphir.sdk
 
 import org.morphir.sdk.Maybe.Maybe
 
-private[sdk] trait MaybeLike[+A]
-    extends IterableOnce[A]
-    with Product
-    with Serializable
+private[sdk] trait MaybeLike[+A] extends IterableOnce[A] with Product with Serializable
 
 private[sdk] object MaybeLike {
 

@@ -16,11 +16,11 @@ object Char {
     isLower(ch) || isUpper(ch) || isDigit(ch)
 
   /**
-    * Detect upper case ASCII characters.
-    *
-    * @param ch a character
-    * @return
-    */
+   * Detect upper case ASCII characters.
+   *
+   * @param ch a character
+   * @return
+   */
   def isUpper(ch: Char): Boolean = ch match {
     case UnicodeChar(code) => code <= 0x5A && 0x41 <= code
   }
@@ -34,11 +34,11 @@ object Char {
   }
 
   /**
-    * Detect octal digits `01234567`
-    *
-    * @param ch
-    * @return
-    */
+   * Detect octal digits `01234567`
+   *
+   * @param ch
+   * @return
+   */
   def isOctDigit(ch: Char): Boolean = ch match {
     case UnicodeChar(code) => code <= 0x37 && 0x30 <= code
   }
@@ -68,6 +68,6 @@ object Char {
     UnicodeChar(codePoint)
 
   def from(ch: scala.Char): Char = UnicodeChar(ch.toInt)
-  def from(ch: Int): Char = UnicodeChar(ch)
+  def from(ch: Int): Char        = UnicodeChar(ch)
 
 }

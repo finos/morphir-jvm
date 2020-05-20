@@ -68,15 +68,15 @@ object MaybeSpec extends DefaultRunnableSpec {
       ),
       suite("Foreach spec")(
         test("Given a Just foreach should execute the given function") {
-          var entries = List.empty[String]
-          def push(entry: String) = entries = entry :: entries
+          var entries              = List.empty[String]
+          def push(entry: String)  = entries = entry :: entries
           val maybe: Maybe[String] = Maybe.just("Hello")
           maybe.foreach(push)
           assert(entries)(equalTo(List("Hello")))
         },
         test("Given a Nothing foreach should NOT execute the given function") {
-          var entries = List.empty[String]
-          def push(entry: String) = entries = entry :: entries
+          var entries              = List.empty[String]
+          def push(entry: String)  = entries = entry :: entries
           val maybe: Maybe[String] = Maybe.Nothing
           maybe.foreach(push)
           assert(entries)(equalTo(List.empty))
@@ -84,8 +84,8 @@ object MaybeSpec extends DefaultRunnableSpec {
       ),
       suite("For comprehension spec")(
         test("Basic for loop should be supported") {
-          var entries = List.empty[String]
-          def push(entry: String) = entries = entry :: entries
+          var entries              = List.empty[String]
+          def push(entry: String)  = entries = entry :: entries
           val maybe: Maybe[String] = Maybe.just("Hello")
           for {
             m <- maybe
@@ -100,14 +100,13 @@ object MaybeSpec extends DefaultRunnableSpec {
           assert(result)(equalTo(Maybe.Just(84)))
         },
         testM("Multiple generators should be supported") {
-          check(Gen.alphaNumericString, Gen.alphaNumericString) {
-            (part1, part2) =>
-              val result = for {
-                a <- Maybe.Just(part1)
-                b <- Maybe.Just(part2)
-              } yield s"$a-$b"
+          check(Gen.alphaNumericString, Gen.alphaNumericString) { (part1, part2) =>
+            val result = for {
+              a <- Maybe.Just(part1)
+              b <- Maybe.Just(part2)
+            } yield s"$a-$b"
 
-              assert(result)(equalTo(Maybe.just(s"$part1-$part2")))
+            assert(result)(equalTo(Maybe.just(s"$part1-$part2")))
           }
         },
         test("if expressions shoud be supported") {
