@@ -140,7 +140,12 @@ object morphir extends Module {
   import Deps._
   object ir extends Module {
     object jvm extends Cross[JvmMorphirIrModule](Versions.scala212, Versions.scala213)
-    class JvmMorphirIrModule(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
+    class JvmMorphirIrModule(val crossScalaVersion: String)
+        extends CrossScalaModule
+        with CommonJvmModule
+        with MorphirPublishModule {
+
+      def artifactName = "morphir-ir"
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
@@ -161,8 +166,12 @@ object morphir extends Module {
   object scala extends Module {
 
     object jvm extends Cross[JvmMorphirScalaModule](Versions.scala212, Versions.scala213)
-    class JvmMorphirScalaModule(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
-      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+    class JvmMorphirScalaModule(val crossScalaVersion: String)
+        extends CrossScalaModule
+        with CommonJvmModule
+        with MorphirPublishModule {
+      def artifactName = "morphir-scala"
+      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
       def ivyDeps = Agg(
         ivy"org.scalameta::scalameta:${Versions.scalameta}"
       )
@@ -176,7 +185,12 @@ object morphir extends Module {
 
     object core extends Module {
       object jvm extends Cross[JvmMorphirSdkCore](Versions.scala212, Versions.scala211, Versions.scala213)
-      class JvmMorphirSdkCore(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
+      class JvmMorphirSdkCore(val crossScalaVersion: String)
+          extends CrossScalaModule
+          with CommonJvmModule
+          with MorphirPublishModule {
+
+        def artifactName = "morphir-sdk-core"
         object test extends Tests {
           def crossScalaVersion = JvmMorphirSdkCore.this.crossScalaVersion
         }
@@ -186,8 +200,12 @@ object morphir extends Module {
 
   object workspace extends Module {
     object jvm extends Cross[JvmMorphirWorkspace](Versions.scala212, Versions.scala213)
-    class JvmMorphirWorkspace(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
-      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+    class JvmMorphirWorkspace(val crossScalaVersion: String)
+        extends CrossScalaModule
+        with CommonJvmModule
+        with MorphirPublishModule {
+      def artifactName = "morphir-workspace"
+      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-logging:${Versions.zioLogging}",
@@ -221,8 +239,12 @@ object morphir extends Module {
 
   object cli extends Module {
     object jvm extends Cross[JvmMorphirCli](Versions.scala212, Versions.scala213)
-    class JvmMorphirCli(val crossScalaVersion: String) extends CrossScalaModule with CommonJvmModule {
-      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion), morphir.workspace.jvm(crossScalaVersion))
+    class JvmMorphirCli(val crossScalaVersion: String)
+        extends CrossScalaModule
+        with CommonJvmModule
+        with MorphirPublishModule {
+      def artifactName = "morphir-cli"
+      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion), morphir.workspace.jvm(crossScalaVersion))
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-logging:${Versions.zioLogging}",
