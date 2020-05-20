@@ -29,7 +29,7 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-    val zio           = "1.0.0-RC19"
+    val zio           = "1.0.0-RC19-2"
     val zioConfig     = "1.0.0-RC18"
     val zioLogging    = "0.2.9"
     val zioNio        = "1.0.0-RC6"

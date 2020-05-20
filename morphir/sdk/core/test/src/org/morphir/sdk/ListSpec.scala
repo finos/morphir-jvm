@@ -1,7 +1,9 @@
 package org.morphir.sdk
 
+import zio.duration._
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect.timeout
 
 object ListSpec extends DefaultRunnableSpec {
   def spec = suite("ListSpec")(
@@ -92,7 +94,7 @@ object ListSpec extends DefaultRunnableSpec {
         val sut = List("3", "hi", "12", "4th", "May")
         assert(List.filterMap(String.toInt)(sut))(equalTo(List(3, 12)))
       }
-    ),
+    ) @@ timeout(10.seconds),
     suite("List.foldl spec")(
       test("foldl should reduce a list from the left") {
         assert(List.foldl(List.cons[Int])(List.empty[Int])(List(1, 2, 3)))(

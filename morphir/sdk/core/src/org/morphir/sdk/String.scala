@@ -3,7 +3,7 @@ package org.morphir.sdk
 import org.morphir.sdk.Maybe.Maybe
 
 object String {
-  type String = ScalaString
+  type String = scala.Predef.String
 
   @inline def isEmpty(str: String): Boolean = str.isEmpty()
 
@@ -14,7 +14,7 @@ object String {
   def repeat(times: Int, str: String): String = Array.fill[String](times)(str).mkString
 
   @inline def replace(literal: String, replacement: String, target: String): String =
-    target.replaceAllLiterally(literal, replacement)
+    target.replace(literal, replacement)
 
   @inline def fromInt(int: Int): String =
     int.toString
@@ -25,10 +25,15 @@ object String {
 
   @inline def concat(strings: List[String]): String = strings.mkString
 
-  @inline def split(sep: String, target: String): String = target.split(sep) //TODO: These aren't exactly the same
+  @inline def split(sep: String, target: String): List[String] =
+    target.split(sep).toList //TODO: These aren't exactly the same
 
-  @inline def toInt(text: String): Maybe[Int] =
-    StringOps.toInt(text)
+  def toInt(text: String): Maybe[Int] =
+    try {
+      Maybe.just(text.toInt)
+    } catch {
+      case _: NumberFormatException => Maybe.nothing
+    }
 
   @inline def toUpper(text: String): String =
     text.toUpperCase()
@@ -38,7 +43,7 @@ object String {
 
   @inline def trim(text: String): String = text.trim()
 
-  implicit class StringOps(val self: String) extends AnyVal {
+  implicit class StringOps(private val self: String) extends AnyVal {
     def ++(that: String): String = self + that
   }
 }

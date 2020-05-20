@@ -113,6 +113,7 @@ object ConfigLayer {
     valueDelimiter: Option[Char]
   ): Task[ConfigSource] =
     for {
+      //scalafix:off
       properties <- ZIO.bracket(
                      ZIO.effect(getClass.getResourceAsStream(file))
                    )(r => ZIO.effectTotal(if (r != null) r.close())) { inputStream =>
@@ -124,6 +125,7 @@ object ConfigLayer {
                        properties
                      }
                    }
+      //scalafix:on
     } yield ConfigSource.fromProperties(
       properties,
       file,

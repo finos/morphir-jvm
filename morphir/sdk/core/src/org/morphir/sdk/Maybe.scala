@@ -11,6 +11,11 @@ object Maybe {
     @inline final def getOrElse[B >: A](default: => B): B =
       if (isEmpty) default else this.get
 
+    @SuppressWarnings(
+      Array(
+        "scalafix:DisableSyntax.null"
+      )
+    )
     @inline final def orNull[A1 >: A](implicit ev: Null <:< A1): A1 =
       this getOrElse ev(null)
 
@@ -111,7 +116,8 @@ object Maybe {
   }
 
   case object Nothing extends Maybe[scala.Nothing] {
-    def get: scala.Nothing = throw new NoSuchElementException("Nothing.get")
+
+    def get: scala.Nothing = throw new NoSuchElementException("Nothing.get") //scalafix:ok
 
     def map[B](fn: scala.Nothing => B): Maybe[B] = this
 
