@@ -1,15 +1,23 @@
 package morphir.ir
 
-import morphir.ir.MorphirPackage.{ PackagePath, Specification }
+import io.estatico.newtype.macros.newtype
 
-case class MorphirPackage[+A](
-  dependencies: Map[PackagePath, Specification[A]],
-  modules: Map[ModulePath, AccessControlled[Module.Definition[A]]]
-) {
-  def toPackageDefinition: PackageDefinition[A] = Package.Definition(dependencies, modules)
-}
-object MorphirPackage {
-  final case class PackagePath(value: Path) extends AnyVal
+object PackageModule {
+
+  @newtype case class PackagePath(value: Path)
+
+  sealed trait PackageRef
+  object PackageRef {
+    case object ThisPackage                                        extends PackageRef
+    final case class PackageDependency(toPackagePath: PackagePath) extends PackageRef
+  }
+
+  case class Pkg[+A](
+    dependencies: Map[PackagePath, Specification[A]],
+    modules: Map[ModulePath, AccessControlled[Module.Definition[A]]]
+  ) {
+    def toPackageDefinition: PkgDef[A] = Package.Definition(dependencies, modules)
+  }
 
   final case class Specification[+A](modules: Map[ModulePath, Module.Specification[A]])
   object Specification {

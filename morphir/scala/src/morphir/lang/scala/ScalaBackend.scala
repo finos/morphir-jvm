@@ -1,23 +1,26 @@
 package morphir.lang.scala
-import morphir.ir.{ Name, TypeDefinition }
+import morphir.ir.{ Name, Type => TypeExpr }
 
-import scala.meta.Tree
+import scala.meta._
+import morphir.ir.Type.Record
 
 object ScalaBackend {
   trait Service {
     //def rewrite[A, B](typeExpr: TypeExpr[A]): TypeExpr[B]
-    def generate[A](name: Name, typeDef: TypeDefinition[A]): Tree
+    //def generate[A](name: Name, typeDef: TypeDefinition[A]): Tree
+    def toTree[A](name: Name)(typeExpr: TypeExpr[A]): Tree
   }
 
   final case class Live() extends Service {
     //def rewrite[A, B](typeExpr: TypeExpr[A]): TypeExpr[B] = ???
 
-    def generate[A](name: Name, typeDef: TypeDefinition[A]): Tree = {
-      import _root_.scala.meta._
-
+    def toTree[A](name: Name)(typeExpr: TypeExpr[A]): Tree = {
       val typeName = scala.meta.Type.Name(name.toCamelCase)
-
       q"case class $typeName ()"
     }
+
+    def toTree[A](name: Name)(record: Record[A]): Tree =
+      ???
+
   }
 }

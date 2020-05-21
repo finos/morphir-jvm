@@ -63,6 +63,21 @@ trait MorphirPublishModule extends GitVersionedPublishModule {
   )
 }
 
+trait ScalaMacroModule extends ScalaModule {
+  def crossScalaVersion: String
+
+  def scalacOptions = super.scalacOptions().toList ++ (
+    if (crossScalaVersion.startsWith("2.13")) List("-Ymacro-annotations") else List.empty
+    )
+
+  abstract override def scalacPluginIvyDeps =
+    super.scalacPluginIvyDeps() ++
+      (if (crossScalaVersion.startsWith("2.12"))
+        Agg(ivy"org.scalamacros:::paradise:${Deps.Versions.macroParadise}")
+      else
+        Agg.empty)
+}
+
 trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixModule with TpolecatModule {
 
   def millSourcePath = super.millSourcePath / offset
@@ -143,7 +158,8 @@ object morphir extends Module {
     class JvmMorphirIrModule(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
-        with MorphirPublishModule {
+        with MorphirPublishModule
+          with ScalaMacroModule {
 
       def artifactName = "morphir-ir"
       def ivyDeps = Agg(
@@ -154,6 +170,7 @@ object morphir extends Module {
         ivy"io.circe::circe-parser:${Versions.circe}",
         ivy"com.beachape::enumeratum:${Versions.enumeratum}",
         ivy"com.beachape::enumeratum-circe:${Versions.enumeratum}",
+        ivy"io.estatico::newtype:${Versions.newtype}",
         ivy"dev.zio::zio-test::${Deps.Versions.zio}"
       )
 
@@ -203,7 +220,8 @@ object morphir extends Module {
     class JvmMorphirWorkspace(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
-        with MorphirPublishModule {
+        with MorphirPublishModule
+        with ScalaMacroModule {
       def artifactName = "morphir-workspace"
       def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
       def ivyDeps = Agg(
@@ -219,17 +237,6 @@ object morphir extends Module {
         ivy"com.lihaoyi::pprint:${Versions.pprint}",
         ivy"org.scalameta::scalameta:${Versions.scalameta}"
       )
-
-      def scalacOptions = super.scalacOptions() ++ (
-        if (crossScalaVersion.startsWith("2.13")) Seq("-Ymacro-annotations") else Seq.empty
-      )
-
-      def scalacPluginIvyDeps =
-        super.scalacPluginIvyDeps() ++
-          (if (crossScalaVersion.startsWith("2.12"))
-             Agg(ivy"org.scalamacros:::paradise:${Versions.macroParadise}")
-           else
-             Agg.empty)
 
       object test extends Tests {
         def crossScalaVersion = JvmMorphirWorkspace.this.crossScalaVersion
@@ -276,4 +283,3 @@ object morphir extends Module {
     }
   }
 }
-//   object workspace extends Module

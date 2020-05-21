@@ -21,11 +21,11 @@ package object ir {
   type PublicAccessControlled[+A]  = AccessControlled.Public[A]
   type PrivateAccessControlled[+A] = AccessControlled.Private[A]
 
-  type Package = MorphirPackage.type
-  val Package: Package = MorphirPackage
+  type Package = PackageModule.type
+  val Package: Package = PackageModule
 
-  type PackageDefinition[+A] = Package.Definition[A]
-  val PackageDefinition: Package.Definition.type = Package.Definition
+  type PkgDef[+A] = Package.Definition[A]
+  val PkgDef: Package.Definition.type = Package.Definition
 
   type Parameter[+A]     = (Name, Type[A])
   type ParameterList[+A] = List[Parameter[A]]
