@@ -5,6 +5,10 @@ import io.circe.{ Encoder, Printer }
 import morphir.ir.json.Encode.Value
 
 trait Encode {
+
+  def compactEncode(value: Value): String                              = value.noSpaces
+  def compactEncode[A](value: A)(implicit encoder: Encoder[A]): String = value.asJson.noSpaces
+
   def encode(value: Value, indent: Int): String = {
     val indentResolved = Math.max(0, indent)
     indentResolved match {

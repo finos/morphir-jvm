@@ -1,11 +1,24 @@
 package morphir.ir
 
+import io.circe.{ Decoder, Encoder }
+import io.estatico.newtype.macros.newtype
+import morphir.ir.codec.NameCodec
+
 object Module {
 
-  final case class ModulePath(value: Path) extends AnyVal
+  @newtype case class ModulePath(toPath: Path)
+
   object ModulePath {
-    def fromString(pathStr: String): ModulePath       = ModulePath(Path.fromString(pathStr))
-    implicit def toPath(modulePath: ModulePath): Path = modulePath.value
+    def fromString(pathStr: String): ModulePath = Module.ModulePath(Path.fromString(pathStr))
+    def fromList(names: List[Name]): ModulePath =
+      ModulePath(Path(names))
+
+    implicit def toPath(modulePath: ModulePath): Path = modulePath.toPath
+    implicit def encodePath(implicit nameEncoder: Encoder[Name] = NameCodec.encodeName): Encoder[ModulePath] =
+      Encoder.encodeList(nameEncoder).contramap(x => x.toPath.value)
+
+    implicit def decodePath(implicit nameDecoder: Decoder[Name] = NameCodec.decodeName): Decoder[ModulePath] =
+      Decoder.decodeList(nameDecoder).map(ModulePath.fromList)
   }
 
   final case class Specification[+A](

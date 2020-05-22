@@ -18,7 +18,7 @@ trait JsonSpec extends JsonFacade { this: DefaultRunnableSpec =>
     zio.test.assert(decoded)(equalTo(Valid(value)))
   }
 
-  def checkCodecIsWellBehaved[A](
+  def assertCodecIsWellBehaved[A](
     value: A
   )(
     assertion: Assertion[ValidatedNel[io.circe.Error, A]]

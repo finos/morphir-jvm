@@ -16,7 +16,7 @@ object PackageModule {
     dependencies: Map[PackagePath, Specification[A]],
     modules: Map[ModulePath, AccessControlled[Module.Definition[A]]]
   ) {
-    def toPackageDefinition: PkgDef[A] = Package.Definition(dependencies, modules)
+    def toPackageDefinition: PkgDef[A] = Package.Definition[A](dependencies, modules)
   }
 
   final case class Specification[+A](modules: Map[ModulePath, Module.Specification[A]])

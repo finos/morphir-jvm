@@ -6,6 +6,9 @@ import morphir.ir.typeclass.instances.NameInstances
 
 package object ir {
 
+  type Path = path.Path
+  val Path: path.Path.type = path.Path
+
   val ModulePath: Module.ModulePath.type = Module.ModulePath
   type ModulePath = Module.ModulePath
 

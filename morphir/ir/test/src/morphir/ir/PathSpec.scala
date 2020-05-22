@@ -1,12 +1,10 @@
 package morphir.ir
-import morphir.ir.codec.PathCodec
 import zio.test._
 import zio.test.Assertion._
 import morphir.ir.fuzzer.NameFuzzers._
-import morphir.ir.json.JsonFacade
 import morphir.ir.testing.JsonSpec
 
-object PathSpec extends DefaultRunnableSpec with JsonSpec with PathCodec {
+object PathSpec extends DefaultRunnableSpec with JsonSpec {
 
   def spec = suite("PathSpec")(
     suite("Creating a Path from a String")(
@@ -108,6 +106,6 @@ object PathSpec extends DefaultRunnableSpec with JsonSpec with PathCodec {
 
   def checkEncodesTo(sut: Path, expectedJsonText: String): ZSpec[Any, Nothing] =
     test(s"Given Path: $sut it should encode to: $expectedJsonText") {
-      assert(JsonFacade.encode(sut, 0))(equalTo(expectedJsonText))
+      assert(compactEncode(sut))(equalTo(expectedJsonText))
     }
 }

@@ -1,4 +1,4 @@
-import $ivy.`com.goyeau::mill-git:0.1.0-6-4254b37`
+import $ivy.`com.goyeau::mill-git:0.1.0-8-5ed3839`
 import $ivy.`com.goyeau::mill-scalafix:8515ae6`
 import $ivy.`io.github.davidgregory084::mill-tpolecat:0.1.3`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
@@ -68,14 +68,14 @@ trait ScalaMacroModule extends ScalaModule {
 
   def scalacOptions = super.scalacOptions().toList ++ (
     if (crossScalaVersion.startsWith("2.13")) List("-Ymacro-annotations") else List.empty
-    )
+  )
 
   abstract override def scalacPluginIvyDeps =
     super.scalacPluginIvyDeps() ++
       (if (crossScalaVersion.startsWith("2.12"))
-        Agg(ivy"org.scalamacros:::paradise:${Deps.Versions.macroParadise}")
-      else
-        Agg.empty)
+         Agg(ivy"org.scalamacros:::paradise:${Deps.Versions.macroParadise}")
+       else
+         Agg.empty)
 }
 
 trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixModule with TpolecatModule {
@@ -159,7 +159,7 @@ object morphir extends Module {
         extends CrossScalaModule
         with CommonJvmModule
         with MorphirPublishModule
-          with ScalaMacroModule {
+        with ScalaMacroModule {
 
       def artifactName = "morphir-ir"
       def ivyDeps = Agg(
