@@ -18,7 +18,7 @@ object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
         }(
           equalTo(
             Json.arr(
-              Json.fromString("Variable"),
+              Json.fromString(Variable.Tag),
               Json.arr(
                 Json.fromString("one"),
                 Json.fromDoubleOrNull(2)
@@ -39,7 +39,7 @@ object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
           val sut = Variable((), name("morphir", "test", "model", "foo"))
           encodeAsJson(sut).asArray
         }(
-          isSome(hasFirst(equalTo(Json.fromString("Variable"))))
+          isSome(hasFirst(equalTo(Json.fromString(Variable.Tag))))
         )
       )
     )

@@ -39,8 +39,6 @@ package object ir {
   type RecordField[+A]  = (Name, Value[A])
   type RecordFields[+A] = List[RecordField[A]]
 
-  type Pattern[+A] = Value.Pattern[A]
-
   type PatternMatchCase[+A]  = (Pattern[A], Value[A])
   type PatternMatchCases[+A] = List[PatternMatchCase[A]]
 
