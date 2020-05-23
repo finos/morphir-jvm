@@ -1,5 +1,6 @@
 package morphir.ir
 
+import io.circe.{ Decoder, Encoder }
 import morphir.ir.codec.{ `type` => typeCodec }
 
 sealed abstract class Expr[+K <: ExprKind, +A](val kind: K) extends Product with Serializable {
@@ -135,6 +136,14 @@ object Value {
 
   final case class Literal[+A, +L](attributes: A, value: LiteralValue[L]) extends Value[A](ValueExprKind.Literal) {
     def mapAttributes[B](f: A => B): Value[B] = Literal(f(attributes), value)
+  }
+
+  object Literal {
+    // implicit def encodeLiteral[A, L, LV <: LiteralValue[L]](
+    //   implicit evA: Encoder[A],
+    //   evL: Encoder[L]
+    // ): Encoder[Literal[A, LV]] =
+    //   Encoder.encodeTuple3[String, A, LV].contramap[Literal[A, L]](lit => (lit.tag, lit.attributes, lit.value))
   }
 
   final case class Constructor[+A](attributes: A, fullyQualifiedName: FQName)
