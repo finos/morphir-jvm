@@ -80,7 +80,6 @@ trait ScalaMacroModule extends ScalaModule {
 
 trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixModule with TpolecatModule {
 
-  def millSourcePath = super.millSourcePath / offset
   def repositories = super.repositories ++ Seq(
     MavenRepository("https://oss.sonatype.org/content/repositories/releases"),
     MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
@@ -88,14 +87,14 @@ trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixM
 
   def platformSegment: String
 
-  def offset: os.RelPath = os.rel
+  //def millSourcePath = super.millSourcePath / ammonite.ops.up
   def sources = T.sources(
     super
       .sources()
       .flatMap(source =>
         Seq(
-          PathRef(source.path / os.up / source.path.last),
-          PathRef(source.path / os.up / os.up / source.path.last)
+          PathRef(source.path),
+          PathRef(source.path / os.up / platformSegment / source.path.last)
         )
       )
   )

@@ -260,7 +260,7 @@ object Value {
 
   import syntax.all._
 
-  final case class Literal[+A, +L](attributes: A, value: LiteralValue[L]) extends Value[A](ValueExprKind.Literal) {
+  final case class Literal[+A, +L <: LiteralValue[_]](attributes: A, value: L) extends Value[A](ValueExprKind.Literal) {
     def mapAttributes[B](f: A => B): Value[B] = Literal(f(attributes), value)
   }
 
@@ -338,12 +338,31 @@ object Value {
     def mapAttributes[B](f: A => B): Value[B] = Unit(f(attributes))
   }
 
-  object Literal {
-    // implicit def encodeLiteral[A, L, LV <: LiteralValue[L]](
-    //   implicit evA: Encoder[A],
-    //   evL: Encoder[L]
-    // ): Encoder[Literal[A, LV]] =
-    //   Encoder.encodeTuple3[String, A, LV].contramap[Literal[A, L]](lit => (lit.tag, lit.attributes, lit.value))
+  object Literal extends ExprCompanion("literal") {
+
+    implicit def encodeLiteral[A: Encoder, L <: LiteralValue[_]](
+      implicit evidence: Encoder[L]
+    ): Encoder[Literal[A, L]] =
+      Encoder.encodeTuple3[String, A, L].contramap(lit => (Tag, lit.attributes, lit.value))
+
+    implicit def decodeLiteral[A: Decoder, L <: LiteralValue[_]](
+      implicit evidence: Decoder[L]
+    ): Decoder[Literal[A, L]] =
+      Decoder.decodeTuple3[String, A, L].map {
+        case (_, attributes, literalValue) => Literal(attributes, literalValue)
+      }
+  }
+
+  object Unit extends ExprCompanion("unit") {
+
+    implicit def encodeUnit[A: Encoder]: Encoder[Unit[A]] =
+      Encoder.encodeTuple2[String, A].contramap(u => (Tag, u.attributes))
+
+    implicit def decodeUnit[A: Decoder]: Decoder[Unit[A]] =
+      Decoder.decodeTuple2[String, A].map {
+        case (_, attributes) => Unit(attributes)
+      }
+
   }
 
   final case class Specification[+A](inputs: ParameterList[A], output: Type[A]) {

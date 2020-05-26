@@ -5,6 +5,12 @@ sealed abstract class Literal[+A](val tag: String) extends Product with Serializ
 
 object Literal {
 
+  def bool(value: Boolean): BoolLiteral    = BoolLiteral(value)
+  def char(value: Char): CharLiteral       = CharLiteral(value)
+  def string(value: String): StringLiteral = StringLiteral(value)
+  def int(value: Int): IntLiteral          = IntLiteral(value)
+  def float(value: Float): FloatLiteral    = FloatLiteral(value)
+
   final case class BoolLiteral(value: Boolean)  extends Literal[Boolean]("bool_literal")
   final case class CharLiteral(value: Char)     extends Literal[Char]("char_literal")
   final case class StringLiteral(value: String) extends Literal[String]("string_literal")

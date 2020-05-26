@@ -1,5 +1,6 @@
 package morphir.ir.codec.`type`
 
+import cats.data.Validated.Valid
 import io.circe.Json
 import morphir.ir.Name.name
 import morphir.ir.Type.Variable
@@ -42,6 +43,12 @@ object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
           isSome(hasFirst(equalTo(Json.fromString(Variable.Tag))))
         )
       )
+    ),
+    suite("JSON - Decoding")(
+      test("Should decode from a JSON Array") {
+        val json = """["variable", null, ["temp"]]"""
+        assert(decodeString[Variable[Unit]](json))(equalTo(Valid(Variable((), name("temp")))))
+      }
     )
   )
 }
