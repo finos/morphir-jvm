@@ -1,14 +1,30 @@
 package morphir.ir
 
 import io.circe.Json
+import io.circe.Encoder
+import io.circe.syntax._
 import zio.test._
 import zio.test.Assertion._
 import morphir.ir.testing.JsonSpec
+import morphir.ir.fuzzer.LiteralFuzzers._
 import morphir.ir.Literal._
-import io.circe.Encoder
 
 object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
   def spec = suite("Literal Spec")(
+    suite("JSON encoding/decoding")(
+      testM("Encoding any literal should encode as an array of tag and value")(
+        check(fuzzLiteral)(sut =>
+          assert(encodeAsJson(sut))(
+            equalTo(
+              Json.arr(
+                Json.fromString(sut.tag),
+                sut.value.asJson
+              )
+            )
+          )
+        )
+      )
+    ),
     suite("BoolLiteral Spec")(
       suite("JSON encoding/decoding")(
         testM("BoolLiteral should encode as a JSON Array")(
@@ -89,5 +105,5 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
         )
       )
     )
-  )
+  ),
 }
