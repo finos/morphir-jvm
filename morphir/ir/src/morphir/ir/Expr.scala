@@ -3,6 +3,9 @@ package morphir.ir
 import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }
 import io.circe.syntax._
+import morphir.ir.core.TaggedCompanionObject
+
+import scala.collection.immutable.{ List => ScalaList }
 
 sealed abstract class Expr[+K <: ExprKind, +A](val kind: K) extends Product with Serializable {
   final def tag: String = kind.tag
@@ -19,11 +22,7 @@ sealed abstract class Value[+A](kind: ValueExprKind) extends Expr[ValueExprKind,
   def mapAttributes[B](f: A => B): Value[B]
 }
 
-sealed abstract class ExprCompanion(val Tag: String) {
-  def hasMatchingTag[P <: Product](product: P): Boolean =
-    if (product.productArity < 1) false
-    else product.productElement(0) == Tag
-}
+sealed abstract class ExprCompanion(tag: String) extends TaggedCompanionObject(tag)
 
 object Type {
 
@@ -227,6 +226,7 @@ object Type {
     def mapFieldType[B](f: Type[A] => Type[B]): Field[B] = copy(fieldType = f(fieldType))
     def mapAttributes[B](f: A => B): Field[B]            = Field(name, fieldType.mapAttributes(f))
   }
+
   object Field {
     implicit def encodeFieldType[A: Encoder]: Encoder[Field[A]] =
       Encoder.encodeTuple2[Name, Type[A]].contramap(ft => ft.name -> ft.fieldType)
@@ -268,80 +268,6 @@ object Value {
     def mapAttributes[B](f: A => B): Value[B] = Literal(f(attributes), value)
   }
 
-  final case class Constructor[+A](attributes: A, fullyQualifiedName: FQName)
-      extends Value[A](ValueExprKind.Constructor) {
-    def mapAttributes[B](f: A => B): Value[B] = Constructor(f(attributes), fullyQualifiedName)
-  }
-
-  final case class Tuple[+A](attributes: A, elements: ValueExprList[A]) extends Value[A](ValueExprKind.Tuple) {
-    def mapAttributes[B](f: A => B): Value[B] = Tuple(f(attributes), elements.mapAttributes(f))
-  }
-
-  final case class List[+A](attributes: A, items: ValueExprList[A]) extends Value[A](ValueExprKind.List) {
-    def mapAttributes[B](f: A => B): Value[B] = List(f(attributes), items.mapAttributes(f))
-  }
-  final case class Record[+A](attributes: A, fields: RecordFields[A]) extends Value[A](ValueExprKind.Record) {
-    def mapAttributes[B](f: A => B): Value[B] = Record(f(attributes), fields.mapAttributes(f))
-  }
-  final case class Variable[+A](attributes: A, name: Name) extends Value[A](ValueExprKind.Variable) {
-    def mapAttributes[B](f: A => B): Value[B] = Variable(f(attributes), name)
-  }
-  final case class Reference[+A](attributes: A, fullyQualifiedName: FQName) extends Value[A](ValueExprKind.Reference) {
-    def mapAttributes[B](f: A => B): Value[B] = Reference(f(attributes), fullyQualifiedName)
-  }
-  final case class Field[+A](attributes: A, subjectValue: Value[A], fieldName: Name)
-      extends Value[A](ValueExprKind.Field) {
-    def mapAttributes[B](f: A => B): Value[B] = Field(f(attributes), subjectValue.mapAttributes(f), fieldName)
-  }
-  final case class FieldFunction[+A](attributes: A, fieldName: Name) extends Value[A](ValueExprKind.FieldFunction) {
-    def mapAttributes[B](f: A => B): Value[B] = FieldFunction(f(attributes), fieldName)
-  }
-  final case class Apply[+A](attributes: A, function: Value[A], argument: Value[A])
-      extends Value[A](ValueExprKind.Apply) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      Apply(f(attributes), function.mapAttributes(f), argument.mapAttributes(f))
-  }
-  final case class Lambda[+A](attributes: A, argumentPattern: Pattern[A], body: Value[A])
-      extends Value[A](ValueExprKind.Lambda) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      Lambda(f(attributes), argumentPattern.mapAttributes(f), body.mapAttributes(f))
-  }
-  final case class LetDefinition[+A](attributes: A, valueName: Name, valueDefinition: Definition[A], inValue: Value[A])
-      extends Value[A](ValueExprKind.LetDefinition) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      LetDefinition(f(attributes), valueName, valueDefinition.mapAttributes(f), inValue.mapAttributes(f))
-  }
-  final case class LetRecursion[+A](attributes: A, valueDefinitions: Map[Name, Definition[A]], inValue: Value[A])
-      extends Value[A](ValueExprKind.LetRecursion) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      LetRecursion(f(attributes), valueDefinitions.map {
-        case (name, definition) => name -> definition.mapAttributes(f)
-      }, inValue.mapAttributes(f))
-  }
-  final case class Destructure[+A](attributes: A, pattern: Pattern[A], valueToDestruct: Value[A], inValue: Value[A])
-      extends Value[A](ValueExprKind.Destructure) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      Destructure(f(attributes), pattern.mapAttributes(f), valueToDestruct.mapAttributes(f), inValue.mapAttributes(f))
-  }
-  final case class IfThenElse[+A](attributes: A, condition: Value[A], thenBranch: Value[A], elseBranch: Value[A])
-      extends Value[A](ValueExprKind.IfThenElse) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      IfThenElse(f(attributes), condition.mapAttributes(f), thenBranch.mapAttributes(f), elseBranch.mapAttributes(f))
-  }
-  final case class PatternMatch[A](attributes: A, branchOutOn: Value[A], cases: PatternMatchCases[A])
-      extends Value[A](ValueExprKind.PatternMatch) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      PatternMatch(f(attributes), branchOutOn.mapAttributes(f), cases.mapAttributes(f))
-  }
-  final case class UpdateRecord[+A](attributes: A, valueToUpdate: Value[A], fieldsToUpdate: RecordFields[A])
-      extends Value[A](ValueExprKind.UpdateRecord) {
-    def mapAttributes[B](f: A => B): Value[B] =
-      UpdateRecord(f(attributes), valueToUpdate.mapAttributes(f), fieldsToUpdate.mapAttributes(f))
-  }
-  final case class Unit[+A](attributes: A) extends Value[A](ValueExprKind.Unit) {
-    def mapAttributes[B](f: A => B): Value[B] = Unit(f(attributes))
-  }
-
   object Literal extends ExprCompanion("literal") {
 
     implicit def encodeLiteral[A: Encoder]: Encoder[Literal[A]] =
@@ -353,6 +279,281 @@ object Value {
       Decoder.decodeTuple3[String, A, LiteralValue].map {
         case (_, attributes, literalValue) => Literal(attributes, literalValue)
       }
+  }
+
+  final case class Constructor[+A](attributes: A, fullyQualifiedName: FQName)
+      extends Value[A](ValueExprKind.Constructor) {
+    def mapAttributes[B](f: A => B): Value[B] = Constructor(f(attributes), fullyQualifiedName)
+  }
+
+  object Constructor extends ExprCompanion("constructor") {
+    implicit def encodeConstructor[A: Encoder]: Encoder[Constructor[A]] =
+      Encoder.encodeTuple3[String, A, FQName].contramap(v => (Tag, v.attributes, v.fullyQualifiedName))
+
+    implicit def decodeConstructor[A: Decoder]: Decoder[Constructor[A]] =
+      Decoder.decodeTuple3[String, A, FQName].map {
+        case (_, attributes, fqName) => Constructor(attributes, fqName)
+      }
+  }
+
+  final case class Tuple[+A](attributes: A, elements: ValueExprList[A]) extends Value[A](ValueExprKind.Tuple) {
+    def mapAttributes[B](f: A => B): Value[B] = Tuple(f(attributes), elements.mapAttributes(f))
+  }
+
+  object Tuple extends ExprCompanion("tuple") {
+    implicit def encodeTuple[A: Encoder]: Encoder[Tuple[A]] =
+      Encoder.encodeTuple3[String, A, ValueExprList[A]].contramap(tpl => (Tag, tpl.attributes, tpl.elements))
+
+    implicit def decodeTuple[A: Decoder]: Decoder[Tuple[A]] =
+      Decoder.decodeTuple3[String, A, ValueExprList[A]].map {
+        case (_, attributes, elements) => Tuple(attributes, elements)
+      }
+  }
+
+  final case class List[+A](attributes: A, items: ValueExprList[A]) extends Value[A](ValueExprKind.List) {
+    def mapAttributes[B](f: A => B): Value[B] = List(f(attributes), items.mapAttributes(f))
+  }
+
+  object List extends ExprCompanion("list") {
+    implicit def encodeList[A: Encoder]: Encoder[List[A]] =
+      Encoder.encodeTuple3[String, A, ValueExprList[A]].contramap(lst => (Tag, lst.attributes, lst.items))
+
+    implicit def decodeList[A: Decoder]: Decoder[List[A]] =
+      Decoder.decodeTuple3[String, A, ValueExprList[A]].map {
+        case (_, attributes, items) => List(attributes, items)
+      }
+  }
+
+  final case class Record[+A](attributes: A, fields: RecordFields[A]) extends Value[A](ValueExprKind.Record) {
+    def mapAttributes[B](f: A => B): Value[B] = Record(f(attributes), fields.mapAttributes(f))
+  }
+
+  object Record extends ExprCompanion("record") {
+
+    implicit def encodeRecord[A: Encoder]: Encoder[Record[A]] =
+      Encoder.encodeTuple3[String, A, RecordFields[A]].contramap(rec => (Tag, rec.attributes, rec.fields))
+
+    implicit def decodeRecord[A: Decoder]: Decoder[Record[A]] =
+      Decoder.decodeTuple3[String, A, RecordFields[A]].map {
+        case (_, attributes, fields) => Record(attributes, fields)
+      }
+  }
+
+  final case class Variable[+A](attributes: A, name: Name) extends Value[A](ValueExprKind.Variable) {
+    def mapAttributes[B](f: A => B): Value[B] = Variable(f(attributes), name)
+  }
+
+  object Variable extends ExprCompanion("variable") {
+    implicit def encodeVariable[A: Encoder]: Encoder[Variable[A]] =
+      Encoder.encodeTuple3[String, A, Name].contramap(v => (Tag, v.attributes, v.name))
+
+    implicit def decodeVariable[A: Decoder]: Decoder[Variable[A]] =
+      Decoder.decodeTuple3[String, A, Name].map {
+        case (_, attributes, name) => Variable(attributes, name)
+      }
+  }
+
+  final case class Reference[+A](attributes: A, fullyQualifiedName: FQName) extends Value[A](ValueExprKind.Reference) {
+    def mapAttributes[B](f: A => B): Value[B] = Reference(f(attributes), fullyQualifiedName)
+  }
+
+  object Reference extends ExprCompanion("reference") {
+    implicit def encodeReference[A: Encoder]: Encoder[Reference[A]] =
+      Encoder.encodeTuple3[String, A, FQName].contramap(ref => (Tag, ref.attributes, ref.fullyQualifiedName))
+
+    implicit def decodeReference[A: Decoder]: Decoder[Reference[A]] =
+      Decoder.decodeTuple3[String, A, FQName].map {
+        case (_, attributes, fqn) => Reference(attributes, fqn)
+      }
+  }
+
+  final case class Field[+A](attributes: A, subjectValue: Value[A], fieldName: Name)
+      extends Value[A](ValueExprKind.Field) {
+    def mapAttributes[B](f: A => B): Value[B] = Field(f(attributes), subjectValue.mapAttributes(f), fieldName)
+  }
+
+  object Field extends ExprCompanion("field") {
+    implicit def encodeField[A: Encoder]: Encoder[Field[A]] =
+      Encoder
+        .encodeTuple4[String, A, Value[A], Name]
+        .contramap(field => (Tag, field.attributes, field.subjectValue, field.fieldName))
+
+    implicit def decodeField[A: Decoder]: Decoder[Field[A]] =
+      Decoder.decodeTuple4[String, A, Value[A], Name].map {
+        case (_, attributes, subjectValue, fieldName) => Field(attributes, subjectValue, fieldName)
+      }
+  }
+
+  final case class FieldFunction[+A](attributes: A, fieldName: Name) extends Value[A](ValueExprKind.FieldFunction) {
+    def mapAttributes[B](f: A => B): Value[B] = FieldFunction(f(attributes), fieldName)
+  }
+
+  object FieldFunction extends ExprCompanion("field_function") {
+    implicit def encodeFieldFunction[A: Encoder]: Encoder[FieldFunction[A]] =
+      Encoder.encodeTuple3[String, A, Name].contramap(f => (Tag, f.attributes, f.fieldName))
+
+    implicit def decodeFieldFunction[A: Decoder]: Decoder[FieldFunction[A]] =
+      Decoder.decodeTuple3[String, A, Name].map {
+        case (_, attributes, fieldName) => FieldFunction(attributes, fieldName)
+      }
+  }
+
+  final case class Apply[+A](attributes: A, function: Value[A], argument: Value[A])
+      extends Value[A](ValueExprKind.Apply) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      Apply(f(attributes), function.mapAttributes(f), argument.mapAttributes(f))
+  }
+
+  object Apply extends ExprCompanion("apply") {
+    implicit def encodeApply[A: Encoder]: Encoder[Apply[A]] =
+      Encoder
+        .encodeTuple4[String, A, Value[A], Value[A]]
+        .contramap(ap => (Tag, ap.attributes, ap.function, ap.argument))
+
+    implicit def decodeApply[A: Decoder]: Decoder[Apply[A]] =
+      Decoder.decodeTuple4[String, A, Value[A], Value[A]].map {
+        case (_, attributes, function, argument) => Apply(attributes, function, argument)
+      }
+  }
+
+  final case class Lambda[+A](attributes: A, argumentPattern: Pattern[A], body: Value[A])
+      extends Value[A](ValueExprKind.Lambda) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      Lambda(f(attributes), argumentPattern.mapAttributes(f), body.mapAttributes(f))
+  }
+
+  object Lambda extends ExprCompanion("lambda") {
+    implicit def encodeLambda[A: Encoder]: Encoder[Lambda[A]] =
+      Encoder
+        .encodeTuple4[String, A, Pattern[A], Value[A]]
+        .contramap(l => (Tag, l.attributes, l.argumentPattern, l.body))
+
+    implicit def decodeLambda[A: Decoder]: Decoder[Lambda[A]] =
+      Decoder.decodeTuple4[String, A, Pattern[A], Value[A]].map {
+        case (_, attributes, argumentPattern, body) => Lambda(attributes, argumentPattern, body)
+      }
+  }
+
+  final case class LetDefinition[+A](attributes: A, valueName: Name, valueDefinition: Definition[A], inValue: Value[A])
+      extends Value[A](ValueExprKind.LetDefinition) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      LetDefinition(f(attributes), valueName, valueDefinition.mapAttributes(f), inValue.mapAttributes(f))
+  }
+
+  object LetDefinition extends ExprCompanion("let_definition") {
+    implicit def encodeLetDefinition[A: Encoder]: Encoder[LetDefinition[A]] =
+      Encoder
+        .encodeTuple5[String, A, Name, Definition[A], Value[A]]
+        .contramap(expr => (Tag, expr.attributes, expr.valueName, expr.valueDefinition, expr.inValue))
+
+    implicit def decodeLetDefinition[A: Decoder]: Decoder[LetDefinition[A]] =
+      Decoder
+        .decodeTuple5[String, A, Name, Definition[A], Value[A]]
+        .ensure(hasMatchingTag, s"""The tag of a let definition expression must be "$Tag".""")
+        .map {
+          case (_, attributes, valueName, valueDefinition, inValue) =>
+            LetDefinition(attributes, valueName, valueDefinition, inValue)
+        }
+  }
+
+  final case class LetRecursion[+A](attributes: A, valueDefinitions: Map[Name, Definition[A]], inValue: Value[A])
+      extends Value[A](ValueExprKind.LetRecursion) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      LetRecursion(f(attributes), valueDefinitions.map {
+        case (name, definition) => name -> definition.mapAttributes(f)
+      }, inValue.mapAttributes(f))
+  }
+
+  object LetRecursion extends ExprCompanion("let_recursion") {
+
+    implicit def encodeLetRecursion[A: Encoder]: Encoder[LetRecursion[A]] =
+      Encoder
+        .encodeTuple4[String, A, ScalaList[(Name, Definition[A])], Value[A]]
+        .contramap(expr => (Tag, expr.attributes, expr.valueDefinitions.toList, expr.inValue))
+
+    implicit def decodeLetRecursion[A: Decoder]: Decoder[LetRecursion[A]] =
+      Decoder.decodeTuple4[String, A, ScalaList[(Name, Definition[A])], Value[A]].map {
+        case (_, attributes, valueDefinitions, inValue) => LetRecursion(attributes, valueDefinitions.toMap, inValue)
+      }
+  }
+
+  final case class Destructure[+A](attributes: A, pattern: Pattern[A], valueToDestruct: Value[A], inValue: Value[A])
+      extends Value[A](ValueExprKind.Destructure) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      Destructure(f(attributes), pattern.mapAttributes(f), valueToDestruct.mapAttributes(f), inValue.mapAttributes(f))
+  }
+
+  object Destructure extends ExprCompanion("destructure") {
+    implicit def encodeDestructure[A: Encoder]: Encoder[Destructure[A]] =
+      Encoder
+        .encodeTuple5[String, A, Pattern[A], Value[A], Value[A]]
+        .contramap(expr => (Tag, expr.attributes, expr.pattern, expr.valueToDestruct, expr.inValue))
+
+    implicit def decodeDestructure[A: Decoder]: Decoder[Destructure[A]] =
+      Decoder.decodeTuple5[String, A, Pattern[A], Value[A], Value[A]].map {
+        case (_, attributes, pattern, valueToDestruct, inValue) =>
+          Destructure(attributes, pattern, valueToDestruct, inValue)
+      }
+  }
+
+  final case class IfThenElse[+A](attributes: A, condition: Value[A], thenBranch: Value[A], elseBranch: Value[A])
+      extends Value[A](ValueExprKind.IfThenElse) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      IfThenElse(f(attributes), condition.mapAttributes(f), thenBranch.mapAttributes(f), elseBranch.mapAttributes(f))
+  }
+
+  object IfThenElse extends ExprCompanion("if_then_else") {
+    implicit def encodeIfThenElse[A: Encoder]: Encoder[IfThenElse[A]] =
+      Encoder
+        .encodeTuple5[String, A, Value[A], Value[A], Value[A]]
+        .contramap(expr => (Tag, expr.attributes, expr.condition, expr.thenBranch, expr.elseBranch))
+
+    implicit def decodeIfThenElse[A: Decoder]: Decoder[IfThenElse[A]] =
+      Decoder.decodeTuple5[String, A, Value[A], Value[A], Value[A]].map {
+        case (_, attributes, condition, thenBranch, elseBranch) =>
+          IfThenElse(attributes, condition, thenBranch, elseBranch)
+      }
+  }
+
+  final case class PatternMatch[+A](attributes: A, branchOutOn: Value[A], cases: PatternMatchCases[A])
+      extends Value[A](ValueExprKind.PatternMatch) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      PatternMatch(f(attributes), branchOutOn.mapAttributes(f), cases.mapAttributes(f))
+  }
+
+  object PatternMatch extends ExprCompanion("pattern_match") {
+
+    implicit def encodePatternMatch[A: Encoder]: Encoder[PatternMatch[A]] =
+      Encoder
+        .encodeTuple4[String, A, Value[A], PatternMatchCases[A]]
+        .contramap(expr => (Tag, expr.attributes, expr.branchOutOn, expr.cases))
+
+    implicit def decodePatternMatch[A: Decoder]: Decoder[PatternMatch[A]] =
+      Decoder.decodeTuple4[String, A, Value[A], PatternMatchCases[A]].map {
+        case (_, attributes, branchOutOn, cases) => PatternMatch(attributes, branchOutOn, cases)
+      }
+  }
+
+  final case class UpdateRecord[+A](attributes: A, valueToUpdate: Value[A], fieldsToUpdate: RecordFields[A])
+      extends Value[A](ValueExprKind.UpdateRecord) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      UpdateRecord(f(attributes), valueToUpdate.mapAttributes(f), fieldsToUpdate.mapAttributes(f))
+  }
+
+  object UpdateRecord extends ExprCompanion("update_record") {
+    implicit def encodeUpdateRecord[A: Encoder]: Encoder[UpdateRecord[A]] =
+      Encoder
+        .encodeTuple4[String, A, Value[A], RecordFields[A]]
+        .contramap(expr => (Tag, expr.attributes, expr.valueToUpdate, expr.fieldsToUpdate))
+
+    implicit def decodeUpdateRecord[A: Decoder]: Decoder[UpdateRecord[A]] =
+      Decoder.decodeTuple4[String, A, Value[A], RecordFields[A]].map {
+        case (_, attributes, valueToUpdate, fieldsToUpdate) => UpdateRecord(attributes, valueToUpdate, fieldsToUpdate)
+      }
+  }
+
+  final case class Unit[+A](attributes: A) extends Value[A](ValueExprKind.Unit) {
+    def mapAttributes[B](f: A => B): Value[B] = Unit(f(attributes))
   }
 
   object Unit extends ExprCompanion("unit") {
@@ -367,11 +568,66 @@ object Value {
 
   }
 
+  implicit def encodeValue[A: Encoder]: Encoder[Value[A]] = Encoder.instance {
+    case expr @ Literal(_, _)             => expr.asJson
+    case expr @ Constructor(_, _)         => expr.asJson
+    case expr @ Tuple(_, _)               => expr.asJson
+    case expr @ List(_, _)                => expr.asJson
+    case expr @ Record(_, _)              => expr.asJson
+    case expr @ Variable(_, _)            => expr.asJson
+    case expr @ Reference(_, _)           => expr.asJson
+    case expr @ Field(_, _, _)            => expr.asJson
+    case expr @ FieldFunction(_, _)       => expr.asJson
+    case expr @ Apply(_, _, _)            => expr.asJson
+    case expr @ Lambda(_, _, _)           => expr.asJson
+    case expr @ LetDefinition(_, _, _, _) => expr.asJson
+    case expr @ LetRecursion(_, _, _)     => expr.asJson
+    case expr @ Destructure(_, _, _, _)   => expr.asJson
+    case expr @ IfThenElse(_, _, _, _)    => expr.asJson
+    case expr @ PatternMatch(_, _, _)     => expr.asJson
+    case expr @ UpdateRecord(_, _, _)     => expr.asJson
+    case expr @ Unit(_)                   => expr.asJson
+  }
+
+  implicit def decodeValue[A: Decoder]: Decoder[Value[A]] =
+    Decoder[Literal[A]]
+      .widen[Value[A]]
+      .or(Decoder[Constructor[A]].widen)
+      .or(Decoder[Tuple[A]].widen)
+      .or(Decoder[List[A]].widen)
+      .or(Decoder[Record[A]].widen)
+      .or(Decoder[Variable[A]].widen)
+      .or(Decoder[Reference[A]].widen)
+      .or(Decoder[Field[A]].widen)
+      .or(Decoder[FieldFunction[A]].widen)
+      .or(Decoder[Apply[A]].widen)
+      .or(Decoder[Lambda[A]].widen)
+      .or(Decoder[LetDefinition[A]].widen)
+      .or(Decoder[LetRecursion[A]].widen)
+      .or(Decoder[Destructure[A]].widen)
+      .or(Decoder[Unit[A]].widen)
+
   final case class Specification[+A](inputs: ParameterList[A], output: Type[A]) {
     def mapAttributes[B](f: A => B): Specification[B] = Specification(inputs.mapAttributes(f), output.mapAttributes(f))
   }
+
   final case class Definition[+A](valueType: Option[Type[A]], arguments: ArgumentList[A], body: Value[A]) {
     def mapAttributes[B](f: A => B): Definition[B] =
       Definition(valueType.map(_.mapAttributes(f)), arguments.mapAttributes(f), body.mapAttributes(f))
+  }
+
+  object Definition extends TaggedCompanionObject("definition") {
+    implicit def encodeDefinition[A: Encoder]: Encoder[Definition[A]] =
+      Encoder
+        .encodeTuple4[String, Option[Type[A]], ArgumentList[A], Value[A]]
+        .contramap(d => (Tag, d.valueType, d.arguments, d.body))
+
+    implicit def decodeDefinition[A: Decoder]: Decoder[Definition[A]] =
+      Decoder
+        .decodeTuple4[String, Option[Type[A]], ArgumentList[A], Value[A]]
+        .ensure(hasMatchingTag, s"""The tag of a value definition must be "$Tag".""")
+        .map {
+          case (_, valueType, arguments, body) => Definition(valueType, arguments, body)
+        }
   }
 }

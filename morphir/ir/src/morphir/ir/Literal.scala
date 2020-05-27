@@ -3,6 +3,7 @@ package morphir.ir
 import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }
 import io.circe.syntax._
+import morphir.ir.core.TaggedCompanionObject
 
 sealed abstract class Literal(val tag: String) extends Product with Serializable {
   type A
@@ -14,11 +15,7 @@ sealed abstract class LiteralT[T](tag: String) extends Literal(tag) {
   def value: A
 }
 
-sealed abstract class LiteralCompanion(val Tag: String) {
-  def hasMatchingTag[P <: Product](product: P): Boolean =
-    if (product.productArity < 1) false
-    else product.productElement(0) == Tag
-}
+sealed abstract class LiteralCompanion(tag: String) extends TaggedCompanionObject(tag)
 
 object Literal {
   type Aux[A0] = Literal { type A = A0 }

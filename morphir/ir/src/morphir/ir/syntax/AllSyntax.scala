@@ -5,7 +5,6 @@ trait AllSyntax
     with RecordFieldSyntax
     with RecordFieldsSyntax
     with PatternListSyntax
-    with PatternMatchCaseSyntax
     with PatternMatchCasesSyntax
     with ArgumentSyntax
     with ArgumentListSyntax
