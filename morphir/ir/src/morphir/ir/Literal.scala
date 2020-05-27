@@ -1,8 +1,16 @@
 package morphir.ir
+
+import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }
 import io.circe.syntax._
 
-sealed abstract class Literal[+A](val tag: String) extends Product with Serializable {
+sealed abstract class Literal(val tag: String) extends Product with Serializable {
+  type A
+  def value: A
+}
+
+sealed abstract class LiteralT[T](tag: String) extends Literal(tag) {
+  type A = T
   def value: A
 }
 
@@ -13,6 +21,7 @@ sealed abstract class LiteralCompanion(val Tag: String) {
 }
 
 object Literal {
+  type Aux[A0] = Literal { type A = A0 }
 
   def bool(value: Boolean): BoolLiteral    = BoolLiteral(value)
   def char(value: Char): CharLiteral       = CharLiteral(value)
@@ -20,11 +29,11 @@ object Literal {
   def int(value: Int): IntLiteral          = IntLiteral(value)
   def float(value: Float): FloatLiteral    = FloatLiteral(value)
 
-  final case class BoolLiteral(value: Boolean)  extends Literal[Boolean](BoolLiteral.Tag)
-  final case class CharLiteral(value: Char)     extends Literal[Char](CharLiteral.Tag)
-  final case class StringLiteral(value: String) extends Literal[String](StringLiteral.Tag)
-  final case class IntLiteral(value: Int)       extends Literal[Int](IntLiteral.Tag)
-  final case class FloatLiteral(value: Float)   extends Literal[Float](FloatLiteral.Tag)
+  final case class BoolLiteral(value: Boolean)  extends LiteralT[Boolean](BoolLiteral.Tag)
+  final case class CharLiteral(value: Char)     extends LiteralT[Char](CharLiteral.Tag)
+  final case class StringLiteral(value: String) extends LiteralT[String](StringLiteral.Tag)
+  final case class IntLiteral(value: Int)       extends LiteralT[Int](IntLiteral.Tag)
+  final case class FloatLiteral(value: Float)   extends LiteralT[Float](FloatLiteral.Tag)
 
   object BoolLiteral extends LiteralCompanion("bool_literal") {
     implicit val encodeBoolLiteral: Encoder[BoolLiteral] =
@@ -85,7 +94,7 @@ object Literal {
 
   }
 
-  implicit def encodeLiteral[A: Encoder]: Encoder[Literal[A]] = Encoder.instance {
+  implicit val encodeLiteral: Encoder[Literal] = Encoder.instance {
     case lit @ BoolLiteral(_)   => lit.asJson
     case lit @ CharLiteral(_)   => lit.asJson
     case lit @ StringLiteral(_) => lit.asJson
@@ -93,7 +102,7 @@ object Literal {
     case lit @ FloatLiteral(_)  => lit.asJson
   }
 
-  implicit def decodeLiteral[A: Decoder]: Decoder[Literal[A]] =
-    ???
+  implicit def decodeLiteral: Decoder[Literal] =
+    Decoder[BoolLiteral].widen[Literal]
 
 }

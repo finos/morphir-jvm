@@ -1,6 +1,7 @@
 package morphir.ir.codec.value
 
-import morphir.ir.Value
+import cats.data.Validated._
+import morphir.ir.{ LiteralValue, Value }
 import Value.Literal
 import morphir.ir.testing.JsonSpec
 import io.circe._
@@ -11,13 +12,13 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
   def spec = suite("Value.Literal Spec")(
     suite("JSON encoding")(
       test("It should encode as a literal value") {
-        val sut = Value.literal("Hello", true)
+        val sut = Value.literal((1, 2), true)
         assert(encodeAsJson(sut))(
           equalTo(
             Json.arr(
               Json.fromString(Value.Literal.Tag),
               Json.arr(Json.fromInt(1), Json.fromInt(2)),
-              Json.fromBoolean(true)
+              Json.arr(Json.fromString(LiteralValue.BoolLiteral.Tag), Json.fromBoolean(true))
             )
           )
         )

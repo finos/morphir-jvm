@@ -21,7 +21,7 @@ trait LiteralFuzzers {
   implicit val fuzzFloatLiteral: Fuzzer[FloatLiteral] =
     Gen.anyFloat.map(Literal.float(_))
 
-  implicit val fuzzLiteral: Fuzzer[Literal[Any]] =
+  implicit val fuzzLiteral: Fuzzer[Literal] =
     Gen.oneOf(fuzzBoolLiteral, fuzzCharLiteral, fuzzStringLiteral, fuzzIntLiteral, fuzzFloatLiteral)
 }
 

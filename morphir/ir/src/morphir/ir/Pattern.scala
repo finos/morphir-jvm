@@ -31,7 +31,7 @@ object Pattern {
     def mapAttributes[B](f: A => B): Pattern[B] =
       HeadTailPattern(f(attributes), headPattern.mapAttributes(f), tailPattern.mapAttributes(f))
   }
-  final case class LiteralPattern[+A, +L](attributes: A, value: LiteralValue[L]) extends Pattern[A] {
+  final case class LiteralPattern[+A](attributes: A, value: LiteralValue) extends Pattern[A] {
     def mapAttributes[B](f: A => B): Pattern[B] = LiteralPattern(f(attributes), value)
   }
   final case class UnitPattern[+A](attributes: A) extends Pattern[A] {
