@@ -59,11 +59,11 @@ object Result {
 
   def err[E](error: E): Result[E, Nothing] = Err(error)
 
-  def andThen[E, A, B](fn: A => Result[E, B]): Result[E, A] => Result[E, B] =
-    (result: Result[E, A]) => result.flatMap(fn)
+  def andThen[E, A, B](fn: A => Result[E, B])(result: Result[E, A]): Result[E, B] =
+    result.flatMap(fn)
 
-  def map[E, A, A1](fn: A => A1): Result[E, A] => Result[E, A1] =
-    (result: Result[E, A]) => result.map(fn)
+  def map[E, A, A1](fn: A => A1)(result: Result[E, A]): Result[E, A1] =
+    result.map(fn)
 
   def map2[E, A, B, V](
     fn: A => B => V
