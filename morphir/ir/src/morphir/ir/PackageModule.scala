@@ -19,6 +19,8 @@ object PackageModule {
     def toPackageDefinition: PkgDef[A] = Package.Definition[A](dependencies, modules)
   }
 
+  object Pkg {}
+
   final case class Specification[+A](modules: Map[ModulePath, Module.Specification[A]])
   object Specification {
     def empty[A]: Specification[A] = Specification[A](Map.empty)

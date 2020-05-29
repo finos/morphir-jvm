@@ -1,6 +1,7 @@
 package morphir.ir
 
-import io.circe.{ Decoder, Encoder }
+import io.circe.{ Decoder, Encoder, Json }
+import io.circe.syntax._
 import io.estatico.newtype.macros.newtype
 import morphir.ir.codec.NameCodec
 
@@ -14,6 +15,7 @@ object Module {
       ModulePath(Path(names))
 
     implicit def toPath(modulePath: ModulePath): Path = modulePath.toPath
+
     implicit def encodePath(implicit nameEncoder: Encoder[Name] = NameCodec.encodeName): Encoder[ModulePath] =
       Encoder.encodeList(nameEncoder).contramap(x => x.toPath.value)
 
@@ -27,15 +29,32 @@ object Module {
   )
 
   object Specification {
+    implicit def encodeSpecification[A: Encoder]: Encoder[Specification[A]] = {
+      implicit def encodeTypeSpecMap: Encoder[Map[Name, Type.Specification[A]]] = ???
+
+      implicit def encodeValueSpecMap: Encoder[Map[Name, Value.Specification[A]]] = ???
+      Encoder.encodeJson.contramap { spec =>
+        Json.obj(
+          ("type", spec.types.asJson),
+          ("values", spec.values.asJson)
+        )
+      }
+    }
+
+    implicit def decodeSpecification[A: Decoder]: Decoder[Specification[A]] = ???
+
     def empty[A]: Specification[A] = Specification[A](Map.empty, Map.empty)
   }
 
   final case class Definition[+A](
     types: Map[Name, AccessControlled[Type.Definition[A]]],
     values: Map[Name, AccessControlled[Value.Definition[A]]]
-  ) {}
+  )
 
   object Definition {
+    implicit def encodeDefinition[A: Encoder]: Encoder[Definition[A]] = ???
+    implicit def decodeDefinition[A: Decoder]: Decoder[Definition[A]] = ???
+
     def empty[A]: Definition[A] = Definition[A](Map.empty, Map.empty)
   }
 }

@@ -8,15 +8,17 @@ import io.circe._
 import morphir.ir.json.JsonFacade
 import zio.test._
 import zio.test.Assertion._
+import zio.{ console, ZIO }
 
 trait JsonSpec extends JsonFacade { this: DefaultRunnableSpec =>
   def checkCodecIsWellBehaved[A](
     value: A
-  )(implicit encoder: Encoder[A], decoder: Decoder[A]): TestResult = {
-    val encoded = value.asJson.noSpaces
-    val decoded = decodeAccumulating(encoded)
-    zio.test.assert(decoded)(equalTo(Valid(value)))
-  }
+  )(implicit encoder: Encoder[A], decoder: Decoder[A]) =
+    for {
+      encoded <- ZIO.effect(value.asJson.noSpaces)
+      decoded <- ZIO.effect(decodeAccumulating(encoded))
+      _       <- console.putStrLn(s"JSON: ${value.asJson.spaces2}")
+    } yield zio.test.assert(decoded)(equalTo(Valid(value)))
 
   def assertCodecIsWellBehaved[A](
     value: A

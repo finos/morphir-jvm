@@ -2,6 +2,7 @@ package morphir.ir
 import cats.implicits._
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect._
 import morphir.ir.fuzzer.NameFuzzers._
 import morphir.ir.codec.NameCodec._
 import morphir.ir.json.JsonFacade
@@ -121,7 +122,7 @@ object NameSpec extends DefaultRunnableSpec with JsonSpec {
       ),
       suite("Name encoding/decoding")(
         testM("Should work in a well-behaved manner") {
-          check(fuzzName)(givenName => checkCodecIsWellBehaved(givenName))
+          checkM(fuzzName)(givenName => checkCodecIsWellBehaved(givenName))
         },
         testM("A Name should encode as expected") {
           check(fuzzName)(givenName => assert(JsonFacade.encode(givenName, 0))(equalTo(givenName.show)))
@@ -141,5 +142,5 @@ object NameSpec extends DefaultRunnableSpec with JsonSpec {
           )
         }
       )
-    )
+    ) @@ silent
 }

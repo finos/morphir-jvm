@@ -173,19 +173,81 @@ object Type {
     def mapAttributes[B](f: A => B): Specification[B]
   }
   object Specification {
+
+    implicit def enodeSpecification[A: Encoder]: Encoder[Specification[A]] = Encoder.instance {
+      case spec @ TypeAliasSpecification(_, _)  => spec.asJson
+      case spec @ OpaqueTypeSpecification(_)    => spec.asJson
+      case spec @ CustomTypeSpecification(_, _) => spec.asJson
+    }
+
+    implicit def decodeSpecification[A: Decoder]: Decoder[Specification[A]] =
+      Decoder[TypeAliasSpecification[A]]
+        .widen[Specification[A]]
+        .or(Decoder[OpaqueTypeSpecification].widen)
+        .or(Decoder[CustomTypeSpecification[A]].widen)
+
     final case class TypeAliasSpecification[+A](typeParams: List[Name], typeExp: Type[A]) extends Specification[A] {
       def mapAttributes[B](f: A => B): Specification[B] =
         TypeAliasSpecification(typeParams, typeExp.mapAttributes(f))
     }
+
+    object TypeAliasSpecification {
+      implicit def nameTag[A]: NameTag[TypeAliasSpecification[A]] = NameTag.forClass[TypeAliasSpecification[A]]
+
+      implicit def encodeTypeAliasSpecification[A: Encoder](
+        implicit nameTag: NameTag[TypeAliasSpecification[A]]
+      ): Encoder[TypeAliasSpecification[A]] =
+        Encoder
+          .encodeTuple3[String, List[Name], Type[A]]
+          .contramapArray(spec => (nameTag.tag, spec.typeParams, spec.typeExp))
+
+      implicit def decodeTypeAliasSpecification[A: Decoder]: Decoder[TypeAliasSpecification[A]] =
+        Decoder.decodeTuple3[String, List[Name], Type[A]].map {
+          case (_, typeParams, typeExp) => TypeAliasSpecification(typeParams, typeExp)
+        }
+
+    }
+
     final case class OpaqueTypeSpecification(typeParams: List[Name]) extends Specification[Nothing] {
       def mapAttributes[B](f: Nothing => B): Specification[B] = this
     }
+
+    object OpaqueTypeSpecification {
+      implicit val nameTag: NameTag[OpaqueTypeSpecification] = NameTag.forClass[OpaqueTypeSpecification]
+
+      implicit val encodeOpaqueTypeSpecification: Encoder[OpaqueTypeSpecification] =
+        Encoder
+          .encodeTuple2[String, List[Name]]
+          .contramap(spec => (NameTag[OpaqueTypeSpecification].tag, spec.typeParams))
+
+      implicit val decodeOpaqueTypeSpecification: Decoder[OpaqueTypeSpecification] =
+        Decoder.decodeTuple2[String, List[Name]].map {
+          case (_, typeParams) => OpaqueTypeSpecification(typeParams)
+        }
+    }
+
     final case class CustomTypeSpecification[+A](typeParams: List[Name], constructors: Constructors[A])
         extends Specification[A] {
       def mapAttributes[B](f: A => B): Specification[B] =
         CustomTypeSpecification(typeParams, constructors.mapAttributes(f))
     }
 
+    object CustomTypeSpecification {
+      implicit def nameTag[A]: NameTag[CustomTypeSpecification[A]] = NameTag.forClass[CustomTypeSpecification[A]]
+
+      implicit def encodeCustomTypeSpecification[A: Encoder](
+        implicit nameTag: NameTag[CustomTypeSpecification[A]]
+      ): Encoder[CustomTypeSpecification[A]] =
+        Encoder
+          .encodeTuple3[String, List[Name], Constructors[A]]
+          .contramapArray(spec => (nameTag.tag, spec.typeParams, spec.constructors))
+
+      implicit def decodeCustomTypeSpecification[A: Decoder]: Decoder[CustomTypeSpecification[A]] =
+        Decoder.decodeTuple3[String, List[Name], Constructors[A]].map {
+          case (_, typeParams, ctors) => CustomTypeSpecification(typeParams, ctors)
+        }
+
+    }
   }
 
   sealed abstract class Definition[+A] extends Product with Serializable {
@@ -207,14 +269,35 @@ object Type {
     }
   }
 
-  final case class Constructors[+A](constructors: List[Constructor[A]]) extends AnyVal {
+  final case class Constructors[+A](toList: List[Constructor[A]]) extends AnyVal {
     def mapAttributes[B](f: A => B): Constructors[B] =
-      Constructors(constructors.map(constructor => constructor.mapAttributes(f)))
+      Constructors(toList.map(constructor => constructor.mapAttributes(f)))
+  }
+
+  object Constructors {
+    implicit def encodeConstructor[A: Encoder]: Encoder[Constructors[A]] =
+      Encoder.encodeList[Constructor[A]].contramap(ctors => ctors.toList)
+
+    implicit def decodeConstructor[A: Decoder]: Decoder[Constructors[A]] =
+      Decoder.decodeList[Constructor[A]].map(Constructors(_))
   }
 
   final case class Constructor[+A](name: Name, args: List[(Name, Type[A])]) {
     def mapAttributes[B](f: A => B): Constructor[B] =
       Constructor(name, args.map { case (name, argType) => name -> argType.mapAttributes(f) })
+  }
+
+  object Constructor {
+
+    implicit def nameTag[A]: NameTag[Constructor[A]] = NameTag.fromString("constructor")
+
+    implicit def encodeConstructor[A: Encoder](implicit nameTag: NameTag[Constructor[A]]): Encoder[Constructor[A]] =
+      Encoder.encodeTuple3[String, Name, List[(Name, Type[A])]].contramap(ctor => (nameTag.tag, ctor.name, ctor.args))
+
+    implicit def decodeConstructor[A: Decoder]: Decoder[Constructor[A]] =
+      Decoder.decodeTuple3[String, Name, List[(Name, Type[A])]].map {
+        case (_, name, args) => Constructor(name, args)
+      }
   }
 
   final case class Field[+A](name: Name, fieldType: Type[A]) {
@@ -235,7 +318,7 @@ object Type {
       Decoder.decodeTuple2[Name, Type[A]].map { case (fieldName, fieldType) => Field(fieldName, fieldType) }
   }
 
-  implicit def encodeTypeCoproduct[A: Encoder]: Encoder[Type[A]] = Encoder.instance {
+  implicit def encodeType[A: Encoder]: Encoder[Type[A]] = Encoder.instance {
     case variable @ Type.Variable(_, _)                    => variable.asJson
     case reference @ Type.Reference(_, _, _)               => reference.asJson
     case tuple @ Type.Tuple(_, _)                          => tuple.asJson
@@ -245,7 +328,7 @@ object Type {
     case unit @ Type.Unit(_)                               => unit.asJson
   }
 
-  implicit def decodeTypeCoproduct[A: Decoder]: Decoder[Type[A]] =
+  implicit def decodeType[A: Decoder]: Decoder[Type[A]] =
     Decoder[Variable[A]]
       .widen[Type[A]]
       .or(Decoder[Type.Unit[A]].widen)
