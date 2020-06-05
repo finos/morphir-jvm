@@ -9,5 +9,5 @@ object Common {
     PackagePath(Path.fromString("Morphir.SDK"))
 
   def toFQName(modulePath: ModulePath, localName: scala.Predef.String): FQName =
-    FQName.fromQName(packageName.value, QName.qName(modulePath, Name.fromString(localName)))
+    FQName.fromQName(packageName.toPath, QName.qName(modulePath, Name.fromString(localName)))
 }

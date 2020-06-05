@@ -7,7 +7,6 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import FQName.fQName
-import Name.name
 import morphir.ir.json.JsonFacade
 
 object FQNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers with AllCodecs with JsonFacade {

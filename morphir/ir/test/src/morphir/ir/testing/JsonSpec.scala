@@ -11,6 +11,7 @@ import zio.test.Assertion._
 import zio.{ console, ZIO }
 
 trait JsonSpec extends JsonFacade { this: DefaultRunnableSpec =>
+
   def checkCodecIsWellBehaved[A](
     value: A
   )(implicit encoder: Encoder[A], decoder: Decoder[A]) =

@@ -1,9 +1,11 @@
 package morphir.ir
 
+import cats.Show
+import cats.implicits._
 import io.estatico.newtype.macros.newtype
-import morphir.ir.typeclass.instances.PathInstances
-import morphir.ir.codec.NameCodec
 import morphir.ir.MorphirPackage.PackagePath
+import morphir.ir.codec.PathCodec
+import upickle.default._
 
 object path {
 
@@ -28,16 +30,19 @@ object path {
       value.mkString(".")
   }
 
-  object Path extends PathInstances {
+  object Path {
+    implicit val show: Show[Path] =
+      Show.show(path => path.value.mkString("[", ",", "]"))
+
     import io.circe.{ Decoder, Encoder }
 
-    implicit def encodePath(implicit nameEncoder: Encoder[Name] = NameCodec.encodeName): Encoder[Path] =
-      Encoder.encodeList(nameEncoder).contramap(x => x.value)
+    implicit val readWriter: ReadWriter[Path] = PathCodec.pathReadWriter
 
-    implicit def decodePath(implicit nameDecoder: Decoder[Name] = NameCodec.decodeName): Decoder[Path] =
-      Decoder.decodeList(nameDecoder).map(Path.fromList)
+    implicit val encodePath: Encoder[Path] = PathCodec.encodePath
 
-    implicit val empty: Path = Path(List.empty)
+    implicit val decodePath: Decoder[Path] = PathCodec.decodePath
+
+    val empty: Path = Path(List.empty)
 
     def apply(head: Name, rest: Name*): Path =
       Path(head :: rest.toList)

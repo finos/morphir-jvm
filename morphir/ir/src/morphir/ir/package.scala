@@ -2,9 +2,11 @@ package morphir
 
 import morphir.ir.codec.AllCodecs
 import morphir.ir.fuzzer.AllFuzzers
-import morphir.ir.typeclass.instances.NameInstances
 
 package object ir {
+
+  type Name = name.Name
+  val Name: name.Name.type = name.Name
 
   type Path = path.Path
   val Path: path.Path.type = path.Path
@@ -45,6 +47,6 @@ package object ir {
 
   type ValueExprList[+A] = List[Value[A]]
 
-  object implicits extends AllCodecs with AllFuzzers with NameInstances
+  object implicits extends AllCodecs with AllFuzzers
 
 }

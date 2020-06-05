@@ -1,6 +1,5 @@
 package morphir.ir
 
-import morphir.ir.Name.name
 import morphir.ir.QName.qName
 import morphir.ir.codec.AllCodecs
 import morphir.ir.fuzzer.AllFuzzers

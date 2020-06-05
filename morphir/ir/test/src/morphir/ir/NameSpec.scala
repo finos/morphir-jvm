@@ -4,12 +4,9 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import morphir.ir.fuzzer.NameFuzzers._
-import morphir.ir.codec.NameCodec._
-import morphir.ir.json.JsonFacade
-import morphir.ir.testing.JsonSpec
-import morphir.ir.typeclass.instances.NameInstances._
+import morphir.ir.testing.UpickleJsonSpec
 
-object NameSpec extends DefaultRunnableSpec with JsonSpec {
+object NameSpec extends DefaultRunnableSpec with UpickleJsonSpec {
   def spec =
     suite("NameSpec")(
       suite("Make a Name from a string and check that:")(
@@ -125,20 +122,28 @@ object NameSpec extends DefaultRunnableSpec with JsonSpec {
           checkM(fuzzName)(givenName => checkCodecIsWellBehaved(givenName))
         },
         testM("A Name should encode as expected") {
-          check(fuzzName)(givenName => assert(JsonFacade.encode(givenName, 0))(equalTo(givenName.show)))
+          check(fuzzName)(givenName => assertEncodesToExpectedCompactJsonString(givenName)(givenName.show))
         },
         test(
           """Given a Name whose value is ["delta","sigma","theta"] it should encode correctly"""
         ) {
-          assert(JsonFacade.encode(Name.name("delta", "sigma", "theta"), 0))(
-            equalTo("""["delta","sigma","theta"]""")
+          checkEncodesTo(name("delta", "sigma", "theta"))(
+            ujson.Arr(
+              ujson.Str("delta"),
+              ujson.Str("sigma"),
+              ujson.Str("theta")
+            )
           )
         },
         test(
           """Given a Name whose value is ["sigma","gamma","ro"] it should encode correctly"""
         ) {
-          assert(JsonFacade.encode(Name.name("sigma", "gamma", "ro"), 0))(
-            equalTo("""["sigma","gamma","ro"]""")
+          checkEncodesTo(name("sigma", "gamma", "ro"))(
+            ujson.Arr(
+              ujson.Str("sigma"),
+              ujson.Str("gamma"),
+              ujson.Str("ro")
+            )
           )
         }
       )

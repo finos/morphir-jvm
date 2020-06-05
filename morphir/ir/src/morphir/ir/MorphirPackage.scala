@@ -8,7 +8,13 @@ import upickle.default._
 
 object MorphirPackage {
 
-  @newtype case class PackagePath(value: Path)
+  @newtype case class PackagePath(toPath: Path)
+  object PackagePath {
+    implicit val readWriter: ReadWriter[PackagePath] = readwriter[Path].bimap(
+      pkgPath => pkgPath.toPath,
+      path => PackagePath(path)
+    )
+  }
 
   sealed trait PackageRef
   object PackageRef {
@@ -63,11 +69,11 @@ object MorphirPackage {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Definition[A]] = {
       def writeJsonValue(defn: Definition[A]): ujson.Value =
-        ujson.Obj(("dependencies", ujson.Null), ("modules", ujson.Null))
+        ujson.Obj(("dependencies", writeJs(defn.dependencies)), ("modules", ujson.Null))
 
       def readJsonValue(json: ujson.Value): Definition[A] = {
-        val dependencies = read[List[(String, Specification[A])]](json("dependencies"))
-        Definition[A](Map.empty, Map.empty)
+        val dependencies = read[List[(PackagePath, Specification[A])]](json("dependencies")).toMap
+        Definition[A](dependencies, Map.empty)
       }
 
       readwriter[ujson.Value].bimap[Definition[A]](writeJsonValue, readJsonValue)
