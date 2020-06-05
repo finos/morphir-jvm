@@ -30,9 +30,12 @@ object Module {
 
   object Specification {
     implicit def encodeSpecification[A: Encoder]: Encoder[Specification[A]] = {
-      implicit def encodeTypeSpecMap: Encoder[Map[Name, Type.Specification[A]]] = ???
+      implicit def encodeTypeSpecMap: Encoder[Map[Name, Type.Specification[A]]] =
+        Encoder.encodeList[(Name, Type.Specification[A])].contramap(specMap => specMap.toList)
 
-      implicit def encodeValueSpecMap: Encoder[Map[Name, Value.Specification[A]]] = ???
+      implicit def encodeValueSpecMap: Encoder[Map[Name, Value.Specification[A]]] =
+        Encoder.encodeList[(Name, Value.Specification[A])].contramap(_.toList)
+
       Encoder.encodeJson.contramap { spec =>
         Json.obj(
           ("type", spec.types.asJson),
@@ -44,6 +47,17 @@ object Module {
     implicit def decodeSpecification[A: Decoder]: Decoder[Specification[A]] = ???
 
     def empty[A]: Specification[A] = Specification[A](Map.empty, Map.empty)
+  }
+
+  final case class NamedModuleSpec[+A](name: ModulePath, spec: Specification[A])
+  object NamedModuleSpec {
+    implicit def encodeNamedModuleSpec[A: Encoder]: Encoder[NamedModuleSpec[A]] =
+      Encoder.instance(me =>
+        Json.obj(
+          ("name", me.name.asJson),
+          ("spec", me.spec.asJson)
+        )
+      )
   }
 
   final case class Definition[+A](

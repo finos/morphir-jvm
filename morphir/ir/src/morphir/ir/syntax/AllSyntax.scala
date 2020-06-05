@@ -8,5 +8,3 @@ trait AllSyntax
     with PatternMatchCasesSyntax
     with ArgumentSyntax
     with ArgumentListSyntax
-    with ParameterSyntax
-    with ParameterListSyntax

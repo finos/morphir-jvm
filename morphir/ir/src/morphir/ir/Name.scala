@@ -18,6 +18,7 @@ final case class Name private (value: List[String]) extends AnyVal {
     Name(value.map(f))
 
   @inline def segments: List[String] = value
+  @inline def toList: List[String]   = value
 
   override def toString: String = toTitleCase
 

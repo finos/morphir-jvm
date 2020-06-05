@@ -1,7 +1,7 @@
 package morphir.ir
 
 import cats.syntax.functor._
-import io.circe.{ Decoder, Encoder }
+import io.circe.{ Decoder, Encoder, Json }
 import io.circe.syntax._
 import morphir.ir.core.TaggedCompanionObject
 
@@ -160,7 +160,7 @@ object Type {
 
   object Unit extends ExprCompanion("unit") {
     implicit def encodeUnit[A: Encoder]: Encoder[Unit[A]] =
-      Encoder.encodeTuple2[String, A].contramap(v => v.tag -> v.attributes)
+      Encoder.encodeTuple2[String, A].contramap(v => (Tag, v.attributes))
 
     implicit def decodeUnit[A: Decoder]: Decoder[Unit[A]] =
       Decoder.decodeTuple2[String, A].ensure(hasMatchingTag, s"""The tag of the unit type must be "$Tag".""").map {
@@ -690,8 +690,20 @@ object Value {
       .or(Decoder[Destructure[A]].widen)
       .or(Decoder[Unit[A]].widen)
 
-  final case class Specification[+A](inputs: ParameterList[A], output: Type[A]) {
-    def mapAttributes[B](f: A => B): Specification[B] = Specification(inputs.mapAttributes(f), output.mapAttributes(f))
+  final case class Specification[+A](inputs: scala.List[NamedType[A]], output: Type[A]) {
+    def mapAttributes[B](f: A => B): Specification[B] =
+      Specification(NamedType.mapAttributes(f)(inputs), output.mapAttributes(f))
+  }
+
+  object Specification {
+
+    implicit def encodeSpecification[A: Encoder]: Encoder[Specification[A]] =
+      Encoder.encodeJson.contramap(spec =>
+        Json.obj(
+          ("inputs", spec.inputs.asJson),
+          ("output", spec.output.asJson)
+        )
+      )
   }
 
   final case class Definition[+A](valueType: Option[Type[A]], arguments: ArgumentList[A], body: Value[A]) {

@@ -3,7 +3,7 @@ package morphir.ir
 import io.estatico.newtype.macros.newtype
 import morphir.ir.typeclass.instances.PathInstances
 import morphir.ir.codec.NameCodec
-import morphir.ir.PackageModule.PackagePath
+import morphir.ir.MorphirPackage.PackagePath
 
 object path {
 

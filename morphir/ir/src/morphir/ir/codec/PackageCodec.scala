@@ -1,6 +1,6 @@
 package morphir.ir.codec
 
-import morphir.ir.PackageModule.Pkg
+import morphir.ir.MorphirPackage.Pkg
 import morphir.ir.json.Decode.Decoder
 
 trait PackageCodec {

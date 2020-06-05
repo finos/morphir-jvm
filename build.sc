@@ -29,8 +29,6 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-
-
     val zio           = "1.0.0-RC20"
     val zioConfig     = "1.0.0-RC19"
     val zioLogging    = "0.3.0"
@@ -44,6 +42,7 @@ object Deps {
     val directories   = "11"
     val enumeratum    = "1.6.1"
     val macroParadise = "2.1.1"
+    val upickle       = "0.9.5"
   }
 }
 
@@ -100,7 +99,6 @@ trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixM
         )
       )
   )
-
 }
 
 trait CommonJvmModule extends MorphirCommonModule {
@@ -128,6 +126,7 @@ trait MorphirTestModule extends ScalaModule with TestModule {
   def millSourcePath = super.millSourcePath / os.up
 
   def crossScalaVersion: String
+  def platformSegment: String
 
   def ivyDeps = Agg(
     ivy"dev.zio::zio-test::${Deps.Versions.zio}",
@@ -145,7 +144,18 @@ trait MorphirTestModule extends ScalaModule with TestModule {
       .flatMap(source =>
         Seq(
           PathRef(source.path / os.up / "test" / source.path.last),
-          PathRef(source.path / os.up / os.up / "test" / source.path.last)
+          PathRef(source.path / os.up / platformSegment / "test" / source.path.last)
+        )
+      )
+      .distinct
+  )
+
+  def resources = T.sources(
+    super
+      .resources()
+      .flatMap(source =>
+        Seq(
+          PathRef(source.path / os.up / "test" / source.path.last)
         )
       )
       .distinct
@@ -160,12 +170,13 @@ object morphir extends Module {
         extends CrossScalaModule
         with CommonJvmModule
         with MorphirPublishModule
-        with ScalaMacroModule {
+        with ScalaMacroModule { self =>
 
       def artifactName = "morphir-ir"
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
+        ivy"com.lihaoyi::upickle:${Versions.upickle}",
         ivy"io.circe::circe-core:${Versions.circe}",
         ivy"io.circe::circe-generic:${Versions.circe}",
         ivy"io.circe::circe-parser:${Versions.circe}",
@@ -176,7 +187,8 @@ object morphir extends Module {
       )
 
       object test extends Tests {
-        def crossScalaVersion = JvmMorphirIrModule.this.crossScalaVersion
+        def platformSegment: String = self.platformSegment
+        def crossScalaVersion       = JvmMorphirIrModule.this.crossScalaVersion
       }
     }
   }
@@ -187,7 +199,7 @@ object morphir extends Module {
     class JvmMorphirScalaModule(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
-        with MorphirPublishModule {
+        with MorphirPublishModule { self =>
       def artifactName = "morphir-scala"
       def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
       def ivyDeps = Agg(
@@ -195,7 +207,8 @@ object morphir extends Module {
       )
 
       object test extends Tests {
-        def crossScalaVersion = JvmMorphirScalaModule.this.crossScalaVersion
+        def platformSegment: String = self.platformSegment
+        def crossScalaVersion       = JvmMorphirScalaModule.this.crossScalaVersion
       }
     }
   }
@@ -206,11 +219,12 @@ object morphir extends Module {
       class JvmMorphirSdkCore(val crossScalaVersion: String)
           extends CrossScalaModule
           with CommonJvmModule
-          with MorphirPublishModule {
+          with MorphirPublishModule { self =>
 
         def artifactName = "morphir-sdk-core"
         object test extends Tests {
-          def crossScalaVersion = JvmMorphirSdkCore.this.crossScalaVersion
+          def platformSegment: String = self.platformSegment
+          def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
         }
       }
     }
@@ -222,7 +236,7 @@ object morphir extends Module {
         extends CrossScalaModule
         with CommonJvmModule
         with MorphirPublishModule
-        with ScalaMacroModule {
+        with ScalaMacroModule { self =>
       def artifactName = "morphir-workspace"
       def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
       def ivyDeps = Agg(
@@ -240,7 +254,8 @@ object morphir extends Module {
       )
 
       object test extends Tests {
-        def crossScalaVersion = JvmMorphirWorkspace.this.crossScalaVersion
+        def platformSegment: String = self.platformSegment
+        def crossScalaVersion       = JvmMorphirWorkspace.this.crossScalaVersion
       }
     }
   }
@@ -250,7 +265,7 @@ object morphir extends Module {
     class JvmMorphirCli(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
-        with MorphirPublishModule {
+        with MorphirPublishModule { self =>
       def artifactName = "morphir-cli"
       def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion), morphir.workspace.jvm(crossScalaVersion))
       def ivyDeps = Agg(
@@ -279,7 +294,8 @@ object morphir extends Module {
              Agg.empty)
 
       object test extends Tests {
-        def crossScalaVersion = JvmMorphirCli.this.crossScalaVersion
+        def platformSegment: String = self.platformSegment
+        def crossScalaVersion       = JvmMorphirCli.this.crossScalaVersion
       }
     }
   }

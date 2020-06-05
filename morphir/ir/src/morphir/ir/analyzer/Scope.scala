@@ -1,7 +1,7 @@
 package morphir.ir.analyzer
 
 import morphir.ir.Name
-import morphir.ir.PackageModule.Pkg
+import morphir.ir.MorphirPackage.Pkg
 
 sealed trait ParentScope[+C] {
   def children: Map[Name, Scope[C]]

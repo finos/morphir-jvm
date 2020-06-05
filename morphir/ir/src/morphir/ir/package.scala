@@ -24,14 +24,11 @@ package object ir {
   type PublicAccessControlled[+A]  = AccessControlled.Public[A]
   type PrivateAccessControlled[+A] = AccessControlled.Private[A]
 
-  type Package = PackageModule.type
-  val Package: Package = PackageModule
+  type PackageDefinition = MorphirPackage.Definition[ujson.Value]
+  val PackageDefinition: MorphirPackage.Definition.type = MorphirPackage.Definition
 
-  type PkgDef[+A] = Package.Definition[A]
-  val PkgDef: Package.Definition.type = Package.Definition
-
-  type Parameter[+A]     = (Name, Type[A])
-  type ParameterList[+A] = List[Parameter[A]]
+  type PkgDef[+A] = MorphirPackage.Definition[A]
+  val PkgDef: MorphirPackage.Definition.type = MorphirPackage.Definition
 
   type Argument[+A]     = (Name, A)
   type ArgumentList[+A] = List[Argument[A]]
@@ -49,4 +46,5 @@ package object ir {
   type ValueExprList[+A] = List[Value[A]]
 
   object implicits extends AllCodecs with AllFuzzers with NameInstances
+
 }
