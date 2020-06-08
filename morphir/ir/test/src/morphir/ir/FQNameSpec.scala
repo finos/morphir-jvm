@@ -1,6 +1,5 @@
 package morphir.ir
 
-import morphir.ir.codec.AllCodecs
 import morphir.ir.fuzzer.AllFuzzers
 import morphir.ir.testing.JsonSpec
 import zio.test._
@@ -9,7 +8,7 @@ import zio.test.TestAspect._
 import FQName.fQName
 import morphir.ir.json.JsonFacade
 
-object FQNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers with AllCodecs with JsonFacade {
+object FQNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers with JsonFacade {
   def spec =
     suite("FQNameSpec")(
       suite("Encoding and decoding")(

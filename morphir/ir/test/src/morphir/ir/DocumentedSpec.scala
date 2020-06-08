@@ -1,11 +1,11 @@
 package morphir.ir
 
 import morphir.ir.documented._
-import morphir.ir.testing.JsonSpec
+import morphir.ir.testing.UpickleJsonSpec
 import zio.test._
 import zio.test.TestAspect._
 
-object DocumentedSpec extends DefaultRunnableSpec with JsonSpec {
+object DocumentedSpec extends DefaultRunnableSpec with UpickleJsonSpec {
   def spec =
     suite("Documented Spec")(
       suite("JSON Codec")(

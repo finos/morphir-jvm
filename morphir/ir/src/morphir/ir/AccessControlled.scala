@@ -2,7 +2,7 @@ package morphir.ir
 
 import io.circe.{ Decoder, Encoder }
 import morphir.ir.AccessControlled.{ Private, Public }
-import morphir.ir.codec.AccessControlledCodec
+import morphir.ir.codec.accessControlledCodecs
 
 sealed abstract class AccessControlled[+A] extends Product with Serializable {
 
@@ -35,7 +35,7 @@ sealed abstract class AccessControlled[+A] extends Product with Serializable {
   }
 }
 
-object AccessControlled extends AccessControlledCodec {
+object AccessControlled extends accessControlledCodecs.AccessControlledCodec {
 
   sealed abstract class Access extends Serializable
   object Access {

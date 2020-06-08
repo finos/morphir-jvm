@@ -1,14 +1,13 @@
 package morphir.ir
 
 import morphir.ir.QName.qName
-import morphir.ir.codec.AllCodecs
 import morphir.ir.fuzzer.AllFuzzers
 import morphir.ir.json.JsonFacade
 import morphir.ir.testing.JsonSpec
 import zio.test.TestAspect._
 import zio.test._
 
-object QNameSpec extends DefaultRunnableSpec with JsonSpec with AllCodecs with AllFuzzers with JsonFacade {
+object QNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers with JsonFacade {
 
   def spec = suite("QNameSpec")(
     suite("Encoding/Decoding a QName")(

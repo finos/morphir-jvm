@@ -5,6 +5,8 @@ import cats.implicits._
 import io.estatico.newtype.macros.newtype
 import morphir.ir.MorphirPackage.PackagePath
 import morphir.ir.codec.PathCodec
+import morphir.ir.module.ModulePath
+
 import upickle.default._
 
 object path {

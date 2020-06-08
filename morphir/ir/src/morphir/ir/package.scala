@@ -1,6 +1,5 @@
 package morphir
 
-import morphir.ir.codec.AllCodecs
 import morphir.ir.fuzzer.AllFuzzers
 
 package object ir {
@@ -11,14 +10,11 @@ package object ir {
   type Path = path.Path
   val Path: path.Path.type = path.Path
 
-  val ModulePath: Module.ModulePath.type = Module.ModulePath
-  type ModulePath = Module.ModulePath
+  type ModuleDefinition[+A] = module.Definition[A]
+  val ModuleDefinition: module.Definition.type = module.Definition
 
-  type ModuleDefinition[+A] = Module.Definition[A]
-  val ModuleDefinition: Module.Definition.type = Module.Definition
-
-  type ModuleSpecification[+A] = Module.Specification[A]
-  val ModuleSpecification: Module.Specification.type = Module.Specification
+  type ModuleSpecification[+A] = module.Specification[A]
+  val ModuleSpecification: module.Specification.type = module.Specification
 
   type TypeDefinition[+A] = Type.Definition[A]
   val TypeDefinition: Type.Definition.type = Type.Definition
@@ -47,6 +43,6 @@ package object ir {
 
   type ValueExprList[+A] = List[Value[A]]
 
-  object implicits extends AllCodecs with AllFuzzers
+  object implicits extends AllFuzzers
 
 }

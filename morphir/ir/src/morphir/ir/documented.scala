@@ -1,21 +1,18 @@
 package morphir.ir
 
-import io.circe.{ Decoder, Encoder }
+import morphir.ir.codec.documentedCodecs
 
 object documented {
 
   case class Documented[+A](doc: String, value: A) {
-    @inline def toTuple: (String, A) = doc -> value
+
+    @inline def toTuple: (String, A) = (doc, value)
+
+    def map[B](f: A => B): Documented[B] =
+      Documented(doc, f(value))
   }
 
-  object Documented {
-
-    implicit def encodeDocumented[A: Encoder]: Encoder[Documented[A]] =
-      Encoder.encodeTuple2[String, A].contramap(_.toTuple)
-
-    implicit def decodeDocumented[A: Decoder]: Decoder[Documented[A]] =
-      Decoder.decodeTuple2[String, A].map(fromTuple)
-
+  object Documented extends documentedCodecs.DocumentedCodec {
     def fromTuple[A](tuple: (String, A)): Documented[A] = Documented(tuple._1, tuple._2)
   }
 }

@@ -1,6 +1,6 @@
 package morphir.ir.sdk
 
-import morphir.ir.Module.ModulePath
+import morphir.ir.module.ModulePath
 import morphir.ir.MorphirPackage.PackagePath
 import morphir.ir.{ FQName, Name, Path, QName }
 

@@ -1,6 +1,6 @@
 package morphir.ir.sdk
 
-import morphir.ir.Module.ModulePath
+import morphir.ir.module.ModulePath
 import morphir.ir.Type.Reference
 import morphir.ir.{ ModuleSpecification, Name, Value }
 import morphir.ir.Type.Specification.OpaqueTypeSpecification
