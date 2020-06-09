@@ -256,7 +256,7 @@ object Value {
   import syntax.all._
 
   def literal[A](attributes: A, value: LiteralValue): Literal[A] = Literal(attributes, value)
-  def literal[A](attributes: A, value: Boolean): Literal[A]      = Literal(attributes, LiteralValue.bool(value))
+  def literal[A](attributes: A, value: Boolean): Literal[A]      = Literal(attributes, morphir.ir.literal.bool(value))
   def unit[A](attributes: A): Unit[A]                            = Unit(attributes)
 
   final case class Literal[+A](attributes: A, value: LiteralValue) extends Value[A](ValueExprKind.Literal) {

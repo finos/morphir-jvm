@@ -38,8 +38,8 @@ package object ir {
 
   type PatternList[+A] = List[Pattern[A]]
 
-  type LiteralValue = Literal
-  val LiteralValue: Literal.type = Literal
+  type LiteralValue = literal.Literal
+  val LiteralValue: literal.Literal.type = literal.Literal
 
   type ValueExprList[+A] = List[Value[A]]
 

@@ -7,7 +7,8 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import morphir.ir.testing.JsonSpec
 import morphir.ir.fuzzer.LiteralFuzzers._
-import morphir.ir.Literal._
+
+import morphir.ir.literal.Literal._
 
 object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
   def spec =

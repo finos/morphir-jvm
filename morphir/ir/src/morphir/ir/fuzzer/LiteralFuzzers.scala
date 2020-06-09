@@ -1,25 +1,26 @@
 package morphir.ir.fuzzer
 
-import morphir.ir.Literal
-import morphir.ir.Literal._
+import morphir.ir.literal
+import morphir.ir.literal._
+import morphir.ir.literal.Literal._
 
 import zio.test.Gen
 
 trait LiteralFuzzers {
   implicit val fuzzBoolLiteral: Fuzzer[BoolLiteral] =
-    Gen.boolean.map(Literal.bool(_))
+    Gen.boolean.map(literal.bool)
 
   implicit val fuzzCharLiteral: Fuzzer[CharLiteral] =
-    Gen.anyUnicodeChar.map(Literal.char(_))
+    Gen.anyUnicodeChar.map(literal.char)
 
   implicit val fuzzStringLiteral: Fuzzer[StringLiteral] =
-    Gen.alphaNumericString.map(Literal.string(_))
+    Gen.alphaNumericString.map(literal.string)
 
   implicit val fuzzIntLiteral: Fuzzer[IntLiteral] =
-    Gen.anyInt.map(Literal.int(_))
+    Gen.anyInt.map(literal.int)
 
   implicit val fuzzFloatLiteral: Fuzzer[FloatLiteral] =
-    Gen.anyFloat.map(Literal.float(_))
+    Gen.anyFloat.map(literal.float)
 
   implicit val fuzzLiteral: Fuzzer[Literal] =
     Gen.oneOf(fuzzBoolLiteral, fuzzCharLiteral, fuzzStringLiteral, fuzzIntLiteral, fuzzFloatLiteral)
