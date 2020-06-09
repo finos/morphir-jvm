@@ -4,6 +4,8 @@ import morphir.ir.codec.documentedCodecs
 
 object documented {
 
+  def apply[A](doc: String, value: A): Documented[A] = Documented(doc, value)
+
   case class Documented[+A](doc: String, value: A) {
 
     @inline def toTuple: (String, A) = (doc, value)

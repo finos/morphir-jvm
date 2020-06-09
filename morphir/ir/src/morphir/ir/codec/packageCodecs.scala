@@ -1,7 +1,7 @@
 package morphir.ir.codec
 
 import upickle.default._
-import morphir.ir.{ module, MorphirPackage }
+import morphir.ir.{ module, AccessControlled, MorphirPackage }
 import morphir.ir.module.{ ModulePath, Specification => ModuleSpec }
 
 object packageCodecs {
@@ -62,8 +62,17 @@ object packageCodecs {
       }
 
       def readJsonValue(json: ujson.Value): Definition[A] = {
-        val dependencies = read[List[(PackagePath, Specification[A])]](json("dependencies")).toMap
-        Definition[A](dependencies, Map.empty)
+        val dependenciesJson = json("dependencies")
+        val moduleJson       = json("modules")
+
+        val dependencies = read[List[(PackagePath, Specification[A])]](dependenciesJson).toMap
+        val modules = moduleJson.arr.map { json =>
+          val name = read[ModulePath](json("name"))
+          val defn = read[AccessControlled[module.Definition[A]]](json("def"))
+          (name, defn)
+        }.toMap
+
+        Definition[A](dependencies, modules)
       }
 
       readwriter[ujson.Value].bimap[Definition[A]](writeJsonValue, readJsonValue)

@@ -43,6 +43,7 @@ object MorphirPackage {
     dependencies: Map[PackagePath, Specification[A]],
     modules: Map[ModulePath, AccessControlled[module.Definition[A]]]
   )
+
   object Definition extends packageCodecs.DefinitionCodec {
     def empty[A]: Definition[A] = Definition(Map.empty, Map.empty)
   }

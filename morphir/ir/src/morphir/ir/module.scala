@@ -1,15 +1,17 @@
 package morphir.ir
 
-import io.circe.{ Decoder, Encoder, Json }
-import io.circe.syntax._
+import io.circe.{ Decoder, Encoder }
 import io.estatico.newtype.macros.newtype
 import morphir.ir.codec.moduleCodecs
 import morphir.ir.codec.moduleCodecs.ModulePathCodec
+import morphir.ir.documented.Documented
 import upickle.default._
 
 object module {
 
-  @newtype case class ModulePath(toPath: Path)
+  @newtype case class ModulePath(toPath: Path) {
+    override def toString: String = s"MP: $toPath"
+  }
 
   object ModulePath {
     def fromString(pathStr: String): ModulePath = module.ModulePath(Path.fromString(pathStr))
@@ -28,7 +30,7 @@ object module {
   }
 
   final case class Specification[+A](
-    types: Map[Name, Type.Specification[A]],
+    types: Map[Name, Documented[Type.Specification[A]]],
     values: Map[Name, Value.Specification[A]]
   )
 
@@ -36,20 +38,8 @@ object module {
 
     def empty[A]: Specification[A] = Specification[A](Map.empty, Map.empty)
   }
-
-  final case class NamedModuleSpec[+A](name: ModulePath, spec: Specification[A])
-  object NamedModuleSpec {
-    implicit def encodeNamedModuleSpec[A: Encoder]: Encoder[NamedModuleSpec[A]] =
-      Encoder.instance(me =>
-        Json.obj(
-          ("name", me.name.asJson),
-          ("spec", me.spec.asJson)
-        )
-      )
-  }
-
   final case class Definition[+A](
-    types: Map[Name, AccessControlled[Type.Definition[A]]],
+    types: Map[Name, AccessControlled[Documented[Type.Definition[A]]]],
     values: Map[Name, AccessControlled[Value.Definition[A]]]
   )
 

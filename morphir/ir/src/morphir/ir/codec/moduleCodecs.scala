@@ -2,8 +2,9 @@ package morphir.ir.codec
 
 import io.circe.{ Decoder, Encoder, Json }
 import io.circe.syntax._
+import morphir.ir.documented.Documented
 import morphir.ir.name.Name
-import morphir.ir.{ Type, Value }
+import morphir.ir.{ AccessControlled, Type, Value }
 import morphir.ir.module._
 import upickle.default._
 import morphir.ir.path.Path
@@ -33,8 +34,8 @@ object moduleCodecs {
       )
 
     implicit def encodeSpecification[A: Encoder]: Encoder[Specification[A]] = {
-      implicit def encodeTypeSpecMap: Encoder[Map[Name, Type.Specification[A]]] =
-        Encoder.encodeList[(Name, Type.Specification[A])].contramap(specMap => specMap.toList)
+      implicit def encodeTypeSpecMap: Encoder[Map[Name, Documented[Type.Specification[A]]]] =
+        Encoder.encodeList[(Name, Documented[Type.Specification[A]])].contramap(specMap => specMap.toList)
 
       implicit def encodeValueSpecMap: Encoder[Map[Name, Value.Specification[A]]] =
         Encoder.encodeList[(Name, Value.Specification[A])].contramap(_.toList)
@@ -53,17 +54,22 @@ object moduleCodecs {
   trait DefinitionCodec {
     implicit def moduleDefinitionReadWriter[A: ReadWriter]: ReadWriter[Definition[A]] =
       readwriter[ujson.Value].bimap[Definition[A]](
-        _ =>
+        definition =>
           ujson.Obj(
-            ("types", ujson.Null),
+            ("types", writeJs(definition.types.toList)),
             ("values", ujson.Null)
           ),
         json => {
-          val types  = json("types")
-          val values = json("values")
-          assert(types != ujson.Null)
-          assert(values != ujson.Null)
-          Definition[A](Map.empty, Map.empty)
+          val typesJson  = json("types")
+          val valuesJson = json("values")
+          val types = typesJson.arr.map { json =>
+            val name = read[Name](json(0))
+            val ac   = read[AccessControlled[Documented[Type.Definition[A]]]](json(1))
+            (name, ac)
+          }.toMap
+          assert(typesJson != ujson.Null)
+          assert(valuesJson != ujson.Null)
+          Definition(types = types, values = Map.empty)
         }
       )
   }

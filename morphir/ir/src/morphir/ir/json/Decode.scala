@@ -17,7 +17,15 @@ object Decode extends Decode {
 
   sealed trait DecodeError extends Exception
   object DecodeError {
-    final case class UnexpectedTag(actualTag: String, expectedExamples: List[String], message: String) {
+
+    def unexpectedTag(actualTag: String, expectedExamples: List[String], message: String): UnexpectedTag =
+      UnexpectedTag(actualTag, expectedExamples, message)
+
+    def unexpectedTag(actualTag: String, expectedExample: String, expectedExamples: String*): UnexpectedTag =
+      new UnexpectedTag(actualTag, List(expectedExample) ++ expectedExamples)
+
+    final case class UnexpectedTag(actualTag: String, expectedExamples: List[String], message: String)
+        extends Exception(message) {
       def this(actualTag: String, expectedExamples: List[String]) = {
         this(
           actualTag,

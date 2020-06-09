@@ -14,6 +14,7 @@ object LoaderSpec extends DefaultRunnableSpec {
         for {
           json   <- getManagedResource("morphir/ir/hello.ir.json").map(bs => bs.mkString).useNow
           pkgDef <- loadPackage(json).provideCustomLayer(Loader.live)
+          _      <- console.putStrLn(s"Package: $pkgDef")
         } yield assert(pkgDef.modules)(isNonEmpty)
       }
     )
