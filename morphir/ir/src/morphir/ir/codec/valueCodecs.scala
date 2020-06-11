@@ -23,23 +23,12 @@ object valueCodecs {
     val Tag: String = "literal"
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Literal[A]] =
-      readwriter[ujson.Value].bimap[Literal[A]](
-        expr => {
-          val lit = writeJs(expr.value)
-          ujson.Arr(Tag, writeJs(expr.attributes), lit)
-        },
-        json => {
-          val lit = read[literal.Literal](json(2))
-          assert(lit != null)
-          ???
+      readwriter[(String, A, literal.Literal)].bimap[Literal[A]](
+        valueExpr => (Tag, valueExpr.attributes, valueExpr.value), {
+          case (tag, attributes, value: literal.Literal) if tag == Tag => Literal(attributes, value)
+          case (tag: String, _, _)                                     => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-//      readwriter[(String, A, literal.Literal)].bimap[Literal[A]](
-//        valueExpr => (Tag, valueExpr.attributes, valueExpr.value), {
-//          case (tag, attributes, value: literal.Literal) if tag == Tag => Literal(attributes, value)
-//          case (tag: String, _, _)                                     => throw DecodeError.unexpectedTag(tag, Tag)
-//        }
-//      )
   }
 
   trait ConstructorCodec extends TaggedCompanionObjectLike {

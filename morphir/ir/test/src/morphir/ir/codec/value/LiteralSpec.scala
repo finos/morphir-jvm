@@ -9,7 +9,7 @@ import zio.test._
 import zio.test.Assertion._
 
 object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
-  def spec = suite("Value.Literal Spec")(
+  def spec = suite("Codec: Value.Literal Spec")(
     suite("JSON encoding")(
       test("It should encode as a literal value") {
         val sut = Value.Literal((1, 2), literal.bool(true))
@@ -26,7 +26,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
     ),
     suite("JSON decoding")(
       test("Decoding a literal with no attributes") {
-        val json   = """["literal", null, ["bool_literal", true]]""".stripMargin
+        val json   = """["literal", {}, ["bool_literal", true]]""".stripMargin
         val result = decodeString[Literal[scala.Unit]](json)
 
         assert(result)(equalTo(Good(Value.literal((), true))))

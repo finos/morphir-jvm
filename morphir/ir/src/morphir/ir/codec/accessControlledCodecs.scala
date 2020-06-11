@@ -12,7 +12,7 @@ object accessControlledCodecs {
       readwriter[(String, A)].bimap[AccessControlled[A]](
         {
           case AccessControlled.Public(value)  => ("public", value)
-          case AccessControlled.Private(value) => ("public", value)
+          case AccessControlled.Private(value) => ("private", value)
         }, {
           case ("public", value)  => AccessControlled.Public(value)
           case ("private", value) => AccessControlled.Private(value)

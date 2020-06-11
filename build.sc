@@ -44,6 +44,7 @@ object Deps {
     val macroParadise = "2.1.1"
     val upickle       = "1.1.0"
     val scalactic     = "3.1.2"
+    val scalaUri      = "2.2.2"
   }
 }
 
@@ -179,6 +180,7 @@ object morphir extends Module {
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.lihaoyi::upickle:${Versions.upickle}",
         ivy"com.lihaoyi::pprint:${Versions.pprint}",
+        ivy"io.lemonlabs::scala-uri:${Versions.scalaUri}",
         ivy"org.scalactic::scalactic:${Versions.scalactic}",
         ivy"io.estatico::newtype:${Versions.newtype}",
         ivy"dev.zio::zio-test::${Deps.Versions.zio}"

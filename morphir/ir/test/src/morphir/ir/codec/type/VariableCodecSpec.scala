@@ -8,7 +8,7 @@ import zio.test._
 import zio.test.Assertion._
 
 object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
-  def spec = suite("(Type)Variable codec Spec")(
+  def spec = suite("Codec:Type:Variable Spec")(
     suite("JSON - Encoding")(
       test("Should encode to a JSON array")(
         assert {
@@ -43,7 +43,7 @@ object VariableCodecSpec extends DefaultRunnableSpec with JsonSpec {
     ),
     suite("JSON - Decoding")(
       test("Should decode from a JSON Array") {
-        val json = """["variable", null, ["temp"]]"""
+        val json = """["variable", {}, ["temp"]]"""
         assert(decodeString[Variable[Unit]](json))(equalTo(Good(Variable((), name("temp")))))
       }
     )

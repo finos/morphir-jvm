@@ -13,12 +13,12 @@ object AccessControlledSpec extends DefaultRunnableSpec with JsonSpec with JsonF
       suite("Encoding to JSON")(
         test("A Private object should encode as expected") {
           assertEncodesToExpectedCompactJsonString(AccessControlled.`private`(("John", "Doe", 35)))(
-            """["Private",["John","Doe",35]]"""
+            """["private",["John","Doe",35]]"""
           )
         },
         test("A Public object should encode as expected") {
           assertEncodesToExpectedCompactJsonString(AccessControlled.`public`(("John", "Doe", 35)))(
-            """["Public",["John","Doe",35]]"""
+            """["public",["John","Doe",35]]"""
           )
         }
       ),
@@ -27,7 +27,7 @@ object AccessControlledSpec extends DefaultRunnableSpec with JsonSpec with JsonF
           "Given valid JSON text for a public item it should decode successfully"
         )(
           assert(decodeString[AccessControlled[(String, Int)]]("""
-                                                                 |[ "Public"
+                                                                 |[ "public"
                                                                  |, ["John", 31]    
                                                                  |]
               """.stripMargin))(equalTo(Good(publicAccess(("John", 31)))))
@@ -36,7 +36,7 @@ object AccessControlledSpec extends DefaultRunnableSpec with JsonSpec with JsonF
           "Given valid JSON text for a private item it should decode successfully"
         ) {
           assert(decodeString[AccessControlled[(String, Int)]]("""
-                                                                 |[ "Private"
+                                                                 |[ "private"
                                                                  |, ["John", 31]    
                                                                  |]
               """.stripMargin))(equalTo(Good(privateAccess(("John", 31)))))
@@ -45,7 +45,7 @@ object AccessControlledSpec extends DefaultRunnableSpec with JsonSpec with JsonF
           "Given an invalid $type tag in the JSON decoding should fail"
         ) {
           assert(decodeString[AccessControlled[(String, Int)]]("""
-                                                                 |[ "Protected"
+                                                                 |[ "protected"
                                                                  |, ["John", 31]    
                                                                  |]
               """.stripMargin).isGood)(isFalse)

@@ -16,7 +16,7 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
           """
             |[
             |  "reference",
-            |  null,
+            |  {},
             |  [
             |    [["morphir"], ["s", "d", "k"]],
             |    [["string"]],
@@ -40,7 +40,7 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
           """
             |[
             |  "reference",
-            |  null,
+            |  {},
             |  [
             |    [["morphir"], ["s", "d", "k"]],
             |    [["string"]],
@@ -64,7 +64,7 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
           """
             |[
             |  "not-a-reference",
-            |  null,
+            |  {},
             |  [
             |    [["morphir"], ["s", "d", "k"]],
             |    [["string"]],
