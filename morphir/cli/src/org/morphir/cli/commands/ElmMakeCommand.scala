@@ -1,7 +1,7 @@
 package org.morphir.cli.commands
 
 import cats.implicits._
-import org.morphir.cli.{ CliAction, ExitCode }
+import org.morphir.cli.CliAction
 import org.morphir.workspace.project.model.{ OutputDir, ProjectDir }
 import zio._
 import zio.blocking.Blocking
@@ -42,7 +42,7 @@ final case class ElmMakeCommand(
                      .fork
       _ <- stdoutFork.join
       _ <- stdErrFork.join
-    } yield ExitCode.Success
+    } yield ExitCode.success
 }
 
 object ElmMakeCommand {

@@ -7,7 +7,7 @@ import zio._
 object Cli {
 
   def parse(args: Seq[String]): ZIO[CliEnv, Nothing, CliCommand] =
-    ZIO.fromEither(Cli.rootCommand.parse(args)).fold((help: Help) => HelpCommand(help), identity)
+    ZIO.fromEither(rootCommand.parse(args)).fold((help: Help) => HelpCommand(help), identity)
 
   lazy val rootCommand: Command[CliCommand] = Command("morphir", "Morphir CLI")(
     elmCommand orElse scalaCommand

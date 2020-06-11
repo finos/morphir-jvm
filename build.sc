@@ -42,7 +42,8 @@ object Deps {
     val directories   = "11"
     val enumeratum    = "1.6.1"
     val macroParadise = "2.1.1"
-    val upickle       = "0.9.5"
+    val upickle       = "1.1.0"
+    val scalactic     = "3.1.2"
   }
 }
 
@@ -165,7 +166,7 @@ trait MorphirTestModule extends ScalaModule with TestModule {
 object morphir extends Module {
   import Deps._
   object ir extends Module {
-    object jvm extends Cross[JvmMorphirIrModule](Versions.scala212, Versions.scala213)
+    object jvm extends Cross[JvmMorphirIrModule](Versions.scala213)
     class JvmMorphirIrModule(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
@@ -177,11 +178,8 @@ object morphir extends Module {
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.lihaoyi::upickle:${Versions.upickle}",
-        ivy"io.circe::circe-core:${Versions.circe}",
-        ivy"io.circe::circe-generic:${Versions.circe}",
-        ivy"io.circe::circe-parser:${Versions.circe}",
-        ivy"com.beachape::enumeratum:${Versions.enumeratum}",
-        ivy"com.beachape::enumeratum-circe:${Versions.enumeratum}",
+        ivy"com.lihaoyi::pprint:${Versions.pprint}",
+        ivy"org.scalactic::scalactic:${Versions.scalactic}",
         ivy"io.estatico::newtype:${Versions.newtype}",
         ivy"dev.zio::zio-test::${Deps.Versions.zio}"
       )
@@ -195,7 +193,7 @@ object morphir extends Module {
 
   object scala extends Module {
 
-    object jvm extends Cross[JvmMorphirScalaModule](Versions.scala212, Versions.scala213)
+    object jvm extends Cross[JvmMorphirScalaModule](Versions.scala213)
     class JvmMorphirScalaModule(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
@@ -231,7 +229,7 @@ object morphir extends Module {
   }
 
   object workspace extends Module {
-    object jvm extends Cross[JvmMorphirWorkspace](Versions.scala212, Versions.scala213)
+    object jvm extends Cross[JvmMorphirWorkspace](Versions.scala213)
     class JvmMorphirWorkspace(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
@@ -261,7 +259,7 @@ object morphir extends Module {
   }
 
   object cli extends Module {
-    object jvm extends Cross[JvmMorphirCli](Versions.scala212, Versions.scala213)
+    object jvm extends Cross[JvmMorphirCli](Versions.scala213)
     class JvmMorphirCli(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule

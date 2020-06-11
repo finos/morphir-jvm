@@ -1,6 +1,7 @@
 package morphir.ir.fuzzer
 
-import morphir.ir.{ Name, Path }
+import morphir.ir.name.Name
+import morphir.ir.path.Path
 import zio.random.Random
 import zio.test.{ Gen, Sized }
 

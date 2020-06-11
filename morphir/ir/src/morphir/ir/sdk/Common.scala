@@ -1,8 +1,10 @@
 package morphir.ir.sdk
 
 import morphir.ir.module.ModulePath
+import morphir.ir.name.Name
+import morphir.ir.path.Path
 import morphir.ir.MorphirPackage.PackagePath
-import morphir.ir.{ FQName, Name, Path, QName }
+import morphir.ir.{ FQName, QName }
 
 object Common {
   def packageName: PackagePath =

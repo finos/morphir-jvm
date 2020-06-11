@@ -1,6 +1,6 @@
 package morphir.ir.codec
 
-import morphir.ir.Path
+import morphir.ir.path.Path
 import morphir.ir.Name
 import zio.test._
 import zio.test.Assertion._
@@ -19,7 +19,7 @@ object ModuleCodecSpec extends DefaultRunnableSpec with JsonFacade {
 
           val modulePath = path.toModulePath
 
-          assert(encodeAsJson(path))(equalTo(encodeAsJson(modulePath)))
+          assert(encodeAsJson(modulePath))(equalTo(encodeAsJson(path)))
 
         }
       ),

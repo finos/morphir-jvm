@@ -1,17 +1,17 @@
 package org.morphir.cli.commands
 import java.nio.file.Path
 
-import org.morphir.cli.{ CliAction, ExitCode }
+import org.morphir.cli.CliAction
 import org.morphir.workspace.project.model.ModelFilePath
 import zio.logging._
 
 final case class ScalaGenCommand(modelFile: ModelFilePath) extends CliCommand {
   def action: CliAction =
-    (log
+    log
       .locally(LogAnnotation.Name(getClass.getName :: Nil)) {
         log.info(s"model-file: $modelFile")
-      })
-      .as(ExitCode.Success)
+      }
+      .exitCode
 }
 
 object ScalaGenCommand {

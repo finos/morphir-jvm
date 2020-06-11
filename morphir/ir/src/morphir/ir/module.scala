@@ -1,7 +1,7 @@
 package morphir.ir
 
-import io.circe.{ Decoder, Encoder }
 import io.estatico.newtype.macros.newtype
+import morphir.ir.path.Path
 import morphir.ir.codec.moduleCodecs
 import morphir.ir.codec.moduleCodecs.ModulePathCodec
 import morphir.ir.documented.Documented
@@ -21,12 +21,6 @@ object module {
     implicit def toPath(modulePath: ModulePath): Path = modulePath.toPath
 
     implicit val readWriter: ReadWriter[ModulePath] = ModulePathCodec.modulePathReadWriter
-
-    implicit val encodeModulePath: Encoder[ModulePath] =
-      ModulePathCodec.encodeModulePath
-
-    implicit val decodeModulePath: Decoder[ModulePath] =
-      ModulePathCodec.decodeModulePath
   }
 
   final case class Specification[+A](

@@ -1,7 +1,7 @@
 package morphir.ir
 
-import cats.Show
 import morphir.ir.codec.NameCodec
+import morphir.ir.path.Path
 
 import scala.annotation.tailrec
 
@@ -74,12 +74,11 @@ object name {
 
       process(List.empty, List.empty, words)
     }
+
+    def show: String = value.map(segment => s""""$segment"""").mkString("[", ",", "]")
   }
 
   object Name extends NameCodec {
-
-    implicit val show: Show[Name] =
-      Show.show(name => name.value.map(segment => s""""$segment"""").mkString("[", ",", "]"))
 
     def apply(firstWord: String, otherWords: String*): Name =
       (firstWord :: otherWords.toList).map(fromString).reduce(_ ++ _)

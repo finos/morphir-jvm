@@ -1,20 +1,15 @@
 package morphir.ir
 
-import cats.Show
-import cats.implicits._
 import morphir.ir.codec.QNameCodec
+import morphir.ir.path.Path
 
 case class QName(modulePath: Path, localName: Name) {
-  def toTuple: (Path, Name) = modulePath -> localName
+  def toTuple: (Path, Name) = (modulePath, localName)
 
-  //override def toString: String = mod
+  override def toString: String = s"${modulePath}.$localName"
 }
 
 object QName extends QNameCodec {
-
-  implicit val show: Show[morphir.ir.QName] =
-    Show.show[morphir.ir.QName](qn => show"${qn.modulePath}.${qn.localName}")
-
   @inline def toTuple(qname: QName): (Path, Name) = qname.toTuple
   def fromTuple(tuple: (Path, Name)): QName       = QName(tuple._1, tuple._2)
   @inline def getModulePath(qname: QName): Path   = qname.modulePath
@@ -27,10 +22,10 @@ object QName extends QNameCodec {
     pathPartToString: Name => String,
     nameToString: Name => String,
     sep: String,
-    qname: QName
-  ) =
-    (qname.modulePath.toList.map(pathPartToString) ++ nameToString(
-      qname.localName
+    qualifiedName: QName
+  ): String =
+    (qualifiedName.modulePath.toList.map(pathPartToString) ++ nameToString(
+      qualifiedName.localName
     )).mkString(sep)
 
 }

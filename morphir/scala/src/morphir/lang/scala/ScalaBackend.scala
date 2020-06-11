@@ -14,13 +14,12 @@ object ScalaBackend {
   final case class Live() extends Service {
     //def rewrite[A, B](typeExpr: TypeExpr[A]): TypeExpr[B] = ???
 
-    def toTree[A](name: Name)(typeExpr: TypeExpr[A]): Tree = {
-      val typeName = scala.meta.Type.Name(name.toCamelCase)
-      q"case class $typeName ()"
+    def toTree[A](name: Name)(typeExpr: TypeExpr[A]): Tree = typeExpr match {
+      case Record(_, _) =>
+        val typeName = scala.meta.Type.Name(name.toCamelCase)
+        q"case class $typeName ()"
+      case _ => ???
     }
-
-    def toTree[A](name: Name)(record: Record[A]): Tree =
-      ???
 
   }
 }

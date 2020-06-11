@@ -1,137 +1,102 @@
 package morphir.ir.codec
 
-import io.circe.{ Decoder, Encoder }
 import morphir.ir.core.TaggedCompanionObjectLike
 import morphir.ir.json.Decode.DecodeError
-import morphir.ir.literal.Literal
 import morphir.ir.literal.Literal._
 import upickle.default._
 
 object literalCodecs {
   trait LiteralCodec {
-    implicit def readWriter[A: ReadWriter]: ReadWriter[Literal] =
-      readwriter[ujson.Value].bimap[Literal](
+    implicit val readWriter: ReadWriter[morphir.ir.literal.Literal] =
+      readwriter[ujson.Value].bimap(
         {
-          case literal: BoolLiteral   => writeJs(literal)
-          case literal: CharLiteral   => writeJs(literal)
-          case literal: StringLiteral => writeJs(literal)
-          case literal: IntLiteral    => writeJs(literal)
-          case literal: FloatLiteral  => writeJs(literal)
+          case lit: BoolLiteral   => writeJs(lit)
+          case lit: CharLiteral   => writeJs(lit)
+          case lit: StringLiteral => writeJs(lit)
+          case lit: IntLiteral    => writeJs(lit)
+          case lit: FloatLiteral  => writeJs(lit)
         },
         json => {
           val head = json(0).str
           head match {
-            case tag => throw DecodeError.unexpectedTag(tag, List.empty)
+            case tag if tag == BoolLiteral.Tag   => read[BoolLiteral](json)
+            case tag if tag == CharLiteral.Tag   => read[CharLiteral](json)
+            case tag if tag == StringLiteral.Tag => read[StringLiteral](json)
+            case tag if tag == IntLiteral.Tag    => read[IntLiteral](json)
+            case tag if tag == FloatLiteral.Tag  => read[FloatLiteral](json)
+            case tag =>
+              throw DecodeError.unexpectedTag(
+                tag,
+                BoolLiteral.Tag,
+                CharLiteral.Tag,
+                StringLiteral.Tag,
+                IntLiteral.Tag,
+                FloatLiteral.Tag
+              )
           }
         }
       )
   }
 
+  object LiteralCodec extends LiteralCodec
+
   trait BoolLiteralCodec extends TaggedCompanionObjectLike {
     val Tag: String = "bool_literal"
 
-    implicit val readWriter: ReadWriter[BoolLiteral] =
-      readwriter[(String, Boolean)].bimap(
+    implicit def readWriter: ReadWriter[BoolLiteral] =
+      readwriter[(String, Boolean)].bimap[BoolLiteral](
         literal => (literal.tag, literal.value), {
           case (tag, value) if tag == Tag => BoolLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit val encodeBoolLiteral: Encoder[BoolLiteral] =
-      Encoder.encodeTuple2[String, Boolean].contramap(v => v.tag -> v.value)
-
-    implicit val decodeBoolLiteral: Decoder[BoolLiteral] =
-      Decoder
-        .decodeTuple2[String, Boolean]
-        .ensure(hasMatchingTag, s"""The tag of a boolean literal must be "$Tag".""")
-        .map {
-          case (_, value) => BoolLiteral(value)
-        }
   }
 
   trait CharLiteralCodec extends TaggedCompanionObjectLike {
     val Tag: String = "char_literal"
 
-    implicit val readWriter: ReadWriter[CharLiteral] =
-      readwriter[(String, Char)].bimap(
+    implicit def readWriter: ReadWriter[CharLiteral] =
+      readwriter[(String, Char)].bimap[CharLiteral](
         literal => (literal.tag, literal.value), {
           case (tag, value) if tag == Tag => CharLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit val encodeCharLiteral: Encoder[CharLiteral] =
-      Encoder.encodeTuple2[String, Char].contramap(v => v.tag -> v.value)
-
-    implicit val decodeCharLiteral: Decoder[CharLiteral] =
-      Decoder
-        .decodeTuple2[String, Char]
-        .ensure(hasMatchingTag, s"""The tag of a char literal must be "$Tag".""")
-        .map { case (_, value) => CharLiteral(value) }
   }
 
   trait StringLiteralCodec extends TaggedCompanionObjectLike {
     val Tag: String = "string_literal"
 
-    implicit val readWriter: ReadWriter[StringLiteral] =
-      readwriter[(String, String)].bimap(
+    implicit def readWriter: ReadWriter[StringLiteral] =
+      readwriter[(String, String)].bimap[StringLiteral](
         literal => (literal.tag, literal.value), {
           case (tag, value) if tag == Tag => StringLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit val encodeStringLiteral: Encoder[StringLiteral] =
-      Encoder.encodeTuple2[String, String].contramap(v => v.tag -> v.value)
-
-    implicit val decodeStringLiteral: Decoder[StringLiteral] =
-      Decoder
-        .decodeTuple2[String, String]
-        .ensure(hasMatchingTag, s"""The tag of a string literal must be "$Tag".""")
-        .map { case (_, value) => StringLiteral(value) }
-
   }
 
   trait IntLiteralCodec extends TaggedCompanionObjectLike {
     val Tag: String = "int_literal"
 
-    implicit val readWriter: ReadWriter[IntLiteral] =
-      readwriter[(String, Int)].bimap(
+    implicit def readWriter: ReadWriter[IntLiteral] =
+      readwriter[(String, Int)].bimap[IntLiteral](
         literal => (literal.tag, literal.value), {
           case (tag, value) if tag == Tag => IntLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit val encodeIntLiteral: Encoder[IntLiteral] =
-      Encoder.encodeTuple2[String, Int].contramap(v => v.tag -> v.value)
-
-    implicit val decodeIntLiteral: Decoder[IntLiteral] =
-      Decoder
-        .decodeTuple2[String, Int]
-        .ensure(hasMatchingTag, s"""The tag of a int literal must be "$Tag".""")
-        .map { case (_, value) => IntLiteral(value) }
   }
 
   trait FloatLiteralCodec extends TaggedCompanionObjectLike {
     val Tag: String = "float_literal"
 
     implicit val readWriter: ReadWriter[FloatLiteral] =
-      readwriter[(String, Float)].bimap(
+      readwriter[(String, Float)].bimap[FloatLiteral](
         literal => (literal.tag, literal.value), {
           case (tag, value) if tag == Tag => FloatLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit val encodeFloatLiteral: Encoder[FloatLiteral] =
-      Encoder.encodeTuple2[String, Float].contramap(v => v.tag -> v.value)
-
-    implicit val decodeFloatLiteral: Decoder[FloatLiteral] =
-      Decoder
-        .decodeTuple2[String, Float]
-        .ensure(hasMatchingTag, s"""The tag of a float literal must be "$Tag".""")
-        .map { case (_, value) => FloatLiteral(value) }
   }
 }

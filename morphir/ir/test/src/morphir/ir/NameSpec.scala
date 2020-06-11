@@ -1,12 +1,11 @@
 package morphir.ir
-import cats.implicits._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import morphir.ir.fuzzer.NameFuzzers._
-import morphir.ir.testing.UpickleJsonSpec
+import morphir.ir.testing.JsonSpec
 
-object NameSpec extends DefaultRunnableSpec with UpickleJsonSpec {
+object NameSpec extends DefaultRunnableSpec with JsonSpec {
   def spec =
     suite("NameSpec")(
       suite("Make a Name from a string and check that:")(

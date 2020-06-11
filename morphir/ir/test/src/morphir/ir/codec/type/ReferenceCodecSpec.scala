@@ -1,10 +1,10 @@
 package morphir.ir.codec.`type`
 
-import cats.data.Validated.Valid
 import morphir.ir._
 import FQName.fQName
 import Name.name
 import morphir.ir.testing.JsonSpec
+import org.scalactic.Good
 import zio.test._
 import zio.test.Assertion._
 
@@ -32,7 +32,7 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
           name("string")
         )
         val expected = Type.Reference((), expectedFQName)
-        assert(actual)(equalTo(Valid(expected)))
+        assert(actual)(equalTo(Good(expected)))
 
       },
       test("Decoding a type reference as a Type") {
@@ -56,7 +56,7 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
           name("string")
         )
         val expected = Type.Reference((), expectedFQName)
-        assert(actual)(equalTo(Valid(expected)))
+        assert(actual)(equalTo(Good(expected)))
 
       },
       test("Decoding a type reference should fail if the tag is wrong") {
@@ -80,7 +80,7 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
           name("string")
         )
         val expected = Type.Reference((), expectedFQName)
-        assert(actual)(not(equalTo(Valid(expected))))
+        assert(actual)(not(equalTo(Good(expected))))
 
       }
     )

@@ -1,10 +1,12 @@
 package morphir.ir
 
 import morphir.ir.codec.FQNameCodec
+import morphir.ir.path.Path
 
 case class FQName(packagePath: Path, modulePath: Path, localName: Name) {
   def toTuple: (Path, Path, Name) =
     (packagePath, modulePath, localName)
+
 }
 
 object FQName extends FQNameCodec {

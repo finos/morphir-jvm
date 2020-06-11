@@ -3,6 +3,7 @@ package morphir.ir
 import io.estatico.newtype.macros.newtype
 import morphir.ir.codec.packageCodecs
 import morphir.ir.module.ModulePath
+import morphir.ir.path.Path
 
 object MorphirPackage {
 

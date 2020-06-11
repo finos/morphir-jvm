@@ -1,6 +1,5 @@
 package morphir.ir
 
-import io.circe.{ Decoder, Encoder }
 import morphir.ir.AccessControlled.{ Private, Public }
 import morphir.ir.codec.accessControlledCodecs
 
@@ -45,49 +44,7 @@ object AccessControlled extends accessControlledCodecs.AccessControlledCodec {
 
   final case class Public[+A] private[AccessControlled] (value: A) extends AccessControlled[A]
 
-  object Public {
-    implicit def encodeAccessControlled[A](
-      implicit itemEncoder: Encoder[A],
-      tagEncoder: Encoder[String] = Encoder.encodeString
-    ): Encoder[Public[A]] =
-      Encoder.encodeTuple2[String, A].contramap(ac => "Public" -> ac.value)
-
-    implicit def decodeAccessControlled[A](
-      implicit itemDecoder: Decoder[A],
-      stringDecoder: Decoder[String]
-    ): Decoder[Public[A]] =
-      Decoder.decodeTuple2[String, A].emap {
-        case ("Public", value) => Right(Public(value))
-        case ("Private", value) =>
-          Left(
-            s"An access type of private is not a valid access controlled type for the public access controlled object: $value."
-          )
-        case (ac, value) => Left(s"Unknown access controlled type: $ac for value: $value")
-      }
-  }
-
   final case class Private[+A] private[AccessControlled] (value: A) extends AccessControlled[A] {}
-
-  object Private {
-    implicit def encodeAccessControlled[A](
-      implicit itemEncoder: Encoder[A],
-      tagEncoder: Encoder[String] = Encoder.encodeString
-    ): Encoder[Private[A]] =
-      Encoder.encodeTuple2[String, A].contramap(ac => "Private" -> ac.value)
-
-    implicit def decodeAccessControlled[A](
-      implicit itemDecoder: Decoder[A],
-      stringDecoder: Decoder[String]
-    ): Decoder[Private[A]] =
-      Decoder.decodeTuple2[String, A].emap {
-        case ("private", value) => Right(Private(value))
-        case ("public", value) =>
-          Left(
-            s"An access type of public is not a valid access controlled type for the public access controlled object: $value."
-          )
-        case (ac, value) => Left(s"Unknown access controlled type: $ac for value: $value")
-      }
-  }
 
   def publicAccess[A](value: A): AccessControlled[A] =
     Public(value)

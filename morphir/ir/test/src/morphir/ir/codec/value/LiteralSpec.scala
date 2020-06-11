@@ -1,10 +1,10 @@
 package morphir.ir.codec.value
 
-import cats.data.Validated._
-import morphir.ir.{ LiteralValue, Value }
-import Value.Literal
+import morphir.ir.literal
 import morphir.ir.testing.JsonSpec
-import io.circe._
+import morphir.ir.Value
+import Value.Literal
+import org.scalactic.Good
 import zio.test._
 import zio.test.Assertion._
 
@@ -12,13 +12,13 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
   def spec = suite("Value.Literal Spec")(
     suite("JSON encoding")(
       test("It should encode as a literal value") {
-        val sut = Value.literal((1, 2), true)
+        val sut = Value.Literal((1, 2), literal.bool(true))
         assert(encodeAsJson(sut))(
           equalTo(
-            Json.arr(
-              Json.fromString(Value.Literal.Tag),
-              Json.arr(Json.fromInt(1), Json.fromInt(2)),
-              Json.arr(Json.fromString(LiteralValue.BoolLiteral.Tag), Json.fromBoolean(true))
+            ujson.Arr(
+              ujson.Str(Value.Literal.Tag),
+              ujson.Arr(ujson.Num(1), ujson.Num(2)),
+              ujson.Arr(ujson.Str(literal.Literal.BoolLiteral.Tag), ujson.Bool(true))
             )
           )
         )
@@ -27,9 +27,9 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
     suite("JSON decoding")(
       test("Decoding a literal with no attributes") {
         val json   = """["literal", null, ["bool_literal", true]]""".stripMargin
-        val result = decodeString[Literal[Unit]](json)
+        val result = decodeString[Literal[scala.Unit]](json)
 
-        assert(result)(equalTo(Valid(Value.literal((), true))))
+        assert(result)(equalTo(Good(Value.literal((), true))))
       }
     )
   )

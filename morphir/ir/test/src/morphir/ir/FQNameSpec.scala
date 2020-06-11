@@ -6,9 +6,8 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import FQName.fQName
-import morphir.ir.json.JsonFacade
 
-object FQNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers with JsonFacade {
+object FQNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers {
   def spec =
     suite("FQNameSpec")(
       suite("Encoding and decoding")(

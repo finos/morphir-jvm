@@ -1,14 +1,16 @@
 package morphir.ir.codec
 
-import io.circe.{ Decoder, Encoder }
-import morphir.ir.{ Name, Path, QName }
+import morphir.ir.name.Name
+import morphir.ir.path.Path
+import morphir.ir.QName
+import upickle.default._
 
 trait QNameCodec {
-  implicit val encodeQName: Encoder[QName] =
-    Encoder.encodeTuple2[Path, Name].contramap(_.toTuple)
-
-  implicit val decodeQName: Decoder[QName] =
-    Decoder.decodeTuple2[Path, Name].map { case (modulePath, localName) => QName(modulePath, localName) }
+  implicit val readWriter: ReadWriter[QName] = readwriter[(Path, Name)].bimap[QName](
+    qName => (qName.modulePath, qName.localName), {
+      case (modulePath, localName) => QName(modulePath, localName)
+    }
+  )
 }
 
 object QNameCodec extends QNameCodec

@@ -1,7 +1,5 @@
 package morphir.ir
 
-import cats.Show
-import cats.implicits._
 import io.estatico.newtype.macros.newtype
 import morphir.ir.MorphirPackage.PackagePath
 import morphir.ir.codec.PathCodec
@@ -30,19 +28,13 @@ object path {
 
     override def toString: String =
       value.mkString(".")
+
+    def show: String = value.mkString("[", ",", "]")
   }
 
   object Path {
-    implicit val show: Show[Path] =
-      Show.show(path => path.value.mkString("[", ",", "]"))
-
-    import io.circe.{ Decoder, Encoder }
 
     implicit val readWriter: ReadWriter[Path] = PathCodec.pathReadWriter
-
-    implicit val encodePath: Encoder[Path] = PathCodec.encodePath
-
-    implicit val decodePath: Decoder[Path] = PathCodec.decodePath
 
     val empty: Path = Path(List.empty)
 

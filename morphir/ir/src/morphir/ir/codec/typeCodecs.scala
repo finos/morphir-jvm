@@ -1,6 +1,5 @@
 package morphir.ir.codec
 
-import io.circe.{ Decoder, Encoder }
 import morphir.ir.FQName
 import morphir.ir.name.Name
 import morphir.ir.Type
@@ -118,20 +117,6 @@ object typeCodecs {
         case (tag, _, _)                           => throw DecodeError.unexpectedTag(tag, Tag)
       }
     )
-
-    implicit def encodeVariable[A: Encoder]: Encoder[Variable[A]] =
-      Encoder.encodeTuple3[String, A, Name].contramap(exp => (Tag, exp.attributes, exp.name))
-
-    implicit def decodeVariable[A: Decoder]: Decoder[Variable[A]] =
-      Decoder
-        .decodeTuple3[String, A, Name]
-        .ensure(
-          pred = hasMatchingTag,
-          message = s"""The tag of a type variable must be "$Tag"."""
-        )
-        .map {
-          case (_, attributes, name) => Variable(attributes, name)
-        }
   }
 
   trait ReferenceCodec extends TaggedCompanionObjectLike {
@@ -145,76 +130,38 @@ object typeCodecs {
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit def encodeReferenceType[A: Encoder](implicit typeEncoder: Encoder[Type[A]]): Encoder[Reference[A]] =
-      Encoder
-        .encodeTuple4[String, A, FQName, List[Type[A]]]
-        .contramap(x => (Tag, x.attributes, x.typeName, x.typeParameters))
-
-    implicit def decodeReferenceType[A: Decoder](implicit typeDecoder: Decoder[Type[A]]): Decoder[Reference[A]] =
-      Decoder
-        .decodeTuple4[String, A, FQName, List[Type[A]]]
-        .ensure(
-          pred = hasMatchingTag,
-          message = s"""The tag of a type reference must be "$Tag"."""
-        )
-        .map {
-          case (_, attributes, typeName, typeParameters) => Reference(attributes, typeName, typeParameters)
-        }
-
   }
 
   trait TupleCodec extends TaggedCompanionObjectLike {
     val Tag: String = "tuple"
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Tuple[A]] =
-      readwriter[(String, A, List[Type[A]])].bimap[Tuple[A]](
+      readwriter[(String, A, scala.List[Type[A]])].bimap[Tuple[A]](
         typeExpr => (Tag, typeExpr.attributes, typeExpr.elementTypes), {
           case (tag, attributes, elementTypes) if tag == Tag => Tuple(attributes, elementTypes)
           case (tag, _, _)                                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit def encodeTupleType[A: Encoder]: Encoder[Tuple[A]] =
-      Encoder
-        .encodeTuple3[String, A, List[Type[A]]]
-        .contramap(tuple => (Tag, tuple.attributes, tuple.elementTypes))
-
-    implicit def decodeTupleType[A: Decoder]: Decoder[Type.Tuple[A]] =
-      Decoder
-        .decodeTuple3[String, A, List[Type[A]]]
-        .ensure(hasMatchingTag, s"""The tag of a tuple type must be "$Tag".""")
-        .map {
-          case (_, attributes, elements) => Type.Tuple(attributes, elements)
-        }
   }
 
   trait RecordCodec extends TaggedCompanionObjectLike {
     val Tag: String = "record"
 
     implicit def readWriter[A: ReadWriter]: default.ReadWriter[Record[A]] =
-      readwriter[(String, A, List[Field[A]])].bimap[Record[A]](
+      readwriter[(String, A, scala.List[Field[A]])].bimap[Record[A]](
         rec => (Tag, rec.attributes, rec.fieldTypes), {
           case (tag, attributes, fieldTypes) if tag == Tag => Record(attributes, fieldTypes)
           case (tag, _, _)                                 => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
 
-    implicit def encodeRecordType[A: Encoder]: Encoder[Type.Record[A]] =
-      Encoder.encodeTuple3[String, A, List[Field[A]]].contramap(rec => (Tag, rec.attributes, rec.fieldTypes))
-
-    implicit def decodeRecordType[A: Decoder]: Decoder[Type.Record[A]] =
-      Decoder
-        .decodeTuple3[String, A, List[Field[A]]]
-        .ensure(hasMatchingTag, s"""The tag of a record type must be "$Tag".""")
-        .map { case (_, attributes, fields) => Record(attributes, fields) }
   }
 
   trait ExtensibleRecordCodec extends TaggedCompanionObjectLike {
     val Tag: String = "extensible_record"
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[ExtensibleRecord[A]] =
-      readwriter[(String, A, Name, List[Field[A]])].bimap[ExtensibleRecord[A]](
+      readwriter[(String, A, Name, scala.List[Field[A]])].bimap[ExtensibleRecord[A]](
         typExpr => (Tag, typExpr.attributes, typExpr.variableName, typExpr.fieldTypes), {
           case (tag, attributes, variableName, fieldTypes) if tag == Tag =>
             ExtensibleRecord(attributes, variableName, fieldTypes)
@@ -222,18 +169,6 @@ object typeCodecs {
         }
       )
 
-    implicit def encodeExtensibleRecordType[A: Encoder]: Encoder[Type.ExtensibleRecord[A]] =
-      Encoder
-        .encodeTuple4[String, A, Name, List[Field[A]]]
-        .contramap(rec => (Tag, rec.attributes, rec.variableName, rec.fieldTypes))
-
-    implicit def decodeExtensibleRecordType[A: Decoder]: Decoder[Type.ExtensibleRecord[A]] =
-      Decoder
-        .decodeTuple4[String, A, Name, List[Field[A]]]
-        .ensure(hasMatchingTag, s"""The tag of an extensible record type must be "$Tag".""")
-        .map {
-          case (_, attributes, name, fields) => ExtensibleRecord(attributes, name, fields)
-        }
   }
 
   trait FunctionCodec extends TaggedCompanionObjectLike {
@@ -247,19 +182,6 @@ object typeCodecs {
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
-
-    implicit def encodeFunctionType[A: Encoder]: Encoder[Type.Function[A]] =
-      Encoder
-        .encodeTuple4[String, A, Type[A], Type[A]]
-        .contramap(ft => (ft.tag, ft.attributes, ft.argumentType, ft.returnType))
-
-    implicit def decodeFunctionType[A: Decoder]: Decoder[Type.Function[A]] =
-      Decoder
-        .decodeTuple4[String, A, Type[A], Type[A]]
-        .ensure(hasMatchingTag, s"""The tag of a function type must be "$Tag".""")
-        .map {
-          case (_, attributes, argumentType, returnType) => Type.Function(attributes, argumentType, returnType)
-        }
   }
 
   trait UnitCodec extends TaggedCompanionObjectLike {
@@ -273,13 +195,6 @@ object typeCodecs {
         }
       )
 
-    implicit def encodeUnit[A: Encoder]: Encoder[Unit[A]] =
-      Encoder.encodeTuple2[String, A].contramap(v => (Tag, v.attributes))
-
-    implicit def decodeUnit[A: Decoder]: Decoder[Unit[A]] =
-      Decoder.decodeTuple2[String, A].ensure(hasMatchingTag, s"""The tag of the unit type must be "$Tag".""").map {
-        case (_, attributes) => Unit(attributes)
-      }
   }
 
   trait FieldCodec {
@@ -288,24 +203,18 @@ object typeCodecs {
         case (name, fieldType) => Field(name, fieldType)
       }
     )
-    implicit def encodeFieldType[A: Encoder]: Encoder[Field[A]] =
-      Encoder.encodeTuple2[Name, Type[A]].contramap(ft => ft.name -> ft.fieldType)
 
-    implicit def decodeFieldType[A: Decoder]: Decoder[Field[A]] =
-      Decoder.decodeTuple2[Name, Type[A]].map { case (fieldName, fieldType) => Field(fieldName, fieldType) }
   }
 
-  trait ConstructorCodec {
+  trait ConstructorCodec extends TaggedCompanionObjectLike {
+    val Tag: String = "constructor"
+
     implicit def readWriter[A: ReadWriter]: ReadWriter[Constructor[A]] =
-      readwriter[(String, Name, List[(Name, Type[A])])].bimap[Constructor[A]](
-        _ => ???,
-        _ => ???
+      readwriter[(String, Name, scala.List[(Name, Type[A])])].bimap[Constructor[A]](
+        ctor => (Tag, ctor.name, ctor.args), {
+          case (tag, name, args) if tag == Tag => Constructor(name, args)
+          case (tag, _, _)                     => throw DecodeError.unexpectedTag(tag, Tag)
+        }
       )
-
-    implicit def encodeConstructor[A: Encoder]: Encoder[Constructors[A]] =
-      Encoder.encodeList[Constructor[A]].contramap(ctors => ctors.toList)
-
-    implicit def decodeConstructor[A: Decoder]: Decoder[Constructors[A]] =
-      Decoder.decodeList[Constructor[A]].map(Constructors(_))
   }
 }

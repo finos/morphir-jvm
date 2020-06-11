@@ -1,7 +1,5 @@
 package morphir.ir
 
-import io.circe.Json
-import io.circe.Encoder
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
@@ -15,7 +13,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
     suite("Literal Spec")(
       suite("JSON encoding/decoding")(
         testM("Any literal value should encode")(
-          check(fuzzLiteral)((sut: LiteralValue) =>
+          check(fuzzLiteral)((sut: literal.Literal) =>
             assert(compactEncode(sut))(
               anything
             )
@@ -27,7 +25,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
           testM("BoolLiteral should encode as a JSON Array")(
             check(Gen.boolean) { input =>
               val sut = BoolLiteral(input)
-              assert(encodeAsJson(sut))(equalTo(Json.arr(Json.fromString("bool_literal"), Json.fromBoolean(input))))
+              assert(encodeAsJson(sut))(equalTo(ujson.Arr(ujson.Str("bool_literal"), ujson.Bool(input))))
             }
           ),
           testM("BoolLiteral should have a well behaving JSON codec")(
@@ -43,7 +41,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
           testM("CharLiteral should encode as a JSON Array")(
             check(Gen.anyChar) { input =>
               val sut = CharLiteral(input)
-              assert(encodeAsJson(sut))(equalTo(Json.arr(Json.fromString("char_literal"), Encoder.encodeChar(input))))
+              assert(encodeAsJson(sut))(equalTo(ujson.Arr(ujson.Str("char_literal"), encodeAsJson(input))))
             }
           ),
           testM("CharLiteral should have a well behaving JSON codec")(
@@ -60,7 +58,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
             check(Gen.anyString) { input =>
               val sut = StringLiteral(input)
               assert(encodeAsJson(sut))(
-                equalTo(Json.arr(Json.fromString("string_literal"), Encoder.encodeString(input)))
+                equalTo(ujson.Arr(ujson.Str("string_literal"), encodeAsJson(input)))
               )
             }
           ),
@@ -77,7 +75,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
           testM("IntLiteral should encode as a JSON Array")(
             check(Gen.anyInt) { input =>
               val sut = IntLiteral(input)
-              assert(encodeAsJson(sut))(equalTo(Json.arr(Json.fromString("int_literal"), Encoder.encodeInt(input))))
+              assert(encodeAsJson(sut))(equalTo(ujson.Arr(ujson.Str("int_literal"), encodeAsJson(input))))
             }
           ),
           testM("IntLiteral should have a well behaving JSON codec")(
@@ -93,7 +91,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
           testM("FloatLiteral should encode as a JSON Array")(
             check(Gen.anyFloat) { input =>
               val sut = FloatLiteral(input)
-              assert(encodeAsJson(sut))(equalTo(Json.arr(Json.fromString("float_literal"), Encoder.encodeFloat(input))))
+              assert(encodeAsJson(sut))(equalTo(ujson.Arr(ujson.Str("float_literal"), encodeAsJson(input))))
             }
           ),
           testM("FloatLiteral should have a well behaving JSON codec")(
