@@ -164,7 +164,8 @@ object Type extends typeCodecs.TypeCodec {
 
 object Value extends valueCodecs.ValueCodec {
 
-  import syntax.all._
+  type ValueExprList[+A] = scala.List[Value[A]]
+
   import pattern.Pattern
 
   def literal[A](attributes: A, value: morphir.ir.literal.Literal): Literal[A] = Literal(attributes, value)
@@ -182,20 +183,23 @@ object Value extends valueCodecs.ValueCodec {
   }
   object Constructor extends valueCodecs.ConstructorCodec
 
-  final case class Tuple[+A](attributes: A, elements: ValueExprList[A]) extends Value[A](Tuple.Tag) {
+  final case class Tuple[+A](attributes: A, elements: scala.List[Value[A]]) extends Value[A](Tuple.Tag) {
     def mapAttributes[B](f: A => B): Value[B] = Tuple(f(attributes), elements.mapAttributes(f))
   }
 
   object Tuple extends valueCodecs.TupleCodec
 
-  final case class List[+A](attributes: A, items: ValueExprList[A]) extends Value[A](List.Tag) {
+  final case class List[+A](attributes: A, items: scala.List[Value[A]]) extends Value[A](List.Tag) {
     def mapAttributes[B](f: A => B): Value[B] = List(f(attributes), items.mapAttributes(f))
   }
 
   object List extends valueCodecs.ListCodec
 
-  final case class Record[+A](attributes: A, fields: RecordFields[A]) extends Value[A](Record.Tag) {
-    def mapAttributes[B](f: A => B): Value[B] = Record(f(attributes), fields.mapAttributes(f))
+  final case class Record[+A](attributes: A, fields: scala.List[(Name, Value[A])]) extends Value[A](Record.Tag) {
+    def mapAttributes[B](f: A => B): Value[B] =
+      Record(f(attributes), fields.map {
+        case (name, valueExpr) => (name, valueExpr.mapAttributes(f))
+      })
   }
 
   object Record extends valueCodecs.RecordCodec
@@ -287,11 +291,16 @@ object Value extends valueCodecs.ValueCodec {
 
   object PatternMatch extends valueCodecs.PatternMatchCodec
 
-  final case class UpdateRecord[+A](attributes: A, valueToUpdate: Value[A], fieldsToUpdate: RecordFields[A])
-      extends Value[A](UpdateRecord.Tag) {
+  final case class UpdateRecord[+A](
+    attributes: A,
+    valueToUpdate: Value[A],
+    fieldsToUpdate: scala.List[(Name, Value[A])]
+  ) extends Value[A](UpdateRecord.Tag) {
 
     def mapAttributes[B](f: A => B): Value[B] =
-      UpdateRecord(f(attributes), valueToUpdate.mapAttributes(f), fieldsToUpdate.mapAttributes(f))
+      UpdateRecord(f(attributes), valueToUpdate.mapAttributes(f), fieldsToUpdate.map {
+        case (name, valueExpr) => (name, valueExpr.mapAttributes(f))
+      })
   }
 
   object UpdateRecord extends valueCodecs.UpdateRecordCodec
@@ -311,10 +320,19 @@ object Value extends valueCodecs.ValueCodec {
 
   object Specification
 
-  final case class Definition[+A](valueType: Option[Type[A]], arguments: argument.ArgumentList[A], body: Value[A]) {
+  final case class Definition[+A](
+    valueType: Option[Type[A]],
+    arguments: argument.ArgumentList[A],
+    body: Value[A]
+  ) {
     def mapAttributes[B](f: A => B): Definition[B] =
       Definition(valueType.map(_.mapAttributes(f)), arguments.mapValue(f), body.mapAttributes(f))
   }
 
   object Definition extends valueCodecs.DefinitionCodec
+
+  implicit class ValueExprListOps[+A](private val self: ValueExprList[A]) extends AnyVal {
+    def mapAttributes[B](f: A => B): ValueExprList[B] =
+      self.map(_.mapAttributes(f))
+  }
 }

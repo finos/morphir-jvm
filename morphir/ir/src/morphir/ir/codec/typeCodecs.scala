@@ -77,8 +77,8 @@ object typeCodecs {
             writeJs(defn.typeParams),
             ujson.Null
           ),
-        json => {
-          println(s"Type Alias Def JSON: $json")
+        json =>
+          //println(s"Type Alias Def JSON: $json")
           json(0).str match {
             case "type_alias_definition" =>
               val typeParams = read[List[Name]](json(1))
@@ -87,7 +87,6 @@ object typeCodecs {
               TypeAliasDefinition(typeParams, typeExp)
             case tag => throw DecodeError.unexpectedTag(tag, "type_alias_definition")
           }
-        }
       )
   }
 

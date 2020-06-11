@@ -3,11 +3,8 @@ package morphir.ir
 import morphir.ir.codec.patternCodecs
 
 object pattern {
-
-  type PatternList[+A] = List[Pattern[A]]
-
-  implicit class PatternListOps[+A](val self: PatternList[A]) extends AnyVal {
-    def mapAttributes[B](f: A => B): PatternList[B] =
+  implicit class PatternListOps[+A](val self: List[Pattern[A]]) extends AnyVal {
+    def mapAttributes[B](f: A => B): List[Pattern[B]] =
       self.map(pat => pat.mapAttributes(f))
   }
 
@@ -30,7 +27,7 @@ object pattern {
     }
     object AsPattern extends patternCodecs.AsPatternCodec
 
-    final case class TuplePattern[+A](attributes: A, elementPatterns: PatternList[A]) extends Pattern[A] {
+    final case class TuplePattern[+A](attributes: A, elementPatterns: List[Pattern[A]]) extends Pattern[A] {
       def mapAttributes[B](f: A => B): Pattern[B] = TuplePattern(f(attributes), elementPatterns.mapAttributes(f))
     }
 
@@ -42,7 +39,7 @@ object pattern {
 
     object RecordPattern extends patternCodecs.RecordPatternCodec
 
-    final case class ConstructorPattern[+A](attributes: A, constructorName: FQName, argumentPatterns: PatternList[A])
+    final case class ConstructorPattern[+A](attributes: A, constructorName: FQName, argumentPatterns: List[Pattern[A]])
         extends Pattern[A] {
       def mapAttributes[B](f: A => B): Pattern[B] =
         ConstructorPattern(f(attributes), constructorName, argumentPatterns.mapAttributes(f))

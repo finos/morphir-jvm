@@ -25,11 +25,6 @@ package object ir {
   type PkgDef[+A] = MorphirPackage.Definition[A]
   val PkgDef: MorphirPackage.Definition.type = MorphirPackage.Definition
 
-  type RecordField[+A]  = (Name, Value[A])
-  type RecordFields[+A] = List[RecordField[A]]
-
-  type ValueExprList[+A] = List[Value[A]]
-
   object implicits extends AllFuzzers
 
 }

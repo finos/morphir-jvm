@@ -24,7 +24,7 @@
                     [],
                     [
                       "reference",
-                      null,
+                      {},
                       [
                         [
                           [
@@ -64,7 +64,7 @@
                     [],
                     [
                       "reference",
-                      null,
+                      {},
                       [
                         [
                           [
@@ -107,24 +107,24 @@
                       [
                         "greeting"
                       ],
-                      null
+                      {}
                     ],
                     [
                       [
                         "who"
                       ],
-                      null
+                      {}
                     ]
                   ],
                   [
                     "apply",
-                    null,
+                    {},
                     [
                       "apply",
-                      null,
+                      {},
                       [
                         "reference",
-                        null,
+                        {},
                         [
                           [
                             [
@@ -148,7 +148,7 @@
                       ],
                       [
                         "variable",
-                        null,
+                        {},
                         [
                           "greeting"
                         ]
@@ -156,13 +156,13 @@
                     ],
                     [
                       "apply",
-                      null,
+                      {},
                       [
                         "apply",
-                        null,
+                        {},
                         [
                           "reference",
-                          null,
+                          {},
                           [
                             [
                               [
@@ -186,7 +186,7 @@
                         ],
                         [
                           "literal",
-                          null,
+                          {},
                           [
                             "string_literal",
                             ", "
@@ -195,7 +195,7 @@
                       ],
                       [
                         "variable",
-                        null,
+                        {},
                         [
                           "who"
                         ]

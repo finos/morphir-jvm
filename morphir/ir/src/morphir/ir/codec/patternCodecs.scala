@@ -5,17 +5,14 @@ import morphir.ir.core.TaggedCompanionObjectLike
 import morphir.ir.json.Decode.DecodeError
 import morphir.ir.literal
 import morphir.ir.name.Name
-import morphir.ir.pattern.{ Pattern, PatternList }
+import morphir.ir.pattern.Pattern
 import upickle.default._
 
 object patternCodecs {
   trait PatternCodec extends TaggedCompanionObjectLike {
     val Tag: String = "pattern"
 
-    implicit def readWriter[A: ReadWriter](
-      implicit literalReadWriter: ReadWriter[literal.Literal],
-      patternListReadWriter: ReadWriter[PatternList[A]]
-    ): ReadWriter[Pattern[A]] =
+    implicit def readWriter[A: ReadWriter]: ReadWriter[Pattern[A]] =
       readwriter[ujson.Value].bimap(
         {
           case pat @ Pattern.WildcardPattern(_)          => writeJs(pat)
@@ -101,9 +98,9 @@ object patternCodecs {
     val Tag: String = "constructor_pattern"
 
     implicit def readWriter[A: ReadWriter](
-      implicit patternListReadWriter: ReadWriter[PatternList[A]]
+      implicit patternListReadWriter: ReadWriter[List[Pattern[A]]]
     ): ReadWriter[Pattern.ConstructorPattern[A]] =
-      readwriter[(String, A, FQName, PatternList[A])]
+      readwriter[(String, A, FQName, List[Pattern[A]])]
         .bimap[Pattern.ConstructorPattern[A]](
           pat => (Tag, pat.attributes, pat.constructorName, pat.argumentPatterns), {
             case (tag: String, attributes, constructorName: FQName, argumentPatterns) if tag == Tag =>
