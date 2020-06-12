@@ -1,8 +1,9 @@
 package morphir.ir.codec
 
-import morphir.ir.{ literal, pattern, FQName, Value }
+import morphir.ir.{ literal, pattern, FQName, Type, Value }
 import morphir.ir.name.Name
 import morphir.ir.Value._
+import morphir.ir.argument.{ Argument, ArgumentList }
 import morphir.ir.core.TaggedCompanionObjectLike
 import morphir.ir.json.Decode.DecodeError
 import upickle.default._
@@ -11,30 +12,48 @@ object valueCodecs {
   trait ValueCodec {
     implicit def readWriter[A: ReadWriter]: ReadWriter[Value[A]] = readwriter[ujson.Value].bimap[Value[A]](
       {
-        case expr @ Literal(_, _)       => writeJs(expr)
-        case expr @ Constructor(_, _)   => writeJs(expr)
-        case expr @ Tuple(_, _)         => writeJs(expr)
-        case expr @ List(_, _)          => writeJs(expr)
-        case expr @ Record(_, _)        => writeJs(expr)
-        case expr @ Variable(_, _)      => writeJs(expr)
-        case expr @ Reference(_, _)     => writeJs(expr)
-        case expr @ Field(_, _, _)      => writeJs(expr)
-        case expr @ FieldFunction(_, _) => writeJs(expr)
-        case expr @ Apply(_, _, _)      => writeJs(expr)
-        case expr @ Lambda(_, _, _)     => writeJs(expr)
-//        case expr @ LetDefinition(_, _, _, _) => writeJs(expr)
-//        case expr @ LetRecursion(_, _, _)     => writeJs(expr)
-//        case expr @ Destructure(_, _, _, _)   => writeJs(expr)
-//        case expr @ IfThenElse(_, _, _, _)    => writeJs(expr)
-//        case expr @ PatternMatch(_, _, _)     => writeJs(expr)
-//        case expr @ UpdateRecord(_, _, _)     => writeJs(expr)
-        case expr @ Unit(_) => writeJs(expr)
-        case _              => ???
+        case expr @ Literal(_, _)             => writeJs(expr)
+        case expr @ Constructor(_, _)         => writeJs(expr)
+        case expr @ Tuple(_, _)               => writeJs(expr)
+        case expr @ List(_, _)                => writeJs(expr)
+        case expr @ Record(_, _)              => writeJs(expr)
+        case expr @ Variable(_, _)            => writeJs(expr)
+        case expr @ Reference(_, _)           => writeJs(expr)
+        case expr @ Field(_, _, _)            => writeJs(expr)
+        case expr @ FieldFunction(_, _)       => writeJs(expr)
+        case expr @ Apply(_, _, _)            => writeJs(expr)
+        case expr @ Lambda(_, _, _)           => writeJs(expr)
+        case expr @ LetDefinition(_, _, _, _) => writeJs(expr)
+        case expr @ LetRecursion(_, _, _)     => writeJs(expr)
+        case expr @ Destructure(_, _, _, _)   => writeJs(expr)
+        case expr @ IfThenElse(_, _, _, _)    => writeJs(expr)
+        case expr @ PatternMatch(_, _, _)     => writeJs(expr)
+        case expr @ UpdateRecord(_, _, _)     => writeJs(expr)
+        case expr @ Unit(_)                   => writeJs(expr)
       },
       json => {
         val exprTag = json(0).str
         exprTag match {
+          case tag if tag == Literal.Tag       => read[Literal[A]](json)
+          case tag if tag == Constructor.Tag   => read[Constructor[A]](json)
+          case tag if tag == Tuple.Tag         => read[Tuple[A]](json)
+          case tag if tag == List.Tag          => read[List[A]](json)
+          case tag if tag == Record.Tag        => read[Record[A]](json)
+          case tag if tag == Variable.Tag      => read[Variable[A]](json)
+          case tag if tag == Reference.Tag     => read[Reference[A]](json)
+          case tag if tag == Field.Tag         => read[Field[A]](json)
+          case tag if tag == FieldFunction.Tag => read[FieldFunction[A]](json)
+          case tag if tag == Apply.Tag         => read[Apply[A]](json)
+          case tag if tag == Lambda.Tag        => read[Lambda[A]](json)
+          case tag if tag == LetDefinition.Tag => read[LetDefinition[A]](json)
+          case tag if tag == LetRecursion.Tag  => read[LetRecursion[A]](json)
+          case tag if tag == Destructure.Tag   => read[Destructure[A]](json)
+          case tag if tag == IfThenElse.Tag    => read[IfThenElse[A]](json)
+          case tag if tag == PatternMatch.Tag  => read[PatternMatch[A]](json)
+          case tag if tag == UpdateRecord.Tag  => read[UpdateRecord[A]](json)
+          case tag if tag == Unit.Tag          => read[Unit[A]](json)
           case tag =>
+            println(s"[BAD|JSON]: $json")
             throw DecodeError
               .unexpectedTag(
                 tag,
@@ -298,7 +317,17 @@ object valueCodecs {
           val body      = writeJs(defn.body)
           ujson.Arr(ujson.Str(Tag), valueType, arguments, body)
         },
-        _ => ???
+        json => {
+          val tag = json(0).str
+          if (tag == Tag) {
+            val valueType = read[Option[Type[A]]](json(1))
+            val arguments = read[scala.List[Argument[A]]](json(2))
+            val body      = read[Value[A]](json(3))
+            Definition(valueType, arguments, body)
+          } else {
+            throw DecodeError.unexpectedTag(tag, Tag)
+          }
+        }
       )
 //      readwriter[(String, Option[Type[A]], ArgumentList[A], Value[A])].bimap[Definition[A]](
 //        defn => (Tag, defn.valueType, defn.arguments, defn.body), {

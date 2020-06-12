@@ -20,7 +20,7 @@ object LoaderSpec extends DefaultRunnableSpec {
           } yield assert(pkgDef.modules)(isNonEmpty)
         }
       )
-    ) @@ silent
+    ) @@ debug
 
   def getManagedResource(resource: String): Managed[IOException, BufferedSource] =
     Managed.make(IO.effect(Source.fromResource(resource)).refineToOrDie[IOException])(bs =>

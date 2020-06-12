@@ -2,7 +2,7 @@ package morphir.ir.codec
 
 import morphir.ir.documented.Documented
 import morphir.ir.name.Name
-import morphir.ir.{ AccessControlled, Type }
+import morphir.ir.{ AccessControlled, Type, Value }
 import morphir.ir.module._
 import upickle.default._
 import morphir.ir.path.Path
@@ -38,14 +38,22 @@ object moduleCodecs {
         json => {
           val typesJson  = json("types")
           val valuesJson = json("values")
+
           val types = typesJson.arr.map { json =>
             val name = read[Name](json(0))
             val ac   = read[AccessControlled[Documented[Type.Definition[A]]]](json(1))
             (name, ac)
           }.toMap
+
+          val values = valuesJson.arr.map { json =>
+            val name = read[Name](json(0))
+            val ac   = read[AccessControlled[Value.Definition[A]]](json(1))
+            (name, ac)
+          }.toMap
+
           assert(typesJson != ujson.Null)
           assert(valuesJson != ujson.Null)
-          Definition(types = types, values = Map.empty)
+          Definition(types = types, values = values)
         }
       )
   }
