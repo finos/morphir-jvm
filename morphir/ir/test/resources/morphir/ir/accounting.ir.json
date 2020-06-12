@@ -1,0 +1,147 @@
+{
+  "dependencies": [],
+  "modules": [
+    {
+      "name": [["account"]],
+      "def": [
+        "public",
+        {
+          "types": [
+            [
+              ["account"],
+              [
+                "public",
+                [
+                  "",
+                  [
+                    "custom_type_definition",
+                    [],
+                    [
+                      "private",
+                      [
+                        [
+                          "constructor",
+                          ["firm", "account"],
+                          [
+                            [
+                              ["arg", "1"],
+                              [
+                                "reference",
+                                {},
+                                [
+                                  [["morphir"], ["s", "d", "k"]],
+                                  [["string"]],
+                                  ["string"]
+                                ],
+                                []
+                              ]
+                            ]
+                          ]
+                        ],
+                        [
+                          "constructor",
+                          ["counterparty", "account"],
+                          [
+                            [
+                              ["arg", "1"],
+                              [
+                                "reference",
+                                {},
+                                [
+                                  [["morphir"], ["s", "d", "k"]],
+                                  [["string"]],
+                                  ["string"]
+                                ],
+                                []
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "values": [
+            [
+              ["account", "type"],
+              [
+                "public",
+                [
+                  "definition",
+                  null,
+                  [[["acc"], {}]],
+                  [
+                    "pattern_match",
+                    {},
+                    ["variable", {}, ["acc"]],
+                    [
+                      [
+                        [
+                          "constructor_pattern",
+                          {},
+                          [[], [], ["firm", "account"]],
+                          []
+                        ],
+                        ["literal", {}, ["string_literal", "FirmAccount"]]
+                      ],
+                      [
+                        [
+                          "constructor_pattern",
+                          {},
+                          [[], [], ["counterparty", "account"]],
+                          []
+                        ],
+                        [
+                          "literal",
+                          {},
+                          ["string_literal", "CounterpartyAccount"]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            [
+              ["counterparty", "account"],
+              [
+                "public",
+                [
+                  "definition",
+                  null,
+                  [[["account"], {}]],
+                  [
+                    "apply",
+                    {},
+                    ["constructor", {}, [[], [], ["counterparty", "account"]]],
+                    ["variable", {}, ["account"]]
+                  ]
+                ]
+              ]
+            ],
+            [
+              ["firm", "account"],
+              [
+                "public",
+                [
+                  "definition",
+                  null,
+                  [[["account"], {}]],
+                  [
+                    "apply",
+                    {},
+                    ["constructor", {}, [[], [], ["firm", "account"]]],
+                    ["variable", {}, ["account"]]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

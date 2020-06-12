@@ -18,9 +18,16 @@ object LoaderSpec extends DefaultRunnableSpec {
             pkgDef <- loadPackage(json).provideCustomLayer(Loader.live)
             _      <- console.putStrLn(s"Package: $pkgDef")
           } yield assert(pkgDef.modules)(isNonEmpty)
-        }
+        } @@ silent,
+        testM("Loading a package with custom types and access restrictions") {
+          for {
+            json   <- getManagedResource("morphir/ir/accounting.ir.json").map(bs => bs.mkString).useNow
+            pkgDef <- loadPackage(json).provideCustomLayer(Loader.live)
+            _      <- console.putStrLn(s"Package: $pkgDef")
+          } yield assert(pkgDef.modules)(isNonEmpty)
+        } @@ debug
       )
-    ) @@ debug
+    )
 
   def getManagedResource(resource: String): Managed[IOException, BufferedSource] =
     Managed.make(IO.effect(Source.fromResource(resource)).refineToOrDie[IOException])(bs =>

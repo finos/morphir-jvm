@@ -1,8 +1,7 @@
 package morphir.ir.codec
 
-import morphir.ir.FQName
+import morphir.ir.{ AccessControlled, FQName, Type }
 import morphir.ir.name.Name
-import morphir.ir.Type
 import morphir.ir.Type._
 import morphir.ir.Type.Definition._
 import morphir.ir.core.TaggedCompanionObjectLike
@@ -101,8 +100,11 @@ object typeCodecs {
           ),
         json =>
           json(0).str match {
-            case "custom_type_definition" => ???
-            case tag                      => throw DecodeError.unexpectedTag(tag, "custom_type_definition")
+            case "custom_type_definition" =>
+              val typeParams = read[scala.List[Name]](json(1))
+              val ctors      = read[AccessControlled[Constructors[A]]](json(2))
+              CustomTypeDefinition(typeParams, ctors)
+            case tag => throw DecodeError.unexpectedTag(tag, "custom_type_definition")
           }
       )
   }
@@ -214,6 +216,15 @@ object typeCodecs {
           case (tag, name, args) if tag == Tag => Constructor(name, args)
           case (tag, _, _)                     => throw DecodeError.unexpectedTag(tag, Tag)
         }
+      )
+  }
+
+  trait ConstructorsCodec {
+
+    implicit def readWriter[A: ReadWriter]: ReadWriter[Constructors[A]] =
+      readwriter[scala.List[Constructor[A]]].bimap(
+        ctors => ctors.toList,
+        ctors => Constructors(ctors)
       )
   }
 }

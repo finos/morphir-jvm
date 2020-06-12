@@ -137,14 +137,14 @@ object Type extends typeCodecs.TypeCodec {
       Constructors(toList.map(constructor => constructor.mapAttributes(f)))
   }
 
-  object Constructors
+  object Constructors extends typeCodecs.ConstructorsCodec
 
   final case class Constructor[+A](name: Name, args: List[(Name, Type[A])]) {
     def mapAttributes[B](f: A => B): Constructor[B] =
       Constructor(name, args.map { case (name, argType) => name -> argType.mapAttributes(f) })
   }
 
-  object Constructor {
+  object Constructor extends typeCodecs.ConstructorCodec {
 
     implicit def nameTag[A]: NameTag[Constructor[A]] = NameTag.fromString("constructor")
   }
