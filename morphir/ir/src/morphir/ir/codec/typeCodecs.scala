@@ -61,51 +61,33 @@ object typeCodecs {
           tag match {
             case "type_alias_definition"  => read[TypeAliasDefinition[A]](json)
             case "custom_type_definition" => read[CustomTypeDefinition[A]](json)
-            case _                        => throw DecodeError.unexpectedTag(tag, "type_alias_definition", "custom_type_definition")
+            case _                        => throw DecodeError.unexpectedTag(tag, TypeAliasDefinition.Tag, CustomTypeDefinition.Tag)
           }
         }
       )
   }
 
-  trait TypeAliasDefinitionCodec {
+  trait TypeAliasDefinitionCodec extends TaggedCompanionObjectLike {
+    val Tag: String = "type_alias_definition"
+
     implicit def readWriter[A: ReadWriter]: ReadWriter[TypeAliasDefinition[A]] =
-      readwriter[ujson.Value].bimap[TypeAliasDefinition[A]](
-        defn =>
-          ujson.Arr(
-            ujson.Str("type_alias_definition"),
-            writeJs(defn.typeParams),
-            ujson.Null
-          ),
-        json =>
-          //println(s"Type Alias Def JSON: $json")
-          json(0).str match {
-            case "type_alias_definition" =>
-              val typeParams = read[List[Name]](json(1))
-              println(s"typeParams: $typeParams")
-              val typeExp = read[Type[A]](json(2))
-              TypeAliasDefinition(typeParams, typeExp)
-            case tag => throw DecodeError.unexpectedTag(tag, "type_alias_definition")
-          }
+      readwriter[(String, scala.List[Name], Type[A])].bimap(
+        defn => (Tag, defn.typeParams, defn.typeExp), {
+          case (tag, typeParams, typeExp) if tag == Tag => TypeAliasDefinition(typeParams, typeExp)
+          case (tag, _, _)                              => throw DecodeError.unexpectedTag(tag, Tag)
+        }
       )
   }
 
-  trait CustomTypeDefinitionCodec {
+  trait CustomTypeDefinitionCodec extends TaggedCompanionObjectLike {
+    val Tag: String = "custom_type_definition"
+
     implicit def readWriter[A: ReadWriter]: ReadWriter[CustomTypeDefinition[A]] =
-      readwriter[ujson.Value].bimap[CustomTypeDefinition[A]](
-        defn =>
-          ujson.Arr(
-            ujson.Str("custom_type_definition"),
-            writeJs(defn.typeParams),
-            ujson.Null
-          ),
-        json =>
-          json(0).str match {
-            case "custom_type_definition" =>
-              val typeParams = read[scala.List[Name]](json(1))
-              val ctors      = read[AccessControlled[Constructors[A]]](json(2))
-              CustomTypeDefinition(typeParams, ctors)
-            case tag => throw DecodeError.unexpectedTag(tag, "custom_type_definition")
-          }
+      readwriter[(String, scala.List[Name], AccessControlled[Constructors[A]])].bimap(
+        definition => (Tag, definition.typeParams, definition.ctors), {
+          case (tag, typeParams, ctors) if tag == Tag => CustomTypeDefinition(typeParams, ctors)
+          case (tag, _, _)                            => throw DecodeError.unexpectedTag(tag, Tag)
+        }
       )
   }
 

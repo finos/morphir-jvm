@@ -114,7 +114,7 @@ object Type extends typeCodecs.TypeCodec {
   }
   object Definition extends typeCodecs.DefinitionCodec {
 
-    final case class TypeAliasDefinition[+A](typeParams: List[Name], typeExp: Type[A]) extends Definition[A] {
+    final case class TypeAliasDefinition[+A](typeParams: scala.List[Name], typeExp: Type[A]) extends Definition[A] {
       def toSpecification: Specification[A] = Specification.TypeAliasSpecification(typeParams, typeExp)
     }
 

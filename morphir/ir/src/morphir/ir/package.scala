@@ -19,7 +19,7 @@ package object ir {
   type PublicAccessControlled[+A]  = AccessControlled.Public[A]
   type PrivateAccessControlled[+A] = AccessControlled.Private[A]
 
-  type PackageDefinition = MorphirPackage.Definition[ujson.Value]
+  type PackageDefinition = MorphirPackage.Definition[json.Value]
   val PackageDefinition: MorphirPackage.Definition.type = MorphirPackage.Definition
 
   type PkgDef[+A] = MorphirPackage.Definition[A]
