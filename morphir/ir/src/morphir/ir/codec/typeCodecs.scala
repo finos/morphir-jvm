@@ -2,16 +2,17 @@ package morphir.ir.codec
 
 import morphir.ir.{ AccessControlled, FQName, Type }
 import morphir.ir.name.Name
-import morphir.ir.Type._
-import morphir.ir.Type.Definition._
 import morphir.ir.core.TaggedCompanionObjectLike
 import morphir.ir.json.Decode.DecodeError
 import upickle.default
 import upickle.default._
 
+// scalafix:off DisableSyntax.throw
 object typeCodecs {
-
+  import morphir.ir.Type._
+  import morphir.ir.Type.Definition._
   trait TypeCodec {
+
     implicit def readWriter[A: ReadWriter]: ReadWriter[Type[A]] =
       readwriter[ujson.Value].bimap[Type[A]](
         {
@@ -210,3 +211,4 @@ object typeCodecs {
       )
   }
 }
+// scalafix:on

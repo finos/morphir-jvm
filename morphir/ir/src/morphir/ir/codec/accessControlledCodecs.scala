@@ -4,6 +4,7 @@ import morphir.ir.AccessControlled
 import morphir.ir.json.JsonDecode.DecodeError
 import upickle.default._
 
+// scalafix:off DisableSyntax.throw
 object accessControlledCodecs {
 
   trait AccessControlledCodec {
@@ -21,3 +22,4 @@ object accessControlledCodecs {
       )
   }
 }
+// scalafix:on

@@ -5,6 +5,7 @@ import morphir.ir.json.Decode.DecodeError
 import morphir.ir.literal.Literal._
 import upickle.default._
 
+// scalafix:off DisableSyntax.throw
 object literalCodecs {
   trait LiteralCodec {
     implicit val readWriter: ReadWriter[morphir.ir.literal.Literal] =
@@ -100,3 +101,4 @@ object literalCodecs {
       )
   }
 }
+// scalafix:on

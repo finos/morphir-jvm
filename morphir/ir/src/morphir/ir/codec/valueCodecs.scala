@@ -8,6 +8,7 @@ import morphir.ir.core.TaggedCompanionObjectLike
 import morphir.ir.json.Decode.DecodeError
 import upickle.default._
 
+// scalafix:off DisableSyntax.throw
 object valueCodecs {
   trait ValueCodec {
     implicit def readWriter[A: ReadWriter]: ReadWriter[Value[A]] = readwriter[ujson.Value].bimap[Value[A]](
@@ -338,3 +339,4 @@ object valueCodecs {
 //      )
   }
 }
+// scalafix:on

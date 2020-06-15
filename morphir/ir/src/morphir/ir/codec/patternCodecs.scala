@@ -8,6 +8,7 @@ import morphir.ir.name.Name
 import morphir.ir.pattern.Pattern
 import upickle.default._
 
+// scalafix:off DisableSyntax.throw
 object patternCodecs {
   trait PatternCodec extends TaggedCompanionObjectLike {
     val Tag: String = "pattern"
@@ -163,3 +164,4 @@ object patternCodecs {
       )
   }
 }
+// scalafix:on

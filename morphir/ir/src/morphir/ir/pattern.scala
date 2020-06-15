@@ -3,7 +3,7 @@ package morphir.ir
 import morphir.ir.codec.patternCodecs
 
 object pattern {
-  implicit class PatternListOps[+A](val self: List[Pattern[A]]) extends AnyVal {
+  implicit class PatternListOps[+A](private val self: List[Pattern[A]]) extends AnyVal {
     def mapAttributes[B](f: A => B): List[Pattern[B]] =
       self.map(pat => pat.mapAttributes(f))
   }

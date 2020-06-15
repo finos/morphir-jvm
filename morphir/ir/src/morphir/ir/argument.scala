@@ -22,7 +22,7 @@ object argument {
 
   type ArgumentList[+A] = List[Argument[A]]
 
-  implicit class ArgumentListOps[A](val self: ArgumentList[A]) extends AnyVal {
+  implicit class ArgumentListOps[A](private val self: ArgumentList[A]) extends AnyVal {
     def mapValue[B](f: A => B): ArgumentList[B] = self.map(arg => arg.mapValue(f))
   }
 }
