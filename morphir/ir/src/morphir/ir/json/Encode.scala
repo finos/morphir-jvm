@@ -1,27 +1,23 @@
 package morphir.ir.json
 
-import io.circe.syntax._
-import io.circe.{ Encoder, Printer }
+import upickle.default._
 import morphir.ir.json.Encode.Value
 
 trait Encode {
-  def encode(value: Value, indent: Int): String = {
-    val indentResolved = Math.max(0, indent)
-    indentResolved match {
-      case 0 => value.noSpaces
-      case 2 => value.spaces2
-      case 4 => value.spaces4
-      case _ => value.printWith(Printer.indented(Array.fill(indent)(" ").mkString))
-    }
-  }
+  type Encoder[A] = Writer[A]
+
+  def compactEncode(value: Value): String                              = write(value)
+  def compactEncode[A](value: A)(implicit encoder: Encoder[A]): String = write(value)
+
+  def encode(value: Value, indent: Int): String = write(value, indent)
 
   def encode[A](value: A, indent: Int = 2)(implicit encoder: Encoder[A]): String =
-    encode(value.asJson, indent)
+    write(value, indent)
 
   def encodeAsJson[A](value: A)(implicit encoder: Encoder[A]): Value =
-    value.asJson
+    writeJs(value)
 }
 
 object Encode extends Encode {
-  type Value = io.circe.Json
+  type Value = ujson.Value
 }

@@ -1,6 +1,8 @@
 package morphir.ir.fuzzer
 
-import morphir.ir.{ FQName, Name, Path }
+import morphir.ir.name.Name
+import morphir.ir.path.Path
+import morphir.ir.FQName
 
 trait FQNameFuzzers {
   implicit def fuzzFQName(implicit pathFuzzer: Fuzzer[Path], nameFuzzer: Fuzzer[Name]): Fuzzer[FQName] =

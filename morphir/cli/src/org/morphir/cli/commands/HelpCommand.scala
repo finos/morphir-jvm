@@ -1,14 +1,14 @@
 package org.morphir.cli.commands
 
 import com.monovore.decline.Help
-import org.morphir.cli.{ CliAction, ExitCode }
-import zio.{ console, UIO }
+import org.morphir.cli.CliAction
+import zio._
 
 case class HelpCommand(help: Help) extends CliCommand {
   def action: CliAction =
     for {
       _ <- console.putStrLn(s"$help")
-    } yield ExitCode.Failure
+    } yield ExitCode.failure
 }
 
 object HelpCommand {

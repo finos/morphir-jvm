@@ -1,20 +1,16 @@
 package morphir.ir.codec
 
-import io.circe.{ Decoder, Encoder }
-import morphir.ir.{ FQName, Name, Path }
+import morphir.ir.name.Name
+import morphir.ir.path.Path
+import morphir.ir.FQName
+import upickle.default._
 
 trait FQNameCodec {
-  implicit def encodeFQName(
-    implicit pathEncoder: Encoder[Path] = PathCodec.encodePath,
-    nameEncoder: Encoder[Name] = NameCodec.encodeName
-  ): Encoder[FQName] =
-    Encoder.encodeTuple3[Path, Path, Name].contramap(fqn => (fqn.packagePath, fqn.modulePath, fqn.localName))
 
-  implicit def decodeFQName(
-    implicit decodePath: Decoder[Path] = PathCodec.decodePath,
-    nameDecoder: Decoder[Name] = NameCodec.decodeName
-  ): Decoder[FQName] =
-    Decoder.decodeTuple3[Path, Path, Name].map(FQName.fromTuple)
+  implicit val readWriter: ReadWriter[FQName] =
+    readwriter[(Path, Path, Name)].bimap[FQName](fqn => (fqn.packagePath, fqn.modulePath, fqn.localName), {
+      case (packagePath, modulePath, localName) => FQName(packagePath, modulePath, localName)
+    })
 }
 
 object FQNameCodec extends FQNameCodec
