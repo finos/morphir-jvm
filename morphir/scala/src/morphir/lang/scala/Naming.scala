@@ -4,7 +4,7 @@ import morphir.ir.FQName
 import scala.meta.{ Term, Type => MType }
 
 object Naming {
-  implicit class FQNameOps(val fqn: FQName) extends AnyVal {
+  implicit class FQNameOps(private val fqn: FQName) extends AnyVal {
     def toTypeName: scala.meta.Type.Name =
       scala.meta.Type.Name(fqn.toString)
 
