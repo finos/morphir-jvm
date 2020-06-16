@@ -15,14 +15,13 @@ object Main extends App {
       rootLoggerName = Some("morphir")
     ) ++ Workspace.live
 
-  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, Int] =
+  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] =
     program(args)
       .provideCustomLayer(env ++ Workspace.live)
 
-  def program(args: List[String]): ZIO[CliEnv, Nothing, Int] =
-    (for {
-      cmd      <- Cli.parse(args)
+  def program(args: List[String]): ZIO[CliEnv, Nothing, ExitCode] =
+    for {
+      cmd      <- org.morphir.cli.Cli.parse(args)
       exitCode <- cmd.execute
-      ec       = exitCode.code
-    } yield ec) *> ZIO.succeed(1)
+    } yield exitCode
 }

@@ -1,12 +1,12 @@
 package org.morphir.cli.commands
 
-import org.morphir.cli.{ CliAction, CliEnv, ExitCode }
+import org.morphir.cli.{ CliAction, CliEnv }
 import zio._
 import zio.logging.log
 
 abstract class CliCommand extends Product {
   def execute: ZIO[CliEnv, Nothing, ExitCode] =
-    action.foldM(onError, _ => UIO.succeed(ExitCode.Success))
+    action.foldM(onError, _ => UIO.succeed(ExitCode.success))
 
   def action: CliAction
 
@@ -14,6 +14,6 @@ abstract class CliCommand extends Product {
     for {
       _ <- log.error(s"Error encountered: $error")
 
-    } yield ExitCode.Failure
+    } yield ExitCode.failure
 
 }

@@ -21,4 +21,9 @@ object model {
     def absolutePath: Path         = Paths.get(rawPath).toAbsolutePath
     def toAbsolutePath: Task[Path] = ZIO.effect(absolutePath)
   }
+
+  @newtype case class ModelFilePath(toPath: Path) {
+    def absolutePath: Path         = toPath.toAbsolutePath
+    def toAbsolutePath: Task[Path] = ZIO.effect(absolutePath)
+  }
 }
