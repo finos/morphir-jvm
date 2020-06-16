@@ -26,6 +26,9 @@ object path {
     def toModulePath: ModulePath   = ModulePath(this)
     def toPackagePath: PackagePath = PackagePath(this)
 
+    def toCamelCase(separator: String = "."): String =
+      mapSegments(_.toCamelCase).mkString(separator)
+
     override def toString: String =
       value.mkString(".")
 

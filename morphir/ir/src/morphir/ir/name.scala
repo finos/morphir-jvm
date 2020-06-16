@@ -21,11 +21,17 @@ object name {
     def mapSegments(f: String => String): Name =
       Name(value.map(f))
 
+    def mkString(f: String => String)(sep: String): String =
+      value.map(f).mkString(sep)
+
     @inline def segments: List[String] = value
 
     @inline def toList: List[String] = value
 
     override def toString: String = toTitleCase
+
+    def toLowerCase: String =
+      mkString(part => part.toLowerCase)("")
 
     def toCamelCase: String =
       value match {
