@@ -1,11 +1,17 @@
 package morphir.ir
 
+import morphir.ir.codec.FQNameCodec
+import morphir.ir.path.Path
+
 case class FQName(packagePath: Path, modulePath: Path, localName: Name) {
   def toTuple: (Path, Path, Name) =
     (packagePath, modulePath, localName)
+
+  override def toString: String =
+    Seq(packagePath.toCamelCase(), modulePath.toCamelCase(), localName.toTitleCase).mkString(".")
 }
 
-object FQName {
+object FQName extends FQNameCodec {
 
   def fQName(packagePath: Path) =
     (modulePath: Path) => (localName: Name) => FQName(packagePath, modulePath, localName)

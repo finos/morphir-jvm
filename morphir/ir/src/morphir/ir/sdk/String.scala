@@ -1,6 +1,7 @@
 package morphir.ir.sdk
 
-import morphir.ir.Module.ModulePath
+import morphir.ir.documented
+import morphir.ir.module.ModulePath
 import morphir.ir.{ ModuleSpecification, Name }
 import morphir.ir.Type.Reference
 import morphir.ir.Type.Specification.OpaqueTypeSpecification
@@ -11,7 +12,10 @@ object String {
 
   val moduleSpec: ModuleSpecification[Unit] = ModuleSpecification(
     Map(
-      Name.fromString("String") -> OpaqueTypeSpecification(List.empty)
+      Name.fromString("String") -> documented(
+        "Type that represents a string of characters.",
+        OpaqueTypeSpecification(List.empty)
+      )
     ),
     Map.empty
   )

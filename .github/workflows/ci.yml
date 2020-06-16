@@ -26,7 +26,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/.ivy2/cache
-        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+        key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sc') }}
         restore-keys: |
           ${{ runner.os }}-sbt-ivy-cache-
 
@@ -34,15 +34,38 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/.sbt
-        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sc') }}
         restore-keys: |
           ${{ runner.os }}-sbt-
+
+    - name: Cache Mill
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/mill
+        key: ${{ runner.os }}-mill-${{ hashFiles('**/build.sc') }}
+        restore-keys: |
+          ${{ runner.os }}-mill-
+
+    - name: Cache Coursier
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/coursier
+        key: ${{ runner.os }}-coursier-${{ hashFiles('**/build.sc') }}
+        restore-keys: |
+          ${{ runner.os }}-coursier-
+
+    - name: Cache Out
+      uses: actions/cache@v1
+      with:
+        path: ./out
+        key: ${{ runner.os }}-out-${{ hashFiles('**/build.sc') }}
+        restore-keys: |
+          ${{ runner.os }}-out-
 
     - name: Checks
       run: |
         git config --global user.name "CI"
         ./mill all __.checkFormat "__.fix --check" __.docJar __.test
-
 
     - name: Publish
       if: github.ref == 'refs/heads/master' || github.event_name == 'release'

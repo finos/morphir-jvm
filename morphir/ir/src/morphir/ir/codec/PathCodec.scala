@@ -1,14 +1,14 @@
 package morphir.ir.codec
 
-import io.circe.{ Decoder, Encoder }
-import morphir.ir.{ Name, Path }
+import morphir.ir.Name
+import morphir.ir.path.Path
+import upickle.default._
 
 trait PathCodec {
-  implicit def encodePath(implicit nameEncoder: Encoder[Name] = NameCodec.encodeName): Encoder[Path] =
-    Encoder.encodeList(nameEncoder).contramap(x => x.value)
-
-  implicit def decodePath(implicit nameDecoder: Decoder[Name] = NameCodec.decodeName): Decoder[Path] =
-    Decoder.decodeList(nameDecoder).map(Path.fromList)
+  implicit val pathReadWriter: ReadWriter[Path] = readwriter[List[Name]].bimap(
+    path => path.toList,
+    items => Path.fromList(items)
+  )
 }
 
 object PathCodec extends PathCodec
