@@ -1,5 +1,5 @@
 import $ivy.`com.goyeau::mill-git:0.1.0-8-5ed3839`
-import $ivy.`com.goyeau::mill-scalafix:8515ae6`
+import $ivy.`com.goyeau::mill-scalafix:c71a533`
 import $ivy.`io.github.davidgregory084::mill-tpolecat:0.1.3`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
 import com.goyeau.mill.git._
