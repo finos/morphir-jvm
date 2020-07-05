@@ -54,54 +54,7 @@ trait MorphirScalaModule extends ScalaModule with TpolecatModule { self =>
   }
 }
 
-trait MorphirScalafixModule extends ScalaModule {
-
-  import coursier.Repository
-  import mill.{ Agg, T }
-  import mill.api.{ Logger, Loose, Result }
-  import mill.scalalib._
-  import mill.define.{ Command, Target }
-  import os._
-  import scalafix.interfaces.Scalafix
-  import scalafix.interfaces.ScalafixError._
-  import scala.compat.java8.OptionConverters._
-  import scala.jdk.CollectionConverters._
-  import com.goyeau.mill.scalafix
-
-  override def scalacPluginIvyDeps: Target[Loose.Agg[Dep]] =
-    super.scalacPluginIvyDeps() ++ Agg(ivy"org.scalameta:::semanticdb-scalac:4.3.18")
-
-  def scalafixConfig: T[Option[Path]] = T(None)
-  def scalafixIvyDeps: T[Agg[Dep]]    = Agg.empty[Dep]
-
-  implicit class ResultOps[+A](result: Result[A]) {
-    def flatMap[B](f: A => Result[B]): Result[B] =
-      result match {
-        case Result.Success(value) => f(value)
-        case result                => result.asInstanceOf[Result[B]] // scalafix:ok
-      }
-  }
-
-  /**
-   * Run Scalafix.
-   */
-  def fix(args: String*): Command[Unit] =
-    T.command {
-      for {
-        result <- ScalafixModule.fixAction(
-                   T.ctx.log,
-                   repositories,
-                   allSourceFiles().map(_.path),
-                   localClasspath().map(_.path),
-                   scalaVersion(),
-                   scalacOptions(),
-                   scalafixIvyDeps(),
-                   scalafixConfig(),
-                   args: _*
-                 )
-      } yield result
-    }
-}
+trait MorphirScalafixModule extends ScalafixModule
 
 trait MorphirPublishModule extends GitVersionedPublishModule {
   def packageDescription = T(artifactName())
