@@ -4,7 +4,7 @@ import $ivy.`io.github.davidgregory084::mill-tpolecat:0.1.3`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
 import com.goyeau.mill.git._
 import com.goyeau.mill.scalafix.ScalafixModule
-import io.github.davidgregory084.TpolecatModule
+import io.github.davidgregory084._
 import mill._
 import mill.scalalib._
 import mill.scalajslib._
@@ -18,7 +18,7 @@ object Deps {
 
     val scala211  = "2.11.12"
     val scala212  = "2.12.11"
-    val scala213  = "2.13.3"
+    val scala213  = "2.13.1"
     val scalaJS06 = "0.6.32"
     val scalaJS1  = "1.0.0"
 
@@ -45,6 +45,62 @@ object Deps {
     val scalactic     = "3.1.2"
     val scalaUri      = "2.2.2"
   }
+}
+
+trait MorphirScalaModule extends ScalaModule with TpolecatModule { self =>
+
+  override def scalacOptions = T {
+    super.scalacOptions().filterNot(Set("-Xlint:nullary-override"))
+  }
+}
+
+trait MorphirScalafixModule extends ScalaModule {
+
+  import coursier.Repository
+  import mill.{ Agg, T }
+  import mill.api.{ Logger, Loose, Result }
+  import mill.scalalib._
+  import mill.define.{ Command, Target }
+  import os._
+  import scalafix.interfaces.Scalafix
+  import scalafix.interfaces.ScalafixError._
+  import scala.compat.java8.OptionConverters._
+  import scala.jdk.CollectionConverters._
+  import com.goyeau.mill.scalafix
+
+  override def scalacPluginIvyDeps: Target[Loose.Agg[Dep]] =
+    super.scalacPluginIvyDeps() ++ Agg(ivy"org.scalameta:::semanticdb-scalac:4.3.18")
+
+  def scalafixConfig: T[Option[Path]] = T(None)
+  def scalafixIvyDeps: T[Agg[Dep]]    = Agg.empty[Dep]
+
+  implicit class ResultOps[+A](result: Result[A]) {
+    def flatMap[B](f: A => Result[B]): Result[B] =
+      result match {
+        case Result.Success(value) => f(value)
+        case result                => result.asInstanceOf[Result[B]] // scalafix:ok
+      }
+  }
+
+  /**
+   * Run Scalafix.
+   */
+  def fix(args: String*): Command[Unit] =
+    T.command {
+      for {
+        result <- ScalafixModule.fixAction(
+                   T.ctx.log,
+                   repositories,
+                   allSourceFiles().map(_.path),
+                   localClasspath().map(_.path),
+                   scalaVersion(),
+                   scalacOptions(),
+                   scalafixIvyDeps(),
+                   scalafixConfig(),
+                   args: _*
+                 )
+      } yield result
+    }
 }
 
 trait MorphirPublishModule extends GitVersionedPublishModule {
@@ -81,7 +137,7 @@ trait ScalaMacroModule extends ScalaModule {
          Agg.empty)
 }
 
-trait MorphirCommonModule extends ScalaModule with ScalafmtModule with TpolecatModule {
+trait MorphirCommonModule extends MorphirScalaModule with ScalafmtModule {
 
   def repositories = super.repositories ++ Seq(
     MavenRepository("https://oss.sonatype.org/content/repositories/releases"),
@@ -124,7 +180,7 @@ trait CommonJsModule extends MorphirCommonModule with ScalaJSModule {
   }
 }
 
-trait MorphirTestModule extends ScalaModule with TestModule {
+trait MorphirTestModule extends MorphirScalaModule with TestModule {
   def millSourcePath = super.millSourcePath / os.up
 
   def crossScalaVersion: String
@@ -174,7 +230,7 @@ object morphir extends Module {
         with CommonJvmModule
         with MorphirPublishModule
         with ScalaMacroModule
-        with ScalafixModule { self =>
+        /*with MorphirScalafixModule*/ { self =>
 
       def artifactName = "morphir-ir"
       def ivyDeps = Agg(
