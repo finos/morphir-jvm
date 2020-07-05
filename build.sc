@@ -1,5 +1,5 @@
 import $ivy.`com.goyeau::mill-git:0.1.0-8-5ed3839`
-import $ivy.`com.goyeau::mill-scalafix:c71a533`
+import $ivy.`com.goyeau::mill-scalafix:0.1.3`
 import $ivy.`io.github.davidgregory084::mill-tpolecat:0.1.3`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
 import com.goyeau.mill.git._
@@ -17,8 +17,8 @@ object Deps {
   object Versions {
 
     val scala211  = "2.11.12"
-    val scala212  = "2.12.10"
-    val scala213  = "2.13.2"
+    val scala212  = "2.12.11"
+    val scala213  = "2.13.3"
     val scalaJS06 = "0.6.32"
     val scalaJS1  = "1.0.0"
 
@@ -29,16 +29,15 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-    val zio           = "1.0.0-RC20"
-    val zioConfig     = "1.0.0-RC19"
-    val zioLogging    = "0.3.0"
-    val zioNio        = "1.0.0-RC7"
-    val zioProcess    = "0.0.5"
-    val circe         = "0.13.0"
+    val zio           = "1.0.0-RC21-2"
+    val zioConfig     = "1.0.0-RC23-1"
+    val zioLogging    = "0.3.2"
+    val zioNio        = "1.0.0-RC8"
+    val zioProcess    = "0.0.6"
     val newtype       = "0.4.4"
     val decline       = "1.2.0"
     val pprint        = "0.5.9"
-    val scalameta     = "4.3.10"
+    val scalameta     = "4.3.18"
     val directories   = "11"
     val enumeratum    = "1.6.1"
     val macroParadise = "2.1.1"
@@ -82,7 +81,7 @@ trait ScalaMacroModule extends ScalaModule {
          Agg.empty)
 }
 
-trait MorphirCommonModule extends ScalaModule with ScalafmtModule with ScalafixModule with TpolecatModule {
+trait MorphirCommonModule extends ScalaModule with ScalafmtModule with TpolecatModule {
 
   def repositories = super.repositories ++ Seq(
     MavenRepository("https://oss.sonatype.org/content/repositories/releases"),
@@ -133,6 +132,7 @@ trait MorphirTestModule extends ScalaModule with TestModule {
 
   def ivyDeps = Agg(
     ivy"dev.zio::zio-test::${Deps.Versions.zio}",
+    ivy"dev.zio::zio-test-junit::${Deps.Versions.zio}",
     ivy"dev.zio::zio-test-sbt::${Deps.Versions.zio}"
   )
 
@@ -173,7 +173,8 @@ object morphir extends Module {
         extends CrossScalaModule
         with CommonJvmModule
         with MorphirPublishModule
-        with ScalaMacroModule { self =>
+        with ScalaMacroModule
+        with ScalafixModule { self =>
 
       def artifactName = "morphir-ir"
       def ivyDeps = Agg(
@@ -200,9 +201,11 @@ object morphir extends Module {
     class JvmMorphirScalaModule(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
+        with ScalaMacroModule
         with MorphirPublishModule { self =>
       def artifactName = "morphir-scala"
       def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
+
       def ivyDeps = Agg(
         ivy"org.scalameta::scalameta:${Versions.scalameta}"
       )
@@ -266,6 +269,7 @@ object morphir extends Module {
     class JvmMorphirCli(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
+        with ScalaMacroModule
         with MorphirPublishModule { self =>
       def artifactName = "morphir-cli"
       def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion), morphir.workspace.jvm(crossScalaVersion))
@@ -286,13 +290,6 @@ object morphir extends Module {
       def scalacOptions = super.scalacOptions() ++ (
         if (crossScalaVersion.startsWith("2.13")) Seq("-Ymacro-annotations") else Seq.empty
       )
-
-      def scalacPluginIvyDeps =
-        super.scalacPluginIvyDeps() ++
-          (if (crossScalaVersion.startsWith("2.12"))
-             Agg(ivy"org.scalamacros:::paradise:${Versions.macroParadise}")
-           else
-             Agg.empty)
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
