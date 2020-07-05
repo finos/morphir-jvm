@@ -3,7 +3,7 @@ package morphir.ir.codec
 import morphir.ir.{ literal, pattern, FQName, Type, Value }
 import morphir.ir.name.Name
 import morphir.ir.Value._
-import morphir.ir.argument.{ Argument, ArgumentList }
+import morphir.ir.argument.Argument
 import morphir.ir.core.TaggedCompanionObjectLike
 import morphir.ir.json.Decode.DecodeError
 import upickle.default._
