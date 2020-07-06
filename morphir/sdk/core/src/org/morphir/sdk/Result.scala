@@ -63,7 +63,7 @@ object Result {
   def andThen[E, A, B](fn: A => Result[E, B])(result: Result[E, A]): Result[E, B] =
     result.flatMap(fn)
 
-  def map[E, A, A1](fn: A => A1)(result: Result[E, A]): Result[E, A1] =
+  def map[X, A, V](fn: A => V)(result: Result[X, A]): Result[X, V] =
     result.map(fn)
 
   def map2[X, A, B, V](fn: (A, B) => V)(resA: Result[X, A])(resB: Result[X, B]): Result[X, V] =
