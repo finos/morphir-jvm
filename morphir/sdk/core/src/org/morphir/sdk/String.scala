@@ -51,9 +51,9 @@ object String {
 
   def slice(start: Int)(end: Int)(str: String): String = str.substring(start, end)
 
-  def left(n: Int)(str: String): String = str.substring(0,n)
+  def left(n: Int)(str: String): String = str.substring(0, n)
 
-  def right(n: Int)(str: String): String = str.slice(str.length-n,str.length)
+  def right(n: Int)(str: String): String = str.slice(str.length - n, str.length)
 
   def dropLeft(n: Int)(str: String): String = str.drop(n)
 
@@ -85,8 +85,8 @@ object String {
   def uncons(str: String): Maybe[(Char, String)] =
     str match {
       case a if a.length == 0 => Maybe.nothing
-      case a if a.length == 1 =>  Maybe.just((a.charAt(0), ""))
-      case _ => Maybe.just((str.charAt(0), str.substring(1,str.length)))
+      case a if a.length == 1 => Maybe.just((a.charAt(0), ""))
+      case _                  => Maybe.just((str.charAt(0), str.substring(1, str.length)))
     }
 
   def toList(str: String): List[Char] = str.toList
@@ -103,7 +103,7 @@ object String {
 
   def trimRight(str: String): String = str.replaceAll("\\s+$", "")
 
-  def map(func:(Char, Char) => String)(str: String): String = ???
+  def map(func: (Char, Char) => String)(str: String): String = ???
 
   def filter(func: (Char, Boolean) => String)(str: String): String = ???
 
