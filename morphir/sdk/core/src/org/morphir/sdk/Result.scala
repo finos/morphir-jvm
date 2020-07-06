@@ -73,15 +73,19 @@ object Result {
       case (_, err @ Err(_)) => err.asInstanceOf[Result[X, V]]
     }
 
-  def map3[X, A, B, C, V](fn: (A, B, C) => V)(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C]): Result[X, V] =
+  def map3[X, A, B, C, V](
+    fn: (A, B, C) => V
+  )(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C]): Result[X, V] =
     (resA, resB, resC) match {
-      case (Ok(a), Ok(b), Ok(c))   => Ok(fn(a, b, c))
-      case (err @ Err(_), _, _) => err.asInstanceOf[Result[X, V]]
-      case (_, err @ Err(_), _) => err.asInstanceOf[Result[X, V]]
-      case (_, _, err @ Err(_)) => err.asInstanceOf[Result[X, V]]
+      case (Ok(a), Ok(b), Ok(c)) => Ok(fn(a, b, c))
+      case (err @ Err(_), _, _)  => err.asInstanceOf[Result[X, V]]
+      case (_, err @ Err(_), _)  => err.asInstanceOf[Result[X, V]]
+      case (_, _, err @ Err(_))  => err.asInstanceOf[Result[X, V]]
     }
 
-  def map4[X, A, B, C, D, V](fn: (A, B, C, D) => V)(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C])(resD: Result[X, D]): Result[X, V] =
+  def map4[X, A, B, C, D, V](
+    fn: (A, B, C, D) => V
+  )(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C])(resD: Result[X, D]): Result[X, V] =
     (resA, resB, resC, resD) match {
       case (Ok(a), Ok(b), Ok(c), Ok(d)) => Ok(fn(a, b, c, d))
       case (err @ Err(_), _, _, _)      => err.asInstanceOf[Result[X, V]]
@@ -90,7 +94,9 @@ object Result {
       case (_, _, _, err @ Err(_))      => err.asInstanceOf[Result[X, V]]
     }
 
-  def map5[X, A, B, C, D, E, V](fn: (A, B, C, D, E) => V)(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C])(resD: Result[X, D])(resE: Result[X, E]): Result[X, V] =
+  def map5[X, A, B, C, D, E, V](
+    fn: (A, B, C, D, E) => V
+  )(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C])(resD: Result[X, D])(resE: Result[X, E]): Result[X, V] =
     (resA, resB, resC, resD, resE) match {
       case (Ok(a), Ok(b), Ok(c), Ok(d), Ok(e)) => Ok(fn(a, b, c, d, e))
       case (err @ Err(_), _, _, _, _)          => err.asInstanceOf[Result[X, V]]
