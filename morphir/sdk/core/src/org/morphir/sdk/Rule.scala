@@ -14,8 +14,8 @@ object Rule {
         .find(rule => rule(input).isDefined)
         .flatMap(rule => rule(input))
 
-  def any[A](input: A): Bool =
-    Bool.True
+  def any[A]: A => Bool =
+    _ => Bool.True
 
   def is[A](ref: A)(input: A): Bool =
     ref == input

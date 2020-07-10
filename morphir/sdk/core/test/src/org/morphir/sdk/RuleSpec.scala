@@ -8,14 +8,14 @@ object RuleSpec extends DefaultRunnableSpec {
     suite("Rule.chain specs")(
       chainTests(
         (List(), Char.from('a'), Maybe.Nothing),
-        (List((a: Char.Char) => Maybe.Nothing), Char.from('a'), Maybe.Nothing),
+        (List((_: Char.Char) => Maybe.Nothing), Char.from('a'), Maybe.Nothing),
         (
-          List((a: Char.Char) => Maybe.Nothing, (a: Char.Char) => Maybe.Just(a)),
+          List((_: Char.Char) => Maybe.Nothing, (a: Char.Char) => Maybe.Just(a)),
           Char.from('a'),
           Maybe.Just(Char.from('a'))
         ),
         (
-          List((a: Char.Char) => Maybe.Just(Char.from('b')), (a: Char.Char) => Maybe.Just(a)),
+          List((_: Char.Char) => Maybe.Just(Char.from('b')), (a: Char.Char) => Maybe.Just(a)),
           Char.from('a'),
           Maybe.Just(Char.from('b'))
         )
