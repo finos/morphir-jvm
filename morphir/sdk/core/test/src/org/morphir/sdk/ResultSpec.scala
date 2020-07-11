@@ -24,6 +24,39 @@ object ResultSpec extends DefaultRunnableSpec {
         }
       )
     ),
+    suite("Map2")(
+      suite("Calling map2")(
+        testM("Given an Ok value should invoke the map2") {
+          check(Gen.int(1, 100), Gen.int(1, 100)) { (inputA, inputB) =>
+            val inputa = Result.Ok(inputA).withErr[String]
+            val inputb = Result.Ok(inputB).withErr[String]
+            assert(
+              Result.map2((a: Int, b: Int) => a + b)(inputa)(inputb)
+            )(
+              equalTo(Result.Ok(inputA + inputB))
+            )
+          }
+        },
+        test("Given an Err in value A should return that value") {
+          val bad: Result[String, Int] = Result.Err("No Bueno!")
+          val inputb = Result.Ok(1).withErr[String]
+          assert(
+            Result.map2((a: Int, b: Int) => a * b * 2)(bad)(inputb)
+          )(
+            equalTo(Result.Err("No Bueno!"))
+          )
+        },
+        test("Given an Err in value B should return that value") {
+          val bad: Result[String, Int] = Result.Err("No Bueno!")
+          val inputa = Result.Ok(1).withErr[String]
+          assert(
+            Result.map2((a: Int, b: Int) => a * b * 2)(inputa)(bad)
+          )(
+            equalTo(Result.Err("No Bueno!"))
+          )
+        }
+      )
+    ),
     suite("Calling flatMap")(
       testM("Given an Ok value, then it should invoke the mapping function") {
         check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
