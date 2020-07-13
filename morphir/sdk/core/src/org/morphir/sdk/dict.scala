@@ -1,8 +1,8 @@
 package org.morphir.sdk
 
-import Maybe._
+import maybe._
 
-object Dict {
+object dict {
   sealed abstract class Dict[K, +V]
   private case object EmptyDict                              extends Dict[Any, Nothing]
   private case class DictImpl[K, +V](val wrapped: Map[K, V]) extends Dict[K, V]
@@ -11,7 +11,7 @@ object Dict {
 
   def get[K, V](targetKey: K)(dict: Dict[K, V]): Maybe[V] =
     dict match {
-      case EmptyDict         => Maybe.Nothing
+      case EmptyDict         => maybe.Nothing
       case DictImpl(wrapped) => wrapped.get(targetKey)
     }
 
@@ -47,12 +47,12 @@ object Dict {
   object tupled {
 
     @inline def get[K, V](targetKey: K, dict: Dict[K, V]): Maybe[V] =
-      Dict.get(targetKey)(dict)
+      dict.get(targetKey)(dict)
 
     @inline def member[K, V](key: K, dict: Dict[K, V]): Boolean =
-      Dict.member(key)(dict)
+      dict.member(key)(dict)
 
     @inline def insert[K, V](key: K, value: V, dict: Dict[K, V]): Dict[K, V] =
-      Dict.insert(key)(value)(dict)
+      dict.insert(key)(value)(dict)
   }
 }

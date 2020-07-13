@@ -2,409 +2,409 @@ package org.morphir.sdk
 
 import zio.test._
 import zio.test.Assertion._
-import org.morphir.sdk.Maybe.Maybe
+import org.morphir.sdk.maybe.Maybe
 
 object StringSpec extends DefaultRunnableSpec {
   def spec = suite("StringSpec")(
-    suite("String.isEmpty specs")(
+    suite("string.isEmpty specs")(
       isEmptyTests(
         "Hello World" -> false,
         ""            -> true
       ): _*
     ),
-    suite("String.length specs")(
+    suite("string.length specs")(
       lengthTests(
         "Hello World" -> 11,
-        ""                   -> 0
+        ""            -> 0
       ): _*
     ),
-    suite("String.reverse specs")(
+    suite("string.reverse specs")(
       reverseTests(
         "Hello World" -> "dlroW olleH",
-        ""                   -> ""
+        ""            -> ""
       ): _*
     ),
-    suite("String.repeat specs")(
+    suite("string.repeat specs")(
       repeatTests(
-         (3, "ha","hahaha")
+        (3, "ha", "hahaha")
       ): _*
     ),
-    suite("String.replace specs")(
+    suite("string.replace specs")(
       replaceTests(
-        (".","-", "Json.Decode.succeed","Json-Decode-succeed"),
-        (",", "/", "a,b,c,d,e","a/b/c/d/e")
+        (".", "-", "Json.Decode.succeed", "Json-Decode-succeed"),
+        (",", "/", "a,b,c,d,e", "a/b/c/d/e")
       ): _*
     ),
-    suite("String.fromInt specs")(
+    suite("string.fromInt specs")(
       fromIntTests(
-        1 -> "1",
+        1  -> "1",
         -1 -> "-1"
       ): _*
     ),
-    suite("String.append specs")(
+    suite("string.append specs")(
       appendTests(
-        ("butter","fly","butterfly")
+        ("butter", "fly", "butterfly")
       ): _*
     )
   )
 
-  def isEmptyTests(cases: (String.String, Boolean)*) =
+  def isEmptyTests(cases: (string.String, Boolean)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling isEmpty should return '$expected'"
+          s"Given a string: '$input' calling isEmpty should return '$expected'"
         ) {
-          assert(String.isEmpty(input))(equalTo(expected))
+          assert(string.isEmpty(input))(equalTo(expected))
         }
     }
 
-  def lengthTests(cases: (String.String, Int)*) =
+  def lengthTests(cases: (string.String, Int)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling length should return '$expected'"
+          s"Given a string: '$input' calling length should return '$expected'"
         ) {
-          assert(String.length(input))(equalTo(expected))
+          assert(string.length(input))(equalTo(expected))
         }
     }
 
-  def reverseTests(cases: (String.String, String.String)*) =
+  def reverseTests(cases: (string.String, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling reverse should return '$expected'"
+          s"Given a string: '$input' calling reverse should return '$expected'"
         ) {
-          assert(String.reverse(input))(equalTo(expected))
+          assert(string.reverse(input))(equalTo(expected))
         }
     }
 
-  def repeatTests(cases: (Int, String.String, String.String)*) =
+  def repeatTests(cases: (Int, string.String, string.String)*) =
     cases.map {
       case (inputInt, inputStr, expected) =>
         test(
-          s"Given a String: '$inputStr' and an Int: '$inputInt' calling repeat should return '$expected'"
+          s"Given a string: '$inputStr' and an Int: '$inputInt' calling repeat should return '$expected'"
         ) {
-          assert(String.repeat(inputInt, inputStr))(equalTo(expected))
+          assert(string.repeat(inputInt, inputStr))(equalTo(expected))
         }
     }
 
-  def replaceTests(cases: (String.String, String.String, String.String, String.String)*) =
+  def replaceTests(cases: (string.String, string.String, string.String, string.String)*) =
     cases.map {
       case (literal, replacement, target, expected) =>
         test(
-          s"Given a String: '$target' calling replace should return '$expected'"
+          s"Given a string: '$target' calling replace should return '$expected'"
         ) {
-          assert(String.replace(literal, replacement, target))(equalTo(expected))
+          assert(string.replace(literal, replacement, target))(equalTo(expected))
         }
     }
 
-  def fromIntTests(cases: (Int, String.String)*) =
+  def fromIntTests(cases: (Int, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given an Int: '$input' calling fromInt should return '$expected'"
+          s"Given an int: '$input' calling fromInt should return '$expected'"
         ) {
-          assert(String.fromInt(input))(equalTo(expected))
+          assert(string.fromInt(input))(equalTo(expected))
         }
     }
 
-  def appendTests(cases: (String.String, String.String, String.String)*) =
+  def appendTests(cases: (string.String, string.String, string.String)*) =
     cases.map {
       case (first, second, expected) =>
         test(
           s"Given Strings: '$first' and '$second' calling append should return '$expected'"
         ) {
-          assert(String.append(first, second))(equalTo(expected))
+          assert(string.append(first, second))(equalTo(expected))
         }
     }
 
-  def concatTests(cases: (List[String.String], String.String)*) =
+  def concatTests(cases: (List[string.String], string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a List[String]: '$input' calling concat should return '$expected'"
+          s"Given a list[string]: '$input' calling concat should return '$expected'"
         ) {
-          assert(String.concat(input))(equalTo(expected))
+          assert(string.concat(input))(equalTo(expected))
         }
     }
 
-  def splitTests(cases: (String.String, String.String, List[String])*) =
+  def splitTests(cases: (string.String, string.String, List[String])*) =
     cases.map {
       case (sep, target, expected) =>
         test(
           s"Given Strings: '$target' and 'sep' calling split should return '$expected'"
         ) {
-          assert(String.split(sep, target))(equalTo(expected))
+          assert(string.split(sep, target))(equalTo(expected))
         }
     }
 
-  def toIntTests(cases: (String.String, Maybe[Int])*) =
+  def toIntTests(cases: (string.String, Maybe[Int])*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling toInt should return '$expected'"
+          s"Given a string: '$input' calling toInt should return '$expected'"
         ) {
-          assert(String.toInt(input))(equalTo(expected))
+          assert(string.toInt(input))(equalTo(expected))
         }
     }
 
-  def toUpperTests(cases: (String.String, String.String)*) =
+  def toUpperTests(cases: (string.String, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling toUpper should return '$expected'"
+          s"Given a string: '$input' calling toUpper should return '$expected'"
         ) {
-          assert(String.toUpper(input))(equalTo(expected))
+          assert(string.toUpper(input))(equalTo(expected))
         }
     }
 
-  def toLowerTests(cases: (String.String, String.String)*) =
+  def toLowerTests(cases: (string.String, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling toLower should return '$expected'"
+          s"Given a string: '$input' calling toLower should return '$expected'"
         ) {
-          assert(String.toLower(input))(equalTo(expected))
+          assert(string.toLower(input))(equalTo(expected))
         }
     }
 
-  def trimTests(cases: (String.String, String.String)*) =
+  def trimTests(cases: (string.String, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling trim should return '$expected'"
+          s"Given a string: '$input' calling trim should return '$expected'"
         ) {
-          assert(String.trim(input))(equalTo(expected))
+          assert(string.trim(input))(equalTo(expected))
         }
     }
 
-  def joinTests(cases: (Char, List[String.String], String.String)*) =
+  def joinTests(cases: (Char, List[string.String], string.String)*) =
     cases.map {
       case (sep, chunks, expected) =>
         test(
-          s"Given a List[String]: '$chunks' calling join should return '$expected'"
+          s"Given a list[string]: '$chunks' calling join should return '$expected'"
         ) {
-          assert(String.join(sep)(chunks))(equalTo(expected))
+          assert(string.join(sep)(chunks))(equalTo(expected))
         }
     }
 
-  def wordsTests(cases: (String.String, List[String])*) =
+  def wordsTests(cases: (string.String, List[String])*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling words should return '$expected'"
+          s"Given a string: '$input' calling words should return '$expected'"
         ) {
-          assert(String.words(input))(equalTo(expected))
+          assert(string.words(input))(equalTo(expected))
         }
     }
 
-  def linesTests(cases: (String.String, List[String])*) =
+  def linesTests(cases: (string.String, List[String])*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling lines should return '$expected'"
+          s"Given a string: '$input' calling lines should return '$expected'"
         ) {
-          assert(String.lines(input))(equalTo(expected))
+          assert(string.lines(input))(equalTo(expected))
         }
     }
 
-  def sliceTests(cases: (Int, Int, String.String, String.String)*) =
+  def sliceTests(cases: (Int, Int, string.String, string.String)*) =
     cases.map {
       case (start, end, string, expected) =>
         test(
-          s"Given a String: '$string' and Ints: $start and $end calling slice should return '$expected'"
+          s"Given a string: '$string' and Ints: $start and $end calling slice should return '$expected'"
         ) {
-          assert(String.slice(start)(end)(string))(equalTo(expected))
+          assert(string.slice(start)(end)(string))(equalTo(expected))
         }
     }
 
-  def leftTests(cases: (Int, String.String, String.String)*) =
+  def leftTests(cases: (Int, string.String, string.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
-          s"Given a String: '$str' calling left should return '$expected'"
+          s"Given a string: '$str' calling left should return '$expected'"
         ) {
-          assert(String.left(n)(str))(equalTo(expected))
+          assert(string.left(n)(str))(equalTo(expected))
         }
     }
 
-  def rightTests(cases: (Int, String.String, String.String)*) =
+  def rightTests(cases: (Int, string.String, string.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
-          s"Given a String: '$str' calling right should return '$expected'"
+          s"Given a string: '$str' calling right should return '$expected'"
         ) {
-          assert(String.right(n)(str))(equalTo(expected))
+          assert(string.right(n)(str))(equalTo(expected))
         }
     }
 
-  def dropLeftTests(cases: (Int, String.String, String.String)*) =
+  def dropLeftTests(cases: (Int, string.String, string.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
-          s"Given a String: '$str' calling dropLeft should return '$expected'"
+          s"Given a string: '$str' calling dropLeft should return '$expected'"
         ) {
-          assert(String.dropLeft(n)(str))(equalTo(expected))
+          assert(string.dropLeft(n)(str))(equalTo(expected))
         }
     }
 
-  def dropRightTests(cases: (Int, String.String, String.String)*) =
+  def dropRightTests(cases: (Int, string.String, string.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
-          s"Given a String: '$str' calling dropRight should return '$expected'"
+          s"Given a string: '$str' calling dropRight should return '$expected'"
         ) {
-          assert(String.dropRight(n)(str))(equalTo(expected))
+          assert(string.dropRight(n)(str))(equalTo(expected))
         }
     }
 
-  def containsTests(cases: (String.String, String.String, Boolean)*) =
+  def containsTests(cases: (string.String, string.String, Boolean)*) =
     cases.map {
       case (substring, str, expected) =>
         test(
           s"Given Strings: '$substring' and '$str' calling contains should return '$expected'"
         ) {
-          assert(String.contains(substring)(str))(equalTo(expected))
+          assert(string.contains(substring)(str))(equalTo(expected))
         }
     }
 
-  def startsWithTests(cases: (String.String, String.String, Boolean)*) =
+  def startsWithTests(cases: (string.String, string.String, Boolean)*) =
     cases.map {
       case (substring, str, expected) =>
         test(
           s"Given Strings: '$substring' and '$str' calling startsWith should return '$expected'"
         ) {
-          assert(String.startsWith(substring)(str))(equalTo(expected))
+          assert(string.startsWith(substring)(str))(equalTo(expected))
         }
     }
 
-  def endsWithTests(cases: (String.String, String.String, Boolean)*) =
+  def endsWithTests(cases: (string.String, string.String, Boolean)*) =
     cases.map {
       case (substring, str, expected) =>
         test(
-          s"Given String: '$substring' and '$str' calling endsWith should return '$expected'"
+          s"Given string: '$substring' and '$str' calling endsWith should return '$expected'"
         ) {
-          assert(String.endsWith(substring)(str))(equalTo(expected))
+          assert(string.endsWith(substring)(str))(equalTo(expected))
         }
     }
 
-  def indexesTests(cases: (String.String, String.String, List[Int])*) =
+  def indexesTests(cases: (string.String, string.String, List[Int])*) =
     cases.map {
       case (substring, str, expected) =>
         test(
-          s"Given String: '$substring' and '$str' calling indexes should return '$expected'"
+          s"Given string: '$substring' and '$str' calling indexes should return '$expected'"
         ) {
-          assert(String.indexes(substring)(str))(equalTo(expected))
+          assert(string.indexes(substring)(str))(equalTo(expected))
         }
     }
 
-  def toFloatTests(cases: (String.String, Maybe[Float])*) =
+  def toFloatTests(cases: (string.String, Maybe[Float])*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling toFloat should return '$expected'"
+          s"Given a string: '$input' calling toFloat should return '$expected'"
         ) {
-          assert(String.toFloat(input))(equalTo(expected))
+          assert(string.toFloat(input))(equalTo(expected))
         }
     }
 
-  def fromFloatTests(cases: (Float, String.String)*) =
+  def fromFloatTests(cases: (Float, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
           s"Given a Float: '$input' calling fromFloat should return '$expected'"
         ) {
-          assert(String.fromFloat(input))(equalTo(expected))
+          assert(string.fromFloat(input))(equalTo(expected))
         }
     }
 
-  def fromCharTests(cases: (Char, String.String)*) =
+  def fromCharTests(cases: (Char, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a Char: '$input' calling fromChar should return '$expected'"
+          s"Given a char: '$input' calling fromChar should return '$expected'"
         ) {
-          assert(String.fromChar(input))(equalTo(expected))
+          assert(string.fromChar(input))(equalTo(expected))
         }
     }
 
-  def consTests(cases: (Char, String.String, String.String)*) =
+  def consTests(cases: (Char, string.String, string.String)*) =
     cases.map {
       case (ch, str, expected) =>
         test(
-          s"Given a String: '$str' calling cons should return '$expected'"
+          s"Given a string: '$str' calling cons should return '$expected'"
         ) {
-          assert(String.cons(ch)(str))(equalTo(expected))
+          assert(string.cons(ch)(str))(equalTo(expected))
         }
     }
 
-  def unconsTests(cases: (String.String, Maybe[(Char, String)])*) =
+  def unconsTests(cases: (string.String, Maybe[(Char, String)])*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling uncons should return '$expected'"
+          s"Given a string: '$input' calling uncons should return '$expected'"
         ) {
-          assert(String.uncons(input))(equalTo(expected))
+          assert(string.uncons(input))(equalTo(expected))
         }
     }
 
-  def toListTests(cases: (String.String, List[Char])*) =
+  def toListTests(cases: (string.String, List[Char])*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling toList should return '$expected'"
+          s"Given a string: '$input' calling toList should return '$expected'"
         ) {
-          assert(String.toList(input))(equalTo(expected))
+          assert(string.toList(input))(equalTo(expected))
         }
     }
 
-  def padTests(cases: (Int, Char, String.String, String.String)*) =
+  def padTests(cases: (Int, Char, string.String, string.String)*) =
     cases.map {
       case (n, ch, str, expected) =>
         test(
-          s"Given a String: '$str', a Char: '$ch', and Int: '$n' calling pad should return '$expected'"
+          s"Given a string: '$str', a Char: '$ch', and Int: '$n' calling pad should return '$expected'"
         ) {
-          assert(String.pad(n)(ch)(str))(equalTo(expected))
+          assert(string.pad(n)(ch)(str))(equalTo(expected))
         }
     }
 
-  def padLeftTests(cases: (Int, Char, String.String, String.String)*) =
+  def padLeftTests(cases: (Int, Char, string.String, string.String)*) =
     cases.map {
       case (n, ch, str, expected) =>
         test(
-          s"Given a String: '$str', a Char: '$ch', and Int: '$n' calling pad should return '$expected'"
+          s"Given a string: '$str', a Char: '$ch', and Int: '$n' calling pad should return '$expected'"
         ) {
-          assert(String.padLeft(n)(ch)(str))(equalTo(expected))
+          assert(string.padLeft(n)(ch)(str))(equalTo(expected))
         }
     }
 
-  def padRightTests(cases: (Int, Char, String.String, String.String)*) =
+  def padRightTests(cases: (Int, Char, string.String, string.String)*) =
     cases.map {
       case (n, ch, str, expected) =>
         test(
-          s"Given a String: '$str', a Char: '$ch', and Int: '$n' calling pad should return '$expected'"
+          s"Given a string: '$str', a Char: '$ch', and Int: '$n' calling pad should return '$expected'"
         ) {
-          assert(String.padRight(n)(ch)(str))(equalTo(expected))
+          assert(string.padRight(n)(ch)(str))(equalTo(expected))
         }
     }
 
-  def trimLeftTests(cases: (String.String, String.String)*) =
+  def trimLeftTests(cases: (string.String, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling trimLeft should return '$expected'"
+          s"Given a string: '$input' calling trimLeft should return '$expected'"
         ) {
-          assert(String.trimLeft(input))(equalTo(expected))
+          assert(string.trimLeft(input))(equalTo(expected))
         }
     }
 
-  def trimRightTests(cases: (String.String, String.String)*) =
+  def trimRightTests(cases: (string.String, string.String)*) =
     cases.map {
       case (input, expected) =>
         test(
-          s"Given a String: '$input' calling trimRight should return '$expected'"
+          s"Given a string: '$input' calling trimRight should return '$expected'"
         ) {
-          assert(String.trimRight(input))(equalTo(expected))
+          assert(string.trimRight(input))(equalTo(expected))
         }
     }
 }

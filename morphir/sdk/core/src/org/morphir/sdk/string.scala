@@ -1,8 +1,8 @@
 package org.morphir.sdk
 
-import org.morphir.sdk.Maybe.Maybe
+import org.morphir.sdk.maybe.Maybe
 
-object String {
+object string {
   type String = scala.Predef.String
 
   @inline def isEmpty(str: String): Boolean = str.isEmpty()
@@ -30,9 +30,9 @@ object String {
 
   def toInt(text: String): Maybe[Int] =
     try {
-      Maybe.just(text.toInt)
+      maybe.just(text.toInt)
     } catch {
-      case _: NumberFormatException => Maybe.nothing
+      case _: NumberFormatException => maybe.nothing
     }
 
   @inline def toUpper(text: String): String =
@@ -71,9 +71,9 @@ object String {
 
   def toFloat(str: String): Maybe[Float] =
     try {
-      Maybe.just(str.toFloat)
+      maybe.just(str.toFloat)
     } catch {
-      case _: NumberFormatException => Maybe.nothing
+      case _: NumberFormatException => maybe.nothing
     }
 
   def fromFloat(float: Float): String = float.toString
@@ -84,9 +84,9 @@ object String {
 
   def uncons(str: String): Maybe[(Char, String)] =
     str match {
-      case a if a.length == 0 => Maybe.nothing
-      case a if a.length == 1 => Maybe.just((a.charAt(0), ""))
-      case _                  => Maybe.just((str.charAt(0), str.substring(1, str.length)))
+      case a if a.length == 0 => maybe.nothing
+      case a if a.length == 1 => maybe.just((a.charAt(0), ""))
+      case _                  => maybe.just((str.charAt(0), str.substring(1, str.length)))
     }
 
   def toList(str: String): List[Char] = str.toList

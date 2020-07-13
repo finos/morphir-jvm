@@ -1,8 +1,8 @@
 package org.morphir.sdk
 
-import String.String
+import string.String
 
-object Bool {
+object bool {
   type Bool = Boolean
 
   val True: Bool  = true

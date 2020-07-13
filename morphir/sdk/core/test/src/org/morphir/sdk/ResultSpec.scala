@@ -10,16 +10,16 @@ object ResultSpec extends DefaultRunnableSpec {
         testM("Given an Ok value should invoke the mapping") {
           check(Gen.alphaNumericString) { input =>
             assert(
-              Result.map((text: String) => text.toUpperCase())(Result.Ok(input))
+              result.map((text: String) => text.toUpperCase())(result.Ok(input))
             )(
-              equalTo(Result.Ok(input.toUpperCase()))
+              equalTo(result.Ok(input.toUpperCase()))
             )
           }
         },
         test("Given an Err value should return that value") {
-          val original: Result[String, Int] = Result.Err("No Bueno!")
-          assert(Result.map((x: Int) => x * 2)(original))(
-            equalTo(Result.Err("No Bueno!"))
+          val original: result[String, Int] = result.Err("No Bueno!")
+          assert(result.map((x: Int) => x * 2)(original))(
+            equalTo(result.Err("No Bueno!"))
           )
         }
       )
@@ -28,31 +28,31 @@ object ResultSpec extends DefaultRunnableSpec {
       suite("Calling map2")(
         testM("Given an Ok value should invoke the map2") {
           check(Gen.int(1, 100), Gen.int(1, 100)) { (inputA, inputB) =>
-            val inputa = Result.Ok(inputA).withErr[String]
-            val inputb = Result.Ok(inputB).withErr[String]
+            val inputa = result.Ok(inputA).withErr[String]
+            val inputb = result.Ok(inputB).withErr[String]
             assert(
-              Result.map2((a: Int, b: Int) => a + b)(inputa)(inputb)
+              result.map2((a: Int, b: Int) => a + b)(inputa)(inputb)
             )(
-              equalTo(Result.Ok(inputA + inputB))
+              equalTo(result.Ok(inputA + inputB))
             )
           }
         },
         test("Given an Err in value A should return that value") {
-          val bad: Result[String, Int] = Result.Err("No Bueno!")
-          val inputb = Result.Ok(1).withErr[String]
+          val bad: result[String, Int] = result.Err("No Bueno!")
+          val inputb                   = result.Ok(1).withErr[String]
           assert(
-            Result.map2((a: Int, b: Int) => a * b * 2)(bad)(inputb)
+            result.map2((a: Int, b: Int) => a * b * 2)(bad)(inputb)
           )(
-            equalTo(Result.Err("No Bueno!"))
+            equalTo(result.Err("No Bueno!"))
           )
         },
         test("Given an Err in value B should return that value") {
-          val bad: Result[String, Int] = Result.Err("No Bueno!")
-          val inputa = Result.Ok(1).withErr[String]
+          val bad: result[String, Int] = result.Err("No Bueno!")
+          val inputa                   = result.Ok(1).withErr[String]
           assert(
-            Result.map2((a: Int, b: Int) => a * b * 2)(inputa)(bad)
+            result.map2((a: Int, b: Int) => a * b * 2)(inputa)(bad)
           )(
-            equalTo(Result.Err("No Bueno!"))
+            equalTo(result.Err("No Bueno!"))
           )
         }
       )
@@ -61,20 +61,20 @@ object ResultSpec extends DefaultRunnableSpec {
       testM("Given an Ok value, then it should invoke the mapping function") {
         check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
           val orderItem = OrderItem(product, quantity)
-          val input     = Result.Ok(orderItem).withErr[String]
+          val input     = result.Ok(orderItem).withErr[String]
           assert(
-            input.flatMap((oi: OrderItem) => Result.Ok(Product(oi.product)).withErr[String])
+            input.flatMap((oi: OrderItem) => result.Ok(Product(oi.product)).withErr[String])
           )(
             equalTo(
-              Result.Ok(Product(product)).withErr[String]
+              result.Ok(Product(product)).withErr[String]
             )
           )
         }
       },
       test("Given an Err value, then it should return the original error") {
-        val result: Result[String, Unit] = Result.Err("Whamo!")
-        assert(result.flatMap(_ => Result.Ok(42)))(
-          equalTo(Result.Err("Whamo!").withOk[Int])
+        val result: result[String, Unit] = result.Err("Whamo!")
+        assert(result.flatMap(_ => result.Ok(42)))(
+          equalTo(result.Err("Whamo!").withOk[Int])
         )
       }
     ),
@@ -82,50 +82,50 @@ object ResultSpec extends DefaultRunnableSpec {
       testM("Given an Ok value, then it should invoke the mapping function") {
         check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
           val orderItem = OrderItem(product, quantity)
-          val input     = Result.Ok(orderItem).withErr[String]
+          val input     = result.Ok(orderItem).withErr[String]
           assert(
-            Result.andThen((oi: OrderItem) => Result.Ok(Product(oi.product)).withErr[String])(input)
+            result.andThen((oi: OrderItem) => result.Ok(Product(oi.product)).withErr[String])(input)
           )(
             equalTo(
-              Result.Ok(Product(product)).withErr[String]
+              result.Ok(Product(product)).withErr[String]
             )
           )
         }
       },
       test("Given an Err value, then it should return the original error") {
-        val result: Result[String, Unit] = Result.Err("Whamo!")
-        assert(Result.andThen((_: Unit) => Result.Ok(42))(result))(
-          equalTo(Result.Err("Whamo!").withOk[Int])
+        val result: result[String, Unit] = result.Err("Whamo!")
+        assert(result.andThen((_: Unit) => result.Ok(42))(result))(
+          equalTo(result.Err("Whamo!").withOk[Int])
         )
       }
     ),
     suite("Calling mapError as a method")(
       test("Given an Ok value, then it should return that success value") {
-        val original: Result[String, Int] = Result.Ok(42)
+        val original: result[String, Int] = result.Ok(42)
         assert(original.mapError(e => "[" + e.toUpperCase() + "]"))(
-          equalTo(Result.Ok(42))
+          equalTo(result.Ok(42))
         )
       },
       test("Given an Err value, then it should return a mapped value") {
-        val original: Result[String, Int] = Result.Err("Boom!!!")
+        val original: result[String, Int] = result.Err("Boom!!!")
         assert(original.mapError(e => "[" + e.toUpperCase() + "]"))(
-          equalTo(Result.Err("[BOOM!!!]"))
+          equalTo(result.Err("[BOOM!!!]"))
         )
       }
     ),
     suite("Calling mapError as a function")(
       test("Given an Ok value, then it should return that success value") {
-        val original: Result[String, Int] = Result.Ok(42)
+        val original: result[String, Int] = result.Ok(42)
         assert(
-          Result.mapError((e: String) => "[" + e.toUpperCase() + "]")(original)
+          result.mapError((e: String) => "[" + e.toUpperCase() + "]")(original)
         )(
-          equalTo(Result.Ok(42))
+          equalTo(result.Ok(42))
         )
       },
       test("Given an Err value, then it should return a mapped value") {
-        val original: Result[String, Int] = Result.Err("Boom!!!")
+        val original: result[String, Int] = result.Err("Boom!!!")
         assert(original.mapError(e => "[" + e.toUpperCase() + "]"))(
-          equalTo(Result.Err("[BOOM!!!]"))
+          equalTo(result.Err("[BOOM!!!]"))
         )
       }
     )

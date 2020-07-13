@@ -1,10 +1,10 @@
 package org.morphir.sdk
 
-import org.morphir.sdk.Maybe.Maybe
+import org.morphir.sdk.maybe.Maybe
 
 import scala.util.matching.{ Regex => RE }
 
-object Regex {
+object regex {
 
   case class Regex(toRE: RE) extends AnyVal
   case class Options(caseInsensitive: Boolean, multiline: Boolean)

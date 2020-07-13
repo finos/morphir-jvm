@@ -1,6 +1,6 @@
 package org.morphir.sdk
 
-object Number {
+object number {
 
   def add[A: Numeric](left: A)(right: A)(implicit numeric: Numeric[A]): A =
     numeric.plus(left, right)

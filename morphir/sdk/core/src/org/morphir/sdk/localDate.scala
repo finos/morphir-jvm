@@ -1,6 +1,6 @@
 package org.morphir.sdk
 
-object LocalDate {
+object localDate {
   type LocalDate = java.time.LocalDate
 
   type Month = java.time.Month

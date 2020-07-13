@@ -2,7 +2,7 @@ package org.morphir.sdk
 
 //TODO: We need to think how we want to represent chars as Elm chars support full unicode
 //    : but java cannot store full unicode in a single char
-object Char {
+object char {
   sealed abstract class Char {}
 
   private case class UnicodeChar(codePoint: Int) extends Char {
@@ -48,13 +48,13 @@ object Char {
       (0x30 <= code && code <= 0x39) || (0x41 <= code && code <= 0x46) || (0x61 <= code && code <= 0x66)
   }
 
-  def toUpper(ch: scala.Char): Char = Char.from(ch.toUpper)
+  def toUpper(ch: scala.Char): Char = char.from(ch.toUpper)
 
   def toUpper(ch: Char): Char = ch match {
     case UnicodeChar(codePoint) => UnicodeChar(Character.toUpperCase(codePoint))
   }
 
-  def toLower(ch: scala.Char): Char = Char.from(ch.toLower)
+  def toLower(ch: scala.Char): Char = char.from(ch.toLower)
 
   def toLower(ch: Char): Char = ch match {
     case UnicodeChar(codePoint) => UnicodeChar(Character.toLowerCase(codePoint))

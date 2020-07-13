@@ -1,6 +1,6 @@
 package org.morphir.sdk
 
-object Int {
+object int {
   type Int   = scala.BigInt
   type Int8  = scala.Byte
   type Int16 = scala.Short

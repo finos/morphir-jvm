@@ -2,7 +2,7 @@ package org.morphir.sdk
 
 import scala.util.{ Failure, Success, Try }
 
-object Maybe {
+object maybe {
 
   sealed abstract class Maybe[+A] extends MaybeLike[A] { self =>
 
@@ -94,7 +94,7 @@ object Maybe {
       else collection.Iterator.single(this.get)
 
     def toList: List[A] =
-      if (isEmpty) List() else new ::(this.get, Nil)
+      if (isEmpty) list() else new ::(this.get, Nil)
 
     @inline final def toRight[X](left: => X): Either[X, A] =
       if (isEmpty) Left(left) else Right(this.get)
@@ -201,7 +201,7 @@ object Maybe {
     defaultValue: A1
   )(maybeValue: Maybe[A]): A1 =
     maybeValue match {
-      case _: Maybe.Nothing.type => defaultValue
+      case _: maybe.Nothing.type => defaultValue
       case Just(value)           => value
     }
 

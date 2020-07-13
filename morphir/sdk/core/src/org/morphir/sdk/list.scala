@@ -1,8 +1,8 @@
 package org.morphir.sdk
 
-import org.morphir.sdk.Maybe.{ Just, Maybe }
+import org.morphir.sdk.maybe.{ Just, Maybe }
 
-object List {
+object list {
   type List[+A] = scala.List[A]
 
   @inline def all[A](predicate: A => Boolean)(xs: List[A]): Boolean =
@@ -54,7 +54,7 @@ object List {
     case lst if lst == Nil => lst
     case lst @ _ :: Nil    => lst
     case lst =>
-      lst.take(xs.length - 1).flatMap(x => List(x, elem)) ++ List(xs.last)
+      lst.take(xs.length - 1).flatMap(x => list(x, elem)) ++ list(xs.last)
   }
 
   @inline def length[A](xs: List[A]): Int    = xs.length
@@ -120,8 +120,8 @@ object List {
   @inline def reverse[A](xs: List[A]): List[A] = xs.reverse
 
   @inline def tail[A](xs: List[A]): Maybe[List[A]] = xs.tail match {
-    case Nil  => Maybe.Nothing
-    case tail => Maybe.Just(tail)
+    case Nil  => maybe.Nothing
+    case tail => maybe.Just(tail)
   }
 
   @inline def take[A](n: Int)(xs: List[A]): List[A] = xs.take(n)

@@ -1,7 +1,7 @@
 package org.morphir.sdk
 
-import org.morphir.sdk.Maybe._
-import org.morphir.sdk.String.String
+import org.morphir.sdk.maybe._
+import org.morphir.sdk.string.String
 import scala.util.Try
 
 object StringOps {
