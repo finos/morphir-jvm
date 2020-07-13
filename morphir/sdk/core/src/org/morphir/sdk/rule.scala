@@ -4,7 +4,7 @@ import org.morphir.sdk.Bool.Bool
 import org.morphir.sdk.Maybe.Maybe
 import org.morphir.sdk.List.List
 
-object Rule {
+object rule {
 
   type Rule[A, B] = A => Maybe[B]
 
