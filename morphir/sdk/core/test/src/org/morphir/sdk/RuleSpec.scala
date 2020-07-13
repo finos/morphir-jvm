@@ -5,7 +5,7 @@ import zio.test.{ suite, _ }
 
 object RuleSpec extends DefaultRunnableSpec {
   def spec = suite("RuleSpec")(
-    suite("rule.chain specs")(
+    suite("Rule.chain specs")(
       chainTests(
         (List(), Char.from('a'), Maybe.Nothing),
         (List((_: Char.Char) => Maybe.Nothing), Char.from('a'), Maybe.Nothing),
@@ -21,14 +21,14 @@ object RuleSpec extends DefaultRunnableSpec {
         )
       ): _*
     ),
-    suite("rule.any specs")(
+    suite("Rule.any specs")(
       testM("Calling any on anything should return True") {
-        check(Gen.alphaNumericChar)(input => assert(rule.any(input))(equalTo(Bool.True)))
+        check(Gen.alphaNumericChar)(input => assert(Rule.any(input))(equalTo(Bool.True)))
       }
     ),
-    suite("rule.is specs")(
+    suite("Rule.is specs")(
       testM("Calling is by passing in the same value twice should return True") {
-        check(Gen.alphaNumericChar)(input => assert(rule.is(input)(input))(equalTo(Bool.True)))
+        check(Gen.alphaNumericChar)(input => assert(Rule.is(input)(input))(equalTo(Bool.True)))
       },
       testM("Calling is by passing in two different values should return False") {
         val gen =
@@ -38,11 +38,11 @@ object RuleSpec extends DefaultRunnableSpec {
             if ref != input
           } yield (ref, input)
         check(gen) {
-          case (ref, input) => assert(rule.is(ref)(input))(equalTo(Bool.False))
+          case (ref, input) => assert(Rule.is(ref)(input))(equalTo(Bool.False))
         }
       }
     ),
-    suite("rule.anyOf specs")(
+    suite("Rule.anyOf specs")(
       testM("Calling anyOf by passing in a list and a member should return True") {
         val gen =
           for {
@@ -50,7 +50,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if ref.nonEmpty
           } yield (ref, ref.head)
         check(gen) {
-          case (ref, input) => assert(rule.anyOf(ref)(input))(equalTo(Bool.True))
+          case (ref, input) => assert(Rule.anyOf(ref)(input))(equalTo(Bool.True))
         }
       },
       testM("Calling anyOf by passing in a list and a non-member should return False") {
@@ -61,11 +61,11 @@ object RuleSpec extends DefaultRunnableSpec {
             if !ref.contains(input)
           } yield (ref, input)
         check(gen) {
-          case (ref, input) => assert(rule.anyOf(ref)(input))(equalTo(Bool.False))
+          case (ref, input) => assert(Rule.anyOf(ref)(input))(equalTo(Bool.False))
         }
       }
     ),
-    suite("rule.noneOf specs")(
+    suite("Rule.noneOf specs")(
       testM("Calling noneOf by passing in a list and a member should return False") {
         val gen =
           for {
@@ -73,7 +73,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if ref.nonEmpty
           } yield (ref, ref.head)
         check(gen) {
-          case (ref, input) => assert(rule.noneOf(ref)(input))(equalTo(Bool.False))
+          case (ref, input) => assert(Rule.noneOf(ref)(input))(equalTo(Bool.False))
         }
       },
       testM("Calling noneOf by passing in a list and a non-member should return True") {
@@ -84,19 +84,19 @@ object RuleSpec extends DefaultRunnableSpec {
             if !ref.contains(input)
           } yield (ref, input)
         check(gen) {
-          case (ref, input) => assert(rule.noneOf(ref)(input))(equalTo(Bool.True))
+          case (ref, input) => assert(Rule.noneOf(ref)(input))(equalTo(Bool.True))
         }
       }
     )
   )
 
-  def chainTests(cases: (List[rule.Rule[Char.Char, Char.Char]], Char.Char, Maybe.Maybe[Char.Char])*) =
+  def chainTests(cases: (List[Rule.Rule[Char.Char, Char.Char]], Char.Char, Maybe.Maybe[Char.Char])*) =
     cases.map {
       case (rules, input, expectedResult) =>
         test(
           s"Given the rules: '$rules' passing in input: '$input' chain should return '$expectedResult'"
         ) {
-          assert(rule.chain(rules)(input))(equalTo(expectedResult))
+          assert(Rule.chain(rules)(input))(equalTo(expectedResult))
         }
     }
 

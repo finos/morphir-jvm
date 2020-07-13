@@ -1,10 +1,10 @@
 package org.morphir.sdk
 
 import org.morphir.sdk.Bool.Bool
-import org.morphir.sdk.Maybe.Maybe
 import org.morphir.sdk.List.List
+import org.morphir.sdk.Maybe.Maybe
 
-object rule {
+object Rule {
 
   type Rule[A, B] = A => Maybe[B]
 
