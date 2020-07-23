@@ -1,8 +1,8 @@
-package com.ms.booksandrecords.controller;
+package morphir.examples.booksandrecords.controller;
 
-import com.ms.booksandrecords.commands.DealCmd;
-import com.ms.booksandrecords.service.DealEvent;
-import com.ms.booksandrecords.service.ServiceStatefulApp;
+
+import morphir.examples.booksandrecords.API;
+import morphir.examples.booksandrecords.service.ServiceStatefulApp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +16,8 @@ public class DealController {
     ServiceStatefulApp serviceStatefulApp;
 
     @PostMapping(value="/deal", consumes = MediaType.APPLICATION_JSON_VALUE, produces = "application/json")
-    public DealEvent processDealCmd(@RequestBody DealCmd dealCmd){
+    public API.DealEvent processDealCmd(@RequestBody API.DealCmd dealCmd){
+
         return serviceStatefulApp.logic(dealCmd);
     }
 }

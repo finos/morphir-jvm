@@ -1,56 +1,57 @@
 package morphir.examples.booksandrecords
 
-import org.springframework.stereotype.Component
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.{JsonAutoDetect, JsonProperty, JsonSubTypes, JsonTypeInfo}
+import org.springframework.context.annotation.Bean;
+
 
 object API {
-    type DealId = String
-    type ProductId = String
-    type Price = BigDecimal
-    type Quantity = Int
+  type DealId = String
+  type ProductId = String
+  type Price = Float
+  type Quantity = Int
 
 
-    // Commands
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-    @JsonSubTypes({
-            @JsonSubTypes.Type(value = classOf[OpenDeal], name = "openDeal"),
-            @JsonSubTypes.Type(value = classOf[CloseDeal], name = "closeDeal")
-    })
-    sealed trait DealCmd
+  // Commands
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+  @JsonSubTypes(Array
+  (
+    new JsonSubTypes.Type(value = classOf[OpenDeal], name = "openDeal"),
+    new JsonSubTypes.Type(value = classOf[CloseDeal], name = "closeDeal")
+  ))
+  sealed trait DealCmd
 
-    @Component
-    case class CloseDeal(dealId: DealId) extends DealCmd
+  @Bean
+  case class CloseDeal(@JsonProperty("dealId") dealId: DealId) extends DealCmd
 
 
-    @Component
-    case class OpenDeal (id: DealId, productId: ProductId, price: Price, quantity: Quantity) extends DealCmd 
+  @Bean
+  case class OpenDeal(@JsonProperty("dealId") dealId: DealId, @JsonProperty("productId") productId: ProductId, @JsonProperty("price") price: Price, @JsonProperty("quantity") quantity: Quantity) extends DealCmd
 
-    // Events
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-    @JsonSubTypes({
-            @JsonSubTypes.Type(value = classOf[DuplicateDeal], name = "duplicateDeal"),
-            @JsonSubTypes.Type(value = classOf[DealNotFound], name = "dealNotFound"),
-            @JsonSubTypes.Type(value = classOf[InvalidPrice], name = "invalidPrice"),
-            @JsonSubTypes.Type(value = classOf[InvalidQuantity], name = "invalidQuantity")
-    })
-    sealed trait RejectReason
+  // Events
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+  sealed trait RejectReason
 
-    case object DuplicateDeal
-    case object DealNotFound
-    case object InvalidPrice
-    case object InvalidQuantity
+  case object DuplicateDeal extends RejectReason
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-    @JsonSubTypes({
-            @JsonSubTypes.Type(value = classOf[DealClosed], name = "dealClosed"),
-            @JsonSubTypes.Type(value = classOf[DealNotFound], name = "dealOpened"),
-            @JsonSubTypes.Type(value = classOf[DealNotFound], name = "CommandRejected"),
-    })
-    sealed trait DealEvent
+  case object DealNotFound extends RejectReason
 
-    case class DealOpened(id: DealId, productId: ProductId, price: Price, quantity: Quantity) extends DealEvent
-    case class DealClosed(dealId: DealId) extends DealEvent
-    case class CommandRejected(dealId: DealId, reason: RejectReason, description: String)
+  case object InvalidPrice extends RejectReason
+
+  case object InvalidQuantity extends RejectReason
+
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+  @JsonSubTypes(Array
+  (
+    new JsonSubTypes.Type(value = classOf[DealClosed], name = "dealClosed"),
+    new JsonSubTypes.Type(value = classOf[DealOpened], name = "dealOpened"),
+    new JsonSubTypes.Type(value = classOf[CommandRejected], name = "CommandRejected")
+  ))
+  @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+  sealed trait DealEvent
+
+  case class DealOpened(  id: DealId, productId: ProductId, price: Price, quantity: Quantity) extends DealEvent
+
+  case class DealClosed(dealId: DealId) extends DealEvent
+
+  case class CommandRejected(dealId: DealId, reason: RejectReason, description: String) extends DealEvent
 }

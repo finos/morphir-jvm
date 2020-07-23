@@ -1,13 +1,14 @@
-package com.ms.booksandrecords.model;
+package morphir.examples.booksandrecords.model;
 
-import org.springframework.data.annotation.Id;
-import com.ms.booksandrecords.API.*;
+import org.springframework.data.annotation.Id
+import morphir.examples.booksandrecords.API._
 
 object State {
     case class Deal (
-        @Id dealId  : DealId, 
+        @Id
+        id  : DealId,
         productId   : ProductId,
-        price       : Price, 
+        price       : Price,
         quantity    : Quantity
     )
 }

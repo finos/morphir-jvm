@@ -1,8 +1,7 @@
-package com.ms.booksandrecords.repository;
+package morphir.examples.booksandrecords.repository;
 
-import com.ms.booksandrecords.model.Deal;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface DealRepository extends MongoRepository<Deal, String>{
+public interface DealRepository extends MongoRepository<morphir.examples.booksandrecords.model.State.Deal, String>{
 
 }

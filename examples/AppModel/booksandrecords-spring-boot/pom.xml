@@ -8,7 +8,7 @@
 		<version>2.3.1.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.ms</groupId>
+	<groupId>morphir.examples</groupId>
 	<artifactId>booksandrecords</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>booksandrecords</name>

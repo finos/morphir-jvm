@@ -1,33 +1,37 @@
 package morphir.examples.booksandrecords
 
-import com.ms.booksandrecords.API.*;
-import com.ms.booksandrecords.model.Deal;
-import org.springframework.stereotype.Component;
+import morphir.examples.booksandrecords.API._
+import morphir.examples.booksandrecords.model.State.Deal
+import morphir.examples.booksandrecords.repository.DealRepository
 
-@Component
+
 object Logic {
     def openDeal(command: OpenDeal, dealRepository: DealRepository) : DealEvent = {
-        for {
-            deal <- dealRepository.findById (command.dealId)
-        } yield {
-            DuplicateDeal(deal.id)
-        } getOrElse {
-            if (command.price < 0)
-                InvalidPrice(command.dealId, command.price);
-            else if (command.quantity < 0)
-                InvalidQuantity(command.dealId, command.quantity);
-            else
-                DealOpened(command.dealId, command.productId, command.price, command.quantity);
+        val dealOptional = dealRepository.findById(command.dealId)
+
+        if (dealOptional.isPresent) {
+            new CommandRejected(command.dealId, DuplicateDeal, "Duplicated")
+        }
+        else if (command.price < 0) {
+            new CommandRejected(command.dealId, InvalidPrice, "Wrong Price")
+        }
+        else if (command.quantity < 0) {
+            new CommandRejected(command.dealId, InvalidQuantity, "Wrong Quantity")
+        }
+        else {
+            val deal = new Deal(command.dealId, command.productId, command.price, command.quantity)
+            dealRepository.save(deal)
+            new DealOpened(command.dealId, command.productId, command.price, command.quantity)
         }
     }
 
     def closeDeal(command: CloseDeal, dealRepository: DealRepository) : DealEvent = {
-        for {
-            deal <- dealRepository.findById (comand.dealId)
-        } yield {
-            DealClosed(deal.id)
-        } getOrElse {
-            DealNotFound(command.dealId)
+        val dealOptional = dealRepository.findById(command.dealId)
+
+        if (dealOptional.isPresent) {
+            dealRepository.deleteById(command.dealId)
+            new DealClosed(command.dealId)
         }
+        else new CommandRejected(command.dealId, DealNotFound, "Deal Not Found")
     }
 }

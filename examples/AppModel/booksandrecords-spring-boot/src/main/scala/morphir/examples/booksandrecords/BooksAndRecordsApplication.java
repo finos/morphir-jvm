@@ -1,11 +1,17 @@
-package com.ms.booksandrecords;
+package morphir.examples.booksandrecords;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.core.convert.CustomConversions;
 
 @SpringBootApplication
-object BooksAndRecordsApplication extends App {
-	SpringApplication.run(classOf[BooksandrecordsApplication], args)
+public class BooksAndRecordsApplication {
+
+	public static void main(String[] args) {
+
+		SpringApplication.run(BooksAndRecordsApplication.class, args);
+	}
+
 }
