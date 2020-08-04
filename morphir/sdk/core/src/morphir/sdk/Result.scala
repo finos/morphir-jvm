@@ -2,7 +2,7 @@ package morphir.sdk
 
 import morphir.sdk.Maybe._
 
-sealed abstract class Result[+E, +A] extends Product with Serializable {
+sealed abstract class Result[+E, +A] extends Product with Serializable { self =>
 
   def isOk: Boolean
 
@@ -15,6 +15,7 @@ sealed abstract class Result[+E, +A] extends Product with Serializable {
     }
 
   def getOrElse[A1 >: A](fallbackValue: A1): A1
+  @inline def withDefault[A1 >: A](fallbackValue: A1): A1 = getOrElse(fallbackValue)
 
   def map[A1](fn: A => A1): Result[E, A1] =
     this match {
@@ -24,9 +25,22 @@ sealed abstract class Result[+E, +A] extends Product with Serializable {
 
   def mapError[E1 >: E](fn: E => E1): Result[E1, A]
 
+  def toOption: Option[A] = self match {
+    case Result.Ok(value) => Option(value)
+    case Result.Err(_)    => None
+  }
+
+  def toMaybe: Maybe[A] =
+    self match {
+      case Result.Ok(value) => Maybe.just(value)
+      case _                => Maybe.nothing
+    }
+
 }
 
 object Result {
+
+  type Result[+E, +A] = morphir.sdk.Result[E, A]
 
   case class Ok[+E, +A](value: A) extends Result[E, A] {
 

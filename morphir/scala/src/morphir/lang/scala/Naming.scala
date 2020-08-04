@@ -1,9 +1,17 @@
 package morphir.lang.scala
 import morphir.ir.FQName
+import morphir.ir.name.Name
 
 import scala.meta.{ Term, Type => MType }
 
 object Naming {
+
+  implicit class NameOps(name: Name) {
+    def toTypeName: scala.meta.Type.Name =
+      scala.meta.Type.Name(name.toString)
+
+  }
+
   implicit class FQNameOps(private val fqn: FQName) extends AnyVal {
     def toTypeName: scala.meta.Type.Name =
       scala.meta.Type.Name(fqn.toString)
