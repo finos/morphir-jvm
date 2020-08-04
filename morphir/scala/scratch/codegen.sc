@@ -12,4 +12,4 @@ val caseClass = """
 """
 
 val ccTree = caseClass.parse[Source].get
-pprint.pprintln(ccTree)
+pprint.log(ccTree)

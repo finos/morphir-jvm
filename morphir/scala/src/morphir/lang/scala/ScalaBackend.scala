@@ -28,6 +28,14 @@ object ScalaBackend {
               Some(fullyQualifiedTypeName.toTypeRef),
               None
             )
+          case morphir.ir.Type.Field(name, morphir.ir.Type.Variable(_, typeVarName)) =>
+            println(s"TypeName: $typeName")
+            Term.Param(
+              List.empty,
+              scala.meta.Name(name.toCamelCase),
+              Some(typeVarName.toTypeName),
+              None
+            )
           case _ => ???
         }
         q"case class $typeName (..$paramss)"
