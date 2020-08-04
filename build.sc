@@ -143,8 +143,7 @@ trait MorphirTestModule extends MorphirScalaModule with TestModule {
   def ivyDeps = Agg(
     ivy"dev.zio::zio-test::${Deps.Versions.zio}",
     ivy"dev.zio::zio-test-junit::${Deps.Versions.zio}",
-    ivy"dev.zio::zio-test-sbt::${Deps.Versions.zio}",
-    ivy"com.lihaoyi::os-lib:${Deps.Versions.oslib}"
+    ivy"dev.zio::zio-test-sbt::${Deps.Versions.zio}"
   )
 
   def testFrameworks =
