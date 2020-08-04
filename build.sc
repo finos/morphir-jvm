@@ -44,6 +44,7 @@ object Deps {
     val upickle       = "1.1.0"
     val scalactic     = "3.1.2"
     val scalaUri      = "2.2.2"
+    val oslib         = "0.6.2"
   }
 }
 
@@ -142,7 +143,8 @@ trait MorphirTestModule extends MorphirScalaModule with TestModule {
   def ivyDeps = Agg(
     ivy"dev.zio::zio-test::${Deps.Versions.zio}",
     ivy"dev.zio::zio-test-junit::${Deps.Versions.zio}",
-    ivy"dev.zio::zio-test-sbt::${Deps.Versions.zio}"
+    ivy"dev.zio::zio-test-sbt::${Deps.Versions.zio}",
+    ivy"com.lihaoyi::os-lib:${Deps.Versions.oslib}"
   )
 
   def testFrameworks =
