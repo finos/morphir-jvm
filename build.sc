@@ -44,6 +44,7 @@ object Deps {
     val upickle       = "1.1.0"
     val scalactic     = "3.1.2"
     val scalaUri      = "2.2.2"
+    val oslib         = "0.6.2"
   }
 }
 
