@@ -65,7 +65,7 @@ jobs:
     - name: Checks
       run: |
         git config --global user.name "CI"
-        ./mill all __.checkFormat __.docJar __.test
+      #  ./mill all __.checkFormat __.docJar __.test
       #  ./mill all __.checkFormat "__.fix --check" __.docJar __.test
 
     - name: Status Check
