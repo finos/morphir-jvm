@@ -19,5 +19,33 @@ package morphir.sdk
 
 object Basics {
   type Decimal = scala.BigDecimal
-  type Float   = scala.Float
+
+  // Float construction
+  type Float   = scala.Double
+  @inline def Float(number: Number): Float =
+    number.doubleValue()
+
+  // Float functions
+  @inline def add(f1: Float)(f2: Float): Float =
+    ( f1 + f2 )
+  @inline def subtract(f1: Float)(f2: Float): Float =
+    ( f1 - f2 )
+  @inline def multiply(f1: Float)(f2: Float): Float =
+    ( f1 * f2 )
+  @inline def divide(f1: Float)(f2: Float): Float =
+    ( f1 / f2 )
+  @inline def power(f1: Float)(f2: Float): Float =
+    Math.pow( f1, f2 )
+  @inline def equal(f1: Float)(f2: Float): Boolean =
+    ( f1 == f2 )
+  @inline def notEqual(f1: Float)(f2: Float): Boolean =
+    ( f1 != f2 )
+  @inline def lessThan(f1: Float)(f2: Float): Boolean =
+    ( f1 < f2 )
+  @inline def greaterThan(f1: Float)(f2: Float): Boolean =
+    ( f1 > f2 )
+  @inline def lessThanOrEqual(f1: Float)(f2: Float): Boolean =
+    ( f1 <= f2 )
+  @inline def greaterThanOrEqual(f1: Float)(f2: Float): Boolean =
+    ( f1 >= f2 )
 }
