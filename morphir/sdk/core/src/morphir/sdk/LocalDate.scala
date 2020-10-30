@@ -45,29 +45,29 @@ object LocalDate {
   val Friday: DayOfWeek = java.time.DayOfWeek.FRIDAY
   val Saturday: DayOfWeek = java.time.DayOfWeek.SATURDAY
 
-  def addDays(count: Long, date: LocalDate) =
+  def addDays(count: Long, date: LocalDate): LocalDate =
     date plusDays count
 
-  def addWeeks(count: Long, date: LocalDate) =
+  def addWeeks(count: Long, date: LocalDate): LocalDate =
     date plusWeeks count
 
-  def addMonths(count: Long, date: LocalDate) =
+  def addMonths(count: Long, date: LocalDate): LocalDate =
     date plusMonths count
 
-  def addYears(count: Long, date: LocalDate) =
+  def addYears(count: Long, date: LocalDate): LocalDate =
     date plusYears count
 
-  def diffInDays(fromDate: LocalDate, toDate: LocalDate) =
-    DAYS.between(fromDate, toDate)
+  def diffInDays(fromDate: LocalDate, toDate: LocalDate): Long =
+    DAYS between (fromDate, toDate)
 
-  def diffInWeeks(fromDate: LocalDate, toDate: LocalDate) =
-    WEEKS.between(fromDate, toDate)
+  def diffInWeeks(fromDate: LocalDate, toDate: LocalDate): Long =
+    WEEKS between (fromDate, toDate)
 
-  def diffInMonths(fromDate: LocalDate, toDate: LocalDate) =
-    MONTHS.between(fromDate, toDate)
+  def diffInMonths(fromDate: LocalDate, toDate: LocalDate): Long =
+    MONTHS between (fromDate, toDate)
 
-  def diffInYears(fromDate: LocalDate, toDate: LocalDate) =
-    YEARS.between(fromDate, toDate)
+  def diffInYears(fromDate: LocalDate, toDate: LocalDate): Long =
+    YEARS between (fromDate, toDate)
 
   /**
     * Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
