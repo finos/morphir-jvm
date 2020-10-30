@@ -16,11 +16,11 @@ import ammonite.ops._, ImplicitWd._
 object Deps {
   object Versions {
 
-    val scala211  = "2.11.12"
-    val scala212  = "2.12.11"
-    val scala213  = "2.13.1"
+    val scala211 = "2.11.12"
+    val scala212 = "2.12.11"
+    val scala213 = "2.13.1"
     val scalaJS06 = "0.6.32"
-    val scalaJS1  = "1.0.0"
+    val scalaJS1 = "1.0.0"
 
     val scalaJVMVersions = Seq(scala211, scala212, scala213)
 
@@ -29,22 +29,23 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-    val zio           = "1.0.0-RC21-2"
-    val zioConfig     = "1.0.0-RC23-1"
-    val zioLogging    = "0.3.2"
-    val zioNio        = "1.0.0-RC8"
-    val zioProcess    = "0.0.6"
-    val newtype       = "0.4.4"
-    val decline       = "1.2.0"
-    val pprint        = "0.5.9"
-    val scalameta     = "4.3.18"
-    val directories   = "11"
-    val enumeratum    = "1.6.1"
+    val zio = "1.0.3"
+    val zioConfig = "1.0.0-RC29"
+    val zioLogging = "0.5.3"
+    val zioNio = "1.0.0-RC10"
+    val zioPrelude = "1.0.0-RC1"
+    val zioProcess = "0.2.0"
+    val newtype = "0.4.4"
+    val decline = "1.2.0"
+    val pprint = "0.5.9"
+    val scalameta = "4.3.18"
+    val directories = "11"
+    val enumeratum = "1.6.1"
     val macroParadise = "2.1.1"
-    val upickle       = "1.1.0"
-    val scalactic     = "3.1.2"
-    val scalaUri      = "2.2.2"
-    val oslib         = "0.6.2"
+    val upickle = "1.1.0"
+    val scalactic = "3.1.2"
+    val scalaUri = "2.2.2"
+    val oslib = "0.6.2"
   }
 }
 
@@ -73,14 +74,16 @@ trait MorphirPublishModule extends GitVersionedPublishModule {
       )
     )
   )
-  def publishVersion: T[String] = GitVersionModule.version(withSnapshotSuffix = true)()
+  def publishVersion: T[String] =
+    GitVersionModule.version(withSnapshotSuffix = true)()
 }
 
 trait ScalaMacroModule extends ScalaModule {
   def crossScalaVersion: String
 
   def scalacOptions = super.scalacOptions().toList ++ (
-    if (crossScalaVersion.startsWith("2.13")) List("-Ymacro-annotations") else List.empty
+    if (crossScalaVersion.startsWith("2.13")) List("-Ymacro-annotations")
+    else List.empty
   )
 
   abstract override def scalacPluginIvyDeps =
@@ -130,7 +133,7 @@ trait CommonJsModule extends MorphirCommonModule with ScalaJSModule {
   def millSourcePath = super.millSourcePath / os.up / os.up
   trait Tests extends super.Tests with MorphirTestModule {
     def platformSegment = "js"
-    def scalaJSVersion  = crossScalaJSVersion
+    def scalaJSVersion = crossScalaJSVersion
   }
 }
 
@@ -153,11 +156,16 @@ trait MorphirTestModule extends MorphirScalaModule with TestModule {
   def sources = T.sources(
     super
       .sources()
-      .++(CrossModuleBase.scalaVersionPaths(crossScalaVersion, s => millSourcePath / s"src-$s"))
+      .++(
+        CrossModuleBase
+          .scalaVersionPaths(crossScalaVersion, s => millSourcePath / s"src-$s")
+      )
       .flatMap(source =>
         Seq(
           PathRef(source.path / os.up / "test" / source.path.last),
-          PathRef(source.path / os.up / platformSegment / "test" / source.path.last)
+          PathRef(
+            source.path / os.up / platformSegment / "test" / source.path.last
+          )
         )
       )
       .distinct
@@ -200,7 +208,7 @@ object morphir extends Module {
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
-        def crossScalaVersion       = JvmMorphirIrModule.this.crossScalaVersion
+        def crossScalaVersion = JvmMorphirIrModule.this.crossScalaVersion
       }
     }
   }
@@ -214,7 +222,7 @@ object morphir extends Module {
         with ScalaMacroModule
         with MorphirPublishModule { self =>
       def artifactName = "morphir-scala"
-      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
+      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
 
       def ivyDeps = Agg(
         ivy"org.scalameta::scalameta:${Versions.scalameta}"
@@ -222,14 +230,19 @@ object morphir extends Module {
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
-        def crossScalaVersion       = JvmMorphirScalaModule.this.crossScalaVersion
+        def crossScalaVersion = JvmMorphirScalaModule.this.crossScalaVersion
       }
     }
   }
   object sdk extends Module {
 
     object core extends Module {
-      object jvm extends Cross[JvmMorphirSdkCore](Versions.scala212, Versions.scala211, Versions.scala213)
+      object jvm
+          extends Cross[JvmMorphirSdkCore](
+            Versions.scala212,
+            Versions.scala211,
+            Versions.scala213
+          )
       class JvmMorphirSdkCore(val crossScalaVersion: String)
           extends CrossScalaModule
           with CommonJvmModule
@@ -238,72 +251,33 @@ object morphir extends Module {
         def artifactName = "morphir-sdk-core"
         object test extends Tests {
           def platformSegment: String = self.platformSegment
-          def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
+          def crossScalaVersion = JvmMorphirSdkCore.this.crossScalaVersion
         }
       }
     }
   }
 
-  object workspace extends Module {
-    object jvm extends Cross[JvmMorphirWorkspace](Versions.scala213)
-    class JvmMorphirWorkspace(val crossScalaVersion: String)
+  object flowz extends Module {
+    object jvm
+        extends Cross[JvmMorphirFlowz](
+          Versions.scala212,
+          Versions.scala211,
+          Versions.scala213
+        )
+    class JvmMorphirFlowz(val crossScalaVersion: String)
         extends CrossScalaModule
         with CommonJvmModule
-        with MorphirPublishModule
-        with ScalaMacroModule { self =>
-      def artifactName = "morphir-workspace"
-      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
-      def ivyDeps = Agg(
-        ivy"dev.zio::zio:${Versions.zio}",
-        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
-        ivy"dev.zio::zio-config:${Versions.zioConfig}",
-        ivy"dev.zio::zio-config-magnolia:${Versions.zioConfig}",
-        ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
-        ivy"dev.zio::zio-process:${Versions.zioProcess}",
-        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
-        ivy"io.estatico::newtype:${Versions.newtype}",
-        ivy"com.monovore::decline-effect:${Versions.decline}",
-        ivy"com.lihaoyi::pprint:${Versions.pprint}",
-        ivy"org.scalameta::scalameta:${Versions.scalameta}"
-      )
-
-      object test extends Tests {
-        def platformSegment: String = self.platformSegment
-        def crossScalaVersion       = JvmMorphirWorkspace.this.crossScalaVersion
-      }
-    }
-  }
-
-  object cli extends Module {
-    object jvm extends Cross[JvmMorphirCli](Versions.scala213)
-    class JvmMorphirCli(val crossScalaVersion: String)
-        extends CrossScalaModule
-        with CommonJvmModule
-        with ScalaMacroModule
         with MorphirPublishModule { self =>
-      def artifactName = "morphir-cli"
-      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion), morphir.workspace.jvm(crossScalaVersion))
+
+      def artifactName = "morphir-flowz"
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
-        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
-        ivy"dev.zio::zio-config:${Versions.zioConfig}",
-        ivy"dev.zio::zio-config-magnolia:${Versions.zioConfig}",
-        ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
-        ivy"dev.zio::zio-process:${Versions.zioProcess}",
-        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
-        ivy"io.estatico::newtype:${Versions.newtype}",
-        ivy"com.monovore::decline-effect:${Versions.decline}",
-        ivy"com.lihaoyi::pprint:${Versions.pprint}",
-        ivy"org.scalameta::scalameta:${Versions.scalameta}"
-      )
-
-      def scalacOptions = super.scalacOptions() ++ (
-        if (crossScalaVersion.startsWith("2.13")) Seq("-Ymacro-annotations") else Seq.empty
+        ivy"dev.zio::zio-prelude:${Versions.zio}"
       )
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
-        def crossScalaVersion       = JvmMorphirCli.this.crossScalaVersion
+        def crossScalaVersion = JvmMorphirFlowz.this.crossScalaVersion
       }
     }
   }
