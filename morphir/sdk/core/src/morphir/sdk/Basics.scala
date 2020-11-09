@@ -60,6 +60,13 @@ object Basics {
   @inline def ceiling(a: Float): Int = a.ceil.round
   @inline def truncate(a: Float): Int = if (a >= 0) floor(a) else -floor(-a)
 
+  // Utilities
+  @inline def identity[A](a: A): A = scala.Predef.identity(a)
+  @inline def always[A, B](a: A)(b: B): A = a
+  @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C = a => g(f(a))
+  @inline def composeRight[A, B, C](f: A => B)(g: B => C): A => C = a => g(f(a))
+  def never[A](nothing: Nothing): A = nothing
+
   type Decimal = scala.BigDecimal
 
 }
