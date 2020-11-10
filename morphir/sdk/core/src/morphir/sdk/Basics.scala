@@ -43,6 +43,7 @@ object Basics {
   @inline def subtract(a: Int)(b: Int): Int = a - b
   @inline def multiply(a: Int)(b: Int): Int = a * b
   @inline def integerDivide(a: Int)(b: Int): Int = a / b
+  @inline def power(a: Int)(b: Int): Int = a ^ b
 
   // Float construction
   type Float = scala.Double
@@ -50,6 +51,12 @@ object Basics {
     number.doubleValue()
 
   // Float functions
+  @inline def lessThan(a: Float)(b: Float): Bool = a < b
+  @inline def lessThanOrEqual(a: Float)(b: Float): Bool = a <= b
+  @inline def greaterThan(a: Float)(b: Float): Bool = a > b
+  @inline def greaterThanOrEqual(a: Float)(b: Float): Bool = a >= b
+  @inline def min(a: Float)(b: Float): Float = a min b
+  @inline def max(a: Float)(b: Float): Float = a max b
   @inline def add(a: Float)(b: Float): Float = a + b
   @inline def subtract(a: Float)(b: Float): Float = a - b
   @inline def multiply(a: Float)(b: Float): Float = a * b
@@ -62,7 +69,7 @@ object Basics {
 
   // Utilities
   @inline def identity[A](a: A): A = scala.Predef.identity(a)
-  @inline def always[A, B](a: A)(b: B): A = a
+  @inline def always[A, B](a: A): B => A = _ => a
   @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C = a => g(f(a))
   @inline def composeRight[A, B, C](f: A => B)(g: B => C): A => C = a => g(f(a))
   def never[A](nothing: Nothing): A = nothing

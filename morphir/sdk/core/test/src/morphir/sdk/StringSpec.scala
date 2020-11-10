@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
@@ -25,19 +24,19 @@ object StringSpec extends DefaultRunnableSpec {
     suite("String.isEmpty specs")(
       isEmptyTests(
         "Hello World" -> false,
-        ""            -> true
+        "" -> true
       ): _*
     ),
     suite("String.length specs")(
       lengthTests(
         "Hello World" -> 11,
-        ""            -> 0
+        "" -> 0
       ): _*
     ),
     suite("String.reverse specs")(
       reverseTests(
         "Hello World" -> "dlroW olleH",
-        ""            -> ""
+        "" -> ""
       ): _*
     ),
     suite("String.repeat specs")(
@@ -53,8 +52,8 @@ object StringSpec extends DefaultRunnableSpec {
     ),
     suite("String.fromInt specs")(
       fromIntTests(
-        1  -> "1",
-        -1 -> "-1"
+        1L -> "1",
+        -1L -> "-1"
       ): _*
     ),
     suite("String.append specs")(
@@ -64,7 +63,7 @@ object StringSpec extends DefaultRunnableSpec {
     )
   )
 
-  def isEmptyTests(cases: (String.String, Boolean)*) =
+  def isEmptyTests(cases: (String.String, Basics.Bool)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -74,7 +73,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def lengthTests(cases: (String.String, Int)*) =
+  def lengthTests(cases: (String.String, Basics.Int)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -94,7 +93,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def repeatTests(cases: (Int, String.String, String.String)*) =
+  def repeatTests(cases: (Basics.Int, String.String, String.String)*) =
     cases.map {
       case (inputInt, inputStr, expected) =>
         test(
@@ -104,17 +103,21 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def replaceTests(cases: (String.String, String.String, String.String, String.String)*) =
+  def replaceTests(
+      cases: (String.String, String.String, String.String, String.String)*
+  ) =
     cases.map {
       case (literal, replacement, target, expected) =>
         test(
           s"Given a String: '$target' calling replace should return '$expected'"
         ) {
-          assert(String.replace(literal, replacement, target))(equalTo(expected))
+          assert(String.replace(literal, replacement, target))(
+            equalTo(expected)
+          )
         }
     }
 
-  def fromIntTests(cases: (Int, String.String)*) =
+  def fromIntTests(cases: (Basics.Int, String.String)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -154,7 +157,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def toIntTests(cases: (String.String, Maybe.Maybe[Int])*) =
+  def toIntTests(cases: (String.String, Maybe.Maybe[Basics.Int])*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -194,7 +197,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def joinTests(cases: (Char, List[String.String], String.String)*) =
+  def joinTests(cases: (Char.Char, List[String.String], String.String)*) =
     cases.map {
       case (sep, chunks, expected) =>
         test(
@@ -224,7 +227,9 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def sliceTests(cases: (Int, Int, String.String, String.String)*) =
+  def sliceTests(
+      cases: (Basics.Int, Basics.Int, String.String, String.String)*
+  ) =
     cases.map {
       case (start, end, string, expected) =>
         test(
@@ -234,7 +239,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def leftTests(cases: (Int, String.String, String.String)*) =
+  def leftTests(cases: (Basics.Int, String.String, String.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
@@ -244,7 +249,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def rightTests(cases: (Int, String.String, String.String)*) =
+  def rightTests(cases: (Basics.Int, String.String, String.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
@@ -254,7 +259,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def dropLeftTests(cases: (Int, String.String, String.String)*) =
+  def dropLeftTests(cases: (Basics.Int, String.String, String.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
@@ -264,7 +269,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def dropRightTests(cases: (Int, String.String, String.String)*) =
+  def dropRightTests(cases: (Basics.Int, String.String, String.String)*) =
     cases.map {
       case (n, str, expected) =>
         test(
@@ -274,7 +279,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def containsTests(cases: (String.String, String.String, Boolean)*) =
+  def containsTests(cases: (String.String, String.String, Basics.Bool)*) =
     cases.map {
       case (substring, str, expected) =>
         test(
@@ -284,7 +289,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def startsWithTests(cases: (String.String, String.String, Boolean)*) =
+  def startsWithTests(cases: (String.String, String.String, Basics.Bool)*) =
     cases.map {
       case (substring, str, expected) =>
         test(
@@ -294,7 +299,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def endsWithTests(cases: (String.String, String.String, Boolean)*) =
+  def endsWithTests(cases: (String.String, String.String, Basics.Bool)*) =
     cases.map {
       case (substring, str, expected) =>
         test(
@@ -304,7 +309,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def indexesTests(cases: (String.String, String.String, List[Int])*) =
+  def indexesTests(cases: (String.String, String.String, List[Basics.Int])*) =
     cases.map {
       case (substring, str, expected) =>
         test(
@@ -314,7 +319,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def toFloatTests(cases: (String.String, Maybe.Maybe[Float])*) =
+  def toFloatTests(cases: (String.String, Maybe.Maybe[Basics.Float])*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -324,7 +329,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def fromFloatTests(cases: (Float, String.String)*) =
+  def fromFloatTests(cases: (Basics.Float, String.String)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -334,7 +339,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def fromCharTests(cases: (Char, String.String)*) =
+  def fromCharTests(cases: (Char.Char, String.String)*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -344,7 +349,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def consTests(cases: (Char, String.String, String.String)*) =
+  def consTests(cases: (Char.Char, String.String, String.String)*) =
     cases.map {
       case (ch, str, expected) =>
         test(
@@ -354,7 +359,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def unconsTests(cases: (String.String, Maybe.Maybe[(Char, String)])*) =
+  def unconsTests(cases: (String.String, Maybe.Maybe[(Char.Char, String)])*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -364,7 +369,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def toListTests(cases: (String.String, List[Char])*) =
+  def toListTests(cases: (String.String, List[Char.Char])*) =
     cases.map {
       case (input, expected) =>
         test(
@@ -374,7 +379,7 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def padTests(cases: (Int, Char, String.String, String.String)*) =
+  def padTests(cases: (Basics.Int, Char.Char, String.String, String.String)*) =
     cases.map {
       case (n, ch, str, expected) =>
         test(
@@ -384,7 +389,9 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def padLeftTests(cases: (Int, Char, String.String, String.String)*) =
+  def padLeftTests(
+      cases: (Basics.Int, Char.Char, String.String, String.String)*
+  ) =
     cases.map {
       case (n, ch, str, expected) =>
         test(
@@ -394,7 +401,9 @@ object StringSpec extends DefaultRunnableSpec {
         }
     }
 
-  def padRightTests(cases: (Int, Char, String.String, String.String)*) =
+  def padRightTests(
+      cases: (Basics.Int, Char.Char, String.String, String.String)*
+  ) =
     cases.map {
       case (n, ch, str, expected) =>
         test(
