@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Basics.{Bool, Float, Int}
+import morphir.sdk.Basics.{Bool, Float}
 import morphir.sdk.Char.Char
 import morphir.sdk.Maybe.Maybe
 
@@ -25,11 +25,11 @@ object String {
 
   @inline def isEmpty(str: String): Bool = str.isEmpty()
 
-  @inline def length(str: String): Int = str.length()
+  @inline def length(str: String): Basics.Int = str.length().toLong
 
   @inline def reverse(str: String): String = str.reverse
 
-  def repeat(times: Int, str: String): String =
+  def repeat(times: Basics.Int, str: String): String =
     Array.fill[String](times.toInt)(str).mkString
 
   @inline def replace(
@@ -39,7 +39,7 @@ object String {
   ): String =
     target.replace(literal, replacement)
 
-  @inline def fromInt(int: Int): String =
+  @inline def fromInt(int: Basics.Int): String =
     int.toString
 
   @inline def append(first: String, second: String): String = first + second
@@ -51,9 +51,9 @@ object String {
   @inline def split(sep: String, target: String): List[String] =
     target.split(sep).toList //TODO: These aren't exactly the same
 
-  def toInt(text: String): Maybe[Int] =
+  def toInt(text: String): Maybe[Basics.Int] =
     try {
-      Maybe.just(text.toInt)
+      Maybe.just(text.toLong)
     } catch {
       case _: NumberFormatException => Maybe.nothing
     }
@@ -73,17 +73,17 @@ object String {
 
   def lines(str: String): List[String] = str.split("\\n").toList
 
-  def slice(start: Int)(end: Int)(str: String): String =
+  def slice(start: Basics.Int)(end: Basics.Int)(str: String): String =
     str.substring(start.toInt, end.toInt)
 
-  def left(n: Int)(str: String): String = str.substring(0, n.toInt)
+  def left(n: Basics.Int)(str: String): String = str.substring(0, n.toInt)
 
-  def right(n: Int)(str: String): String =
+  def right(n: Basics.Int)(str: String): String =
     str.slice(str.length - n.toInt, str.length)
 
-  def dropLeft(n: Int)(str: String): String = str.drop(n.toInt)
+  def dropLeft(n: Basics.Int)(str: String): String = str.drop(n.toInt)
 
-  def dropRight(n: Int)(str: String): String = str.dropRight(n.toInt)
+  def dropRight(n: Basics.Int)(str: String): String = str.dropRight(n.toInt)
 
   def contains(substring: String)(str: String): Bool = str.contains(substring)
 
@@ -92,15 +92,15 @@ object String {
 
   def endsWith(substring: String)(str: String): Bool = str.endsWith(substring)
 
-  def indexes(substring: String)(str: String): List[Int] =
+  def indexes(substring: String)(str: String): List[Basics.Int] =
     str.r.findAllMatchIn(substring).map(_.start.toLong).toList
 
-  def indices(substring: String)(str: String): List[Int] =
+  def indices(substring: String)(str: String): List[Basics.Int] =
     indexes(substring)(str)
 
   def toFloat(str: String): Maybe[Float] =
     try {
-      Maybe.just(str.toFloat)
+      Maybe.just(str.toDouble)
     } catch {
       case _: NumberFormatException => Maybe.nothing
     }
@@ -123,15 +123,15 @@ object String {
 
   def fromList(chList: List[Char]): String = chList.mkString
 
-  def pad(n: Int)(ch: Char)(str: String): String = {
+  def pad(n: Basics.Int)(ch: Char)(str: String): String = {
     val padding: String = ch.toString * n.toInt
     padding + str + padding
   }
 
-  def padLeft(n: Int)(ch: Char)(str: String): String =
+  def padLeft(n: Basics.Int)(ch: Char)(str: String): String =
     (ch.toString * n.toInt) + str
 
-  def padRight(n: Int)(ch: Char)(str: String): String =
+  def padRight(n: Basics.Int)(ch: Char)(str: String): String =
     str + (ch.toString * n.toInt)
 
   def trimLeft(str: String): String = str.replaceAll("^\\s+", "")
@@ -145,10 +145,10 @@ object String {
     str.toList.filter(ch => f(Char.from(ch))).mkString
 
   def foldl[B](f: Char => B => B)(z: B)(str: String): B =
-    str.toList.foldLeft(z)((ch, next) => f(Char.from(ch), next))
+    str.toList.foldLeft(z)((soFar, next) => f(Char.from(next))(soFar))
 
   def foldr[B](f: Char => B => B)(z: B)(str: String): B =
-    str.toList.foldRight(z)((ch, next) => f(Char.from(ch), next))
+    str.toList.foldRight(z)((next, soFar) => f(Char.from(next))(soFar))
 
   def any(f: (Char => Bool))(str: String): Bool =
     str.toList.exists(ch => f(Char.from(ch)))

@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
@@ -81,7 +80,7 @@ object ListSpec extends DefaultRunnableSpec {
     suite("List.concatMap spec")(
       test("concatMap - should map and flatten a list") {
         def doubleIt(n: Int) = List(n * 2)
-        val xs               = List(1, 2, 3, 4, 5)
+        val xs = List(1, 2, 3, 4, 5)
         assert(List.concatMap(doubleIt)(xs))(
           equalTo(List.concat(List.map(doubleIt)(xs)))
         )
@@ -101,7 +100,7 @@ object ListSpec extends DefaultRunnableSpec {
     ),
     suite("List.filter spec")(
       test("filter should remove items that don't satisfy the given predicate") {
-        val sut            = List(1, 2, 3, 4, 5, 6)
+        val sut = List(1, 2, 3, 4, 5, 6)
         def isEven(n: Int) = n % 2 == 0
         assert(List.filter(isEven)(sut))(equalTo(List(2, 4, 6)))
       }
@@ -109,7 +108,9 @@ object ListSpec extends DefaultRunnableSpec {
     suite("List.filterMap spec")(
       test("filterMap should filter out non-ints") {
         val sut = List("3", "hi", "12", "4th", "May")
-        assert(List.filterMap(String.toInt)(sut))(equalTo(List(3, 12)))
+        assert(List.filterMap(String.toInt)(sut))(
+          equalTo(List[Basics.Int](3, 12))
+        )
       }
     ) @@ timeout(10.seconds),
     suite("List.foldl spec")(
