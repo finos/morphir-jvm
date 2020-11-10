@@ -12,40 +12,61 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
 object Basics {
-  type Decimal = scala.BigDecimal
+
+  type Bool = scala.Boolean
+
+  // Equality
+  @inline def equal[A](a: A)(b: A): Bool = a == b
+  @inline def notEqual[A](a: A)(b: A): Bool = a != b
+
+  // Comparable
+  def lessThan[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].lt(a, b)
+  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool =
+    implicitly[Ordering[A]].lteq(a, b)
+  def greaterThan[A: Ordering](a: A)(b: A): Bool =
+    implicitly[Ordering[A]].gt(a, b)
+  def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool =
+    implicitly[Ordering[A]].gteq(a, b)
+  def min[A: Ordering](a: A)(b: A): A = if (lessThan(a)(b)) a else b
+  def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
+
+  // Int
+  type Int = scala.Long
+  def Int(v: scala.Long): Int = v
+
+  @inline def add(a: Int)(b: Int): Int = a + b
+  @inline def subtract(a: Int)(b: Int): Int = a - b
+  @inline def multiply(a: Int)(b: Int): Int = a * b
+  @inline def integerDivide(a: Int)(b: Int): Int = a / b
 
   // Float construction
-  type Float   = scala.Double
+  type Float = scala.Double
   @inline def Float(number: Number): Float =
     number.doubleValue()
 
   // Float functions
-  @inline def add(f1: Float)(f2: Float): Float =
-    ( f1 + f2 )
-  @inline def subtract(f1: Float)(f2: Float): Float =
-    ( f1 - f2 )
-  @inline def multiply(f1: Float)(f2: Float): Float =
-    ( f1 * f2 )
-  @inline def divide(f1: Float)(f2: Float): Float =
-    ( f1 / f2 )
-  @inline def power(f1: Float)(f2: Float): Float =
-    Math.pow( f1, f2 )
-  @inline def equal(f1: Float)(f2: Float): Boolean =
-    ( f1 == f2 )
-  @inline def notEqual(f1: Float)(f2: Float): Boolean =
-    ( f1 != f2 )
-  @inline def lessThan(f1: Float)(f2: Float): Boolean =
-    ( f1 < f2 )
-  @inline def greaterThan(f1: Float)(f2: Float): Boolean =
-    ( f1 > f2 )
-  @inline def lessThanOrEqual(f1: Float)(f2: Float): Boolean =
-    ( f1 <= f2 )
-  @inline def greaterThanOrEqual(f1: Float)(f2: Float): Boolean =
-    ( f1 >= f2 )
+  @inline def add(a: Float)(b: Float): Float = a + b
+  @inline def subtract(a: Float)(b: Float): Float = a - b
+  @inline def multiply(a: Float)(b: Float): Float = a * b
+  @inline def divide(a: Float)(b: Float): Float = a / b
+  @inline def toFloat(a: Int): Float = a.toDouble
+  @inline def round(a: Float): Int = a.round
+  @inline def floor(a: Float): Int = a.floor.round
+  @inline def ceiling(a: Float): Int = a.ceil.round
+  @inline def truncate(a: Float): Int = if (a >= 0) floor(a) else -floor(-a)
+
+  // Utilities
+  @inline def identity[A](a: A): A = scala.Predef.identity(a)
+  @inline def always[A, B](a: A)(b: B): A = a
+  @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C = a => g(f(a))
+  @inline def composeRight[A, B, C](f: A => B)(g: B => C): A => C = a => g(f(a))
+  def never[A](nothing: Nothing): A = nothing
+
+  type Decimal = scala.BigDecimal
+
 }
