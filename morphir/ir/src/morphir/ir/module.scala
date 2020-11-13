@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir
 
@@ -61,7 +60,7 @@ object module {
   final case class ModuleInfo[+A](path: ModulePath, definition: ModuleDefinition[A]) {
     def toTuple: (ModulePath, ModuleDefinition[A]) = path -> definition
   }
-  object ModuleInfo {
+  object ModuleInfo                                                                  {
 
     def apply[A](args: (ModulePath, ModuleDefinition[A])): ModuleInfo[A] =
       ModuleInfo(args._1, args._2)

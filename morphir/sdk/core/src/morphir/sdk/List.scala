@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
@@ -70,7 +69,7 @@ object List {
   def intersperse[A](elem: A)(xs: List[A]): List[A] = xs match {
     case lst if lst == Nil => lst
     case lst @ _ :: Nil    => lst
-    case lst =>
+    case lst               =>
       lst.take(xs.length - 1).flatMap(x => List(x, elem)) ++ List(xs.last)
   }
 
@@ -93,22 +92,22 @@ object List {
   def map2[A, B, R](
     mapping: A => B => R
   )(xs: List[A])(ys: List[B]): List[R] =
-    xs.zip(ys).map {
-      case (a, b) => mapping(a)(b)
+    xs.zip(ys).map { case (a, b) =>
+      mapping(a)(b)
     }
 
   def map3[X, Y, Z, R](
     mapping: X => Y => Z => R
   )(xs: List[X])(ys: List[Y])(zs: List[Z]): List[R] =
-    xs.zip(ys).zip(zs).map {
-      case ((x, y), z) => mapping(x)(y)(z)
+    xs.zip(ys).zip(zs).map { case ((x, y), z) =>
+      mapping(x)(y)(z)
     }
 
   def map4[A, B, C, D, R](
     mapping: A => B => C => D => R
   )(as: List[A])(bs: List[B])(cs: List[C])(ds: List[D]): List[R] =
-    as.zip(bs).zip(cs).zip(ds).map {
-      case (((a, b), c), d) => mapping(a)(b)(c)(d)
+    as.zip(bs).zip(cs).zip(ds).map { case (((a, b), c), d) =>
+      mapping(a)(b)(c)(d)
     }
 
   def map5[A, B, C, D, E, R](
@@ -118,8 +117,8 @@ object List {
       .zip(cs)
       .zip(ds)
       .zip(es)
-      .map {
-        case ((((a, b), c), d), e) => mapping(a)(b)(c)(d)(e)
+      .map { case ((((a, b), c), d), e) =>
+        mapping(a)(b)(c)(d)(e)
       }
 
   @inline def member[A, A1 >: A](candidate: A1)(xs: List[A]): Boolean =

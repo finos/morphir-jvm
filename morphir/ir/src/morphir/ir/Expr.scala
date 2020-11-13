@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir
 
@@ -126,10 +125,10 @@ object Type extends typeCodecs.TypeCodec {
     }
   }
 
-  sealed abstract class Definition[+A] extends Product with Serializable {
+  sealed abstract class Definition[+A] extends Product with Serializable  {
     def toSpecification: Specification[A]
   }
-  object Definition extends typeCodecs.DefinitionCodec {
+  object Definition                    extends typeCodecs.DefinitionCodec {
 
     final case class TypeAliasDefinition[+A](typeParams: scala.List[Name], typeExp: Type[A]) extends Definition[A] {
       def toSpecification: Specification[A] = Specification.TypeAliasSpecification(typeParams, typeExp)
@@ -198,7 +197,7 @@ object Value extends valueCodecs.ValueCodec {
   final case class Constructor[+A](attributes: A, fullyQualifiedName: FQName) extends Value[A](Constructor.Tag) {
     def mapAttributes[B](f: A => B): Value[B] = Constructor(f(attributes), fullyQualifiedName)
   }
-  object Constructor extends valueCodecs.ConstructorCodec
+  object Constructor                                                          extends valueCodecs.ConstructorCodec
 
   final case class Tuple[+A](attributes: A, elements: scala.List[Value[A]]) extends Value[A](Tuple.Tag) {
     def mapAttributes[B](f: A => B): Value[B] = Tuple(f(attributes), elements.mapAttributes(f))
@@ -214,9 +213,12 @@ object Value extends valueCodecs.ValueCodec {
 
   final case class Record[+A](attributes: A, fields: scala.List[(Name, Value[A])]) extends Value[A](Record.Tag) {
     def mapAttributes[B](f: A => B): Value[B] =
-      Record(f(attributes), fields.map {
-        case (name, valueExpr) => (name, valueExpr.mapAttributes(f))
-      })
+      Record(
+        f(attributes),
+        fields.map { case (name, valueExpr) =>
+          (name, valueExpr.mapAttributes(f))
+        }
+      )
   }
 
   object Record extends valueCodecs.RecordCodec
@@ -271,9 +273,13 @@ object Value extends valueCodecs.ValueCodec {
   final case class LetRecursion[+A](attributes: A, valueDefinitions: Map[Name, Definition[A]], inValue: Value[A])
       extends Value[A](LetRecursion.Tag) {
     def mapAttributes[B](f: A => B): Value[B] =
-      LetRecursion(f(attributes), valueDefinitions.map {
-        case (name, definition) => name -> definition.mapAttributes(f)
-      }, inValue.mapAttributes(f))
+      LetRecursion(
+        f(attributes),
+        valueDefinitions.map { case (name, definition) =>
+          name -> definition.mapAttributes(f)
+        },
+        inValue.mapAttributes(f)
+      )
   }
 
   object LetRecursion extends valueCodecs.LetRecursionCodec
@@ -301,9 +307,13 @@ object Value extends valueCodecs.ValueCodec {
   final case class PatternMatch[+A](attributes: A, branchOutOn: Value[A], cases: scala.List[(Pattern[A], Value[A])])
       extends Value[A](PatternMatch.Tag) {
     def mapAttributes[B](f: A => B): Value[B] =
-      PatternMatch(f(attributes), branchOutOn.mapAttributes(f), cases.map {
-        case (pat, valueExpr) => (pat.mapAttributes(f), valueExpr.mapAttributes(f))
-      })
+      PatternMatch(
+        f(attributes),
+        branchOutOn.mapAttributes(f),
+        cases.map { case (pat, valueExpr) =>
+          (pat.mapAttributes(f), valueExpr.mapAttributes(f))
+        }
+      )
   }
 
   object PatternMatch extends valueCodecs.PatternMatchCodec
@@ -315,9 +325,13 @@ object Value extends valueCodecs.ValueCodec {
   ) extends Value[A](UpdateRecord.Tag) {
 
     def mapAttributes[B](f: A => B): Value[B] =
-      UpdateRecord(f(attributes), valueToUpdate.mapAttributes(f), fieldsToUpdate.map {
-        case (name, valueExpr) => (name, valueExpr.mapAttributes(f))
-      })
+      UpdateRecord(
+        f(attributes),
+        valueToUpdate.mapAttributes(f),
+        fieldsToUpdate.map { case (name, valueExpr) =>
+          (name, valueExpr.mapAttributes(f))
+        }
+      )
   }
 
   object UpdateRecord extends valueCodecs.UpdateRecordCodec
@@ -330,9 +344,12 @@ object Value extends valueCodecs.ValueCodec {
 
   final case class Specification[+A](inputs: scala.List[(Name, Type[A])], output: Type[A]) {
     def mapAttributes[B](f: A => B): Specification[B] =
-      Specification(inputs.map {
-        case (name, tpe) => (name, tpe.mapAttributes(f))
-      }, output.mapAttributes(f))
+      Specification(
+        inputs.map { case (name, tpe) =>
+          (name, tpe.mapAttributes(f))
+        },
+        output.mapAttributes(f)
+      )
   }
 
   object Specification

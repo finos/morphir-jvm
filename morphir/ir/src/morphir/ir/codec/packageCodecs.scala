@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -28,12 +27,11 @@ object packageCodecs {
 
     implicit def specificationReadWriter[A: ReadWriter]: ReadWriter[MorphirPackage.Specification[A]] = {
       def writeJsonValue(spec: Specification[A]): ujson.Value = {
-        val modules = spec.modules.map {
-          case (modulePath, moduleSpec) =>
-            ujson.Obj(
-              ("name", writeJs(modulePath)),
-              ("spec", writeJs(moduleSpec))
-            )
+        val modules = spec.modules.map { case (modulePath, moduleSpec) =>
+          ujson.Obj(
+            ("name", writeJs(modulePath)),
+            ("spec", writeJs(moduleSpec))
+          )
         }
         ujson.Obj(
           ("modules", ujson.Arr(modules))
@@ -41,7 +39,7 @@ object packageCodecs {
       }
 
       def readJsonValue(json: ujson.Value): Specification[A] = {
-        val modulesJson = json("modules")
+        val modulesJson                                       = json("modules")
         val modules: Map[ModulePath, module.Specification[A]] = modulesJson.arr.map { (elem: ujson.Value) =>
           val modulePath = read[ModulePath](elem("name"))
           val moduleSpec = read[ModuleSpec[A]](elem("spec"))
@@ -59,20 +57,18 @@ object packageCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Definition[A]] = {
       def writeJsonValue(defn: Definition[A]): ujson.Value = {
-        val dependencies = defn.dependencies.map {
-          case (packageName, spec) =>
-            ujson.Obj(
-              ("name", writeJs(packageName)),
-              ("spec", writeJs(spec))
-            )
+        val dependencies = defn.dependencies.map { case (packageName, spec) =>
+          ujson.Obj(
+            ("name", writeJs(packageName)),
+            ("spec", writeJs(spec))
+          )
         }
 
-        val modules = defn.modules.map {
-          case (moduleName, moduleDef) =>
-            ujson.Obj(
-              ("name", writeJs(moduleName)),
-              ("def", writeJs(moduleDef))
-            )
+        val modules = defn.modules.map { case (moduleName, moduleDef) =>
+          ujson.Obj(
+            ("name", writeJs(moduleName)),
+            ("def", writeJs(moduleDef))
+          )
         }
 
         ujson.Obj(("dependencies", ujson.Arr(dependencies)), ("modules", ujson.Arr(modules)))
@@ -83,7 +79,7 @@ object packageCodecs {
         val moduleJson       = json("modules")
 
         val dependencies = read[List[(PackagePath, Specification[A])]](dependenciesJson).toMap
-        val modules = moduleJson.arr.map { json =>
+        val modules      = moduleJson.arr.map { json =>
           val name = read[ModulePath](json("name"))
           val defn = read[AccessControlled[module.Definition[A]]](json("def"))
           (name, defn)

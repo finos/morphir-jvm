@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.analyzer
 
@@ -35,7 +34,7 @@ sealed trait Scope[+A] {
 
 object Scope {
 
-  def pkg[A](data: A): PackageScope[A] = PackageScope(data)
+  def pkg[A](data: A): PackageScope[A]                                     = PackageScope(data)
   def fromPackage[A, D](pkg: Pkg[A])(toData: Pkg[A] => D): PackageScope[D] =
     PackageScope(toData(pkg))
 }

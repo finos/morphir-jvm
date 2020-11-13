@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Basics.{Bool, Float}
+import morphir.sdk.Basics.{ Bool, Float }
 import morphir.sdk.Char.Char
 import morphir.sdk.Maybe.Maybe
 
@@ -33,9 +33,9 @@ object String {
     Array.fill[String](times.toInt)(str).mkString
 
   @inline def replace(
-      literal: String,
-      replacement: String,
-      target: String
+    literal: String,
+    replacement: String,
+    target: String
   ): String =
     target.replace(literal, replacement)
 
@@ -52,9 +52,8 @@ object String {
     target.split(sep).toList //TODO: These aren't exactly the same
 
   def toInt(text: String): Maybe[Basics.Int] =
-    try {
-      Maybe.just(text.toLong)
-    } catch {
+    try Maybe.just(text.toLong)
+    catch {
       case _: NumberFormatException => Maybe.nothing
     }
 
@@ -99,9 +98,8 @@ object String {
     indexes(substring)(str)
 
   def toFloat(str: String): Maybe[Float] =
-    try {
-      Maybe.just(str.toDouble)
-    } catch {
+    try Maybe.just(str.toDouble)
+    catch {
       case _: NumberFormatException => Maybe.nothing
     }
 
@@ -115,7 +113,7 @@ object String {
     str match {
       case a if a.length == 0 => Maybe.nothing
       case a if a.length == 1 => Maybe.just((Char.from(a.charAt(0)), ""))
-      case _ =>
+      case _                  =>
         Maybe.just((Char.from(str.charAt(0)), str.substring(1, str.length)))
     }
 

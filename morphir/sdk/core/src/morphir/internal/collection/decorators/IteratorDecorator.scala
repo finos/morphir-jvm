@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.internal.collection.decorators
 
@@ -23,12 +22,11 @@ class IteratorDecorator[A](val `this`: Iterator[A]) extends AnyVal {
   def foldSomeLeft[B](z: B)(op: (B, A) => Option[B]): B = {
     //scalafix:off
     var result: B = z
-    while (`this`.hasNext) {
+    while (`this`.hasNext)
       op(result, `this`.next()) match {
         case Some(v) => result = v
         case None    => return result
       }
-    }
     result
     //sclafix:on
   }

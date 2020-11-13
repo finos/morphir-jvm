@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -31,7 +30,8 @@ object accessControlledCodecs {
         {
           case AccessControlled.Public(value)  => ("public", value)
           case AccessControlled.Private(value) => ("private", value)
-        }, {
+        },
+        {
           case ("public", value)  => AccessControlled.Public(value)
           case ("private", value) => AccessControlled.Private(value)
           case (tag, _)           => throw DecodeError.unexpectedTag(tag, "public", "private")

@@ -21,29 +21,29 @@ object Basics {
   type Bool = scala.Boolean
 
   // Equality
-  @inline def equal[A](a: A)(b: A): Bool = a == b
+  @inline def equal[A](a: A)(b: A): Bool    = a == b
   @inline def notEqual[A](a: A)(b: A): Bool = a != b
 
   // Comparable
-  def lessThan[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].lt(a, b)
-  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool =
+  def lessThan[A: Ordering](a: A)(b: A): Bool           = implicitly[Ordering[A]].lt(a, b)
+  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool    =
     implicitly[Ordering[A]].lteq(a, b)
-  def greaterThan[A: Ordering](a: A)(b: A): Bool =
+  def greaterThan[A: Ordering](a: A)(b: A): Bool        =
     implicitly[Ordering[A]].gt(a, b)
   def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool =
     implicitly[Ordering[A]].gteq(a, b)
-  def min[A: Ordering](a: A)(b: A): A = if (lessThan(a)(b)) a else b
-  def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
+  def min[A: Ordering](a: A)(b: A): A                   = if (lessThan(a)(b)) a else b
+  def max[A: Ordering](a: A)(b: A): A                   = if (greaterThan(a)(b)) a else b
 
   // Int
   type Int = scala.Long
   def Int(v: scala.Long): Int = v
 
-  @inline def add(a: Int)(b: Int): Int = a + b
-  @inline def subtract(a: Int)(b: Int): Int = a - b
-  @inline def multiply(a: Int)(b: Int): Int = a * b
+  @inline def add(a: Int)(b: Int): Int           = a + b
+  @inline def subtract(a: Int)(b: Int): Int      = a - b
+  @inline def multiply(a: Int)(b: Int): Int      = a * b
   @inline def integerDivide(a: Int)(b: Int): Int = a / b
-  @inline def power(a: Int)(b: Int): Int = a ^ b
+  @inline def power(a: Int)(b: Int): Int         = a ^ b
 
   // Float construction
   type Float = scala.Double
@@ -51,28 +51,28 @@ object Basics {
     number.doubleValue()
 
   // Float functions
-  @inline def lessThan(a: Float)(b: Float): Bool = a < b
-  @inline def lessThanOrEqual(a: Float)(b: Float): Bool = a <= b
-  @inline def greaterThan(a: Float)(b: Float): Bool = a > b
+  @inline def lessThan(a: Float)(b: Float): Bool           = a < b
+  @inline def lessThanOrEqual(a: Float)(b: Float): Bool    = a <= b
+  @inline def greaterThan(a: Float)(b: Float): Bool        = a > b
   @inline def greaterThanOrEqual(a: Float)(b: Float): Bool = a >= b
-  @inline def min(a: Float)(b: Float): Float = a min b
-  @inline def max(a: Float)(b: Float): Float = a max b
-  @inline def add(a: Float)(b: Float): Float = a + b
-  @inline def subtract(a: Float)(b: Float): Float = a - b
-  @inline def multiply(a: Float)(b: Float): Float = a * b
-  @inline def divide(a: Float)(b: Float): Float = a / b
-  @inline def toFloat(a: Int): Float = a.toDouble
-  @inline def round(a: Float): Int = a.round
-  @inline def floor(a: Float): Int = a.floor.round
-  @inline def ceiling(a: Float): Int = a.ceil.round
-  @inline def truncate(a: Float): Int = if (a >= 0) floor(a) else -floor(-a)
+  @inline def min(a: Float)(b: Float): Float               = a min b
+  @inline def max(a: Float)(b: Float): Float               = a max b
+  @inline def add(a: Float)(b: Float): Float               = a + b
+  @inline def subtract(a: Float)(b: Float): Float          = a - b
+  @inline def multiply(a: Float)(b: Float): Float          = a * b
+  @inline def divide(a: Float)(b: Float): Float            = a / b
+  @inline def toFloat(a: Int): Float                       = a.toDouble
+  @inline def round(a: Float): Int                         = a.round
+  @inline def floor(a: Float): Int                         = a.floor.round
+  @inline def ceiling(a: Float): Int                       = a.ceil.round
+  @inline def truncate(a: Float): Int                      = if (a >= 0) floor(a) else -floor(-a)
 
   // Utilities
-  @inline def identity[A](a: A): A = scala.Predef.identity(a)
-  @inline def always[A, B](a: A): B => A = _ => a
-  @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C = a => g(f(a))
+  @inline def identity[A](a: A): A                                = scala.Predef.identity(a)
+  @inline def always[A, B](a: A): B => A                          = _ => a
+  @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C  = a => g(f(a))
   @inline def composeRight[A, B, C](f: A => B)(g: B => C): A => C = a => g(f(a))
-  def never[A](nothing: Nothing): A = nothing
+  def never[A](nothing: Nothing): A                               = nothing
 
   type Decimal = scala.BigDecimal
 

@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -42,7 +41,7 @@ object literalCodecs {
             case tag if tag == StringLiteral.Tag => read[StringLiteral](json)
             case tag if tag == IntLiteral.Tag    => read[IntLiteral](json)
             case tag if tag == FloatLiteral.Tag  => read[FloatLiteral](json)
-            case tag =>
+            case tag                             =>
               throw DecodeError.unexpectedTag(
                 tag,
                 BoolLiteral.Tag,
@@ -63,7 +62,8 @@ object literalCodecs {
 
     implicit def readWriter: ReadWriter[BoolLiteral] =
       readwriter[(String, Boolean)].bimap[BoolLiteral](
-        literal => (literal.tag, literal.value), {
+        literal => (literal.tag, literal.value),
+        {
           case (tag, value) if tag == Tag => BoolLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -75,7 +75,8 @@ object literalCodecs {
 
     implicit def readWriter: ReadWriter[CharLiteral] =
       readwriter[(String, Char)].bimap[CharLiteral](
-        literal => (literal.tag, literal.value), {
+        literal => (literal.tag, literal.value),
+        {
           case (tag, value) if tag == Tag => CharLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -87,7 +88,8 @@ object literalCodecs {
 
     implicit def readWriter: ReadWriter[StringLiteral] =
       readwriter[(String, String)].bimap[StringLiteral](
-        literal => (literal.tag, literal.value), {
+        literal => (literal.tag, literal.value),
+        {
           case (tag, value) if tag == Tag => StringLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -99,7 +101,8 @@ object literalCodecs {
 
     implicit def readWriter: ReadWriter[IntLiteral] =
       readwriter[(String, Int)].bimap[IntLiteral](
-        literal => (literal.tag, literal.value), {
+        literal => (literal.tag, literal.value),
+        {
           case (tag, value) if tag == Tag => IntLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -111,7 +114,8 @@ object literalCodecs {
 
     implicit val readWriter: ReadWriter[FloatLiteral] =
       readwriter[(String, Float)].bimap[FloatLiteral](
-        literal => (literal.tag, literal.value), {
+        literal => (literal.tag, literal.value),
+        {
           case (tag, value) if tag == Tag => FloatLiteral(value)
           case (tag, _)                   => throw DecodeError.unexpectedTag(tag, Tag)
         }

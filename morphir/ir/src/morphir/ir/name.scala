@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir
 
@@ -52,7 +51,7 @@ object name {
 
     def toCamelCase: String =
       value match {
-        case Nil => ""
+        case Nil          => ""
         case head :: tail =>
           (head :: tail.map(_.capitalize)).mkString("")
       }
@@ -79,7 +78,7 @@ object name {
         suffix: List[String]
       ): List[String] =
         suffix match {
-          case Nil =>
+          case Nil           =>
             abbrev match {
               case Nil => prefix
               case _   => prefix ++ List(join(abbrev))
@@ -90,7 +89,7 @@ object name {
             else
               abbrev match {
                 case Nil => process(prefix ++ List(first), List.empty, rest)
-                case _ =>
+                case _   =>
                   process(prefix ++ List(join(abbrev), first), List.empty, rest)
               }
         }

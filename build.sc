@@ -272,7 +272,7 @@ object morphir extends Module {
       def artifactName = "morphir-flowz"
       def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
-        ivy"dev.zio::zio-prelude:${Versions.zio}"
+        ivy"dev.zio::zio-prelude:${Versions.zioPrelude}"
       )
 
       object test extends Tests {

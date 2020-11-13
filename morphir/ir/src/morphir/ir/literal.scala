@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir
 
@@ -42,27 +41,27 @@ object literal {
     final case class BoolLiteral(value: Boolean) extends Literal(BoolLiteral.Tag) {
       type ValueType = Boolean
     }
-    object BoolLiteral extends literalCodecs.BoolLiteralCodec
+    object BoolLiteral                           extends literalCodecs.BoolLiteralCodec
 
     final case class CharLiteral(value: Char) extends Literal(CharLiteral.Tag) {
       type ValueType = Char
     }
-    object CharLiteral extends literalCodecs.CharLiteralCodec
+    object CharLiteral                        extends literalCodecs.CharLiteralCodec
 
     final case class StringLiteral(value: String) extends Literal(StringLiteral.Tag) {
       type ValueType = String
     }
-    object StringLiteral extends literalCodecs.StringLiteralCodec
+    object StringLiteral                          extends literalCodecs.StringLiteralCodec
 
     final case class IntLiteral(value: Int) extends Literal(IntLiteral.Tag) {
       type ValueType = Int
     }
-    object IntLiteral extends literalCodecs.IntLiteralCodec
+    object IntLiteral                       extends literalCodecs.IntLiteralCodec
 
     final case class FloatLiteral(value: Float) extends Literal(FloatLiteral.Tag) {
       type ValueType = Float
     }
-    object FloatLiteral extends literalCodecs.FloatLiteralCodec
+    object FloatLiteral                         extends literalCodecs.FloatLiteralCodec
   }
 
 }
