@@ -1,0 +1,25 @@
+package morphir.flowz.platform
+
+import zio.console
+import zio.test._
+import zio.test.Assertion._
+
+object WorkerSpec extends DefaultRunnableSpec {
+  def spec = suite("Worker Specs")(
+    testM("It should be possible to run a simple worker")(
+      assertM(simpleWorker.run(List("Hello", "World")).run)(succeeds(anything))
+    )
+  )
+
+  val simpleWorker = Worker(
+    init = (args: List[String]) => (Model(args), Cmd.none),
+    update = (_: Unit, model: Model) =>
+      for {
+        _ <- console.putStrLn(s"Model is: $model")
+      } yield (model, Cmd.unit),
+    subscriptions = (_: Model) => Sub.none
+  )
+
+  final case class Model(args: List[String])
+
+}

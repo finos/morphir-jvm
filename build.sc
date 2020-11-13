@@ -16,11 +16,11 @@ import ammonite.ops._, ImplicitWd._
 object Deps {
   object Versions {
 
-    val scala211 = "2.11.12"
-    val scala212 = "2.12.11"
-    val scala213 = "2.13.1"
+    val scala211  = "2.11.12"
+    val scala212  = "2.12.11"
+    val scala213  = "2.13.1"
     val scalaJS06 = "0.6.32"
-    val scalaJS1 = "1.0.0"
+    val scalaJS1  = "1.0.0"
 
     val scalaJVMVersions = Seq(scala211, scala212, scala213)
 
@@ -29,23 +29,23 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-    val zio = "1.0.3"
-    val zioConfig = "1.0.0-RC29"
-    val zioLogging = "0.5.3"
-    val zioNio = "1.0.0-RC10"
-    val zioPrelude = "1.0.0-RC1"
-    val zioProcess = "0.2.0"
-    val newtype = "0.4.4"
-    val decline = "1.2.0"
-    val pprint = "0.5.9"
-    val scalameta = "4.3.18"
-    val directories = "11"
-    val enumeratum = "1.6.1"
+    val zio           = "1.0.3"
+    val zioConfig     = "1.0.0-RC29"
+    val zioLogging    = "0.5.3"
+    val zioNio        = "1.0.0-RC10"
+    val zioPrelude    = "1.0.0-RC1"
+    val zioProcess    = "0.2.0"
+    val newtype       = "0.4.4"
+    val decline       = "1.2.0"
+    val pprint        = "0.5.9"
+    val scalameta     = "4.3.18"
+    val directories   = "11"
+    val enumeratum    = "1.6.1"
     val macroParadise = "2.1.1"
-    val upickle = "1.1.0"
-    val scalactic = "3.1.2"
-    val scalaUri = "2.2.2"
-    val oslib = "0.6.2"
+    val upickle       = "1.1.0"
+    val scalactic     = "3.1.2"
+    val scalaUri      = "2.2.2"
+    val oslib         = "0.6.2"
   }
 }
 
@@ -59,8 +59,8 @@ trait MorphirScalaModule extends ScalaModule with TpolecatModule { self =>
 trait MorphirScalafixModule extends ScalafixModule
 
 trait MorphirPublishModule extends GitVersionedPublishModule {
-  def packageDescription = T(artifactName())
-  def pomSettings = PomSettings(
+  def packageDescription        = T(artifactName())
+  def pomSettings               = PomSettings(
     description = packageDescription(),
     organization = "org.morphir",
     url = "https://github.com/MorganStanley/morphir-jvm",
@@ -129,11 +129,11 @@ trait CommonJvmModule extends MorphirCommonModule {
 trait CommonJsModule extends MorphirCommonModule with ScalaJSModule {
   def platformSegment = "js"
   def crossScalaJSVersion: String
-  def scalaJSVersion = crossScalaJSVersion
-  def millSourcePath = super.millSourcePath / os.up / os.up
+  def scalaJSVersion  = crossScalaJSVersion
+  def millSourcePath  = super.millSourcePath / os.up / os.up
   trait Tests extends super.Tests with MorphirTestModule {
     def platformSegment = "js"
-    def scalaJSVersion = crossScalaJSVersion
+    def scalaJSVersion  = crossScalaJSVersion
   }
 }
 
@@ -153,7 +153,7 @@ trait MorphirTestModule extends MorphirScalaModule with TestModule {
     Seq("zio.test.sbt.ZTestFramework")
 
   def offset: os.RelPath = os.rel
-  def sources = T.sources(
+  def sources            = T.sources(
     super
       .sources()
       .++(
@@ -195,7 +195,7 @@ object morphir extends Module {
         /*with MorphirScalafixModule*/ { self =>
 
       def artifactName = "morphir-ir"
-      def ivyDeps = Agg(
+      def ivyDeps      = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.lihaoyi::upickle:${Versions.upickle}",
@@ -208,7 +208,7 @@ object morphir extends Module {
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
-        def crossScalaVersion = JvmMorphirIrModule.this.crossScalaVersion
+        def crossScalaVersion       = JvmMorphirIrModule.this.crossScalaVersion
       }
     }
   }
@@ -222,7 +222,7 @@ object morphir extends Module {
         with ScalaMacroModule
         with MorphirPublishModule { self =>
       def artifactName = "morphir-scala"
-      def moduleDeps = Seq(morphir.ir.jvm(crossScalaVersion))
+      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
 
       def ivyDeps = Agg(
         ivy"org.scalameta::scalameta:${Versions.scalameta}"
@@ -230,7 +230,7 @@ object morphir extends Module {
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
-        def crossScalaVersion = JvmMorphirScalaModule.this.crossScalaVersion
+        def crossScalaVersion       = JvmMorphirScalaModule.this.crossScalaVersion
       }
     }
   }
@@ -251,7 +251,7 @@ object morphir extends Module {
         def artifactName = "morphir-sdk-core"
         object test extends Tests {
           def platformSegment: String = self.platformSegment
-          def crossScalaVersion = JvmMorphirSdkCore.this.crossScalaVersion
+          def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
         }
       }
     }
@@ -270,14 +270,15 @@ object morphir extends Module {
         with MorphirPublishModule { self =>
 
       def artifactName = "morphir-flowz"
-      def ivyDeps = Agg(
+      def ivyDeps      = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
+        ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"dev.zio::zio-prelude:${Versions.zioPrelude}"
       )
 
       object test extends Tests {
         def platformSegment: String = self.platformSegment
-        def crossScalaVersion = JvmMorphirFlowz.this.crossScalaVersion
+        def crossScalaVersion       = JvmMorphirFlowz.this.crossScalaVersion
       }
     }
   }
