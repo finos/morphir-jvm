@@ -50,7 +50,7 @@ object Basics {
   @inline def greaterThan(a: Int)(b: Int): Bool = a > b
   @inline def greaterThanOrEqual(a: Int)(b: Int): Bool = a >= b
   @inline def min(a: Int)(b: Int): Int = a min b
-  @inline def max(a: Int)(b: Int): Float = a max b
+  @inline def max(a: Int)(b: Int): Int = a max b
   @inline def add(a: Int)(b: Int): Int = a + b
   @inline def subtract(a: Int)(b: Int): Int = a - b
   @inline def multiply(a: Int)(b: Int): Int = a * b
