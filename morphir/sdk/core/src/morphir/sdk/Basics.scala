@@ -21,9 +21,9 @@ object Basics {
   // Bool
   type Bool = scala.Boolean
   @inline def not(a: Bool): Bool = !a
-  @inline def and(a: Bool, b: Bool): Bool = a && b
-  @inline def or(a: Bool, b: Bool): Bool = a || b
-  @inline def xor(a: Bool, b: Bool): Bool = (a && !b) || (!a && b)
+  @inline def and(a: Bool)(b: Bool): Bool = a && b
+  @inline def or(a: Bool)(b: Bool): Bool = a || b
+  @inline def xor(a: Bool)(b: Bool): Bool = (a && !b) || (!a && b)
 
   // Equality
   @inline def equal[A](a: A)(b: A): Bool = a == b
