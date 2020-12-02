@@ -7,7 +7,10 @@ import zio.test.Assertion._
 object WorkerSpec extends DefaultRunnableSpec {
   def spec = suite("Worker Specs")(
     testM("It should be possible to run a simple worker")(
-      assertM(simpleWorker.run(List("Hello", "World")).run)(succeeds(anything))
+      for {
+        _   <- console.putStrLn(s"Running...")
+        res <- simpleWorker.run(List("Hello", "World"))
+      } yield assert(res)(isUnit)
     )
   )
 

@@ -20,9 +20,9 @@ final case class Worker[R, E, Flags, Model, Msg](
               ZStream.empty.ensuring(ref.set(model2)) ++ (cmd.messages merge subscriptions(model2).messages)
             }
           }
-          .foreach(loop(_))
+          .foreach(loop)
 
-      cmd.messages.foreach(loop(_))
+      cmd.messages.foreach(loop)
     }
   }
 }

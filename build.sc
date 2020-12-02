@@ -1,6 +1,6 @@
-import $ivy.`com.goyeau::mill-git:0.1.0-8-5ed3839`
-import $ivy.`com.goyeau::mill-scalafix:0.1.3`
-import $ivy.`io.github.davidgregory084::mill-tpolecat:0.1.3`
+import $ivy.`com.goyeau::mill-git:0.2.0`
+import $ivy.`com.goyeau::mill-scalafix:0.2.0`
+import $ivy.`io.github.davidgregory084::mill-tpolecat:0.2.0`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
 import com.goyeau.mill.git._
 import com.goyeau.mill.scalafix.ScalafixModule
@@ -36,7 +36,7 @@ object Deps {
     val zioPrelude    = "1.0.0-RC1"
     val zioProcess    = "0.2.0"
     val newtype       = "0.4.4"
-    val decline       = "1.2.0"
+    val decline       = "1.3.0"
     val pprint        = "0.5.9"
     val scalameta     = "4.3.18"
     val directories   = "11"
