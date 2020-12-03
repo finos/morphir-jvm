@@ -9,22 +9,22 @@ object FlowSpec extends DefaultRunnableSpec {
       testM("It should be possible to create a flow that always succeeds with the unit value")(
         for {
           output <- Flow.unit.run
-        } yield assert(output)(equalTo(FlowSuccess.unit))
+        } yield assert(output)(equalTo(FlowOutputs.unit))
       ),
       testM("It should be possible to create a flow that always succeeds with None")(
         for {
           output <- Flow.none.run
-        } yield assert(output)(equalTo(FlowSuccess.none))
+        } yield assert(output)(equalTo(FlowOutputs.none))
       ),
       testM("It should be possible to create a flow that always succeeds with a value")(
         for {
           output <- Flow.succeed(42).run
-        } yield assert(output)(equalTo(FlowSuccess.fromOutput(42)))
+        } yield assert(output)(equalTo(FlowOutputs.fromOutput(42)))
       ),
-      testM("It should be possible to create a flow that always succeeds with the given outpuit and state")(
+      testM("It should be possible to create a flow that always succeeds with the given output and state")(
         for {
-          actual <- Flow.succeed(output = 42, state = "What is the answer?")
-        } yield assert(actual)(equalTo(FlowSuccess(42, "What is the answer")))
+          actual <- Flow.succeed(output = 42, state = "What is the answer?").shiftStateToOutput.run
+        } yield assert(actual)(equalTo(FlowOutputs.fromOutput(("What is the answer?", 42))))
       ),
       testM("It should be possible to create a flow that always fails with a value")(
         for {
@@ -35,7 +35,7 @@ object FlowSpec extends DefaultRunnableSpec {
         checkM(Gen.int(1, 5000)) { input =>
           for {
             actual  <- Flow.fromFunction { n: Int => n * 2 }.run(input)
-            expected = FlowSuccess.fromOutput(input * 2)
+            expected = FlowOutputs.fromOutput(input * 2)
           } yield assert(actual)(equalTo(expected))
         }
       )

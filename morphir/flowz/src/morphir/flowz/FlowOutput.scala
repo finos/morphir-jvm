@@ -1,10 +1,10 @@
 package morphir.flowz
 
 object FlowOutput {
-  val unit: FlowOutput[Unit]                               = FlowSuccess((), ())
+  val unit: FlowOutput[Unit]                               = FlowOutputs((), ())
   def apply[Output](output: => Output): FlowOutput[Output] =
-    FlowSuccess.fromOutput(output)
+    FlowOutputs.fromOutput(output)
 
   def fromOutput[Output](output: => Output): FlowOutput[Output] =
-    FlowSuccess.fromOutput(output)
+    FlowOutputs.fromOutput(output)
 }
