@@ -32,8 +32,8 @@ object accessControlledCodecs {
           case AccessControlled.Private(value) => ("private", value)
         },
         {
-          case ("public", value)  => AccessControlled.Public(value)
-          case ("private", value) => AccessControlled.Private(value)
+          case ("public", value)  => AccessControlled.publicAccess(value)
+          case ("private", value) => AccessControlled.privateAccess(value)
           case (tag, _)           => throw DecodeError.unexpectedTag(tag, "public", "private")
         }
       )

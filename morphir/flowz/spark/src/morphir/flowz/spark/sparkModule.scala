@@ -12,6 +12,12 @@ object sparkModule {
   def createDataset[A <: Product: TypeTag](data: Seq[A]): ZIO[SparkModule, Throwable, Dataset[A]] =
     ZIO.accessM[SparkModule](_.get.createDataset(data))
 
+  def makeDataset[A](func: SparkSession => Dataset[A]): RIO[SparkModule, Dataset[A]] =
+    ZIO.accessM(_.get.makeDataset(func))
+
+  def printSchema(dataFrame: DataFrame): URIO[SparkModule, Unit] =
+    ZIO.accessM(_.get.printSchema(dataFrame))
+
   val sparkSession: URIO[SparkModule, SparkSession] =
     ZIO.access(_.get.sparkSession)
 
@@ -20,10 +26,16 @@ object sparkModule {
 
   object SparkModule {
     trait Service extends Serializable {
+
+      /**
+       * Get access to an instance of the `SparkSession`.
+       */
       def sparkSession: SparkSession
 
       def createDataset[A <: Product: TypeTag](data: Seq[A]): Task[Dataset[A]]
+      def makeDataset[A](func: SparkSession => Dataset[A]): Task[Dataset[A]]
 
+      def printSchema(dataFrame: DataFrame): UIO[Unit]
       def withSpark[A](func: SparkSession => A): Task[A]
     }
 
@@ -39,6 +51,14 @@ object sparkModule {
         def createDataset[A <: Product: TypeTag](data: Seq[A]): Task[Dataset[A]] = Task.effect {
           import sparkSession.implicits._
           sparkSession.createDataset(data)
+        }
+
+        def makeDataset[A](func: SparkSession => Dataset[A]): Task[Dataset[A]] = Task.effect {
+          func(sparkSession)
+        }
+
+        override def printSchema(dataFrame: DataFrame): UIO[Unit] = UIO {
+          dataFrame.printSchema()
         }
 
         def withSpark[A](func: SparkSession => A): Task[A] = Task.effect(func(sparkSession))

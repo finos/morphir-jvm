@@ -68,7 +68,15 @@ final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
     self.mapState(_ => stateOut)
 }
 
-object Flow {
+object Flow extends FlowCompanion {}
+
+private[flowz] trait FlowCompanion {
+
+  def fromEffectful[In, Out](func: In => Out): TaskStep[In, Out] =
+    Flow(ZIO.environment[(Any, In, Any)].mapEffect { case (_, in, _) =>
+      FlowSuccess(output = func(in), state = ())
+    })
+
   def fromFunction[In, Out](func: In => Out): Step[Any, In, Nothing, Out] =
     Flow(ZIO.environment[(Any, In, Any)].map { case (_, in, _) =>
       FlowSuccess(output = func(in), state = ())
@@ -86,7 +94,7 @@ object Flow {
   val unit: UStep[Any, Unit] =
     Flow(ZIO.environment[(Any, Any, Any)].as(FlowSuccess.unit))
 
-  def succeed[A](value: => A): Flow[Any, Unit, Any, Any, Nothing, A] =
+  def succeed[A](value: => A): UStep[Any, A] =
     Flow(ZIO.environment[(Any, Any, Any)].as(FlowSuccess.fromOutput(value)))
 
   def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =

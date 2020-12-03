@@ -5,7 +5,12 @@ package object flowz {
 
   type RFlow[-StateIn, +StateOut, -Env, -In, +Out] = Flow[StateIn, StateOut, Env, In, Throwable, Out]
   type Step[-Env, -In, +Err, +Out]                 = Flow[Any, Unit, Env, In, Err, Out]
-  type UStep[-In, +Out]                            = Flow[Any, Unit, Any, In, Nothing, Out]
+
+  type RStep[-In, +Out] = Flow[Any, Unit, Any, In, Throwable, Out]
+
+  type TaskStep[-In, +Out] = Flow[Any, Unit, Any, In, Throwable, Out]
+
+  type UStep[-In, +Out] = Flow[Any, Unit, Any, In, Nothing, Out]
 
   type FlowOutput[+Output] = FlowSuccess[Output, Unit]
 
