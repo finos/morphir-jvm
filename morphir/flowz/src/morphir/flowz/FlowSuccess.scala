@@ -10,14 +10,13 @@ final case class FlowSuccess[+Output, +State](output: Output, state: State) { se
 }
 object FlowSuccess {
 
-  def apply[Output, State](tuple: (Output, State)): FlowSuccess[Output, State] =
-    fromTuple(tuple)
+  val empty: FlowSuccess[Option[Nothing], Option[Nothing]] = FlowSuccess(None, None)
 
-  val none: FlowSuccess[Option[Nothing], Option[Nothing]] = FlowSuccess(None, None)
+  val none: FlowSuccess[Option[Nothing], Unit] = FlowSuccess(None, ())
 
   val unit: FlowSuccess[Unit, Unit] = FlowSuccess((), ())
 
-  def fromOutput[Out](output: => Out): FlowSuccess[Out, Unit] = FlowSuccess(output = output, state = ())
+  def fromOutput[Out](output: => Out): FlowOutput[Out] = FlowSuccess(output = output, state = ())
 
   def fromState[State](state: => State): FlowSuccess[Unit, State] = FlowSuccess(state = state, output = ())
 

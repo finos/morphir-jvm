@@ -7,6 +7,8 @@ package object flowz {
   type Step[-Env, -In, +Err, +Out]                 = Flow[Any, Unit, Env, In, Err, Out]
   type UStep[-In, +Out]                            = Flow[Any, Unit, Any, In, Nothing, Out]
 
+  type FlowOutput[+Output] = FlowSuccess[Output, Unit]
+
   object CommandLineArgs extends Subtype[List[String]]
   type CommandLineArgs = CommandLineArgs.Type
 
