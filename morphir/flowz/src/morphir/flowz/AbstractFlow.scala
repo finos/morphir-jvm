@@ -8,8 +8,6 @@ abstract class AbstractFlow {
 
   def parseCommandLine(args: List[String]): IO[CommandLineParsingError, Params]
 
-  def configure(params: Params)
-
   def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
     (for {
       params <- parseCommandLine((args))

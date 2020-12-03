@@ -17,8 +17,8 @@ object Deps {
   object Versions {
 
     val scala211  = "2.11.12"
-    val scala212  = "2.12.11"
-    val scala213  = "2.13.1"
+    val scala212  = "2.12.12"
+    val scala213  = "2.13.4"
     val scalaJS06 = "0.6.32"
     val scalaJS1  = "1.0.0"
 

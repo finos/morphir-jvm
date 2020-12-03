@@ -1,6 +1,6 @@
 package morphir.flowz
 
-object Step {
+object UStep {
 
   /**
    * Returns a step with the empty value.

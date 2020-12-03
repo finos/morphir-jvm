@@ -1,6 +1,8 @@
-package morphir.flowz
+package morphir.flowz.experimental
+
+import zio.test.Assertion.{ equalTo, fails }
 import zio.test._
-import zio.test.Assertion._
+
 object StepSpec extends DefaultRunnableSpec {
   def spec = suite("Step Spec")(
     suite("Construction")(

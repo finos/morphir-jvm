@@ -2,6 +2,11 @@ package morphir
 import zio.prelude._
 
 package object flowz {
+
+  type RFlow[-StateIn, +StateOut, -Env, -In, +Out] = Flow[StateIn, StateOut, Env, In, Throwable, Out]
+  type Step[-Env, -In, +Err, +Out]                 = Flow[Any, Unit, Env, In, Err, Out]
+  type UStep[-In, +Out]                            = Flow[Any, Unit, Any, In, Nothing, Out]
+
   object CommandLineArgs extends Subtype[List[String]]
   type CommandLineArgs = CommandLineArgs.Type
 
