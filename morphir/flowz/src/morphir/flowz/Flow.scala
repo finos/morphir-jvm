@@ -45,9 +45,15 @@ final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
   def mapEffect[Out2](fn: Output => Out2)(implicit ev: Err <:< Throwable): RFlow[StateIn, StateOut, Env, Input, Out2] =
     Flow(self.effect.mapEffect(success => success.map(fn)))
 
+//  def mapOutputs[StateOut2, Output2](func: (Output, StateOut) => (Output2, StateOut2)) =
+//    Flow(self.map())
+
   def mapState[SOut2](fn: StateOut => SOut2): Flow[StateIn, SOut2, Env, Input, Err, Output] = Flow(
     self.effect.map(success => success.mapState(fn))
   )
+
+  def shiftStateToOutput: Flow[StateIn, Unit, Env, Input, Err, (Output, StateOut)] =
+    Flow(effect.map(success => success.toFlowOutputRight))
 
   def run(implicit
     evAnyInput: Any <:< Input,
@@ -66,6 +72,11 @@ final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
    */
   def stateAs[StateOut2](stateOut: => StateOut2): Flow[StateIn, StateOut2, Env, Input, Err, Output] =
     self.mapState(_ => stateOut)
+
+  def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Input, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
+  ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    Flow((self.effect zip that.effect).map { case (left, right) => left zip right })
 }
 
 object Flow extends FlowCompanion {}
@@ -96,6 +107,9 @@ private[flowz] trait FlowCompanion {
 
   def succeed[A](value: => A): UStep[Any, A] =
     Flow(ZIO.environment[(Any, Any, Any)].as(FlowSuccess.fromOutput(value)))
+
+  def succeed[Output, State](output: Output, state: State): SrcFlow[State, Output] =
+    Flow(ZIO.environment[(Any, Any, Any)].as(FlowSuccess(output = output, state = state)))
 
   def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
     Flow(ZIO.environment[(Any, Any, Any)] *> ZIO.fail(error))

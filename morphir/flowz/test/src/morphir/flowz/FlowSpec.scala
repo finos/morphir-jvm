@@ -21,6 +21,11 @@ object FlowSpec extends DefaultRunnableSpec {
           output <- Flow.succeed(42).run
         } yield assert(output)(equalTo(FlowSuccess.fromOutput(42)))
       ),
+      testM("It should be possible to create a flow that always succeeds with the given outpuit and state")(
+        for {
+          actual <- Flow.succeed(output = 42, state = "What is the answer?")
+        } yield assert(actual)(equalTo(FlowSuccess(42, "What is the answer")))
+      ),
       testM("It should be possible to create a flow that always fails with a value")(
         for {
           result <- Flow.fail("NO!!!").run.run
