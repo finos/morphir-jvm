@@ -29,23 +29,26 @@ object Deps {
       (scala213, scalaJS06)
     )
 
-    val zio           = "1.0.3"
-    val zioConfig     = "1.0.0-RC29"
-    val zioLogging    = "0.5.3"
-    val zioNio        = "1.0.0-RC10"
-    val zioPrelude    = "1.0.0-RC1"
-    val zioProcess    = "0.2.0"
-    val newtype       = "0.4.4"
-    val decline       = "1.3.0"
-    val pprint        = "0.5.9"
-    val scalameta     = "4.3.18"
-    val directories   = "11"
-    val enumeratum    = "1.6.1"
-    val macroParadise = "2.1.1"
-    val upickle       = "1.1.0"
-    val scalactic     = "3.1.2"
-    val scalaUri      = "2.2.2"
-    val oslib         = "0.6.2"
+    val silencer               = "1.7.1"
+    val scalaCollectionsCompat = "2.3.1"
+    val zio                    = "1.0.3"
+    val zioConfig              = "1.0.0-RC30-1"
+    val zioLogging             = "0.5.4"
+    val zioNio                 = "1.0.0-RC10"
+    val zioPrelude             = "1.0.0-RC1"
+    val zioProcess             = "0.2.0"
+    val newtype                = "0.4.4"
+    val decline                = "1.3.0"
+    val pprint                 = "0.5.9"
+    val scalameta              = "4.3.18"
+    val directories            = "11"
+    val enumeratum             = "1.6.1"
+    val macroParadise          = "2.1.1"
+    val upickle                = "1.1.0"
+    val scalactic              = "3.1.2"
+    val scalaUri               = "2.2.2"
+    val oslib                  = "0.6.2"
+    val quill                  = "3.6.0-RC3"
   }
 }
 
@@ -272,6 +275,11 @@ object morphir extends Module {
       def artifactName = "morphir-flowz"
       def ivyDeps      = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
+        ivy"dev.zio::zio-config:${Versions.zioConfig}",
+        ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
+        ivy"dev.zio::zio-config-shapeless:${Versions.zioConfig}",
+        ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+        ivy"dev.zio::zio-logging-slf4j:${Versions.zioLogging}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"dev.zio::zio-prelude:${Versions.zioPrelude}"
       )
@@ -279,6 +287,40 @@ object morphir extends Module {
       object test extends Tests {
         def platformSegment: String = self.platformSegment
         def crossScalaVersion       = JvmMorphirFlowz.this.crossScalaVersion
+      }
+    }
+
+    object spark extends Module {
+      object jvm
+          extends Cross[JvmMorphirFlowzSpark](
+            Versions.scala212,
+            Versions.scala211
+          )
+      class JvmMorphirFlowzSpark(val crossScalaVersion: String)
+          extends CrossScalaModule
+          with CommonJvmModule
+          with MorphirPublishModule { self =>
+
+        def artifactName = "morphir-flowz-spark"
+        def moduleDeps   = Seq(morphir.flowz.jvm(crossScalaVersion))
+
+        def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+        def compileIvyDeps      = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
+        def ivyDeps             = Agg(
+          ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}",
+          ivy"io.getquill::quill-spark:${Versions.quill}",
+          ivy"dev.zio::zio:${Versions.zio}",
+          ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+          ivy"dev.zio::zio-logging-slf4j:${Versions.zioLogging}",
+          ivy"dev.zio::zio-streams:${Versions.zio}",
+          ivy"dev.zio::zio-prelude:${Versions.zioPrelude}"
+        )
+
+        object test extends Tests {
+          def platformSegment: String = self.platformSegment
+          def crossScalaVersion       = JvmMorphirFlowzSpark.this.crossScalaVersion
+
+        }
       }
     }
   }
