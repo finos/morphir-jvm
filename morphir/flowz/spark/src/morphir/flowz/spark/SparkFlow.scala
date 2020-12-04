@@ -6,14 +6,9 @@ import zio._
 object SparkFlow extends FlowCompanion with SparkFlowCompanion {}
 
 object SparkStep extends FlowCompanion with SparkFlowCompanion {
-  def apply[Env, In, Out](func: In => RIO[Env with SparkModule, Out]): SparkStep[Env, In, Throwable, Out] =
-    Flow(ZIO.environment[(Env with SparkModule, In, Any)].flatMap { case (env, in, _) =>
-      func(in).provide(env).map(out => FlowOutputs.fromOutput(out))
-    })
-
-  def input[In]: SparkStep[Any, In, Throwable, In] =
-    Flow(ZIO.environment[(SparkModule, In, Any)].mapEffect { case (_, in, _) =>
-      FlowOutputs.fromOutput(in)
-    })
+  def apply[Env, Params, Out](func: Params => RIO[Env with SparkModule, Out]): SparkStep[Env, Params, Throwable, Out] =
+    Flow.context[Env with SparkModule, Any, Params].flatMap { ctx =>
+      Flow(func(ctx.inputs.params).provide(ctx.environment).map(out => OutputChannels.fromValue(out)))
+    }
 
 }

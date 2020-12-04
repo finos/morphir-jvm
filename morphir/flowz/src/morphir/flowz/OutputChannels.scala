@@ -33,6 +33,9 @@ final case class OutputChannels[+State, +Value](value: Value, state: State) { se
     OutputChannels(state = newState, value = newValue)
   }
 
+  def toInputs: InputChannels[State, Value] =
+    InputChannels(state = self.state, params = self.value)
+
   def toTuple: (State, Value) = (self.state, self.value)
 
   def zip[State2, Output2](that: OutputChannels[State2, Output2]): OutputChannels[(State, State2), (Value, Output2)] =
