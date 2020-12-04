@@ -3,7 +3,7 @@ package morphir.flowz
 import zio._
 
 final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
-  private val effect: ZIO[(Env, Input, StateIn), Err, FlowOutputs[StateOut, Output]]
+  private val effect: ZIO[(Env, Input, StateIn), Err, OutputChannels[StateOut, Output]]
 ) { self =>
 
   def >>>[SOut2, Env1 <: Env, Err1 >: Err, Output2](
@@ -23,8 +23,13 @@ final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
     that: Flow[StateOut, SOut2, Env1, Output, Err1, Output2]
   ): Flow[StateIn, SOut2, Env1, Input, Err1, Output2] =
     Flow(ZIO.environment[(Env1, Input, StateIn)].flatMap { case (env, _, _) =>
-      self.effect.flatMap(out => that.effect.provide((env, out.output, out.state)))
+      self.effect.flatMap(out => that.effect.provide((env, out.value, out.state)))
     })
+
+  def andThenEffect[Err1 >: Err, StateOut2, Output2](
+    thatEffect: ZIO[Output, Err1, OutputChannels[StateOut2, Output2]]
+  ): Flow[StateIn, StateOut2, Env, Input, Err1, Output2] =
+    Flow((self.effect.map(out => out.value) andThen thatEffect))
 
   /**
    * Maps the success value of this flow to the specified constant value.
@@ -35,7 +40,7 @@ final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
     func: Output => Flow[StateOut, S, Env1, In1, Err1, Out1]
   ): Flow[StateIn, S, Env1, In1, Err1, Out1] =
     Flow(ZIO.environment[(Env1, In1, StateIn)].flatMap { case (env1, in1, _) =>
-      self.effect.flatMap(success => func(success.output).effect.provide((env1, in1, success.state)))
+      self.effect.flatMap(success => func(success.value).effect.provide((env1, in1, success.state)))
     })
 
   def map[Out2](fn: Output => Out2): Flow[StateIn, StateOut, Env, Input, Err, Out2] = Flow(
@@ -48,25 +53,25 @@ final case class Flow[-StateIn, +StateOut, -Env, -Input, +Err, +Output](
   def mapOutputs[StateOut2, Output2](
     func: (StateOut, Output) => (StateOut2, Output2)
   ): Flow[StateIn, StateOut2, Env, Input, Err, Output2] =
-    Flow(self.effect.map(out => FlowOutputs.fromTuple(func(out.state, out.output))))
+    Flow(self.effect.map(out => OutputChannels.fromTuple(func(out.state, out.value))))
 
   def mapState[SOut2](fn: StateOut => SOut2): Flow[StateIn, SOut2, Env, Input, Err, Output] = Flow(
     self.effect.map(success => success.mapState(fn))
   )
 
   def shiftStateToOutput: Flow[StateIn, Unit, Env, Input, Err, (StateOut, Output)] =
-    Flow(effect.map(success => success.toFlowOutputLeft))
+    Flow(effect.map(success => success.toFlowValueLeft))
 
   def run(implicit
     evAnyInput: Any <:< Input,
     evAnyState: Any <:< StateIn
-  ): ZIO[Env, Err, FlowOutputs[StateOut, Output]] =
+  ): ZIO[Env, Err, OutputChannels[StateOut, Output]] =
     self.effect.provideSome[Env](env => (env, (), ()))
 
-  def run(input: Input)(implicit evAnyState: Unit <:< StateIn): ZIO[Env, Err, FlowOutputs[StateOut, Output]] =
+  def run(input: Input)(implicit evAnyState: Unit <:< StateIn): ZIO[Env, Err, OutputChannels[StateOut, Output]] =
     self.effect.provideSome[Env](env => (env, input, ()))
 
-  def run(input: Input, initialState: StateIn): ZIO[Env, Err, FlowOutputs[StateOut, Output]] =
+  def run(input: Input, initialState: StateIn): ZIO[Env, Err, OutputChannels[StateOut, Output]] =
     self.effect.provideSome[Env](env => (env, input, initialState))
 
   /**
@@ -85,21 +90,27 @@ object Flow extends FlowCompanion {}
 
 private[flowz] trait FlowCompanion {
 
-  def fromEffectful[In, Out](func: In => Out): TaskStep[In, Out] =
+  def effect[In, Out](func: In => Out): TaskStep[In, Out] =
     Flow(ZIO.environment[(Any, In, Any)].mapEffect { case (_, in, _) =>
-      FlowOutputs(output = func(in), state = ())
+      OutputChannels(value = func(in), state = ())
     })
+
+  def environment[Env]: RStep[Env, Any, Env]    =
+    Flow(ZIO.environment[(Env, Any, Any)].map { case (env, _, _) => FlowValue.fromValue(env) })
+
+  def fromEffect[R, E, A](effect: ZIO[R, E, A]) = ???
+  //Flow.environment[R].flatMap()
 
   def fromFunction[In, Out](func: In => Out): Step[Any, In, Nothing, Out] =
     Flow(ZIO.environment[(Any, In, Any)].map { case (_, in, _) =>
-      FlowOutputs(output = func(in), state = ())
+      OutputChannels(value = func(in), state = ())
     })
 
   def get[State]: Flow[State, State, Any, Any, Nothing, State] =
     modify[State, State, State](s => (s, s))
 
   def inputs[Env, In, StateIn]: URFlow[StateIn, Unit, Env, In, (Env, In, StateIn)] =
-    Flow(ZIO.environment[(Env, In, StateIn)].map(FlowOutputs.fromOutput(_)))
+    Flow(ZIO.environment[(Env, In, StateIn)].map(OutputChannels.fromValue(_)))
 
   def modify[StateIn, StateOut, Output](
     func: StateIn => (StateOut, Output)
@@ -113,27 +124,27 @@ private[flowz] trait FlowCompanion {
    * Returns a flow with the empty value.
    */
   val none: UStep[Any, Option[Nothing]] =
-    Flow(ZIO.environment[(Any, Any, Any)].as(FlowOutputs.none))
+    Flow(ZIO.environment[(Any, Any, Any)].as(OutputChannels.none))
 
   /**
    * A flow that succeeds with a unit value.
    */
   val unit: UStep[Any, Unit] =
-    Flow(ZIO.environment[(Any, Any, Any)].as(FlowOutputs.unit))
+    Flow(ZIO.environment[(Any, Any, Any)].as(OutputChannels.unit))
 
   def update[StateIn, StateOut](func: StateIn => StateOut): Flow[StateIn, StateOut, Any, Any, Nothing, Unit] =
     Flow(ZIO.environment[(Any, Any, StateIn)].map { case (_, _, stateIn) =>
-      FlowOutputs.fromState(func(stateIn))
+      OutputChannels.fromState(func(stateIn))
     })
 
   def set[S](state: S): Flow[Any, S, Any, Any, Nothing, Unit] =
     modify { _: Any => (state, ()) }
 
   def succeed[A](value: => A): UStep[Any, A] =
-    Flow(ZIO.environment[(Any, Any, Any)].as(FlowOutputs.fromOutput(value)))
+    Flow(ZIO.environment[(Any, Any, Any)].as(OutputChannels.fromValue(value)))
 
   def succeed[Output, State](output: Output, state: State): SrcFlow[State, Output] =
-    Flow(ZIO.environment[(Any, Any, Any)].as(FlowOutputs(output = output, state = state)))
+    Flow(ZIO.environment[(Any, Any, Any)].as(OutputChannels(value = output, state = state)))
 
   def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
     Flow(ZIO.environment[(Any, Any, Any)] *> ZIO.fail(error))
