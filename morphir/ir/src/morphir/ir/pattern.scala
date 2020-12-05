@@ -41,7 +41,7 @@ object pattern {
     final case class AsPattern[+A](attributes: A, pattern: Pattern[A], name: Name) extends Pattern[A] {
       def mapAttributes[B](f: A => B): Pattern[B] = AsPattern(f(attributes), pattern mapAttributes f, name)
     }
-    object AsPattern                                                               extends patternCodecs.AsPatternCodec
+    object AsPattern extends patternCodecs.AsPatternCodec
 
     final case class TuplePattern[+A](attributes: A, elementPatterns: List[Pattern[A]]) extends Pattern[A] {
       def mapAttributes[B](f: A => B): Pattern[B] = TuplePattern(f(attributes), elementPatterns.mapAttributes(f))

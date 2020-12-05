@@ -125,10 +125,10 @@ object Type extends typeCodecs.TypeCodec {
     }
   }
 
-  sealed abstract class Definition[+A] extends Product with Serializable  {
+  sealed abstract class Definition[+A] extends Product with Serializable {
     def toSpecification: Specification[A]
   }
-  object Definition                    extends typeCodecs.DefinitionCodec {
+  object Definition extends typeCodecs.DefinitionCodec {
 
     final case class TypeAliasDefinition[+A](typeParams: scala.List[Name], typeExp: Type[A]) extends Definition[A] {
       def toSpecification: Specification[A] = Specification.TypeAliasSpecification(typeParams, typeExp)
@@ -197,7 +197,7 @@ object Value extends valueCodecs.ValueCodec {
   final case class Constructor[+A](attributes: A, fullyQualifiedName: FQName) extends Value[A](Constructor.Tag) {
     def mapAttributes[B](f: A => B): Value[B] = Constructor(f(attributes), fullyQualifiedName)
   }
-  object Constructor                                                          extends valueCodecs.ConstructorCodec
+  object Constructor extends valueCodecs.ConstructorCodec
 
   final case class Tuple[+A](attributes: A, elements: scala.List[Value[A]]) extends Value[A](Tuple.Tag) {
     def mapAttributes[B](f: A => B): Value[B] = Tuple(f(attributes), elements.mapAttributes(f))

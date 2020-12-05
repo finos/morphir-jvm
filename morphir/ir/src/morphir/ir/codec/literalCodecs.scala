@@ -41,7 +41,7 @@ object literalCodecs {
             case tag if tag == StringLiteral.Tag => read[StringLiteral](json)
             case tag if tag == IntLiteral.Tag    => read[IntLiteral](json)
             case tag if tag == FloatLiteral.Tag  => read[FloatLiteral](json)
-            case tag                             =>
+            case tag =>
               throw DecodeError.unexpectedTag(
                 tag,
                 BoolLiteral.Tag,

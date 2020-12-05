@@ -51,7 +51,7 @@ object name {
 
     def toCamelCase: String =
       value match {
-        case Nil          => ""
+        case Nil => ""
         case head :: tail =>
           (head :: tail.map(_.capitalize)).mkString("")
       }
@@ -78,7 +78,7 @@ object name {
         suffix: List[String]
       ): List[String] =
         suffix match {
-          case Nil           =>
+          case Nil =>
             abbrev match {
               case Nil => prefix
               case _   => prefix ++ List(join(abbrev))
@@ -89,7 +89,7 @@ object name {
             else
               abbrev match {
                 case Nil => process(prefix ++ List(first), List.empty, rest)
-                case _   =>
+                case _ =>
                   process(prefix ++ List(join(abbrev), first), List.empty, rest)
               }
         }

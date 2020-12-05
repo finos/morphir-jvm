@@ -34,7 +34,7 @@ object ScalaBackend {
 
     def toTree[A](name: Name)(typeExpr: TypeExpr[A]): Tree = typeExpr match {
       case Record(_, fieldTypes) =>
-        val typeName                  = MType.Name(name.toCamelCase)
+        val typeName = MType.Name(name.toCamelCase)
         val paramss: List[Term.Param] = fieldTypes.map {
           case morphir.ir.Type.Field(name, morphir.ir.Type.Reference(_, fullyQualifiedTypeName, Nil)) =>
             println(s"TypeName: $typeName")
@@ -44,7 +44,7 @@ object ScalaBackend {
               Some(fullyQualifiedTypeName.toTypeRef),
               None
             )
-          case morphir.ir.Type.Field(name, morphir.ir.Type.Variable(_, typeVarName))                  =>
+          case morphir.ir.Type.Field(name, morphir.ir.Type.Variable(_, typeVarName)) =>
             println(s"TypeName: $typeName")
             Term.Param(
               List.empty,
@@ -52,10 +52,10 @@ object ScalaBackend {
               Some(typeVarName.toTypeName),
               None
             )
-          case _                                                                                      => ???
+          case _ => ???
         }
         q"case class $typeName (..$paramss)"
-      case _                     => ???
+      case _ => ???
     }
 
   }

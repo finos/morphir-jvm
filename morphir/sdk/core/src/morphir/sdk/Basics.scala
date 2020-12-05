@@ -30,15 +30,15 @@ object Basics {
   @inline def notEqual[A](a: A)(b: A): Bool = a != b
 
   // Comparable
-  def lessThan[A: Ordering](a: A)(b: A): Bool           = implicitly[Ordering[A]].lt(a, b)
-  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool    =
+  def lessThan[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].lt(a, b)
+  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool =
     implicitly[Ordering[A]].lteq(a, b)
-  def greaterThan[A: Ordering](a: A)(b: A): Bool        =
+  def greaterThan[A: Ordering](a: A)(b: A): Bool =
     implicitly[Ordering[A]].gt(a, b)
   def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool =
     implicitly[Ordering[A]].gteq(a, b)
-  def min[A: Ordering](a: A)(b: A): A                   = if (lessThan(a)(b)) a else b
-  def max[A: Ordering](a: A)(b: A): A                   = if (greaterThan(a)(b)) a else b
+  def min[A: Ordering](a: A)(b: A): A = if (lessThan(a)(b)) a else b
+  def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
 
   // Int construction
   type Int = scala.Long
@@ -60,7 +60,7 @@ object Basics {
   @inline def remainderBy(a: Int)(b: Int): Int         = a % b
   @inline def negate(a: Int): Int                      = -a
   @inline def abs(a: Int): Int                         = Math.abs(a)
-  @inline def clamp(min: Int)(max: Int)(a: Int): Int   =
+  @inline def clamp(min: Int)(max: Int)(a: Int): Int =
     if (a < min) min
     else if (a > max) max
     else a
@@ -71,29 +71,29 @@ object Basics {
     number.doubleValue()
 
   // Float functions
-  @inline def lessThan(a: Float)(b: Float): Bool             = a < b
-  @inline def lessThanOrEqual(a: Float)(b: Float): Bool      = a <= b
-  @inline def greaterThan(a: Float)(b: Float): Bool          = a > b
-  @inline def greaterThanOrEqual(a: Float)(b: Float): Bool   = a >= b
-  @inline def min(a: Float)(b: Float): Float                 = a min b
-  @inline def max(a: Float)(b: Float): Float                 = a max b
-  @inline def add(a: Float)(b: Float): Float                 = a + b
-  @inline def subtract(a: Float)(b: Float): Float            = a - b
-  @inline def multiply(a: Float)(b: Float): Float            = a * b
-  @inline def divide(a: Float)(b: Float): Float              = a / b
-  @inline def toFloat(a: Int): Float                         = a.toDouble
-  @inline def round(a: Float): Int                           = a.round
-  @inline def floor(a: Float): Int                           = a.floor.round
-  @inline def ceiling(a: Float): Int                         = a.ceil.round
-  @inline def truncate(a: Float): Int                        = if (a >= 0) floor(a) else -floor(-a)
-  @inline def negate(a: Float): Float                        = -a
-  @inline def abs(a: Float): Float                           = Math.abs(a)
+  @inline def lessThan(a: Float)(b: Float): Bool           = a < b
+  @inline def lessThanOrEqual(a: Float)(b: Float): Bool    = a <= b
+  @inline def greaterThan(a: Float)(b: Float): Bool        = a > b
+  @inline def greaterThanOrEqual(a: Float)(b: Float): Bool = a >= b
+  @inline def min(a: Float)(b: Float): Float               = a min b
+  @inline def max(a: Float)(b: Float): Float               = a max b
+  @inline def add(a: Float)(b: Float): Float               = a + b
+  @inline def subtract(a: Float)(b: Float): Float          = a - b
+  @inline def multiply(a: Float)(b: Float): Float          = a * b
+  @inline def divide(a: Float)(b: Float): Float            = a / b
+  @inline def toFloat(a: Int): Float                       = a.toDouble
+  @inline def round(a: Float): Int                         = a.round
+  @inline def floor(a: Float): Int                         = a.floor.round
+  @inline def ceiling(a: Float): Int                       = a.ceil.round
+  @inline def truncate(a: Float): Int                      = if (a >= 0) floor(a) else -floor(-a)
+  @inline def negate(a: Float): Float                      = -a
+  @inline def abs(a: Float): Float                         = Math.abs(a)
   @inline def clamp(min: Float)(max: Float)(a: Float): Float =
     if (a < min) min
     else if (a > max) max
     else a
-  @inline def isNaN(a: Float): Bool                          = a.isNaN
-  @inline def isInfinite(a: Float): Bool                     = a.isInfinite
+  @inline def isNaN(a: Float): Bool      = a.isNaN
+  @inline def isInfinite(a: Float): Bool = a.isInfinite
 
   // Utilities
   @inline def identity[A](a: A): A                                = scala.Predef.identity(a)

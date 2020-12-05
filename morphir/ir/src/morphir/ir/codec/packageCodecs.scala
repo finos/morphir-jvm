@@ -39,7 +39,7 @@ object packageCodecs {
       }
 
       def readJsonValue(json: ujson.Value): Specification[A] = {
-        val modulesJson                                       = json("modules")
+        val modulesJson = json("modules")
         val modules: Map[ModulePath, module.Specification[A]] = modulesJson.arr.map { (elem: ujson.Value) =>
           val modulePath = read[ModulePath](elem("name"))
           val moduleSpec = read[ModuleSpec[A]](elem("spec"))
@@ -79,7 +79,7 @@ object packageCodecs {
         val moduleJson       = json("modules")
 
         val dependencies = read[List[(PackagePath, Specification[A])]](dependenciesJson).toMap
-        val modules      = moduleJson.arr.map { json =>
+        val modules = moduleJson.arr.map { json =>
           val name = read[ModulePath](json("name"))
           val defn = read[AccessControlled[module.Definition[A]]](json("def"))
           (name, defn)

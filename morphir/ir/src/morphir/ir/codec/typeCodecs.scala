@@ -50,7 +50,7 @@ object typeCodecs {
             case tag if tag == ExtensibleRecord.Tag => read[ExtensibleRecord[A]](json)
             case tag if tag == Function.Tag         => read[Function[A]](json)
             case tag if tag == Unit.Tag             => read[Unit[A]](json)
-            case tag                                =>
+            case tag =>
               throw DecodeError.unexpectedTag(
                 tag,
                 Variable.Tag,
@@ -131,7 +131,7 @@ object typeCodecs {
         {
           case (tag, attributes, typeName, typeParameters) if tag == Tag =>
             Reference(attributes, typeName, typeParameters)
-          case (tag, _, _, _)                                            => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }
@@ -172,7 +172,7 @@ object typeCodecs {
         {
           case (tag, attributes, variableName, fieldTypes) if tag == Tag =>
             ExtensibleRecord(attributes, variableName, fieldTypes)
-          case (tag, _, _, _)                                            => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
 
@@ -187,7 +187,7 @@ object typeCodecs {
         {
           case (tag, attributes, argumentType, returnType) if tag == Tag =>
             Function(attributes, argumentType, returnType)
-          case (tag, _, _, _)                                            => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }

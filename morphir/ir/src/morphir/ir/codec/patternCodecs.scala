@@ -126,7 +126,7 @@ object patternCodecs {
           {
             case (tag: String, attributes, constructorName: FQName, argumentPatterns) if tag == Tag =>
               Pattern.ConstructorPattern(attributes, constructorName, argumentPatterns)
-            case (tag: String, _, _, _)                                                             => throw DecodeError.unexpectedTag(tag, Tag)
+            case (tag: String, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
           }
         )
   }
@@ -155,7 +155,7 @@ object patternCodecs {
         {
           case (tag, attributes, headPattern, tailPattern) if tag == Tag =>
             Pattern.HeadTailPattern(attributes, headPattern, tailPattern)
-          case (tag, _, _, _)                                            => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }

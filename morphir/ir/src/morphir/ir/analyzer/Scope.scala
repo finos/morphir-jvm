@@ -34,7 +34,7 @@ sealed trait Scope[+A] {
 
 object Scope {
 
-  def pkg[A](data: A): PackageScope[A]                                     = PackageScope(data)
+  def pkg[A](data: A): PackageScope[A] = PackageScope(data)
   def fromPackage[A, D](pkg: Pkg[A])(toData: Pkg[A] => D): PackageScope[D] =
     PackageScope(toData(pkg))
 }

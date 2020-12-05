@@ -69,7 +69,7 @@ object valueCodecs {
           case tag if tag == PatternMatch.Tag  => read[PatternMatch[A]](json)
           case tag if tag == UpdateRecord.Tag  => read[UpdateRecord[A]](json)
           case tag if tag == Unit.Tag          => read[Unit[A]](json)
-          case tag                             =>
+          case tag =>
             println(s"[BAD|JSON]: $json")
             throw DecodeError
               .unexpectedTag(
@@ -250,7 +250,7 @@ object valueCodecs {
         {
           case (tag, attributes, valueName, valueDefinition, inValue) if tag == Tag =>
             LetDefinition(attributes, valueName, valueDefinition, inValue)
-          case (tag, _, _, _, _)                                                    => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
 
@@ -268,7 +268,7 @@ object valueCodecs {
         {
           case (tag, attributes, valueDefinitions, inValue) if tag == Tag =>
             LetRecursion(attributes, valueDefinitions.toMap, inValue)
-          case (tag, _, _, _)                                             => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }
@@ -282,7 +282,7 @@ object valueCodecs {
         {
           case (tag, attributes, pattern, valueToDestruct, inValue) if tag == Tag =>
             Destructure(attributes, pattern, valueToDestruct, inValue)
-          case (tag, _, _, _, _)                                                  => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }
@@ -296,7 +296,7 @@ object valueCodecs {
         {
           case (tag, attributes, condition, thenBranch, elseBranch) if tag == Tag =>
             IfThenElse(attributes, condition, thenBranch, elseBranch)
-          case (tag, _, _, _, _)                                                  => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }
@@ -323,7 +323,7 @@ object valueCodecs {
         {
           case (tag, attributes, valueToUpdate, fieldsToUpdate) if tag == Tag =>
             UpdateRecord(attributes, valueToUpdate, fieldsToUpdate)
-          case (tag, _, _, _)                                                 => throw DecodeError.unexpectedTag(tag, Tag)
+          case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
         }
       )
   }

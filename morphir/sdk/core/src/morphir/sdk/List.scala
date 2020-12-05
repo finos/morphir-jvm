@@ -69,7 +69,7 @@ object List {
   def intersperse[A](elem: A)(xs: List[A]): List[A] = xs match {
     case lst if lst == Nil => lst
     case lst @ _ :: Nil    => lst
-    case lst               =>
+    case lst =>
       lst.take(xs.length - 1).flatMap(x => List(x, elem)) ++ List(xs.last)
   }
 
@@ -149,6 +149,6 @@ object List {
     if (list.isEmpty) Maybe.Nothing else Maybe.Just(list.min)
   @inline def maximum[A: Ordering](list: List[A]): Maybe[A] =
     if (list.isEmpty) Maybe.Nothing else Maybe.Just(list.max)
-  @inline def sum[A: Numeric](list: List[A]): A             = list.sum
-  @inline def product[A: Numeric](list: List[A]): A         = list.product
+  @inline def sum[A: Numeric](list: List[A]): A     = list.sum
+  @inline def product[A: Numeric](list: List[A]): A = list.product
 }

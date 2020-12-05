@@ -113,7 +113,7 @@ object String {
     str match {
       case a if a.length == 0 => Maybe.nothing
       case a if a.length == 1 => Maybe.just((Char.from(a.charAt(0)), ""))
-      case _                  =>
+      case _ =>
         Maybe.just((Char.from(str.charAt(0)), str.substring(1, str.length)))
     }
 

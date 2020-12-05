@@ -62,10 +62,10 @@ object Maybe {
      *  collection with max size 1.
      */
     class WithFilter(p: A => Boolean) {
-      def map[B](f: A => B): Maybe[B]             = self filter p map f
-      def flatMap[B](f: A => Maybe[B]): Maybe[B]  =
+      def map[B](f: A => B): Maybe[B] = self filter p map f
+      def flatMap[B](f: A => Maybe[B]): Maybe[B] =
         self filter p flatMap f
-      def foreach[U](f: A => U): Unit             = self filter p foreach f
+      def foreach[U](f: A => U): Unit = self filter p foreach f
       def withFilter(q: A => Boolean): WithFilter =
         new WithFilter(x => p(x) && q(x))
     }
@@ -203,7 +203,7 @@ object Maybe {
               (maybeA, maybeB, maybeC, maybeD, maybeE) match {
                 case (Just(a), Just(b), Just(c), Just(d), Just(e)) =>
                   Just(fn(a)(b)(c)(d)(e))
-                case _                                             => Nothing.asInstanceOf[Maybe[V]]
+                case _ => Nothing.asInstanceOf[Maybe[V]]
               }
 
   def andThen[A, B](
