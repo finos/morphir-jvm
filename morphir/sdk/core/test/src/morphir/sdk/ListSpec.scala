@@ -80,7 +80,7 @@ object ListSpec extends DefaultRunnableSpec {
     suite("List.concatMap spec")(
       test("concatMap - should map and flatten a list") {
         def doubleIt(n: Int) = List(n * 2)
-        val xs = List(1, 2, 3, 4, 5)
+        val xs               = List(1, 2, 3, 4, 5)
         assert(List.concatMap(doubleIt)(xs))(
           equalTo(List.concat(List.map(doubleIt)(xs)))
         )
@@ -100,7 +100,7 @@ object ListSpec extends DefaultRunnableSpec {
     ),
     suite("List.filter spec")(
       test("filter should remove items that don't satisfy the given predicate") {
-        val sut = List(1, 2, 3, 4, 5, 6)
+        val sut            = List(1, 2, 3, 4, 5, 6)
         def isEven(n: Int) = n % 2 == 0
         assert(List.filter(isEven)(sut))(equalTo(List(2, 4, 6)))
       }

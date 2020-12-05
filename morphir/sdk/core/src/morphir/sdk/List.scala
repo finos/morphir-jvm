@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Maybe.{Just, Maybe}
+import morphir.sdk.Maybe.{ Just, Maybe }
 
 object List {
   type List[+A] = scala.List[A]
@@ -73,52 +73,52 @@ object List {
       lst.take(xs.length - 1).flatMap(x => List(x, elem)) ++ List(xs.last)
   }
 
-  @inline def length[A](xs: List[A]): Int = xs.length
+  @inline def length[A](xs: List[A]): Int    = xs.length
   @inline def singleton[A](item: A): List[A] = scala.List(item)
 
   @inline def map[A, B](mapping: A => B)(list: List[A]): List[B] =
     list.map(mapping)
 
   /**
-    * Combine two lists, combining them with the given function. If one list is longer, the extra elements are dropped.
-    * @param mapping a mapping function
-    * @param xs the first list
-    * @param ys the second list
-    * @tparam A the type of the first list
-    * @tparam B the type of the second list
-    * @tparam R the type of the resulting list
-    * @return a list containing the combined elements of list1 and list2 using the mapping function.
-    */
+   * Combine two lists, combining them with the given function. If one list is longer, the extra elements are dropped.
+   * @param mapping a mapping function
+   * @param xs the first list
+   * @param ys the second list
+   * @tparam A the type of the first list
+   * @tparam B the type of the second list
+   * @tparam R the type of the resulting list
+   * @return a list containing the combined elements of list1 and list2 using the mapping function.
+   */
   def map2[A, B, R](
-      mapping: A => B => R
+    mapping: A => B => R
   )(xs: List[A])(ys: List[B]): List[R] =
-    xs.zip(ys).map {
-      case (a, b) => mapping(a)(b)
+    xs.zip(ys).map { case (a, b) =>
+      mapping(a)(b)
     }
 
   def map3[X, Y, Z, R](
-      mapping: X => Y => Z => R
+    mapping: X => Y => Z => R
   )(xs: List[X])(ys: List[Y])(zs: List[Z]): List[R] =
-    xs.zip(ys).zip(zs).map {
-      case ((x, y), z) => mapping(x)(y)(z)
+    xs.zip(ys).zip(zs).map { case ((x, y), z) =>
+      mapping(x)(y)(z)
     }
 
   def map4[A, B, C, D, R](
-      mapping: A => B => C => D => R
+    mapping: A => B => C => D => R
   )(as: List[A])(bs: List[B])(cs: List[C])(ds: List[D]): List[R] =
-    as.zip(bs).zip(cs).zip(ds).map {
-      case (((a, b), c), d) => mapping(a)(b)(c)(d)
+    as.zip(bs).zip(cs).zip(ds).map { case (((a, b), c), d) =>
+      mapping(a)(b)(c)(d)
     }
 
   def map5[A, B, C, D, E, R](
-      mapping: A => B => C => D => E => R
+    mapping: A => B => C => D => E => R
   )(as: List[A])(bs: List[B])(cs: List[C])(ds: List[D])(es: List[E]): List[R] =
     as.zip(bs)
       .zip(cs)
       .zip(ds)
       .zip(es)
-      .map {
-        case ((((a, b), c), d), e) => mapping(a)(b)(c)(d)(e)
+      .map { case ((((a, b), c), d), e) =>
+        mapping(a)(b)(c)(d)(e)
       }
 
   @inline def member[A, A1 >: A](candidate: A1)(xs: List[A]): Boolean =
@@ -149,6 +149,6 @@ object List {
     if (list.isEmpty) Maybe.Nothing else Maybe.Just(list.min)
   @inline def maximum[A: Ordering](list: List[A]): Maybe[A] =
     if (list.isEmpty) Maybe.Nothing else Maybe.Just(list.max)
-  @inline def sum[A: Numeric](list: List[A]): A = list.sum
+  @inline def sum[A: Numeric](list: List[A]): A     = list.sum
   @inline def product[A: Numeric](list: List[A]): A = list.product
 }

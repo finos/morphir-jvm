@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
@@ -39,11 +38,11 @@ object Char {
    * @return
    */
   def isUpper(ch: Char): Boolean = ch match {
-    case UnicodeChar(code) => code <= 0x5A && 0x41 <= code
+    case UnicodeChar(code) => code <= 0x5a && 0x41 <= code
   }
 
   def isLower(ch: Char): Boolean = ch match {
-    case UnicodeChar(code) => 0x61 <= code && code <= 0x7A
+    case UnicodeChar(code) => 0x61 <= code && code <= 0x7a
   }
 
   def isDigit(ch: Char): Boolean = ch match {

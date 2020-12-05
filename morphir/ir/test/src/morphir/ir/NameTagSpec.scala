@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir
 
@@ -53,7 +52,11 @@ object NameTagSpec extends DefaultRunnableSpec {
     ),
     test("It should be creatable when given a parameterized type that has a ClassTag")(
       assert(NameTag.forClass[ParameterizedTestNode[String]])(
-        hasField("tag", (nt: NameTag[ParameterizedTestNode[String]]) => nt.tag, equalTo("parameterized_test_node")) && hasField(
+        hasField(
+          "tag",
+          (nt: NameTag[ParameterizedTestNode[String]]) => nt.tag,
+          equalTo("parameterized_test_node")
+        ) && hasField(
           "name",
           (nt: NameTag[ParameterizedTestNode[String]]) => nt.name,
           equalTo(Name.fromString("ParameterizedTestNode"))

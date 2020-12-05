@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
@@ -54,8 +53,8 @@ object RuleSpec extends DefaultRunnableSpec {
             input <- Gen.alphaNumericString
             if ref != input
           } yield (ref, input)
-        check(gen) {
-          case (ref, input) => assert(Rule.is(ref)(input))(equalTo(Bool.False))
+        check(gen) { case (ref, input) =>
+          assert(Rule.is(ref)(input))(equalTo(Bool.False))
         }
       }
     ),
@@ -66,8 +65,8 @@ object RuleSpec extends DefaultRunnableSpec {
             ref <- Gen.listOf(Gen.alphaNumericString)
             if ref.nonEmpty
           } yield (ref, ref.head)
-        check(gen) {
-          case (ref, input) => assert(Rule.anyOf(ref)(input))(equalTo(Bool.True))
+        check(gen) { case (ref, input) =>
+          assert(Rule.anyOf(ref)(input))(equalTo(Bool.True))
         }
       },
       testM("Calling anyOf by passing in a list and a non-member should return False") {
@@ -77,8 +76,8 @@ object RuleSpec extends DefaultRunnableSpec {
             input <- Gen.alphaNumericString
             if !ref.contains(input)
           } yield (ref, input)
-        check(gen) {
-          case (ref, input) => assert(Rule.anyOf(ref)(input))(equalTo(Bool.False))
+        check(gen) { case (ref, input) =>
+          assert(Rule.anyOf(ref)(input))(equalTo(Bool.False))
         }
       }
     ),
@@ -89,8 +88,8 @@ object RuleSpec extends DefaultRunnableSpec {
             ref <- Gen.listOf(Gen.alphaNumericString)
             if ref.nonEmpty
           } yield (ref, ref.head)
-        check(gen) {
-          case (ref, input) => assert(Rule.noneOf(ref)(input))(equalTo(Bool.False))
+        check(gen) { case (ref, input) =>
+          assert(Rule.noneOf(ref)(input))(equalTo(Bool.False))
         }
       },
       testM("Calling noneOf by passing in a list and a non-member should return True") {
@@ -100,21 +99,20 @@ object RuleSpec extends DefaultRunnableSpec {
             input <- Gen.alphaNumericString
             if !ref.contains(input)
           } yield (ref, input)
-        check(gen) {
-          case (ref, input) => assert(Rule.noneOf(ref)(input))(equalTo(Bool.True))
+        check(gen) { case (ref, input) =>
+          assert(Rule.noneOf(ref)(input))(equalTo(Bool.True))
         }
       }
     )
   )
 
   def chainTests(cases: (List[Rule.Rule[Char.Char, Char.Char]], Char.Char, Maybe.Maybe[Char.Char])*) =
-    cases.map {
-      case (rules, input, expectedResult) =>
-        test(
-          s"Given the rules: '$rules' passing in input: '$input' chain should return '$expectedResult'"
-        ) {
-          assert(Rule.chain(rules)(input))(equalTo(expectedResult))
-        }
+    cases.map { case (rules, input, expectedResult) =>
+      test(
+        s"Given the rules: '$rules' passing in input: '$input' chain should return '$expectedResult'"
+      ) {
+        assert(Rule.chain(rules)(input))(equalTo(expectedResult))
+      }
     }
 
 }
