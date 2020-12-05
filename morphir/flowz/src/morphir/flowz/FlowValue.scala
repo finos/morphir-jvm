@@ -1,7 +1,7 @@
 package morphir.flowz
 
 object FlowValue {
-  val unit: FlowValue[Unit]                               = OutputChannels((), ())
+  val unit: FlowValue[Unit] = OutputChannels((), ())
   def apply[Output](output: => Output): FlowValue[Output] =
     OutputChannels.fromValue(output)
 

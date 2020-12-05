@@ -50,7 +50,7 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
       self.effect.flatMap(out => func(out.value).effect.provide(ctx.updateState(out.state)))
     })
 
-  def flipOutputs: Flow[StateIn, Output, Env, Params, Err, StateOut]                 =
+  def flipOutputs: Flow[StateIn, Output, Env, Params, Err, StateOut] =
     self.mapOutputs { case (state, value) => (value, state) }
 
   def map[Out2](fn: Output => Out2): Flow[StateIn, StateOut, Env, Params, Err, Out2] = Flow(
@@ -179,7 +179,7 @@ private[flowz] trait FlowCompanion {
       OutputChannels(state = state, value = value)
     })
 
-  def state[S]: Stage[S, S, Any, S]                       =
+  def state[S]: Stage[S, S, Any, S] =
     context[Any, S, Any].mapOutputs { case (_, ctx) => (ctx.inputs.state, ctx.inputs.state) }
 
   def stateful[StateIn, Params, StateOut, Out](
