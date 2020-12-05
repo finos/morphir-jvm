@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir
 
@@ -23,8 +22,8 @@ object PrettyPrinting extends PrettyPrinting
 
 trait PrettyPrinting {
   val pretty: PPrinter = pprint.copy(
-    additionalHandlers = {
-      case value: name.Name => pprint.Tree.Literal(value.show)
+    additionalHandlers = { case value: name.Name =>
+      pprint.Tree.Literal(value.show)
     }
   )
 }

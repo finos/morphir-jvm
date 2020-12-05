@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.sdk
 
@@ -57,7 +56,8 @@ object Maybe {
 
     def withFilter(fn: A => Boolean): WithFilter = new WithFilter((fn))
 
-    /** We need a whole WithFilter class to honor the "doesn't create a new
+    /**
+     * We need a whole WithFilter class to honor the "doesn't create a new
      *  collection" contract even though it seems unlikely to matter much in a
      *  collection with max size 1.
      */
@@ -96,8 +96,8 @@ object Maybe {
     final def zip[A1 >: A, B](that: Maybe[B]): Maybe[(A1, B)] =
       if (isEmpty || that.isEmpty) Nothing else Just((this.get, that.get))
 
-    final def unzip[A1, A2](
-      implicit asPair: A <:< (A1, A2)
+    final def unzip[A1, A2](implicit
+      asPair: A <:< (A1, A2)
     ): (Maybe[A1], Maybe[A2]) =
       if (isEmpty)
         (Nothing, Nothing)

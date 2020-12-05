@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -90,7 +89,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[TypeAliasDefinition[A]] =
       readwriter[(String, scala.List[Name], Type[A])].bimap(
-        defn => (Tag, defn.typeParams, defn.typeExp), {
+        defn => (Tag, defn.typeParams, defn.typeExp),
+        {
           case (tag, typeParams, typeExp) if tag == Tag => TypeAliasDefinition(typeParams, typeExp)
           case (tag, _, _)                              => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -102,7 +102,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[CustomTypeDefinition[A]] =
       readwriter[(String, scala.List[Name], AccessControlled[Constructors[A]])].bimap(
-        definition => (Tag, definition.typeParams, definition.ctors), {
+        definition => (Tag, definition.typeParams, definition.ctors),
+        {
           case (tag, typeParams, ctors) if tag == Tag => CustomTypeDefinition(typeParams, ctors)
           case (tag, _, _)                            => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -113,7 +114,8 @@ object typeCodecs {
     val Tag: String = "variable"
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Variable[A]] = readwriter[(String, A, Name)].bimap[Variable[A]](
-      typeExpr => (Tag, typeExpr.attributes, typeExpr.name), {
+      typeExpr => (Tag, typeExpr.attributes, typeExpr.name),
+      {
         case (tag, attributes, name) if tag == Tag => Variable(attributes, name)
         case (tag, _, _)                           => throw DecodeError.unexpectedTag(tag, Tag)
       }
@@ -125,7 +127,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Reference[A]] =
       readwriter[(String, A, FQName, List[Type[A]])].bimap[Reference[A]](
-        typeExpr => (Tag, typeExpr.attributes, typeExpr.typeName, typeExpr.typeParameters), {
+        typeExpr => (Tag, typeExpr.attributes, typeExpr.typeName, typeExpr.typeParameters),
+        {
           case (tag, attributes, typeName, typeParameters) if tag == Tag =>
             Reference(attributes, typeName, typeParameters)
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -138,7 +141,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Tuple[A]] =
       readwriter[(String, A, scala.List[Type[A]])].bimap[Tuple[A]](
-        typeExpr => (Tag, typeExpr.attributes, typeExpr.elementTypes), {
+        typeExpr => (Tag, typeExpr.attributes, typeExpr.elementTypes),
+        {
           case (tag, attributes, elementTypes) if tag == Tag => Tuple(attributes, elementTypes)
           case (tag, _, _)                                   => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -150,7 +154,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: default.ReadWriter[Record[A]] =
       readwriter[(String, A, scala.List[Field[A]])].bimap[Record[A]](
-        rec => (Tag, rec.attributes, rec.fieldTypes), {
+        rec => (Tag, rec.attributes, rec.fieldTypes),
+        {
           case (tag, attributes, fieldTypes) if tag == Tag => Record(attributes, fieldTypes)
           case (tag, _, _)                                 => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -163,7 +168,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[ExtensibleRecord[A]] =
       readwriter[(String, A, Name, scala.List[Field[A]])].bimap[ExtensibleRecord[A]](
-        typExpr => (Tag, typExpr.attributes, typExpr.variableName, typExpr.fieldTypes), {
+        typExpr => (Tag, typExpr.attributes, typExpr.variableName, typExpr.fieldTypes),
+        {
           case (tag, attributes, variableName, fieldTypes) if tag == Tag =>
             ExtensibleRecord(attributes, variableName, fieldTypes)
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -177,7 +183,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Function[A]] =
       readwriter[(String, A, Type[A], Type[A])].bimap[Function[A]](
-        typeExpr => (Tag, typeExpr.attributes, typeExpr.argumentType, typeExpr.returnType), {
+        typeExpr => (Tag, typeExpr.attributes, typeExpr.argumentType, typeExpr.returnType),
+        {
           case (tag, attributes, argumentType, returnType) if tag == Tag =>
             Function(attributes, argumentType, returnType)
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -190,7 +197,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Unit[A]] =
       readwriter[(String, A)].bimap[Unit[A]](
-        (typeExpr: Unit[A]) => (Tag, typeExpr.attributes), {
+        (typeExpr: Unit[A]) => (Tag, typeExpr.attributes),
+        {
           case ("unit", attributes) => Unit(attributes)
           case (tag, _)             => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -200,8 +208,9 @@ object typeCodecs {
 
   trait FieldCodec {
     implicit def readWriter[A: ReadWriter]: ReadWriter[Field[A]] = readwriter[(Name, Type[A])].bimap[Field[A]](
-      field => (field.name, field.fieldType), {
-        case (name, fieldType) => Field(name, fieldType)
+      field => (field.name, field.fieldType),
+      { case (name, fieldType) =>
+        Field(name, fieldType)
       }
     )
 
@@ -212,7 +221,8 @@ object typeCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Constructor[A]] =
       readwriter[(String, Name, scala.List[(Name, Type[A])])].bimap[Constructor[A]](
-        ctor => (Tag, ctor.name, ctor.args), {
+        ctor => (Tag, ctor.name, ctor.args),
+        {
           case (tag, name, args) if tag == Tag => Constructor(name, args)
           case (tag, _, _)                     => throw DecodeError.unexpectedTag(tag, Tag)
         }

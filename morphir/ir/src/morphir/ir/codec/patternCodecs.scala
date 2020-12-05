@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -66,7 +65,8 @@ object patternCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Pattern.WildcardPattern[A]] =
       readwriter[(String, A)].bimap(
-        pat => (Tag, pat.attributes), {
+        pat => (Tag, pat.attributes),
+        {
           case (tag, attributes) if tag == Tag => Pattern.WildcardPattern(attributes)
           case (tag, _)                        => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -76,11 +76,12 @@ object patternCodecs {
   trait AsPatternCodec extends TaggedCompanionObjectLike {
     val Tag: String = "as_pattern"
 
-    implicit def readWriter[A: ReadWriter](
-      implicit patternReadWriter: ReadWriter[Pattern[A]]
+    implicit def readWriter[A: ReadWriter](implicit
+      patternReadWriter: ReadWriter[Pattern[A]]
     ): ReadWriter[Pattern.AsPattern[A]] =
       readwriter[(String, A, Pattern[A], Name)].bimap[Pattern.AsPattern[A]](
-        pat => (Tag, pat.attributes, pat.pattern, pat.name), {
+        pat => (Tag, pat.attributes, pat.pattern, pat.name),
+        {
           case (tag, attributes, pattern, name) if tag == Tag => Pattern.AsPattern(attributes, pattern, name)
           case (tag, _, _, _)                                 => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -105,7 +106,8 @@ object patternCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Pattern.RecordPattern[A]] =
       readwriter[(String, A, List[Name])].bimap(
-        pat => (Tag, pat.attributes, pat.fieldNames), {
+        pat => (Tag, pat.attributes, pat.fieldNames),
+        {
           case (tag, attributes, fieldNames) if tag == Tag => Pattern.RecordPattern(attributes, fieldNames)
           case (tag, _, _)                                 => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -115,12 +117,13 @@ object patternCodecs {
   trait ConstructorPatternCodec extends TaggedCompanionObjectLike {
     val Tag: String = "constructor_pattern"
 
-    implicit def readWriter[A: ReadWriter](
-      implicit patternListReadWriter: ReadWriter[List[Pattern[A]]]
+    implicit def readWriter[A: ReadWriter](implicit
+      patternListReadWriter: ReadWriter[List[Pattern[A]]]
     ): ReadWriter[Pattern.ConstructorPattern[A]] =
       readwriter[(String, A, FQName, List[Pattern[A]])]
         .bimap[Pattern.ConstructorPattern[A]](
-          pat => (Tag, pat.attributes, pat.constructorName, pat.argumentPatterns), {
+          pat => (Tag, pat.attributes, pat.constructorName, pat.argumentPatterns),
+          {
             case (tag: String, attributes, constructorName: FQName, argumentPatterns) if tag == Tag =>
               Pattern.ConstructorPattern(attributes, constructorName, argumentPatterns)
             case (tag: String, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -133,7 +136,8 @@ object patternCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Pattern.EmptyListPattern[A]] =
       readwriter[(String, A)].bimap(
-        pat => (Tag, pat.attributes), {
+        pat => (Tag, pat.attributes),
+        {
           case (tag, attributes) if tag == Tag => Pattern.EmptyListPattern(attributes)
           case (tag, _)                        => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -143,11 +147,12 @@ object patternCodecs {
   trait HeadTailPatternCodec extends TaggedCompanionObjectLike {
     val Tag: String = "head_tail_pattern"
 
-    implicit def readWriter[A: ReadWriter](
-      implicit patternReadWriter: ReadWriter[Pattern[A]]
+    implicit def readWriter[A: ReadWriter](implicit
+      patternReadWriter: ReadWriter[Pattern[A]]
     ): ReadWriter[Pattern.HeadTailPattern[A]] =
       readwriter[(String, A, Pattern[A], Pattern[A])].bimap(
-        pat => (Tag, pat.attributes, pat.headPattern, pat.tailPattern), {
+        pat => (Tag, pat.attributes, pat.headPattern, pat.tailPattern),
+        {
           case (tag, attributes, headPattern, tailPattern) if tag == Tag =>
             Pattern.HeadTailPattern(attributes, headPattern, tailPattern)
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -158,11 +163,12 @@ object patternCodecs {
   trait LiteralPattenCodec extends TaggedCompanionObjectLike {
     val Tag: String = "literal_pattern"
 
-    implicit def readWriter[A: ReadWriter](
-      implicit literalReadWriter: ReadWriter[literal.Literal]
+    implicit def readWriter[A: ReadWriter](implicit
+      literalReadWriter: ReadWriter[literal.Literal]
     ): ReadWriter[Pattern.LiteralPattern[A]] =
       readwriter[(String, A, literal.Literal)].bimap[Pattern.LiteralPattern[A]](
-        pat => (Tag, pat.attributes, pat.value), {
+        pat => (Tag, pat.attributes, pat.value),
+        {
           case (tag, attributes, value: literal.Literal) if tag == Tag => Pattern.LiteralPattern(attributes, value)
           case (tag: String, _, _)                                     => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -174,7 +180,8 @@ object patternCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Pattern.UnitPattern[A]] =
       readwriter[(String, A)].bimap(
-        pat => (Tag, pat.attributes), {
+        pat => (Tag, pat.attributes),
+        {
           case (tag, attributes) if tag == Tag => Pattern.UnitPattern(attributes)
           case (tag: String, _)                => throw DecodeError.unexpectedTag(tag, Tag)
         }

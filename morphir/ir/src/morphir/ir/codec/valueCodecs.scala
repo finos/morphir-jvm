@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -104,7 +103,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Literal[A]] =
       readwriter[(String, A, literal.Literal)].bimap[Literal[A]](
-        valueExpr => (Tag, valueExpr.attributes, valueExpr.value), {
+        valueExpr => (Tag, valueExpr.attributes, valueExpr.value),
+        {
           case (tag, attributes, value: literal.Literal) if tag == Tag => Literal(attributes, value)
           case (tag: String, _, _)                                     => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -116,7 +116,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Constructor[A]] =
       readwriter[(String, A, FQName)].bimap(
-        ctor => (Tag, ctor.attributes, ctor.fullyQualifiedName), {
+        ctor => (Tag, ctor.attributes, ctor.fullyQualifiedName),
+        {
           case (tag, attributes, fullyQualifiedName) if tag == Tag => Constructor(attributes, fullyQualifiedName)
           case (tag, _, _)                                         => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -128,7 +129,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Tuple[A]] =
       readwriter[(String, A, scala.List[Value[A]])].bimap(
-        expr => (expr.tag, expr.attributes, expr.elements), {
+        expr => (expr.tag, expr.attributes, expr.elements),
+        {
           case (tag, attributes, elements) if tag == Tag => Tuple(attributes, elements)
           case (tag, _, _)                               => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -140,7 +142,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[List[A]] =
       readwriter[(String, A, scala.List[Value[A]])].bimap(
-        expr => (expr.tag, expr.attributes, expr.items), {
+        expr => (expr.tag, expr.attributes, expr.items),
+        {
           case (tag, attributes, items) if tag == Tag => List(attributes, items)
           case (tag, _, _)                            => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -152,7 +155,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Record[A]] =
       readwriter[(String, A, scala.List[(Name, Value[A])])].bimap(
-        expr => (expr.tag, expr.attributes, expr.fields), {
+        expr => (expr.tag, expr.attributes, expr.fields),
+        {
           case (tag, attributes, fields) if tag == Tag => Record(attributes, fields)
           case (tag, _, _)                             => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -164,7 +168,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Variable[A]] =
       readwriter[(String, A, Name)].bimap(
-        expr => (expr.tag, expr.attributes, expr.name), {
+        expr => (expr.tag, expr.attributes, expr.name),
+        {
           case (tag, attributes, name) if tag == Tag => Variable(attributes, name)
           case (tag, _, _)                           => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -176,7 +181,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Reference[A]] =
       readwriter[(String, A, FQName)].bimap(
-        expr => (expr.tag, expr.attributes, expr.fullyQualifiedName), {
+        expr => (expr.tag, expr.attributes, expr.fullyQualifiedName),
+        {
           case (tag, attributes, fullyQualifiedName) if tag == Tag => Reference(attributes, fullyQualifiedName)
           case (tag, _, _)                                         => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -188,7 +194,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Field[A]] =
       readwriter[(String, A, Value[A], Name)].bimap(
-        expr => (expr.tag, expr.attributes, expr.subjectValue, expr.fieldName), {
+        expr => (expr.tag, expr.attributes, expr.subjectValue, expr.fieldName),
+        {
           case (tag, attributes, subjectValue, fieldName) if tag == Tag => Field(attributes, subjectValue, fieldName)
           case (tag, _, _, _)                                           => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -200,7 +207,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[FieldFunction[A]] =
       readwriter[(String, A, Name)].bimap(
-        expr => (expr.tag, expr.attributes, expr.fieldName), {
+        expr => (expr.tag, expr.attributes, expr.fieldName),
+        {
           case (tag, attributes, fieldName) if tag == Tag => FieldFunction(attributes, fieldName)
           case (tag, _, _)                                => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -212,7 +220,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Apply[A]] =
       readwriter[(String, A, Value[A], Value[A])].bimap(
-        expr => (expr.tag, expr.attributes, expr.function, expr.argument), {
+        expr => (expr.tag, expr.attributes, expr.function, expr.argument),
+        {
           case (tag, attributes, function, argument) if tag == Tag => Apply(attributes, function, argument)
           case (tag, _, _, _)                                      => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -224,7 +233,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Lambda[A]] =
       readwriter[(String, A, pattern.Pattern[A], Value[A])].bimap[Lambda[A]](
-        expr => (expr.tag, expr.attributes, expr.argumentPattern, expr.body), {
+        expr => (expr.tag, expr.attributes, expr.argumentPattern, expr.body),
+        {
           case (tag, attributes, argumentPattern, body) if tag == Tag => Lambda(attributes, argumentPattern, body)
           case (tag, _, _, _)                                         => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -236,7 +246,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[LetDefinition[A]] =
       readwriter[(String, A, Name, Definition[A], Value[A])].bimap(
-        expr => (expr.tag, expr.attributes, expr.valueName, expr.valueDefinition, expr.inValue), {
+        expr => (expr.tag, expr.attributes, expr.valueName, expr.valueDefinition, expr.inValue),
+        {
           case (tag, attributes, valueName, valueDefinition, inValue) if tag == Tag =>
             LetDefinition(attributes, valueName, valueDefinition, inValue)
           case (tag, _, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -253,7 +264,8 @@ object valueCodecs {
         expr => {
           val valDefs = expr.valueDefinitions.toList
           (expr.tag, expr.attributes, valDefs, expr.inValue)
-        }, {
+        },
+        {
           case (tag, attributes, valueDefinitions, inValue) if tag == Tag =>
             LetRecursion(attributes, valueDefinitions.toMap, inValue)
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -266,7 +278,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Destructure[A]] =
       readwriter[(String, A, pattern.Pattern[A], Value[A], Value[A])].bimap(
-        expr => (expr.tag, expr.attributes, expr.pattern, expr.valueToDestruct, expr.inValue), {
+        expr => (expr.tag, expr.attributes, expr.pattern, expr.valueToDestruct, expr.inValue),
+        {
           case (tag, attributes, pattern, valueToDestruct, inValue) if tag == Tag =>
             Destructure(attributes, pattern, valueToDestruct, inValue)
           case (tag, _, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -279,7 +292,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[IfThenElse[A]] =
       readwriter[(String, A, Value[A], Value[A], Value[A])].bimap(
-        expr => (expr.tag, expr.attributes, expr.condition, expr.thenBranch, expr.elseBranch), {
+        expr => (expr.tag, expr.attributes, expr.condition, expr.thenBranch, expr.elseBranch),
+        {
           case (tag, attributes, condition, thenBranch, elseBranch) if tag == Tag =>
             IfThenElse(attributes, condition, thenBranch, elseBranch)
           case (tag, _, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -292,7 +306,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[PatternMatch[A]] =
       readwriter[(String, A, Value[A], scala.List[(pattern.Pattern[A], Value[A])])].bimap(
-        expr => (expr.tag, expr.attributes, expr.branchOutOn, expr.cases), {
+        expr => (expr.tag, expr.attributes, expr.branchOutOn, expr.cases),
+        {
           case (tag, attributes, branchOutOn, cases) if tag == Tag => PatternMatch(attributes, branchOutOn, cases)
           case (tag, _, _, _)                                      => throw DecodeError.unexpectedTag(tag, Tag)
         }
@@ -304,7 +319,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[UpdateRecord[A]] =
       readwriter[(String, A, Value[A], scala.List[(Name, Value[A])])].bimap(
-        expr => (expr.tag, expr.attributes, expr.valueToUpdate, expr.fieldsToUpdate), {
+        expr => (expr.tag, expr.attributes, expr.valueToUpdate, expr.fieldsToUpdate),
+        {
           case (tag, attributes, valueToUpdate, fieldsToUpdate) if tag == Tag =>
             UpdateRecord(attributes, valueToUpdate, fieldsToUpdate)
           case (tag, _, _, _) => throw DecodeError.unexpectedTag(tag, Tag)
@@ -317,7 +333,8 @@ object valueCodecs {
 
     implicit def readWriter[A: ReadWriter]: ReadWriter[Unit[A]] =
       readwriter[(String, A)].bimap(
-        expr => (Tag, expr.attributes), {
+        expr => (Tag, expr.attributes),
+        {
           case (tag, attributes) if tag == Tag => Value.Unit(attributes)
           case (tag: String, _)                => throw DecodeError.unexpectedTag(tag, Tag)
         }

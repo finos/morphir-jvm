@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec
 
@@ -26,8 +25,9 @@ object documentedCodecs {
 
     implicit def documentedReadWriter[A: ReadWriter]: ReadWriter[Documented[A]] =
       readwriter[(String, A)].bimap[Documented[A]](
-        instance => (instance.doc, instance.value), {
-          case (docs, value) => Documented(docs, value)
+        instance => (instance.doc, instance.value),
+        { case (docs, value) =>
+          Documented(docs, value)
         }
       )
 

@@ -12,8 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.ir.codec.`type`
 
@@ -42,13 +41,13 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
             |  []
             |]""".stripMargin
 
-        val actual = decodeString[Type.Reference[Unit]](json)
+        val actual         = decodeString[Type.Reference[Unit]](json)
         val expectedFQName = fQName(
           path(name("morphir"), name("s", "d", "k")),
           path(name("string")),
           name("string")
         )
-        val expected = Type.Reference((), expectedFQName)
+        val expected       = Type.Reference((), expectedFQName)
         assert(actual)(equalTo(Good(expected)))
 
       },
@@ -66,13 +65,13 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
             |  []
             |]""".stripMargin
 
-        val actual = decodeString[Type[Unit]](json)
+        val actual         = decodeString[Type[Unit]](json)
         val expectedFQName = fQName(
           path(name("morphir"), name("s", "d", "k")),
           path(name("string")),
           name("string")
         )
-        val expected = Type.Reference((), expectedFQName)
+        val expected       = Type.Reference((), expectedFQName)
         assert(actual)(equalTo(Good(expected)))
 
       },
@@ -90,13 +89,13 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
             |  []
             |]""".stripMargin
 
-        val actual = decodeString[Type.Reference[Unit]](json)
+        val actual         = decodeString[Type.Reference[Unit]](json)
         val expectedFQName = fQName(
           path(name("morphir"), name("s", "d", "k")),
           path(name("string")),
           name("string")
         )
-        val expected = Type.Reference((), expectedFQName)
+        val expected       = Type.Reference((), expectedFQName)
         assert(actual)(not(equalTo(Good(expected))))
 
       }

@@ -18,7 +18,7 @@ package morphir.sdk
 
 import zio.test._
 import zio.test.Assertion._
-import morphir.sdk.{LocalDate => SdkDate}
+import morphir.sdk.{ LocalDate => SdkDate }
 
 object LocalDateSpec extends DefaultRunnableSpec {
   val date = java.time.LocalDate.now

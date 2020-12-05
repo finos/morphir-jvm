@@ -23,7 +23,6 @@ import morphir.sdk.Int.Int64
 object LocalDate {
   type LocalDate = java.time.LocalDate
 
-
   def addDays(count: Long, date: LocalDate): LocalDate =
     date plusDays count
 
@@ -45,14 +44,14 @@ object LocalDate {
   def diffInMonths(fromDate: LocalDate, toDate: LocalDate): Int64 =
     MONTHS between (fromDate, toDate)
 
-  def diffInYears(fromDate: LocalDate, toDate: LocalDate): Int64  =
+  def diffInYears(fromDate: LocalDate, toDate: LocalDate): Int64 =
     YEARS between (fromDate, toDate)
 
   /**
-    * Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
-    */
+   * Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
+   */
   implicit def fromJavaTimeLocalDate(
-      localDate: java.time.LocalDate
+    localDate: java.time.LocalDate
   ): LocalDate =
     localDate
 }
