@@ -5,7 +5,7 @@ import zio.test.Assertion._
 
 object FlowSpec extends DefaultRunnableSpec {
   def spec = suite("Flow Spec")(
-    suite("Construction")(
+    suite("Constructing")(
       testM("It should be possible to create a flow that always succeeds with the unit value")(
         for {
           output <- Flow.unit.run
@@ -23,7 +23,7 @@ object FlowSpec extends DefaultRunnableSpec {
       ),
       testM("It should be possible to create a flow that always succeeds with the given output and state")(
         for {
-          actual <- Flow.succeed(output = 42, state = "What is the answer?").shiftStateToOutput.run
+          actual <- Flow.succeed(value = 42, state = "What is the answer?").shiftStateToOutput.run
         } yield assert(actual)(equalTo(OutputChannels.fromValue(("What is the answer?", 42))))
       ),
       testM("It should be possible to create a flow that always fails with a value")(
@@ -39,6 +39,16 @@ object FlowSpec extends DefaultRunnableSpec {
           } yield assert(actual)(equalTo(expected))
         }
       )
+    ),
+    suite("Combining")(
+      testM("It should be possible to combine flows using the >>> operator.") {
+        val start = Flow.parameters[List[String]]
+        val next  = Flow((_: Any, args: List[String]) => (args, args.headOption))
+        val flow  = start >>> next
+        assertM(flow.run(List("Hello", "World")))(
+          equalTo(OutputChannels(state = List("Hello", "World"), value = Option("Hello")))
+        )
+      }
     )
   )
 }

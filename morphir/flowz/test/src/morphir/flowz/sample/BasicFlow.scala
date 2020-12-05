@@ -1,4 +1,4 @@
-package morphir.flowz.examples
+package morphir.flowz.sample
 
 import morphir.flowz.DefaultRunnableFlow
 import zio.IO

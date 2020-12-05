@@ -47,8 +47,8 @@ object FlowContext {
     /**
      * A `FlowContext` whose environment must be compatible with type `R`.
      */
-    type EnvOf[+R]    = FlowContext[R, Any, Any]
-    type StateOf[+S]  = FlowContext[Any, S, Any]
-    type ParamsOf[+P] = FlowContext[Any, Any, P]
+    type Environment[+R] = FlowContext[R, Any, Any]
+    type InputState[+S]  = FlowContext[Any, S, Any]
+    type Parameters[+P]  = FlowContext[Any, Any, P]
   }
 }
