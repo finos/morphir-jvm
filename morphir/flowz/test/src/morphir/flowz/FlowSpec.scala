@@ -2,6 +2,7 @@ package morphir.flowz
 
 import zio.test._
 import zio.test.Assertion._
+import zio.test.environment.TestSystem
 
 object FlowSpec extends DefaultRunnableSpec {
   def spec = suite("Flow Spec")(
@@ -38,6 +39,16 @@ object FlowSpec extends DefaultRunnableSpec {
             expected = OutputChannels.fromValue(input * 2)
           } yield assert(actual)(equalTo(expected))
         }
+      ),
+      testM("It should be possible to create a flow from an Option when the value is a Some")(
+        for {
+          actual <- Flow.fromOption(Some(Widget("sprocket"))).run.map(_.value)
+        } yield assert(actual)(equalTo(Widget("sprocket")))
+      ),
+      testM("It should be possible to create a flow from an Option when the value is a None")(
+        for {
+          actual <- Flow.fromOption(None).run.map(_.value).run
+        } yield assert(actual)(fails(isNone))
       )
     ),
     suite("Combining")(
@@ -48,7 +59,35 @@ object FlowSpec extends DefaultRunnableSpec {
         assertM(flow.run(List("Hello", "World")))(
           equalTo(OutputChannels(state = List("Hello", "World"), value = Option("Hello")))
         )
+      },
+      testM("It should be possible to combine flows using zip") {
+        val flowA = Flow.succeed("A")
+        val flowB = Flow.succeed(1)
+        val flow  = flowA zip flowB
+        assertM(flow.run)(equalTo(OutputChannels(state = ((), ()), value = ("A", 1))))
+      },
+      testM("It should be possible to combine flows using the zip operator <*>") {
+        val flowA = Flow.succeed("A")
+        val flowB = Flow.succeed(1)
+        val flow  = flowA <*> flowB
+        assertM(flow.run)(equalTo(OutputChannels(state = ((), ()), value = ("A", 1))))
+      },
+      testM("It should be possible to sequence flows using flatMap") {
+        val flow = Flow.succeed("true").flatMap(value => Flow.succeed(s"The answer is: $value"))
+        assertM(flow.run)(equalTo(OutputChannels.fromValue("The answer is: true")))
+      },
+      testM("It should be possible to sequence flows using a for comprehension") {
+        for {
+          _ <- TestSystem.putEnv("PROFILE", "local")
+          out <- (for {
+                   cfg             <- Flow.succeed(Map("profile.local.host" -> "127.0.0.1", "profile.default.host" -> "finos.org"))
+                   selectedProfile <- Flow.fromEffect(zio.system.envOrElse("PROFILE", "default"))
+                   host            <- Flow.succeed(cfg.getOrElse(s"profile.$selectedProfile.host", "morhir.org"))
+                 } yield host).run.map(_.value)
+        } yield assert(out)(equalTo("127.0.0.1"))
       }
     )
   )
+
+  final case class Widget(name: String)
 }

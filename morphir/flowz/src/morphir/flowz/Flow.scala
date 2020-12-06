@@ -2,6 +2,8 @@ package morphir.flowz
 
 import zio._
 
+import scala.util.Try
+
 /**
  * A flow describes an operation which may have some state and input operations.
  */
@@ -17,6 +19,10 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
     that: Flow[StateOut, SOut2, Env1, Output, Err1, Output2]
   ): Flow[StateIn, SOut2, Env1, Params, Err1, Output2] =
     self andThen that
+
+  def <*>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
+  ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] = self zip that
 
   /**
    * Adapts the input provided to the flow using the provided function.
@@ -60,6 +66,9 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
   def mapEffect[Out2](fn: Output => Out2)(implicit ev: Err <:< Throwable): RFlow[StateIn, StateOut, Env, Params, Out2] =
     Flow(self.effect.mapEffect(success => success.map(fn)))
 
+  def mapError[Err2](onError: Err => Err2): Flow[StateIn, StateOut, Env, Params, Err2, Output] =
+    Flow(self.effect.mapError(onError))
+
   def mapOutputs[StateOut2, Output2](
     func: (StateOut, Output) => (StateOut2, Output2)
   ): Flow[StateIn, StateOut2, Env, Params, Err, Output2] =
@@ -97,6 +106,7 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
 }
 
 object Flow extends FlowCompanion with AnyEnvFlowCompanion {
+
   def apply[StateIn, Params, StateOut, Out](
     func: (StateIn, Params) => (StateOut, Out)
   ): TaskFlow[StateIn, StateOut, Params, Out] =
@@ -124,21 +134,44 @@ private[flowz] trait FlowCompanion {
   def context[Env, StateIn, Params]: URFlow[StateIn, Unit, Env, Params, FlowContext[Env, StateIn, Params]] =
     Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].map(OutputChannels.fromValue(_)))
 
-  def effect[In, Out](func: In => Out): TaskStep[In, Out] =
-    Flow(ZIO.environment[FlowContext.having.Parameters[In]].mapEffect { ctx =>
-      OutputChannels(value = func(ctx.inputs.params), state = ())
-    })
+  def effect[Value](value: => Value): TaskStep[Any, Value] =
+    Flow(ZIO.environment[FlowContext.having.AnyInputs].mapEffect(_ => OutputChannels.fromValue(value)))
 
   def environment[Env]: RStep[Env, Any, Env] =
     Flow(ZIO.environment[FlowContext.having.Environment[Env]].map(ctx => FlowValue.fromValue(ctx.environment)))
 
-  def fromEffect[R, E, A](effect: ZIO[R, E, A]) = ???
-  //Flow.environment[R].flatMap()
+  def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
+    Flow(ZIO.environment[FlowContext.having.AnyInputs] *> ZIO.fail(error))
+
+  def fromEffect[R, E, A](effect: ZIO[R, E, A]): Step[R, Any, E, A] =
+    Flow(
+      ZIO
+        .environment[FlowContext.having.Environment[R]]
+        .flatMap(ctx => effect.map(OutputChannels.fromValue(_)).provide(ctx.environment))
+    )
 
   def fromFunction[In, Out](func: In => Out): Step[Any, In, Nothing, Out] =
     Flow(ZIO.environment[FlowContext.having.Parameters[In]].map { ctx =>
       OutputChannels(value = func(ctx.inputs.params), state = ())
     })
+
+  def fromEither[Err, Value](value: Either[Err, Value]): Step[Any, Any, Err, Value] =
+    Flow(for {
+      _     <- ZIO.environment[FlowContext.having.AnyInputs]
+      value <- ZIO.fromEither(value)
+    } yield OutputChannels.fromValue(value))
+
+  def fromOption[Value](value: => Option[Value]): Step[Any, Any, Option[Nothing], Value] =
+    Flow(for {
+      _     <- ZIO.environment[FlowContext.having.AnyInputs]
+      value <- ZIO.fromOption(value)
+    } yield OutputChannels.fromValue(value))
+
+  def fromTry[Value](value: => Try[Value]): TaskStep[Any, Value] =
+    Flow(for {
+      _     <- ZIO.environment[FlowContext.having.AnyInputs]
+      value <- ZIO.fromTry(value)
+    } yield OutputChannels.fromValue(value))
 
   def get[State]: Flow[State, State, Any, Any, Nothing, State] =
     modify[State, State, State](s => (s, s))
@@ -196,8 +229,10 @@ private[flowz] trait FlowCompanion {
   def succeed[Value, State](value: => Value, state: => State): SrcFlow[State, Value] =
     Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels(value = value, state = state)))
 
-  def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
-    Flow(ZIO.environment[FlowContext.having.AnyInputs] *> ZIO.fail(error))
+  def task[In, Out](func: In => Out): TaskStep[In, Out] =
+    Flow(ZIO.environment[FlowContext.having.Parameters[In]].mapEffect { ctx =>
+      OutputChannels(value = func(ctx.inputs.params), state = ())
+    })
 }
 
 private[flowz] trait AnyEnvFlowCompanion {
