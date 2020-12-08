@@ -7,4 +7,5 @@ package object spark {
     Flow[StateIn, StateOut, Env with SparkModule, Input, Err, Output]
 
   type SparkStep[-Env, -In, +Err, +Out] = Step[Env with SparkModule, In, Err, Out]
+  type SparkTaskStep[-In, +Out]         = Step[SparkModule, In, Throwable, Out]
 }

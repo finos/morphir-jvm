@@ -20,9 +20,29 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
   ): Flow[StateIn, SOut2, Env1, Params, Err1, Output2] =
     self andThen that
 
+  def *>[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, Params1, Err1, Output2]
+  ): Flow[StateIn1, StateOut2, Env1, Params1, Err1, Output2] =
+    Flow(self.effect *> that.effect)
+
   def <*>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
     that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
   ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] = self zip that
+
+  def |+|[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
+  ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
+
+  def <&>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
+  ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
+
+  def <*[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, Params1, Err1, Output2]
+  ): Flow[StateIn1, StateOut, Env1, Params1, Err1, Output] =
+    Flow(self.effect <* that.effect)
 
   /**
    * Adapts the input provided to the flow using the provided function.
@@ -94,15 +114,55 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
     self.effect.provideSome[Env](env => FlowContext(environment = env, params = input, state = initialState))
 
   /**
+   * Make the state and the output value the same by making the state equal to the output.
+   */
+  def unifyOutputs: Flow[StateIn, Output, Env, Params, Err, Output] =
+    self.mapOutputs { case (_, out) =>
+      (out, out)
+    }
+
+  /**
    * Maps the output state value of this flow to the specified constant value.
    */
   def stateAs[StateOut2](stateOut: => StateOut2): Flow[StateIn, StateOut2, Env, Params, Err, Output] =
     self.mapState(_ => stateOut)
 
+  def tap[Env1 <: Env, Err1 >: Err](
+    func: (StateOut, Output) => ZIO[Env1, Err1, Any]
+  ): Flow[StateIn, StateOut, Env1, Params, Err1, Output] =
+    Flow(
+      ZIO
+        .environment[FlowContext[Env1, StateIn, Params]]
+        .flatMap(ctx => self.effect.tap(out => func(out.state, out.value).provide(ctx.environment)))
+    )
+
+  def tapState[Env1 <: Env, Err1 >: Err](
+    func: StateOut => ZIO[Env1, Err1, Any]
+  ): Flow[StateIn, StateOut, Env1, Params, Err1, Output] =
+    Flow(
+      ZIO
+        .environment[FlowContext[Env1, StateIn, Params]]
+        .flatMap(ctx => self.effect.tap(out => func(out.state).provide(ctx.environment)))
+    )
+
+  def tapValue[Env1 <: Env, Err1 >: Err](
+    func: Output => ZIO[Env1, Err1, Any]
+  ): Flow[StateIn, StateOut, Env1, Params, Err1, Output] =
+    Flow(
+      ZIO
+        .environment[FlowContext[Env1, StateIn, Params]]
+        .flatMap(ctx => self.effect.tap(out => func(out.value).provide(ctx.environment)))
+    )
+
   def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
     that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
   ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
     Flow((self.effect zip that.effect).map { case (left, right) => left zip right })
+
+  def zipPar[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
+    that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
+  ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
 }
 
 object Flow extends FlowCompanion with AnyEnvFlowCompanion {
@@ -114,6 +174,9 @@ object Flow extends FlowCompanion with AnyEnvFlowCompanion {
       val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
       OutputChannels(state = state, value = value)
     })
+
+  def environment[Env]: RStep[Env, Any, Env] =
+    Flow(ZIO.environment[FlowContext.having.Environment[Env]].map(ctx => FlowValue.fromValue(ctx.environment)))
 }
 
 private[flowz] trait FlowCompanion {
@@ -136,9 +199,6 @@ private[flowz] trait FlowCompanion {
 
   def effect[Value](value: => Value): TaskStep[Any, Value] =
     Flow(ZIO.environment[FlowContext.having.AnyInputs].mapEffect(_ => OutputChannels.fromValue(value)))
-
-  def environment[Env]: RStep[Env, Any, Env] =
-    Flow(ZIO.environment[FlowContext.having.Environment[Env]].map(ctx => FlowValue.fromValue(ctx.environment)))
 
   def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
     Flow(ZIO.environment[FlowContext.having.AnyInputs] *> ZIO.fail(error))
@@ -216,6 +276,14 @@ private[flowz] trait FlowCompanion {
     context[Any, S, Any].mapOutputs { case (_, ctx) => (ctx.inputs.state, ctx.inputs.state) }
 
   def stateful[StateIn, Params, StateOut, Out](
+    func: (StateIn, Params) => (StateOut, Out)
+  ): Flow[StateIn, StateOut, Any, Params, Nothing, Out] =
+    Flow(ZIO.environment[FlowContext.having.AnyEnv[StateIn, Params]].map { ctx =>
+      val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
+      OutputChannels(state = state, value = value)
+    })
+
+  def statefulEffect[StateIn, Params, StateOut, Out](
     func: (StateIn, Params) => (StateOut, Out)
   ): Flow[StateIn, StateOut, Any, Params, Throwable, Out] =
     Flow(ZIO.environment[FlowContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>

@@ -1,18 +1,45 @@
 package morphir.flowz.spark
 
 import morphir.flowz.spark.sparkModule.SparkModule
-import morphir.flowz.{ Flow, FlowCompanion, TaskStep }
-import org.apache.spark.sql.Dataset
+import morphir.flowz.{ Flow, FlowCompanion, FlowContext, FlowValue }
+import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
+import zio.ZIO
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 
 trait SparkFlowCompanion { self: FlowCompanion =>
-  def mapDataset[A, B <: Product: ClassTag: TypeTag](func: A => B): TaskStep[Dataset[A], Dataset[B]] = ???
-//    fromEffectful { dataSet: Dataset[A] =>
-//      import dataSet.sparkSession.implicits._
-//      dataSet.map(func)
-//    }
+
+  def createDataset[A <: Product: ClassTag: TypeTag](
+    func: SparkSession => Encoder[A] => Dataset[A]
+  ): SparkStep[Any, Any, Throwable, Dataset[A]] =
+    Flow(
+      ZIO
+        .environment[FlowContext.having.Environment[SparkModule]]
+        .mapEffect { ctx =>
+          val spark = ctx.environment.get.sparkSession
+          FlowValue.fromValue(func(spark)(spark.implicits.newProductEncoder))
+        }
+    )
+
+  def createDataset[A <: Product: ClassTag: TypeTag](
+    data: => Seq[A]
+  ): SparkStep[Any, Any, Throwable, Dataset[A]] =
+    Flow(
+      ZIO
+        .environment[FlowContext.having.Environment[SparkModule]]
+        .mapEffect { ctx =>
+          val spark = ctx.environment.get.sparkSession
+          FlowValue.fromValue(spark.createDataset(data)(spark.implicits.newProductEncoder))
+        }
+    )
+
+  def environment[Env]: SparkStep[Env, Any, Nothing, Env with SparkModule] =
+    Flow(
+      ZIO
+        .environment[FlowContext.having.Environment[Env with SparkModule]]
+        .map(ctx => FlowValue.fromValue(ctx.environment))
+    )
 
   /**
    * A step that returns the given parameters.
@@ -21,5 +48,32 @@ trait SparkFlowCompanion { self: FlowCompanion =>
     Flow.context[SparkModule, Any, In].mapEffect { ctx =>
       ctx.inputs.params
     }
+
+  def showDataset[A](): SparkStep[Any, Dataset[A], Throwable, Dataset[A]] =
+    parameters[Dataset[A]].tapValue { dataset =>
+      ZIO.effect(dataset.show())
+    }
+
+  def showDataset[A](truncate: Boolean): SparkStep[Any, Dataset[A], Throwable, Dataset[A]] =
+    parameters[Dataset[A]].tapValue { dataset =>
+      ZIO.effect(dataset.show(truncate))
+    }
+
+  def showDataset[A](numRows: Int, truncate: Boolean): SparkStep[Any, Dataset[A], Throwable, Dataset[A]] =
+    parameters[Dataset[A]].tapValue { dataset =>
+      ZIO.effect(dataset.show(numRows, truncate))
+    }
+
+  def showDataset[A](numRows: Int, truncate: Int): SparkStep[Any, Dataset[A], Throwable, Dataset[A]] =
+    parameters[Dataset[A]].tapValue { dataset =>
+      ZIO.effect(dataset.show(numRows, truncate))
+    }
+
+  def withSpark[A](func: SparkSession => A): SparkStep[Any, Any, Throwable, A] =
+    Flow(
+      ZIO
+        .environment[FlowContext.having.Environment[SparkModule]]
+        .mapEffect(ctx => FlowValue.fromValue(func(ctx.environment.get.sparkSession)))
+    )
 
 }
