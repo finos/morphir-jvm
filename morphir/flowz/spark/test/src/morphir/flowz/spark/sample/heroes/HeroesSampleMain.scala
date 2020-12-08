@@ -63,6 +63,23 @@ object HeroesSampleMain extends App {
 
   val loadAlterEgos: SparkTaskStep[Any, Dataset[AlterEgo]] = SparkFlow.createDataset(alterEgos)
 
+  val loadDataSourcesPar: Flow[Any, DataSources, Any with SparkModule, Any, Throwable, DataSources] =
+    (for {
+      abilitiesForked     <- (loadAbilities >>> SparkFlow.showDataset(false)).fork
+      heroAbilitiesForked <- (loadHeroAbilities >>> SparkFlow.showDataset(false)).fork
+      peopleForked        <- (loadPeople >>> SparkFlow.showDataset(false)).fork
+      alterEgosForked     <- (loadAlterEgos >>> SparkFlow.showDataset(false)).fork
+      abilities           <- Flow.join(abilitiesForked)
+      heroAbilities       <- Flow.join(heroAbilitiesForked)
+      people              <- Flow.join(peopleForked)
+      alterEgos           <- Flow.join(alterEgosForked)
+    } yield DataSources(
+      abilities = abilities,
+      heroAbilities = heroAbilities,
+      people = people,
+      alterEgos = alterEgos
+    )).unifyOutputs
+
   val loadDataSources: Flow[Any, DataSources, Any with SparkModule, Any, Throwable, DataSources] =
     (for {
       abilities     <- loadAbilities >>> SparkFlow.showDataset(false)
@@ -77,6 +94,13 @@ object HeroesSampleMain extends App {
     )).unifyOutputs
 
   def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
+
+    val useParallelSources = args match {
+      case head :: _ if head.equalsIgnoreCase("parallel")   => true
+      case head :: _ if head.equalsIgnoreCase("--parallel") => true
+      case _                                                => false
+    }
+
     val sparkBuilder = SparkSession
       .builder()
       .config("spark.debug.maxToStringFields", "200")
@@ -88,7 +112,7 @@ object HeroesSampleMain extends App {
       SparkModule.buildLayer(sparkBuilder)
     }
 
-    val flow = loadDataSources
+    val flow = if (useParallelSources) loadDataSourcesPar else loadDataSources
     flow
       .run(args)
       .provideCustomLayer(customLayer)

@@ -42,38 +42,38 @@ object CharSpec extends DefaultRunnableSpec {
     ),
     suite("Char.isLower specs")(
       isLowerTests(
-        Char.from('a')     -> true,
-        Char.from('b')     -> true,
-        Char.from('z')     -> true,
-        Char.from('0')     -> false,
-        Char.from('A')     -> false,
-        Char.from('-')     -> false,
+        Char.from('a') -> true,
+        Char.from('b') -> true,
+        Char.from('z') -> true,
+        Char.from('0') -> false,
+        Char.from('A') -> false,
+        Char.from('-') -> false,
         // Testing π - which is an uppercase unicode character
         Char.from(0x1d6b7) -> false
       ): _*
     ),
     suite("Char.isAlpha specs")(
       isAlphaTests(
-        Char.from('a')     -> true,
-        Char.from('b')     -> true,
-        Char.from('E')     -> true,
-        Char.from('Y')     -> true,
-        Char.from('0')     -> false,
-        Char.from('-')     -> false,
+        Char.from('a') -> true,
+        Char.from('b') -> true,
+        Char.from('E') -> true,
+        Char.from('Y') -> true,
+        Char.from('0') -> false,
+        Char.from('-') -> false,
         // Testing π - which is an uppercase unicode character
         Char.from(0x1d6b7) -> false
       ): _*
     ),
     suite("Char.isAlphaNum specs")(
       isAlphaNumTests(
-        Char.from('a')     -> true,
-        Char.from('b')     -> true,
-        Char.from('E')     -> true,
-        Char.from('Y')     -> true,
-        Char.from('0')     -> true,
-        Char.from('7')     -> true,
-        Char.from('9')     -> true,
-        Char.from('-')     -> false,
+        Char.from('a') -> true,
+        Char.from('b') -> true,
+        Char.from('E') -> true,
+        Char.from('Y') -> true,
+        Char.from('0') -> true,
+        Char.from('7') -> true,
+        Char.from('9') -> true,
+        Char.from('-') -> false,
         // Testing π - which is an uppercase unicode character
         Char.from(0x1d6b7) -> false,
         Char.from(0x1d6ba) -> false
@@ -81,24 +81,24 @@ object CharSpec extends DefaultRunnableSpec {
     ),
     suite("Char.isDigit specs")(
       isDigitTests(
-        Char.from('0')     -> true,
-        Char.from('1')     -> true,
-        Char.from('9')     -> true,
-        Char.from('a')     -> false,
-        Char.from('b')     -> false,
-        Char.from('A')     -> false,
+        Char.from('0') -> true,
+        Char.from('1') -> true,
+        Char.from('9') -> true,
+        Char.from('a') -> false,
+        Char.from('b') -> false,
+        Char.from('A') -> false,
         // Testing π - which is an uppercase unicode character
         Char.from(0x1d6b7) -> false
       ): _*
     ),
     suite("Char.isOctDigit specs")(
       isOctDigitTests(
-        Char.from('0')     -> true,
-        Char.from('1')     -> true,
-        Char.from('7')     -> true,
-        Char.from('8')     -> false,
-        Char.from('a')     -> false,
-        Char.from('A')     -> false,
+        Char.from('0') -> true,
+        Char.from('1') -> true,
+        Char.from('7') -> true,
+        Char.from('8') -> false,
+        Char.from('a') -> false,
+        Char.from('A') -> false,
         // Testing π - which is an uppercase unicode character
         Char.from(0x1d6b7) -> false
       ): _*

@@ -8,7 +8,7 @@ import scala.util.Try
  * A flow describes an operation which may have some state and input operations.
  */
 final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
-  private val effect: ZIO[FlowContext[Env, StateIn, Params], Err, OutputChannels[StateOut, Output]]
+  private[flowz] val effect: ZIO[FlowContext[Env, StateIn, Params], Err, OutputChannels[StateOut, Output]]
 ) { self =>
 
   /**
@@ -78,6 +78,13 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
 
   def flipOutputs: Flow[StateIn, Output, Env, Params, Err, StateOut] =
     self.mapOutputs { case (state, value) => (value, state) }
+
+  def fork: ForkedFlow[StateIn, StateOut, Env, Params, Err, Output] =
+    new Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, OutputChannels[StateOut, Output]]](
+      self.effect.fork.map { rt =>
+        OutputChannels.fromValue(rt)
+      }
+    )
 
   def map[Out2](fn: Output => Out2): Flow[StateIn, StateOut, Env, Params, Err, Out2] = Flow(
     self.effect.map(success => success.map(fn))
@@ -227,11 +234,20 @@ private[flowz] trait FlowCompanion {
       value <- ZIO.fromOption(value)
     } yield OutputChannels.fromValue(value))
 
+  def fromOutputs[State, Output](channels: OutputChannels[State, Output]): USrcFlow[State, Output] =
+    Flow(ZIO.succeed(channels))
+
   def fromTry[Value](value: => Try[Value]): TaskStep[Any, Value] =
     Flow(for {
       _     <- ZIO.environment[FlowContext.having.AnyInputs]
       value <- ZIO.fromTry(value)
     } yield OutputChannels.fromValue(value))
+
+  def importOutputs[State, Err, Output](effect: IO[Err, OutputChannels[State, Output]]): SrcFlow[State, Err, Output] =
+    Flow(effect)
+
+  def join[State, Err, Output](fiber: Fiber[Err, OutputChannels[State, Output]]): SrcFlow[State, Err, Output] =
+    Flow(fiber.join)
 
   def get[State]: Flow[State, State, Any, Any, Nothing, State] =
     modify[State, State, State](s => (s, s))
@@ -294,7 +310,7 @@ private[flowz] trait FlowCompanion {
   def succeed[A](value: => A): UStep[Any, A] =
     Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels.fromValue(value)))
 
-  def succeed[Value, State](value: => Value, state: => State): SrcFlow[State, Value] =
+  def succeed[Value, State](value: => Value, state: => State): USrcFlow[State, Value] =
     Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels(value = value, state = state)))
 
   def task[In, Out](func: In => Out): TaskStep[In, Out] =
