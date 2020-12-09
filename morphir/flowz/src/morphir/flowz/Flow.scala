@@ -120,7 +120,7 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
   )
 
   def shiftStateToOutput: Flow[StateIn, Unit, Env, Params, Err, (StateOut, Output)] =
-    Flow(effect.map(success => OutputChannels(state=(),value = (success.state, success.value))))
+    Flow(effect.map(success => OutputChannels(state = (), value = (success.state, success.value))))
 
   def run(implicit
     evAnyInput: Any <:< Params,

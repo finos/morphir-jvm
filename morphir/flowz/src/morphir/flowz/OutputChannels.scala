@@ -60,5 +60,5 @@ object OutputChannels {
   def fromTuple[Value, State](tuple: (State, Value)): OutputChannels[State, Value] =
     new OutputChannels(value = tuple._2, state = tuple._1)
 
-  def unified[Value](value: => Value):OutputChannels[Value,Value] = OutputChannels(value,value)
+  def unified[Value](value: => Value): OutputChannels[Value, Value] = OutputChannels(value, value)
 }
