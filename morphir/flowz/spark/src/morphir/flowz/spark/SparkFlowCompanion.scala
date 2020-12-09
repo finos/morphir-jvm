@@ -1,7 +1,7 @@
 package morphir.flowz.spark
 
 import morphir.flowz.spark.sparkModule.SparkModule
-import morphir.flowz.{ Flow, FlowCompanion, FlowContext, FlowValue }
+import morphir.flowz.{ Flow, FlowCompanion, FlowContext, FlowValue, OutputChannels }
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import zio.ZIO
 
@@ -83,4 +83,10 @@ trait SparkFlowCompanion { self: FlowCompanion =>
         .mapEffect(ctx => FlowValue.fromValue(func(ctx.environment.get.sparkSession)))
     )
 
+  def withSparkEffect[Env, Err, A](func: SparkSession => ZIO[Env, Err, A]): SparkStep[Env, Any, Err, A] =
+    Flow(
+      ZIO
+        .environment[FlowContext.having.Environment[Env with SparkModule]]
+        .flatMap(ctx => func(ctx.environment.get.sparkSession).map(OutputChannels(_)).provide(ctx.environment))
+    )
 }
