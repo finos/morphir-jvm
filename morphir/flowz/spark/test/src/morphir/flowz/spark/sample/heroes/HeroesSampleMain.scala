@@ -68,10 +68,10 @@ object HeroesSampleMain extends App {
   val loadAlterEgos: SparkStep[Clock with Console with Random, Options, Throwable, Dataset[AlterEgo]] =
     createDataset(alterEgos)
 
-  val loadDataSourcesPar: SparkStep[Clock with Console with Random, Options, Throwable, DataSources] =
+  val loadDataSourcesPar: SparkFlow[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
     SparkFlow.mapParN(loadAbilities, loadHeroAbilities, loadPeople, loadAlterEgos) {
       case (abilitiesOut, heroAbilitiesOut, peopleOut, alterEgosOut) =>
-        OutputChannels {
+        OutputChannels.unified {
           DataSources(
             abilities = abilitiesOut.value,
             heroAbilities = heroAbilitiesOut.value,
@@ -81,7 +81,7 @@ object HeroesSampleMain extends App {
         }
     }
 
-  val loadDataSourcesSeq: SparkStep[Clock with Console with Random, Options, Throwable, DataSources] =
+  val loadDataSourcesSeq: SparkFlow[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
     (for {
       abilities     <- loadAbilities
       heroAbilities <- loadHeroAbilities
@@ -92,7 +92,7 @@ object HeroesSampleMain extends App {
       heroAbilities = heroAbilities,
       people = people,
       alterEgos = alterEgos
-    ))
+    )).unifyOutputs
 
   val loadDataSources: SparkStep[Clock with Console with Random, Options, Throwable, DataSources] =
     SparkStep.parameters[Options].flatMap { options: Options =>

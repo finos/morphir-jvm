@@ -91,7 +91,7 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
   def fork: ForkedFlow[StateIn, StateOut, Env, Params, Err, Output] =
     new Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, OutputChannels[StateOut, Output]]](
       self.effect.fork.map { rt =>
-        OutputChannels.fromValue(rt)
+        OutputChannels(rt)
       }
     )
 
@@ -120,7 +120,7 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
   )
 
   def shiftStateToOutput: Flow[StateIn, Unit, Env, Params, Err, (StateOut, Output)] =
-    Flow(effect.map(success => success.toFlowValueLeft))
+    Flow(effect.map(success => OutputChannels(state=(),value = (success.state, success.value))))
 
   def run(implicit
     evAnyInput: Any <:< Params,
@@ -174,6 +174,11 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
         .environment[FlowContext[Env1, StateIn, Params]]
         .flatMap(ctx => self.effect.tap(out => func(out.value).provide(ctx.environment)))
     )
+
+  def transformEff[StateOut2, Output2](
+    func: (StateOut, Output) => (StateOut2, Output2)
+  )(implicit ev: Err <:< Throwable): Flow[StateIn, StateOut2, Env, Params, Throwable, Output2] =
+    Flow(self.effect.mapEffect(out => OutputChannels.fromTuple(func(out.state, out.value))))
 
   def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
     that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
@@ -249,7 +254,7 @@ private[flowz] trait FlowCompanion {
     })
 
   def context[Env, StateIn, Params]: URFlow[StateIn, Unit, Env, Params, FlowContext[Env, StateIn, Params]] =
-    Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].map(OutputChannels.fromValue(_)))
+    Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].map(OutputChannels(_)))
 
   def effect[Value](value: => Value): TaskStep[Any, Value] =
     Flow(ZIO.environment[FlowContext.having.AnyInputs].mapEffect(_ => OutputChannels.fromValue(value)))
@@ -266,7 +271,8 @@ private[flowz] trait FlowCompanion {
 
   def fromFunction[In, Out](func: In => Out): Step[Any, In, Nothing, Out] =
     Flow(ZIO.environment[FlowContext.having.Parameters[In]].map { ctx =>
-      OutputChannels(value = func(ctx.inputs.params), state = ())
+      val value = func(ctx.inputs.params)
+      OutputChannels(value = value, state = value)
     })
 
   def fromEither[Err, Value](value: Either[Err, Value]): Step[Any, Any, Err, Value] =
@@ -508,7 +514,8 @@ private[flowz] trait FlowCompanion {
 
   def task[In, Out](func: In => Out): TaskStep[In, Out] =
     Flow(ZIO.environment[FlowContext.having.Parameters[In]].mapEffect { ctx =>
-      OutputChannels(value = func(ctx.inputs.params), state = ())
+      val value = func(ctx.inputs.params)
+      OutputChannels(value = value, state = value)
     })
 }
 
@@ -518,7 +525,7 @@ private[flowz] trait AnyEnvFlowCompanion {
    * A step that returns the given parameters.
    */
   def parameters[P]: UStep[P, P] =
-    Flow.context[Any, Any, P].map { ctx =>
-      ctx.inputs.params
+    Flow.context[Any, Any, P].flatMap { ctx =>
+      Flow.succeed(ctx.inputs.params, ctx.inputs.params)
     }
 }

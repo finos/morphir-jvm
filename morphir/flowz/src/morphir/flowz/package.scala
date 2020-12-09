@@ -14,17 +14,17 @@ package object flowz {
   type TaskFlow[-StateIn, +StateOut, -In, +Out]     = Flow[StateIn, StateOut, Any, In, Throwable, Out]
   type ForkedFlow[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
     Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, OutputChannels[StateOut, Output]]]
-  type Step[-Env, -In, +Err, +Out] = Flow[Any, Unit, Env, In, Err, Out]
+  type Step[-Env, -In, +Err, +Out] = Flow[Any, Out, Env, In, Err, Out]
 
-  type RStep[-Env, -In, +Out] = Flow[Any, Unit, Env, In, Throwable, Out]
+  type RStep[-Env, -In, +Out] = Flow[Any, Out, Env, In, Throwable, Out]
 
-  type TaskStep[-In, +Out] = Flow[Any, Unit, Any, In, Throwable, Out]
+  type TaskStep[-In, +Out] = Flow[Any, Out, Any, In, Throwable, Out]
 
-  type UStep[-In, +Out] = Flow[Any, Unit, Any, In, Nothing, Out]
+  type UStep[-In, +Out] = Flow[Any, Out, Any, In, Nothing, Out]
 
-  type URStep[-Env, -In, +Out] = Flow[Any, Unit, Env, In, Nothing, Out]
+  type URStep[-Env, -In, +Out] = Flow[Any, Out, Env, In, Nothing, Out]
 
-  type FlowValue[+Output] = OutputChannels[Unit, Output]
+  type FlowValue[+Output] = OutputChannels[Output, Output]
   type FlowState[+S]      = OutputChannels[S, Unit]
 
   object CommandLineArgs extends Subtype[List[String]]

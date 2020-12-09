@@ -45,9 +45,7 @@ trait SparkFlowCompanion { self: FlowCompanion =>
    * A step that returns the given parameters.
    */
   def parameters[In]: SparkStep[Any, In, Throwable, In] =
-    Flow.context[SparkModule, Any, In].mapEffect { ctx =>
-      ctx.inputs.params
-    }
+    Flow.context[SparkModule, Any, In].transformEff ( (_,ctx) => (ctx.inputs.params, ctx.inputs.params) )
 
   def makeStep[Env, Params, Err, Out](
     func: Params => ZIO[Env with SparkModule, Err, Out]
@@ -87,6 +85,6 @@ trait SparkFlowCompanion { self: FlowCompanion =>
     Flow(
       ZIO
         .environment[FlowContext.having.Environment[Env with SparkModule]]
-        .flatMap(ctx => func(ctx.environment.get.sparkSession).map(OutputChannels(_)).provide(ctx.environment))
+        .flatMap(ctx => func(ctx.environment.get.sparkSession).map(OutputChannels.unified(_)).provide(ctx.environment))
     )
 }

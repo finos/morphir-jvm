@@ -49,14 +49,16 @@ object OutputChannels {
 
   val empty: OutputChannels[Option[Nothing], Option[Nothing]] = OutputChannels(None, None)
 
-  val none: OutputChannels[Unit, Option[Nothing]] = OutputChannels(value = None, state = ())
+  val none: OutputChannels[Option[Nothing], Option[Nothing]] = OutputChannels(value = None, state = None)
 
   val unit: OutputChannels[Unit, Unit] = OutputChannels((), ())
 
-  def fromValue[A](value: => A): FlowValue[A] = OutputChannels(value = value, state = ())
+  def fromValue[A](value: => A): FlowValue[A] = OutputChannels(value = value, state = value)
 
   def fromState[State](state: => State): FlowState[State] = OutputChannels(state = state, value = ())
 
   def fromTuple[Value, State](tuple: (State, Value)): OutputChannels[State, Value] =
     new OutputChannels(value = tuple._2, state = tuple._1)
+
+  def unified[Value](value: => Value):OutputChannels[Value,Value] = OutputChannels(value,value)
 }

@@ -24,8 +24,8 @@ object FlowSpec extends DefaultRunnableSpec {
       ),
       testM("It should be possible to create a flow that always succeeds with the given output and state")(
         for {
-          actual <- Flow.succeed(value = 42, state = "What is the answer?").shiftStateToOutput.run
-        } yield assert(actual)(equalTo(OutputChannels.fromValue(("What is the answer?", 42))))
+          actual <- Flow.succeed(value = 42, state = "What is the answer?").run
+        } yield assert(actual)(equalTo(OutputChannels(state = "What is the answer?", value = 42)))
       ),
       testM("It should be possible to create a flow that always fails with a value")(
         for {
@@ -64,13 +64,13 @@ object FlowSpec extends DefaultRunnableSpec {
         val flowA = Flow.succeed("A")
         val flowB = Flow.succeed(1)
         val flow  = flowA zip flowB
-        assertM(flow.run)(equalTo(OutputChannels(state = ((), ()), value = ("A", 1))))
+        assertM(flow.run)(equalTo(OutputChannels(state = ("A", 1), value = ("A", 1))))
       },
       testM("It should be possible to combine flows using the zip operator <*>") {
         val flowA = Flow.succeed("A")
         val flowB = Flow.succeed(1)
         val flow  = flowA <*> flowB
-        assertM(flow.run)(equalTo(OutputChannels(state = ((), ()), value = ("A", 1))))
+        assertM(flow.run)(equalTo(OutputChannels(state = ("A", 1), value = ("A", 1))))
       },
       testM("It should be possible to sequence flows using flatMap") {
         val flow = Flow.succeed("true").flatMap(value => Flow.succeed(s"The answer is: $value"))
