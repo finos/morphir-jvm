@@ -1,9 +1,8 @@
 package morphir.flowz.spark.sample.heroes
 
 import io.getquill.QuillSparkContext
-import morphir.flowz._
-import morphir.flowz.spark.sparkModule.SparkModule
-import morphir.flowz.spark.{ SparkFlow, SparkStep, sparkModule }
+import morphir.flowz.spark.default._
+import sparkModule.SparkModule
 import org.apache.spark.sql.{ Dataset, SQLContext, SparkSession }
 import zio._
 import zio.clock.Clock

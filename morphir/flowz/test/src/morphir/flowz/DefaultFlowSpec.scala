@@ -3,9 +3,10 @@ package morphir.flowz
 import zio.test._
 import zio.test.Assertion._
 import zio.test.environment.TestSystem
+import morphir.flowz.default._
 
-object FlowSpec extends DefaultRunnableSpec {
-  def spec = suite("Flow Spec")(
+object DefaultFlowSpec extends DefaultRunnableSpec {
+  def spec = suite("Flow Spec fro (default)")(
     suite("Constructing")(
       testM("It should be possible to create a flow that always succeeds with the unit value")(
         for {
