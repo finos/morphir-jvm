@@ -102,19 +102,50 @@ object HeroesSampleMain extends App {
         loadDataSourcesSeq
     }
 
-  val getAllHeroNames = SparkStep.state[DataSources].flatMap { dataSources =>
-    SparkStep.withSpark { spark =>
-      implicit val sqlContext: SQLContext = spark.sqlContext
-      import sqlContext.implicits._
-      import io.getquill.QuillSparkContext._
+  val getAllHeroNames: SparkFlow[DataSources, DataSources, Any, Any, Throwable, Dataset[String]] =
+    SparkStep
+      .state[DataSources]
+      .flatMap { dataSources =>
+        SparkStep.withSpark { spark =>
+          implicit val sqlContext: SQLContext = spark.sqlContext
+          import sqlContext.implicits._
+          import io.getquill.QuillSparkContext._
 
-      val heroAbilities = quote(liftQuery(dataSources.heroAbilities))
-      val heroes = quote {
-        heroAbilities.map(h => h.hero).distinct
+          QuillSparkContext.run {
+            liftQuery(dataSources.heroAbilities).map(abilities => abilities.hero) union liftQuery(dataSources.alterEgos)
+              .map(alter => alter.heroName)
+          }
+        }.stateAs(dataSources)
       }
-      QuillSparkContext.run(heroes)
+      .tapValue(dataset => ZIO.effect(dataset.show(false)))
+
+  val getAllHeroAbilities
+    : SparkFlow[DataSources, DataSources, Any, Dataset[String], Throwable, Dataset[HeroAbilities]] =
+    Step.context[Any, DataSources, Dataset[String]].flatMap { ctx =>
+      val heroAbilities = ctx.inputs.state.heroAbilities
+      val abilities     = ctx.inputs.state.abilities
+      val heroNames     = ctx.inputs.params
+
+      SparkStep.withSpark { spark =>
+        implicit val sqlContext: SQLContext = spark.sqlContext
+        import sqlContext.implicits._
+        import io.getquill.QuillSparkContext._
+
+        // Gather all the hero to ability details we have
+        val heroAbilityDetails = QuillSparkContext.run {
+          for {
+            heroAbility <- liftQuery(heroAbilities)
+            ability     <- liftQuery(abilities).join(ability => ability.name == heroAbility.ability)
+          } yield HeroAbilityRow(hero = heroAbility.hero, ability = ability)
+        }
+
+        // Group by the hero name
+        heroAbilityDetails.groupByKey(ha => ha.hero).mapGroups { (hero, row) =>
+          HeroAbilities(hero = hero, abilities = row.map(_.ability).toSet)
+        }
+
+      }.stateAs(ctx.inputs.state)
     }
-  }
 
   val parseCommandLine: Step[Any, List[String], Nothing, Options] =
     Step.makeStep { args: List[String] =>
@@ -141,7 +172,9 @@ object HeroesSampleMain extends App {
       SparkModule.buildLayer(sparkBuilder)
     }
 
-    val flow = parseCommandLine >>> loadDataSources.unifyOutputs >>> getAllHeroNames >>> SparkStep.showDataset(false)
+    val flow =
+      parseCommandLine >>> loadDataSources.unifyOutputs >>> getAllHeroNames >>> getAllHeroAbilities >>> SparkStep
+        .showDataset(false)
     flow
       .run(args)
       .provideCustomLayer(customLayer)
@@ -181,4 +214,5 @@ final case class AlterEgo(firstName: String, lastName: String, heroName: String,
 final case class Hero(name: String, abilities: Set[Ability], alter: Option[AlterEgo])
 final case class HeroAbility(hero: String, ability: String)
 final case class Ability(name: String, description: String)
+final case class HeroAbilityRow(hero: String, ability: Ability)
 final case class HeroAbilities(hero: String, abilities: Set[Ability])
