@@ -44,7 +44,7 @@ final case class OutputChannels[+State, +Value](value: Value, state: State) { se
 }
 object OutputChannels {
 
-  def apply[Value](value: => Value):OutputChannels[Unit, Value] =
+  def apply[Value](value: => Value): OutputChannels[Unit, Value] =
     OutputChannels(value = value, state = ())
 
   val empty: OutputChannels[Option[Nothing], Option[Nothing]] = OutputChannels(None, None)

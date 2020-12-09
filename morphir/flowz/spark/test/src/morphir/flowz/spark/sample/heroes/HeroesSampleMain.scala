@@ -123,9 +123,7 @@ object HeroesSampleMain extends App {
     : SparkFlow[DataSources, DataSources, Any, Dataset[String], Throwable, Dataset[HeroAbilities]] =
     Step.context[Any, DataSources, Dataset[String]].flatMap { ctx =>
       val heroAbilities = ctx.inputs.state.heroAbilities
-      val abilities     = ctx.inputs.state.abilities
-      val heroNames     = ctx.inputs.params
-
+      val abilities     = ctx.inputs.state.abil
       SparkStep.withSpark { spark =>
         implicit val sqlContext: SQLContext = spark.sqlContext
         import sqlContext.implicits._
