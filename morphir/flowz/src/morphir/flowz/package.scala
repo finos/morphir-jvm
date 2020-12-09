@@ -3,6 +3,8 @@ import zio._
 import zio.prelude._
 
 package object flowz {
+  type FOuts[+S, +A] = OutputChannels[S, A]
+  val FOuts: OutputChannels.type = OutputChannels
 
   type USrcFlow[+StateOut, +Out]                    = Flow[Any, StateOut, Any, Any, Nothing, Out]
   type SrcFlow[+StateOut, +Err, +Out]               = Flow[Any, StateOut, Any, Any, Err, Out]

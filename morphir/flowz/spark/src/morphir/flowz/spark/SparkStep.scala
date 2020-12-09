@@ -1,12 +1,14 @@
 package morphir.flowz.spark
-import morphir.flowz._
+
+import morphir.flowz.spark.sparkModule.SparkModule
+import morphir.flowz.{ Flow, FlowCompanion, OutputChannels, TaskStep }
 import org.apache.spark.sql.Dataset
-import zio._
+import zio.RIO
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 
-object SparkFlow extends FlowCompanion with SparkFlowCompanion {
+object SparkStep extends FlowCompanion with SparkFlowCompanion {
   def mapDataset[A, B <: Product: ClassTag: TypeTag](func: A => B): TaskStep[Dataset[A], Dataset[B]] =
     Flow.task { dataset: Dataset[A] =>
       import dataset.sparkSession.implicits._
@@ -17,4 +19,10 @@ object SparkFlow extends FlowCompanion with SparkFlowCompanion {
     func: (S1, Dataset[A]) => (S2, Dataset[B])
   ): Flow[S1, S2, Any, Dataset[A], Throwable, Dataset[B]] =
     Flow.statefulEffect(func)
+
+  def apply[Env, Params, Out](func: Params => RIO[Env with SparkModule, Out]): SparkStep[Env, Params, Throwable, Out] =
+    Flow.context[Env with SparkModule, Any, Params].flatMap { ctx =>
+      Flow(func(ctx.inputs.params).provide(ctx.environment).map(out => OutputChannels.fromValue(out)))
+    }
+
 }

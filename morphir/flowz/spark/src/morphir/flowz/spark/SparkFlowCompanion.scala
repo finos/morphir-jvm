@@ -49,6 +49,13 @@ trait SparkFlowCompanion { self: FlowCompanion =>
       ctx.inputs.params
     }
 
+  def makeStep[Env, Params, Err, Out](
+    func: Params => ZIO[Env with SparkModule, Err, Out]
+  ): SparkStep[Env, Params, Err, Out] =
+    Flow.parameters[Params].flatMap { params =>
+      Flow.fromEffect(func(params))
+    }
+
   def showDataset[A](): SparkStep[Any, Dataset[A], Throwable, Dataset[A]] =
     parameters[Dataset[A]].tapValue { dataset =>
       ZIO.effect(dataset.show())

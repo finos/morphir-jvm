@@ -2,9 +2,14 @@ package morphir.flowz.spark.sample.heroes
 
 import morphir.flowz._
 import morphir.flowz.spark.sparkModule.SparkModule
-import morphir.flowz.spark.{ SparkFlow, SparkStep, SparkTaskStep }
-import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
+import morphir.flowz.spark.{SparkFlow, SparkStep, sparkModule}
+import org.apache.spark.sql.{Dataset, SparkSession}
 import zio._
+import zio.clock.Clock
+import zio.random.Random
+
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
 
 object HeroesSampleMain extends App {
 
@@ -49,57 +54,65 @@ object HeroesSampleMain extends App {
     AlterEgo(firstName = "Jean", lastName = "Grey", heroName = "Phoenix", isSecret = true)
   )
 
-  val loadAbilities: SparkStep[Any, Any, Throwable, Dataset[Ability]] = SparkFlow.createDataset {
-    spark => implicit encoder: Encoder[Ability] =>
-      spark.createDataset(abilities)
-  }
+  val loadAbilities: SparkStep[Clock with Random, Options, Throwable, Dataset[Ability]] =
+    createDataset(abilities)
 
-  val loadHeroAbilities: SparkStep[Any, Any, Throwable, Dataset[HeroAbility]] = SparkFlow.createDataset {
-    spark => implicit encoder: Encoder[HeroAbility] =>
-      spark.createDataset(heroAbilities)
-  }
+  val loadHeroAbilities: SparkStep[Clock with Random, Options, Throwable, Dataset[HeroAbility]] =
+    createDataset(heroAbilities)
 
-  val loadPeople: SparkTaskStep[Any, Dataset[Person]] = SparkFlow.createDataset(people)
+  val loadPeople: SparkStep[Clock with Random, Options, Throwable, Dataset[Person]] =
+    createDataset(people)
 
-  val loadAlterEgos: SparkTaskStep[Any, Dataset[AlterEgo]] = SparkFlow.createDataset(alterEgos)
+  val loadAlterEgos: SparkStep[Clock with Random, Options, Throwable, Dataset[AlterEgo]] =
+    createDataset(alterEgos)
 
-  val loadDataSourcesPar: Flow[Any, DataSources, Any with SparkModule, Any, Throwable, DataSources] =
+  val loadDataSourcesPar: SparkStep[Clock with Random, Options, Throwable, DataSources] =
+    SparkFlow.mapParN(loadAbilities, loadHeroAbilities, loadPeople, loadAlterEgos) {
+      case (abilitiesOut, heroAbilitiesOut, peopleOut, alterEgosOut) =>
+        OutputChannels {
+          DataSources(
+            abilities = abilitiesOut.value,
+            heroAbilities = heroAbilitiesOut.value,
+            people = peopleOut.value,
+            alterEgos = alterEgosOut.value
+          )
+        }
+    }
+
+  val loadDataSourcesSeq: SparkStep[Clock with Random, Options, Throwable, DataSources] =
     (for {
-      abilitiesForked     <- (loadAbilities >>> SparkFlow.showDataset(false)).fork
-      heroAbilitiesForked <- (loadHeroAbilities >>> SparkFlow.showDataset(false)).fork
-      peopleForked        <- (loadPeople >>> SparkFlow.showDataset(false)).fork
-      alterEgosForked     <- (loadAlterEgos >>> SparkFlow.showDataset(false)).fork
-      abilities           <- Flow.join(abilitiesForked)
-      heroAbilities       <- Flow.join(heroAbilitiesForked)
-      people              <- Flow.join(peopleForked)
-      alterEgos           <- Flow.join(alterEgosForked)
+      abilities     <- loadAbilities
+      heroAbilities <- loadHeroAbilities
+      people        <- loadPeople
+      alterEgos     <- loadAlterEgos
     } yield DataSources(
       abilities = abilities,
       heroAbilities = heroAbilities,
       people = people,
       alterEgos = alterEgos
-    )).unifyOutputs
+    ))
 
-  val loadDataSources: Flow[Any, DataSources, Any with SparkModule, Any, Throwable, DataSources] =
-    (for {
-      abilities     <- loadAbilities >>> SparkFlow.showDataset(false)
-      heroAbilities <- loadHeroAbilities >>> SparkFlow.showDataset(false)
-      people        <- loadPeople >>> SparkFlow.showDataset(false)
-      alterEgos     <- loadAlterEgos >>> SparkFlow.showDataset(false)
-    } yield DataSources(
-      abilities = abilities,
-      heroAbilities = heroAbilities,
-      people = people,
-      alterEgos = alterEgos
-    )).unifyOutputs
+  val loadDataSources: SparkStep[Clock with Random, Options, Throwable, DataSources] =
+    SparkStep.parameters[Options].flatMap {options:Options =>
+      if(options.parallelLoads)
+        loadDataSourcesPar
+      else
+        loadDataSourcesSeq
+    }
+
+  val parseCommandLine: Step[Any, List[String], Nothing, Options] =
+    Step.makeStep { args:List[String] =>
+      ZIO.succeed {
+        val useParallelSources = args match {
+          case head :: _ if head.equalsIgnoreCase("parallel")   => true
+          case head :: _ if head.equalsIgnoreCase("--parallel") => true
+          case _                                                => false
+        }
+        Options(parallelLoads = useParallelSources)
+      }
+    }
 
   def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
-
-    val useParallelSources = args match {
-      case head :: _ if head.equalsIgnoreCase("parallel")   => true
-      case head :: _ if head.equalsIgnoreCase("--parallel") => true
-      case _                                                => false
-    }
 
     val sparkBuilder = SparkSession
       .builder()
@@ -112,7 +125,7 @@ object HeroesSampleMain extends App {
       SparkModule.buildLayer(sparkBuilder)
     }
 
-    val flow = if (useParallelSources) loadDataSourcesPar else loadDataSources
+    val flow = parseCommandLine >>> loadDataSources
     flow
       .run(args)
       .provideCustomLayer(customLayer)
@@ -123,6 +136,17 @@ object HeroesSampleMain extends App {
       .exitCode
   }
 
+  def createDataset[A <: Product: ClassTag: TypeTag](
+    data: => Seq[A]
+  ): SparkStep[Clock with Random, Options, Throwable, Dataset[A]] =
+    SparkStep.makeStep { options: Options =>
+      for {
+        delay <- random.nextLongBetween(0, options.maxDelayInMillis).map(zio.duration.Duration.fromMillis)
+        data  <- sparkModule.createDataset(data).delay(delay)
+        _     <- sparkModule.withSpark(_ => data.show(false))
+      } yield data
+    }
+
   final case class DataSources(
     abilities: Dataset[Ability],
     heroAbilities: Dataset[HeroAbility],
@@ -130,6 +154,7 @@ object HeroesSampleMain extends App {
     alterEgos: Dataset[AlterEgo]
   )
 
+  final case class Options(parallelLoads: Boolean = false, showDatasets: Boolean = true, maxDelayInMillis: Long = 3000)
 }
 
 final case class Person(firstName: String, lastName: String)

@@ -1,6 +1,7 @@
 package morphir.flowz
 
 import zio._
+import zio.clock.Clock
 
 import scala.util.Try
 
@@ -69,6 +70,14 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
    */
   def as[Out2](out: => Out2): Flow[StateIn, StateOut, Env, Params, Err, Out2] = self.map(_ => out)
 
+  def delay(duration: zio.duration.Duration): Flow[StateIn, StateOut, Env with Clock, Params, Err, Output] =
+    Flow(
+      for {
+        ctx    <- ZIO.environment[FlowContext[Env with Clock, StateIn, Params]]
+        result <- self.effect.provide(ctx).delay(duration).provide(ctx.environment)
+      } yield result
+    )
+
   def flatMap[S, Env1 <: Env, In1 <: Params, Err1 >: Err, Out1](
     func: Output => Flow[StateOut, S, Env1, In1, Err1, Out1]
   ): Flow[StateIn, S, Env1, In1, Err1, Out1] =
@@ -100,6 +109,11 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
     func: (StateOut, Output) => (StateOut2, Output2)
   ): Flow[StateIn, StateOut2, Env, Params, Err, Output2] =
     Flow(self.effect.map(out => OutputChannels.fromTuple(func(out.state, out.value))))
+
+  def mapOutputChannels[StateOut2, Output2](
+    func: FOuts[StateOut, Output] => FOuts[StateOut2, Output2]
+  ): Flow[StateIn, StateOut2, Env, Params, Err, Output2] =
+    Flow(self.effect.map(func))
 
   def mapState[SOut2](fn: StateOut => SOut2): Flow[StateIn, SOut2, Env, Params, Err, Output] = Flow(
     self.effect.map(success => success.mapState(fn))
@@ -170,6 +184,34 @@ final case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
     that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
   ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
     Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
+
+  def zipWith[
+    StateIn1 <: StateIn,
+    Env1 <: Env,
+    In1 <: Params,
+    Err1 >: Err,
+    StateOut2,
+    Output2,
+    FinalState,
+    FinalOutput
+  ](that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2])(
+    f: (OutputChannels[StateOut, Output], OutputChannels[StateOut2, Output2]) => OutputChannels[FinalState, FinalOutput]
+  ): Flow[StateIn1, FinalState, Env1, In1, Err1, FinalOutput] =
+    Flow((self.effect zipWith that.effect)(f))
+
+  def zipWithPar[
+    StateIn1 <: StateIn,
+    Env1 <: Env,
+    In1 <: Params,
+    Err1 >: Err,
+    StateOut2,
+    Output2,
+    FinalState,
+    FinalOutput
+  ](that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2])(
+    f: (FOuts[StateOut, Output], FOuts[StateOut2, Output2]) => FOuts[FinalState, FinalOutput]
+  ): Flow[StateIn1, FinalState, Env1, In1, Err1, FinalOutput] =
+    Flow((self.effect zipWithPar that.effect)(f))
 }
 
 object Flow extends FlowCompanion with AnyEnvFlowCompanion {
@@ -184,6 +226,11 @@ object Flow extends FlowCompanion with AnyEnvFlowCompanion {
 
   def environment[Env]: RStep[Env, Any, Env] =
     Flow(ZIO.environment[FlowContext.having.Environment[Env]].map(ctx => FlowValue.fromValue(ctx.environment)))
+
+  def makeStep[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
+    Flow.parameters[Params].flatMap { params =>
+      Flow.fromEffect(func(params))
+    }
 }
 
 private[flowz] trait FlowCompanion {
@@ -251,6 +298,152 @@ private[flowz] trait FlowCompanion {
 
   def get[State]: Flow[State, State, Any, Any, Nothing, State] =
     modify[State, State, State](s => (s, s))
+
+  def mapN[S0, R, P, Err, SA, A, SB, B, SC, C](flowA: Flow[S0, SA, R, P, Err, A], flowB: Flow[S0, SB, R, P, Err, B])(
+    f: (FOuts[SA, A], FOuts[SB, B]) => FOuts[SC, C]
+  ): Flow[S0, SC, R, P, Err, C] =
+    flowA.zipWith(flowB)(f)
+
+  def mapParN[S0, R, P, Err, SA, A, SB, B, SC, C](flowA: Flow[S0, SA, R, P, Err, A], flowB: Flow[S0, SB, R, P, Err, B])(
+    f: (FOuts[SA, A], FOuts[SB, B]) => FOuts[SC, C]
+  ): Flow[S0, SC, R, P, Err, C] =
+    flowA.zipWithPar(flowB)(f)
+
+  def mapParN[S0, R, P, Err, SA, A, SB, B, SC, C, SD, D](
+    flowA: Flow[S0, SA, R, P, Err, A],
+    flowB: Flow[S0, SB, R, P, Err, B],
+    flowC: Flow[S0, SC, R, P, Err, C]
+  )(
+    f: (FOuts[SA, A], FOuts[SB, B], FOuts[SC, C]) => FOuts[SD, D]
+  ): Flow[S0, SD, R, P, Err, D] =
+    (flowA <&> flowB <&> flowC).mapOutputChannels { case OutputChannels(((a, b), c), ((sa, sb), sc)) =>
+      val outsA = OutputChannels(state = sa, value = a)
+      val outsB = OutputChannels(state = sb, value = b)
+      val outsC = OutputChannels(state = sc, value = c)
+      f(outsA, outsB, outsC)
+    }
+
+  def mapParN[S0, R, P, Err, SA, A, SB, B, SC, C, SD, D, SF, F](
+    flowA: Flow[S0, SA, R, P, Err, A],
+    flowB: Flow[S0, SB, R, P, Err, B],
+    flowC: Flow[S0, SC, R, P, Err, C],
+    flowD: Flow[S0, SD, R, P, Err, D]
+  )(
+    f: (FOuts[SA, A], FOuts[SB, B], FOuts[SC, C], FOuts[SD, D]) => FOuts[SF, F]
+  ): Flow[S0, SF, R, P, Err, F] =
+    (flowA <&> flowB <&> flowC <&> flowD).mapOutputChannels {
+      case OutputChannels((((a, b), c), d), (((sa, sb), sc), sd)) =>
+        val outsA = OutputChannels(state = sa, value = a)
+        val outsB = OutputChannels(state = sb, value = b)
+        val outsC = OutputChannels(state = sc, value = c)
+        val outsD = OutputChannels(state = sd, value = d)
+        f(outsA, outsB, outsC, outsD)
+    }
+
+  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6](
+    flow1: Flow[S0, S1, R, P, Err, A1],
+    flow2: Flow[S0, S2, R, P, Err, A2],
+    flow3: Flow[S0, S3, R, P, Err, A3],
+    flow4: Flow[S0, S4, R, P, Err, A4],
+    flow5: Flow[S0, S5, R, P, Err, A5]
+  )(
+    f: (FOuts[S1, A1], FOuts[S2, A2], FOuts[S3, A3], FOuts[S4, A4], FOuts[S5, A5]) => FOuts[S6, A6]
+  ): Flow[S0, S6, R, P, Err, A6] =
+    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5).mapOutputChannels {
+      case OutputChannels(((((a, b), c), d), e), ((((sa, sb), sc), sd), se)) =>
+        val outsA = OutputChannels(state = sa, value = a)
+        val outsB = OutputChannels(state = sb, value = b)
+        val outsC = OutputChannels(state = sc, value = c)
+        val outsD = OutputChannels(state = sd, value = d)
+        val outsE = OutputChannels(state = se, value = e)
+        f(outsA, outsB, outsC, outsD, outsE)
+    }
+
+  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6, S7, A7](
+    flow1: Flow[S0, S1, R, P, Err, A1],
+    flow2: Flow[S0, S2, R, P, Err, A2],
+    flow3: Flow[S0, S3, R, P, Err, A3],
+    flow4: Flow[S0, S4, R, P, Err, A4],
+    flow5: Flow[S0, S5, R, P, Err, A5],
+    flow6: Flow[S0, S6, R, P, Err, A6]
+  )(
+    func: (FOuts[S1, A1], FOuts[S2, A2], FOuts[S3, A3], FOuts[S4, A4], FOuts[S5, A5], FOuts[S6, A6]) => FOuts[S7, A7]
+  ): Flow[S0, S7, R, P, Err, A7] =
+    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6).mapOutputChannels {
+      case OutputChannels((((((a, b), c), d), e), f), (((((sa, sb), sc), sd), se), sf)) =>
+        val outsA = OutputChannels(state = sa, value = a)
+        val outsB = OutputChannels(state = sb, value = b)
+        val outsC = OutputChannels(state = sc, value = c)
+        val outsD = OutputChannels(state = sd, value = d)
+        val outsE = OutputChannels(state = se, value = e)
+        val outsF = OutputChannels(state = sf, value = f)
+        func(outsA, outsB, outsC, outsD, outsE, outsF)
+    }
+
+  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6, S7, A7, S8, A8](
+    flow1: Flow[S0, S1, R, P, Err, A1],
+    flow2: Flow[S0, S2, R, P, Err, A2],
+    flow3: Flow[S0, S3, R, P, Err, A3],
+    flow4: Flow[S0, S4, R, P, Err, A4],
+    flow5: Flow[S0, S5, R, P, Err, A5],
+    flow6: Flow[S0, S6, R, P, Err, A6],
+    flow7: Flow[S0, S7, R, P, Err, A7]
+  )(
+    func: (
+      FOuts[S1, A1],
+      FOuts[S2, A2],
+      FOuts[S3, A3],
+      FOuts[S4, A4],
+      FOuts[S5, A5],
+      FOuts[S6, A6],
+      FOuts[S7, A7]
+    ) => FOuts[S8, A8]
+  ): Flow[S0, S8, R, P, Err, A8] =
+    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6 <&> flow7).mapOutputChannels {
+      case OutputChannels(((((((a, b), c), d), e), f), g), ((((((sa, sb), sc), sd), se), sf), sg)) =>
+        val outsA = OutputChannels(state = sa, value = a)
+        val outsB = OutputChannels(state = sb, value = b)
+        val outsC = OutputChannels(state = sc, value = c)
+        val outsD = OutputChannels(state = sd, value = d)
+        val outsE = OutputChannels(state = se, value = e)
+        val outsF = OutputChannels(state = sf, value = f)
+        val outsG = OutputChannels(state = sg, value = g)
+        func(outsA, outsB, outsC, outsD, outsE, outsF, outsG)
+    }
+
+  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6, S7, A7, S8, A8, S9, A9](
+    flow1: Flow[S0, S1, R, P, Err, A1],
+    flow2: Flow[S0, S2, R, P, Err, A2],
+    flow3: Flow[S0, S3, R, P, Err, A3],
+    flow4: Flow[S0, S4, R, P, Err, A4],
+    flow5: Flow[S0, S5, R, P, Err, A5],
+    flow6: Flow[S0, S6, R, P, Err, A6],
+    flow7: Flow[S0, S7, R, P, Err, A7],
+    flow8: Flow[S0, S8, R, P, Err, A8]
+  )(
+    func: (
+      FOuts[S1, A1],
+      FOuts[S2, A2],
+      FOuts[S3, A3],
+      FOuts[S4, A4],
+      FOuts[S5, A5],
+      FOuts[S6, A6],
+      FOuts[S7, A7],
+      FOuts[S8, A8]
+    ) => FOuts[S9, A9]
+  ): Flow[S0, S9, R, P, Err, A9] =
+    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6 <&> flow7 <&> flow8).mapOutputChannels {
+      case OutputChannels((((((((a, b), c), d), e), f), g), h), (((((((sa, sb), sc), sd), se), sf), sg), sh)) =>
+        val outsA = OutputChannels(state = sa, value = a)
+        val outsB = OutputChannels(state = sb, value = b)
+        val outsC = OutputChannels(state = sc, value = c)
+        val outsD = OutputChannels(state = sd, value = d)
+        val outsE = OutputChannels(state = se, value = e)
+        val outsF = OutputChannels(state = sf, value = f)
+        val outsG = OutputChannels(state = sg, value = g)
+        val outsH = OutputChannels(state = sh, value = h)
+        func(outsA, outsB, outsC, outsD, outsE, outsF, outsG, outsH)
+    }
 
   def modify[StateIn, StateOut, Output](
     func: StateIn => (StateOut, Output)
