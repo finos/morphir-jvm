@@ -41,13 +41,13 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
             |  []
             |]""".stripMargin
 
-        val actual         = decodeString[Type.Reference[Unit]](json)
+        val actual = decodeString[Type.Reference[Unit]](json)
         val expectedFQName = fQName(
           path(name("morphir"), name("s", "d", "k")),
           path(name("string")),
           name("string")
         )
-        val expected       = Type.Reference((), expectedFQName)
+        val expected = Type.Reference((), expectedFQName)
         assert(actual)(equalTo(Good(expected)))
 
       },
@@ -65,13 +65,13 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
             |  []
             |]""".stripMargin
 
-        val actual         = decodeString[Type[Unit]](json)
+        val actual = decodeString[Type[Unit]](json)
         val expectedFQName = fQName(
           path(name("morphir"), name("s", "d", "k")),
           path(name("string")),
           name("string")
         )
-        val expected       = Type.Reference((), expectedFQName)
+        val expected = Type.Reference((), expectedFQName)
         assert(actual)(equalTo(Good(expected)))
 
       },
@@ -89,13 +89,13 @@ object ReferenceCodecSpec extends DefaultRunnableSpec with JsonSpec {
             |  []
             |]""".stripMargin
 
-        val actual         = decodeString[Type.Reference[Unit]](json)
+        val actual = decodeString[Type.Reference[Unit]](json)
         val expectedFQName = fQName(
           path(name("morphir"), name("s", "d", "k")),
           path(name("string")),
           name("string")
         )
-        val expected       = Type.Reference((), expectedFQName)
+        val expected = Type.Reference((), expectedFQName)
         assert(actual)(not(equalTo(Good(expected))))
 
       }

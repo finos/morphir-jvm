@@ -1,6 +1,6 @@
 package morphir.flowz.sample
 
-import morphir.flowz.DefaultRunnableFlow
+import morphir.flowz.default._
 import zio.IO
 
 object BasicFlow extends DefaultRunnableFlow {

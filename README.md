@@ -42,3 +42,9 @@ Code needs to be formatted according to `scalafmt` rules. To run `scalafmt` on a
 ```bash
 ./mill mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
 ```
+
+or in watch mode to reformat changed files:
+
+```bash
+./mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
+```
