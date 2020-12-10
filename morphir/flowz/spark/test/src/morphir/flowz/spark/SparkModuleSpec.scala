@@ -37,15 +37,15 @@ object SparkModuleSpec extends SparkSpec {
     suite("Calling makeDataset")(
       testM("It should support creation of a Dataset given just a sparkSession")(
         for {
-          data   <- ZIO.succeed(
-                      Seq(
-                        ("James ", "", "Smith", "36636", "M", 3000),
-                        ("Michael ", "Rose", "", "40288", "M", 4000),
-                        ("Robert ", "", "Williams", "42114", "M", 4000),
-                        ("Maria ", "Anne", "Jones", "39192", "F", 4000),
-                        ("Jen", "Mary", "Brown", "", "F", -1)
-                      )
+          data <- ZIO.succeed(
+                    Seq(
+                      ("James ", "", "Smith", "36636", "M", 3000),
+                      ("Michael ", "Rose", "", "40288", "M", 4000),
+                      ("Robert ", "", "Williams", "42114", "M", 4000),
+                      ("Maria ", "Anne", "Jones", "39192", "F", 4000),
+                      ("Jen", "Mary", "Brown", "", "F", -1)
                     )
+                  )
           columns = Seq("firstname", "middlename", "lastname", "dob", "gender", "salary")
           actual <- sparkModule.makeDataset { spark =>
                       import spark.sqlContext.implicits._

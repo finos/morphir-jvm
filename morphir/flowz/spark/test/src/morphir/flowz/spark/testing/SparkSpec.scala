@@ -16,7 +16,7 @@ abstract class SparkSpec extends RunnableSpec[SparkTestingEnv, Any] {
 
   val sparkTestingLayer: ULayer[SparkTestingEnv] = {
     val logFormat = "[correlation-id = %s] %s"
-    val logging   = Slf4jLogger.make { (context, message) =>
+    val logging = Slf4jLogger.make { (context, message) =>
       val correlationId = LogAnnotation.CorrelationId.render(
         context.get(LogAnnotation.CorrelationId)
       )
