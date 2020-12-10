@@ -1,4 +1,5 @@
 package morphir.flowz.spark
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 
 import scala.reflect.ClassTag
@@ -18,7 +19,7 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
   type SparkStep[-Env, -In, +Err, +Out] = Step[Env with SparkModule, In, Err, Out]
   type SparkTaskStep[-In, +Out]         = Step[SparkModule, In, Throwable, Out]
 
-  object SparkFlow extends FlowCompanion with SparkFlowCompanion {
+  object SparkFlow extends SparkFlowCompanion {
     def mapDataset[A, B <: Product: ClassTag: TypeTag](func: A => B): TaskStep[Dataset[A], Dataset[B]] =
       Flow.task { dataset: Dataset[A] =>
         import dataset.sparkSession.implicits._
@@ -31,7 +32,7 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
       Flow.statefulEffect(func)
   }
 
-  object SparkStep extends FlowCompanion with SparkFlowCompanion {
+  object SparkStep extends SparkFlowCompanion {
     def mapDataset[A, B <: Product: ClassTag: TypeTag](func: A => B): TaskStep[Dataset[A], Dataset[B]] =
       Flow.task { dataset: Dataset[A] =>
         import dataset.sparkSession.implicits._
@@ -52,7 +53,17 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
 
   }
 
-  trait SparkFlowCompanion { self: FlowCompanion =>
+  trait SparkFlowCompanion extends FlowCompanion[SparkModule] { sparkFlow =>
+
+    def broadcast[State, Params, A: ClassTag](
+      func: (SparkSession, State, Params) => A
+    ): SparkFlow[State, State, Any, Params, Throwable, Broadcast[A]] =
+      SparkFlow.context[SparkModule, State, Params].transformEff { case (_, ctx) =>
+        val spark     = ctx.environment.get.sparkSession
+        val value     = func(spark, ctx.inputs.state, ctx.inputs.params)
+        val broadcast = spark.sparkContext.broadcast(value)
+        (ctx.inputs.state, broadcast)
+      }
 
     def createDataset[A <: Product: ClassTag: TypeTag](
       func: SparkSession => Encoder[A] => Dataset[A]
@@ -85,12 +96,6 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
           .map(ctx => FlowValue.fromValue(ctx.environment))
       )
 
-    /**
-     * A step that returns the given parameters.
-     */
-    def parameters[In]: SparkStep[Any, In, Throwable, In] =
-      Flow.context[SparkModule, Any, In].transformEff((_, ctx) => (ctx.inputs.params, ctx.inputs.params))
-
     def makeStep[Env, Params, Err, Out](
       func: Params => ZIO[Env with SparkModule, Err, Out]
     ): SparkStep[Env, Params, Err, Out] =
@@ -116,6 +121,12 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
     def showDataset[A](numRows: Int, truncate: Int): SparkStep[Any, Dataset[A], Throwable, Dataset[A]] =
       parameters[Dataset[A]].tapValue { dataset =>
         ZIO.effect(dataset.show(numRows, truncate))
+      }
+
+    val sparkSession: Flow[Any, SparkSession, SparkModule, Any, Throwable, SparkSession] =
+      Flow.environment[SparkModule].transformEff { (_, sparkMod) =>
+        val sparkSession = sparkMod.get.sparkSession
+        (sparkSession, sparkSession)
       }
 
     def withSpark[A](func: SparkSession => A): SparkStep[Any, Any, Throwable, A] =

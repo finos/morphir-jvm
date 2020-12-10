@@ -13,4 +13,6 @@ trait Types {
    * The type of the base environment of flowz.
    */
   type BaseEnv <: Has[_]
+
+  type DefaultFlowEnvLowerBound
 }

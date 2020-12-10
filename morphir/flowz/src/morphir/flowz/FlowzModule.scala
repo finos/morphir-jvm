@@ -7,6 +7,8 @@ import scala.util.Try
 
 trait FlowzModule extends Types with Channels with Context {
 
+  type DefaultFlowEnvLowerBound = Any
+
   type USrcFlow[+StateOut, +Out]                    = Flow[Any, StateOut, Any, Any, Nothing, Out]
   type SrcFlow[+StateOut, +Err, +Out]               = Flow[Any, StateOut, Any, Any, Err, Out]
   type Stage[-StateIn, +StateOut, -In, +Out]        = Flow[StateIn, StateOut, Any, In, Nothing, Out]
@@ -24,6 +26,22 @@ trait FlowzModule extends Types with Channels with Context {
   type UStep[-In, +Out] = Flow[Any, Out, Any, In, Nothing, Out]
 
   type URStep[-Env, -In, +Out] = Flow[Any, Out, Env, In, Nothing, Out]
+
+  /**
+   * Create a `Flow` by providing a function that takes in some state and parameters and returns a tuple of
+   * the output state and the result.
+   */
+  def flow[StateIn, StateOut, Env <: DefaultFlowEnvLowerBound, Params, Out](
+    func: (StateIn, Params) => (StateOut, Out)
+  ): Flow[StateIn, StateOut, Env, Params, Throwable, Out] =
+    Flow.flow(func)
+
+  /**
+   * Create a `Flow`by providing an effectual function that takes in some state and parameters and produces a tuple of the output state and result.
+   */
+  def flowM[StateIn, StateOut, Env <: DefaultFlowEnvLowerBound, Params, Err, Out](
+    func: (StateIn, Params) => ZIO[Env, Err, (StateOut, Out)]
+  ): Flow[StateIn, StateOut, Env, Params, Err, Out] = Flow.flowM(func)
 
   /**
    * A flow describes an operation which may have some state and input operations.
@@ -141,6 +159,12 @@ trait FlowzModule extends Types with Channels with Context {
       self.effect.map(success => success.mapState(fn))
     )
 
+    /**
+     * Takes the output state and makes it also available as the result value of this flow.
+     */
+    def outputState: Flow[StateIn, StateOut, Env, Params, Err, StateOut] =
+      self.mapOutputs((state, _) => (state, state))
+
     def shiftStateToOutput: Flow[StateIn, Unit, Env, Params, Err, (StateOut, Output)] =
       Flow(effect.map(success => OutputChannels(state = (), value = (success.state, success.value))))
 
@@ -244,15 +268,7 @@ trait FlowzModule extends Types with Channels with Context {
       Flow((self.effect zipWithPar that.effect)(f))
   }
 
-  object Flow extends FlowCompanion with AnyEnvFlowCompanion {
-
-    def apply[StateIn, Params, StateOut, Out](
-      func: (StateIn, Params) => (StateOut, Out)
-    ): TaskFlow[StateIn, StateOut, Params, Out] =
-      Flow(ZIO.environment[FlowContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>
-        val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-        OutputChannels(state = state, value = value)
-      })
+  object Flow extends FlowCompanion[Any] {
 
     def environment[Env]: RStep[Env, Any, Env] =
       Flow(ZIO.environment[FlowContext.having.Environment[Env]].map(ctx => FlowValue.fromValue(ctx.environment)))
@@ -263,7 +279,8 @@ trait FlowzModule extends Types with Channels with Context {
       }
   }
 
-  private[flowz] trait FlowCompanion {
+  abstract class FlowCompanion[-UpperR] {
+    type UpperEnv >: UpperR
 
     def accepting[State, Params]: Stage[State, State, Params, Params] =
       Flow(ZIO.environment[FlowContext.having.AnyEnv[State, Params]].map(_.inputs.toOutputs))
@@ -286,6 +303,30 @@ trait FlowzModule extends Types with Channels with Context {
 
     def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
       Flow(ZIO.environment[FlowContext.having.AnyInputs] *> ZIO.fail(error))
+
+    /**
+     * Create a `Flow` by providing a function that takes in some state and parameters and returns a tuple of
+     * the output state and the result.
+     */
+    def flow[StateIn, StateOut, Env <: UpperEnv, Params, Out](
+      func: (StateIn, Params) => (StateOut, Out)
+    ): Flow[StateIn, StateOut, Env, Params, Throwable, Out] =
+      Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].mapEffect { ctx =>
+        val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
+        OutputChannels(state = state, value = value)
+      })
+
+    /**
+     * Create a `Flow`by providing an effectual function that takes in some state and parameters and produces a tuple of the output state and result.
+     */
+    def flowM[StateIn, StateOut, Env <: UpperEnv, Params, Err, Out](
+      func: (StateIn, Params) => ZIO[Env, Err, (StateOut, Out)]
+    ): Flow[StateIn, StateOut, Env, Params, Err, Out] =
+      Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].flatMap { ctx =>
+        func(ctx.inputs.state, ctx.inputs.params).flatMap { case (state, value) =>
+          ZIO.succeed(OutputChannels(state = state, value = value))
+        }.provide(ctx.environment)
+      })
 
     def fromEffect[R, E, A](effect: ZIO[R, E, A]): Step[R, Any, E, A] =
       Flow(
@@ -323,6 +364,15 @@ trait FlowzModule extends Types with Channels with Context {
 
     def importOutputs[State, Err, Output](effect: IO[Err, OutputChannels[State, Output]]): SrcFlow[State, Err, Output] =
       Flow(effect)
+
+    def inputs[StateIn, Params]: Flow[StateIn, (StateIn, Params), Any, Params, Nothing, (StateIn, Params)] =
+      Flow(
+        ZIO
+          .environment[FlowContext[Any, StateIn, Params]]
+          .map(ctx =>
+            OutputChannels(state = (ctx.inputs.state, ctx.inputs.params), value = (ctx.inputs.state, ctx.inputs.params))
+          )
+      )
 
     def join[State, Err, Output](fiber: Fiber[Err, OutputChannels[State, Output]]): SrcFlow[State, Err, Output] =
       Flow(fiber.join)
@@ -494,6 +544,14 @@ trait FlowzModule extends Types with Channels with Context {
       Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels.none))
 
     /**
+     * A step that returns the given parameters.
+     */
+    def parameters[P]: Step[UpperEnv, P, Nothing, P] =
+      Flow.context[UpperEnv, Any, P].flatMap { ctx =>
+        Flow.succeed(ctx.inputs.params, ctx.inputs.params)
+      }
+
+    /**
      * A flow that succeeds with a unit value.
      */
     val unit: UStep[Any, Unit] =
@@ -547,7 +605,7 @@ trait FlowzModule extends Types with Channels with Context {
       })
   }
 
-  object Step extends FlowCompanion with AnyEnvFlowCompanion {
+  object Step extends FlowCompanion[Any] {
     def environment[Env]: RStep[Env, Any, Env] =
       Flow(ZIO.environment[FlowContext.having.Environment[Env]].map(ctx => FlowValue.fromValue(ctx.environment)))
 
@@ -557,35 +615,24 @@ trait FlowzModule extends Types with Channels with Context {
       }
   }
 
-  object RStep extends FlowCompanion {
+  object RStep extends FlowCompanion[Any] { Me =>
+    def makeStep[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
+      Me.parameters[Params].flatMap { params =>
+        Flow.fromEffect(func(params))
+      }
+  }
+
+  object TaskStep extends FlowCompanion[Any] {
     def makeStep[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
       Flow.parameters[Params].flatMap { params =>
         Flow.fromEffect(func(params))
       }
   }
 
-  object TaskStep extends FlowCompanion with AnyEnvFlowCompanion {
+  object UStep extends FlowCompanion[Any] {
     def makeStep[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
       Flow.parameters[Params].flatMap { params =>
         Flow.fromEffect(func(params))
-      }
-  }
-
-  object UStep extends FlowCompanion with AnyEnvFlowCompanion {
-    def makeStep[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
-      Flow.parameters[Params].flatMap { params =>
-        Flow.fromEffect(func(params))
-      }
-  }
-
-  private[flowz] trait AnyEnvFlowCompanion {
-
-    /**
-     * A step that returns the given parameters.
-     */
-    def parameters[P]: UStep[P, P] =
-      Flow.context[Any, Any, P].flatMap { ctx =>
-        Flow.succeed(ctx.inputs.params, ctx.inputs.params)
       }
   }
 

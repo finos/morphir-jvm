@@ -54,10 +54,10 @@ object DefaultFlowSpec extends DefaultRunnableSpec {
     ),
     suite("Combining")(
       testM("It should be possible to combine flows using the >>> operator.") {
-        val start = Flow.parameters[List[String]]
-        val next  = Flow((_: Any, args: List[String]) => (args, args.headOption))
-        val flow  = start >>> next
-        assertM(flow.run(List("Hello", "World")))(
+        val start  = Flow.parameters[List[String]]
+        val next   = flow((_: Any, args: List[String]) => (args, args.headOption))
+        val myFlow = start >>> next
+        assertM(myFlow.run(List("Hello", "World")))(
           equalTo(OutputChannels(state = List("Hello", "World"), value = Option("Hello")))
         )
       },
