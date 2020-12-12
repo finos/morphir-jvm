@@ -6,7 +6,10 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 import zio._
 
-trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
+trait FlowzSparkModule { sparkFlowz =>
+
+  val flowzApi: morphir.flowz.Api
+  import flowzApi._
 
   type sparkModule = morphir.flowz.spark.sparkModule.type
   val sparkModule: sparkModule = morphir.flowz.spark.sparkModule
@@ -18,6 +21,13 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
 
   type SparkStep[-Env, -In, +Err, +Out] = Step[Env with SparkModule, In, Err, Out]
   type SparkTaskStep[-In, +Out]         = Step[SparkModule, In, Throwable, Out]
+
+  def sparkStep[Params, A](func: SparkSession => Params => A): SparkStep[Any, Params, Throwable, A] =
+    SparkStep.sparkStep(func)
+
+  def sparkStepM[Env, Params, Err, A](
+    func: SparkSession => Params => ZIO[Env with SparkModule, Err, A]
+  ): SparkStep[Env, Params, Err, A] = SparkStep.sparkStepM[Env, Params, Err, A](func)
 
   object SparkFlow extends SparkFlowCompanion {
     def mapDataset[A, B <: Product: ClassTag: TypeTag](func: A => B): TaskStep[Dataset[A], Dataset[B]] =
@@ -128,6 +138,26 @@ trait FlowzSparkModule { sparkFlowz: morphir.flowz.Api =>
         val sparkSession = sparkMod.get.sparkSession
         (sparkSession, sparkSession)
       }
+
+    def sparkStep[Params, A](func: SparkSession => Params => A): SparkStep[Any, Params, Throwable, A] =
+      Flow(
+        ZIO
+          .environment[FlowContext[SparkModule, Any, Params]]
+          .mapEffect(ctx => FlowValue.fromValue(func(ctx.environment.get.sparkSession)(ctx.inputs.params)))
+      )
+
+    def sparkStepM[Env, Params, Err, A](
+      func: SparkSession => Params => ZIO[Env with SparkModule, Err, A]
+    ): SparkStep[Env, Params, Err, A] =
+      Flow(
+        ZIO
+          .environment[FlowContext[Env with SparkModule, Any, Params]]
+          .flatMap(ctx =>
+            func(ctx.environment.get.sparkSession)(ctx.inputs.params)
+              .flatMap(value => ZIO.succeed(OutputChannels.unified(value)))
+              .provide(ctx.environment)
+          )
+      )
 
     def withSpark[A](func: SparkSession => A): SparkStep[Any, Any, Throwable, A] =
       Flow(

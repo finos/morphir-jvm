@@ -1,7 +1,7 @@
 package morphir.flowz.spark.sample.heroes
 
 import io.getquill.QuillSparkContext
-import morphir.flowz.spark.default._
+import morphir.flowz.spark.default._, flowzApi._
 import sparkModule.SparkModule
 import org.apache.spark.sql.{ Dataset, SQLContext, SparkSession }
 import zio._
@@ -124,9 +124,11 @@ object HeroesSampleMain extends App {
       val heroAbilities = ctx.inputs.state.heroAbilities
       val abilities     = ctx.inputs.state.abilities
       SparkStep.withSpark { spark =>
+        import spark.implicits._
         implicit val sqlContext: SQLContext = spark.sqlContext
-        import sqlContext.implicits._
         import io.getquill.QuillSparkContext._
+        val quillFunctions = MyQuillSparkFunctions.apply
+        import quillFunctions._
 
         // Gather all the hero to ability details we have
         val heroAbilityDetails = QuillSparkContext.run {
@@ -136,9 +138,10 @@ object HeroesSampleMain extends App {
           } yield HeroAbilityRow(hero = heroAbility.hero, ability = ability)
         }
 
-        // Group by the hero name
-        heroAbilityDetails.groupByKey(ha => ha.hero).mapGroups { (hero, row) =>
-          HeroAbilities(hero = hero, abilities = row.map(_.ability).toSet)
+        QuillSparkContext.run {
+          liftQuery(heroAbilityDetails).groupBy(ha => ha.hero).map { case (hero, row) =>
+            HeroAbilities(hero, row.map(_.ability).collectSet)
+          }
         }
 
       }.stateAs(ctx.inputs.state)
@@ -204,6 +207,26 @@ object HeroesSampleMain extends App {
   )
 
   final case class Options(parallelLoads: Boolean = false, showDatasets: Boolean = true, maxDelayInMillis: Long = 3000)
+
+  //NOTE: This only exists to support collecting to a collection for now while quill does not directly have syntax for it
+  trait MyQuillSparkFunctions {
+    implicit val sqlContext: SQLContext
+    import io.getquill.Query
+    import io.getquill.QuillSparkContext._
+    def collectList[T] = quote((q: Query[T]) => infix"collect_list(${q})".pure.as[List[T]])
+    def collectSet[T]  = quote((q: Query[T]) => infix"collect_list(${q})".pure.as[Set[T]])
+
+    implicit class SparkBasedQueryExtensions[T](q: Query[T]) {
+      def collectList = quote(infix"collect_list(${q})".pure.as[List[T]])
+      def collectSet  = quote(infix"collect_list(${q})".pure.as[Set[T]])
+    }
+  }
+
+  object MyQuillSparkFunctions {
+    def apply(implicit sqlCtx: SQLContext): MyQuillSparkFunctions = new MyQuillSparkFunctions {
+      implicit val sqlContext: SQLContext = sqlCtx
+    }
+  }
 }
 
 final case class Person(firstName: String, lastName: String)

@@ -1,6 +1,8 @@
 package morphir.flowz.api.spark
 
-import morphir.flowz.api.DefaultApi
+import morphir.flowz.Api
 import morphir.flowz.spark.SparkApi
 
-trait DefaultSparkApi extends DefaultApi with SparkApi {}
+trait DefaultSparkApi extends SparkApi {
+  override val flowzApi: Api = morphir.flowz.default
+}
