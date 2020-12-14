@@ -5,6 +5,7 @@ import org.apache.spark.sql.{ Dataset, Encoder, SparkSession }
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 import zio._
+//import zio.prelude._
 
 trait FlowzSparkModule { sparkFlowz =>
 
@@ -64,6 +65,8 @@ trait FlowzSparkModule { sparkFlowz =>
   }
 
   trait SparkFlowCompanion extends FlowCompanion[SparkModule] { sparkFlow =>
+
+    //import SparkSupport._
 
     def broadcast[State, Params, A: ClassTag](
       func: (SparkSession, State, Params) => A
@@ -158,6 +161,26 @@ trait FlowzSparkModule { sparkFlowz =>
               .provide(ctx.environment)
           )
       )
+
+//    def validateAndSplitDataset[State, DataRow, SuccessValue, FailureValue](
+//      func: SparkSession => (State, DataRow) => (State, Validation[FailureValue, SuccessValue])
+//    ): Flow[State, State, SparkModule, Dataset[DataRow], Throwable, (Dataset[FailureValue], Dataset[SuccessValue])] =
+//      Flow[State, State, SparkModule, Dataset[DataRow], Throwable, (Dataset[FailureValue], Dataset[SuccessValue])](
+//        ZIO.environment[FlowContext[SparkModule, State, Dataset[DataRow]]].mapEffect { ctx =>
+//          val spark     = ctx.environment.get.sparkSession
+//          var state     = ctx.inputs.state;
+//          val inputData = ctx.inputs.params
+//          inputData.map {
+//            row =>
+//            func(spark)(state, row) match {
+//              case (nextState, Validation.Failure(failureValue)) =>
+//                state = nextState
+//                val result:(Option[FailureValue], Option[SuccessValue])
+//
+//            }
+//          }
+//        }
+//      )
 
     def withSpark[A](func: SparkSession => A): SparkStep[Any, Any, Throwable, A] =
       Flow(

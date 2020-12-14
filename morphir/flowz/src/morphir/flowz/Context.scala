@@ -1,6 +1,6 @@
 package morphir.flowz
 
-trait Context extends Channels {
+trait Context extends ChannelExports {
 
   sealed case class FlowContext[+Env, +State, +Params](environment: Env, inputs: InputChannels[State, Params]) { self =>
 

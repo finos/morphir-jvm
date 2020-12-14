@@ -50,6 +50,14 @@ object PresidentialSampleMain extends App {
         (loadExecutiveBranchInfo |+| loadLegislators).map(models.RawDataSources.tupled)
     }
 
+//    val Executive = {
+//      import zio.prelude._
+//      val df: DataFrame = ???
+//      df.map(r => r.getAs[Int](""))
+//    }
+
+    //TODO: List all presidents who also served in congress
+
     val summarizeData = flowM { (state: Any, dataSources: models.RawDataSources) =>
       for {
         _ <- console.putStrLn(s"Executive Branch Data: $state====================================")

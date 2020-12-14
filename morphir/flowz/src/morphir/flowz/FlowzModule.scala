@@ -5,7 +5,7 @@ import zio.clock.Clock
 
 import scala.util.Try
 
-trait FlowzModule extends Types with Channels with Context {
+trait FlowzModule extends Types with ChannelExports with Context {
 
   type DefaultFlowEnvLowerBound = Any
 

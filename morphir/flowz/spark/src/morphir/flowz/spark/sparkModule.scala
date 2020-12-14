@@ -9,6 +9,8 @@ import scala.reflect.runtime.universe.TypeTag
 object sparkModule {
   type SparkModule = Has[SparkModule.Service]
 
+  def apply[A](f: SparkSession => A): ZIO[SparkModule, Throwable, A] = withSpark(f)
+
   def createDataset[A <: Product: TypeTag](data: Seq[A]): ZIO[SparkModule, Throwable, Dataset[A]] =
     ZIO.accessM[SparkModule](_.get.createDataset(data))
 

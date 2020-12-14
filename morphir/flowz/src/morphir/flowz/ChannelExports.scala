@@ -1,6 +1,6 @@
 package morphir.flowz
 
-trait Channels { channels =>
+trait ChannelExports { channels =>
   type FlowState[+S] = OutputChannels[S, Unit]
 
   type FlowValue[+Output] = OutputChannels[Output, Output]

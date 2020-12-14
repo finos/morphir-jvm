@@ -276,7 +276,10 @@ object morphir extends Module {
         with MorphirPublishModule { self =>
 
       def artifactName = "morphir-flowz"
+      def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+      def compileIvyDeps      = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
       def ivyDeps      = Agg(
+        ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}",
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-config:${Versions.zioConfig}",
         ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
