@@ -22,7 +22,7 @@ object PresidentialSampleMain extends App {
     }
 
     import flows._
-    val flow = initialize >>> collectExecutiveBranchPoliticians >>> reportOnWorkflow
+    val flow = initialize >>> prepareDataSources >>> createReport >>> printReport
 
     flow
       .run(
@@ -50,185 +50,94 @@ object PresidentialSampleMain extends App {
     val initialize = stage { (_: Any, options: Options) =>
       Flow.fromEffect(console.putStrLn(s"Options: $options")) *>
         (loadExecutiveBranchInfo |+| loadLegislators).map { case (executiveData, legislatureData) =>
-          models.Workflow(
-            dataSources = models.RawDataSources(executiveData = executiveData, currentLegislators = legislatureData),
-            stateName = "Initial",
-            state = models.State.Initial
-          )
+          RawDataSources(executiveData = executiveData, legislatureData = legislatureData)
         }.mapOutputs((_, out) => (out, out))
     }
 
-    val collectExecutiveBranchPoliticians = stage { (workflow: Workflow[State], _: Any) =>
+    val collectExecutiveBranchPoliticians = stage { (dataSources: RawDataSources, _: Any) =>
       sparkStep { spark => _: Any =>
         import spark.implicits._
-        val executiveDF = workflow.dataSources.executiveData
+        val executiveDF = dataSources.executiveData
         executiveDF
           .select($"name", explode($"terms.type") as "position", $"bio.birthday" as "birthday")
           .distinct()
-          .as[Politician]
+          .as[Executive]
 
-      }.mapState(ds => workflow.applyEvent(Event.RetrievedExecutiveBranchPoliticians(ds)))
+      }.stateAs(dataSources)
     }
 
-    val collectLegislativeBranchPoliticians = stage { (workflow: Workflow[State], _: Any) =>
+    val collectLegislativeBranchPoliticians = stage { (dataSources: RawDataSources, _: Any) =>
       sparkStep { spark => _: Any =>
         import spark.implicits._
-        val executiveDF = workflow.dataSources.executiveData
+        val executiveDF = dataSources.legislatureData
         val executiveDS = executiveDF
           .select(
             struct($"last_name" as "last", $"first_name" as "first", $"middle_name" as "middle") as "name",
-            $"birthday"
+            $"birthday",
+            $"type" as "position"
           )
           .distinct()
-          .as[Politician]
+          .as[CongressPerson]
         executiveDS
-      }.mapState(ds => workflow.applyEvent(Event.RetrievedExecutiveBranchPoliticians(ds)))
+      }.stateAs(dataSources)
 
     }
 
-//    val collectPoliticians =
-//      collectExecutiveBranchPoliticians.zipWithPar(collectLegislativeBranchPoliticians) { (lOut, rOut) => }
-
-    val reportOnWorkflow = stage { (state: Workflow[State], _: Any) =>
-      Step.fromEffect {
-        state match {
-          case Workflow(_, stateName, State.Initial) => console.putStrLn(s"State is: $stateName")
-          case Workflow(_, stateName, State.WithExecutive(politiciansFromExecutiveBranch)) =>
-            for {
-              _           <- console.putStrLn(s"State is: $stateName")
-              politicians <- ZIO.effect(politiciansFromExecutiveBranch.collect().toList)
-              eol         <- system.lineSeparator
-              message <- ZIO.effectTotal(
-                           politicians.zipWithIndex.mkString(
-                             s"Executive Branch Politicians: =========================================== $eol",
-                             eol,
-                             "==========================================="
-                           )
-                         )
-              _ <- console.putStrLn(message)
-            } yield ()
-          case Workflow(_, stateName, _) =>
-            console.putStrLn(s"State is: $stateName")
-        }
-      }.stateAs(state)
+    val prepareDataSources = stage { (rawData: RawDataSources, _: Any) =>
+      collectExecutiveBranchPoliticians.zipWithPar(collectLegislativeBranchPoliticians) { (lOut, rOut) =>
+        val dataSources = DataSources(raw = rawData, executive = lOut.value, congress = rOut.value)
+        OutputChannels(state = dataSources, value = dataSources)
+      }
     }
 
-    //TODO: List all presidents who also served in congress
-
-    val summarizeData = flowM { (state: Workflow[State.WithExecutive], _: Any) =>
+    val createReport = flowM { (data: DataSources, _: Any) =>
       for {
-        _ <-
-          console.putStrLn(
-            s"Executive Branch Data Count: ${state.dataSources.executiveData.count()}===================================="
-          )
-        _ <- ZIO.effect(state.dataSources.executiveData.printSchema())
-        _ <- ZIO.effect(state.dataSources.executiveData.show(false))
-        _ <-
-          console.putStrLn(
-            s"Legislature Data Count: ${state.dataSources.currentLegislators.count()}========================================="
-          )
-        _ <- ZIO.effect(state.dataSources.currentLegislators.printSchema())
-        _ <- ZIO.effect(state.dataSources.currentLegislators.show(false))
-        _ <-
-          console.putStrLn(
-            s"Executive Data Counts: ${state.state.politiciansFromExecutiveBranch.count()}========================================="
-          )
-        _ <- ZIO.effect(state.state.politiciansFromExecutiveBranch.printSchema())
-        _ <- ZIO.effect(state.state.politiciansFromExecutiveBranch.show(false))
-      } yield ((), ())
+        numPrez     <- ZIO.effect(data.executive.filter(p => p.position == "prez").count())
+        numVeep     <- ZIO.effect(data.executive.filter(p => p.position == "viceprez").count())
+        numSenators <- ZIO.effect(data.congress.filter(p => p.position == "sen").count())
+        numReps     <- ZIO.effect(data.congress.filter(p => p.position == "rep").count())
+      } yield (
+        data,
+        Report(
+          numberOfPresidents = numPrez,
+          numberOfVicePresidents = numVeep,
+          numberOfSenators = numSenators,
+          numberOfRepresentatives = numReps
+        )
+      )
     }
+
+    val printReport = flowM { (data: DataSources, report: Report) =>
+      for {
+        _ <- console.putStrLn(s"Number of Presidents: ${report.numberOfPresidents}")
+        _ <- console.putStrLn(s"Number of Vice Presidents: ${report.numberOfVicePresidents}")
+        _ <- console.putStrLn(s"Number of Senators: ${report.numberOfSenators}")
+        _ <- console.putStrLn(s"Number of Representatives: ${report.numberOfRepresentatives}")
+      } yield (data, report)
+    }
+
   }
 
   object models {
     final case class Options(executiveFilePath: String, legislatorsPaths: Seq[String])
-    final case class RawDataSources(executiveData: DataFrame, currentLegislators: DataFrame)
+    final case class RawDataSources(executiveData: DataFrame, legislatureData: DataFrame)
+    final case class DataSources(raw: RawDataSources, congress: Dataset[CongressPerson], executive: Dataset[Executive])
 
-    sealed trait Event
-    object Event {
-      final case class RetrievedExecutiveBranchPoliticians(politician: Dataset[Politician])   extends Event
-      final case class RetrievedLegislativeBranchPoliticians(politician: Dataset[Politician]) extends Event
-    }
-
-    final case class Workflow[+A <: State](dataSources: RawDataSources, stateName: String, state: A) { self =>
-      def applyEvent(event: Event) = (state, event) match {
-        case (State.WithExecutive(_), Event.RetrievedExecutiveBranchPoliticians(politicians)) =>
-          self.copy(stateName = "WithExecutive", state = State.WithExecutive(politicians))
-        case (State.WithLegislative(legislative), Event.RetrievedExecutiveBranchPoliticians(executive)) =>
-          self.copy(
-            stateName = "WithPoliticians",
-            state = State.WithPoliticians(
-              politiciansFromLegislature = legislative,
-              politiciansFromExecutiveBranch = executive
-            )
-          )
-        case (State.WithPoliticians(_, legislative), Event.RetrievedExecutiveBranchPoliticians(executive)) =>
-          self.copy(
-            stateName = "WithPoliticians",
-            state = State.WithPoliticians(
-              politiciansFromLegislature = legislative,
-              politiciansFromExecutiveBranch = executive
-            )
-          )
-        case (_, Event.RetrievedExecutiveBranchPoliticians(politicians)) =>
-          self.copy(stateName = "WithExecutive", state = State.WithExecutive(politicians))
-        case (State.WithLegislative(_), Event.RetrievedLegislativeBranchPoliticians(politicians)) =>
-          self.copy(
-            stateName = "WithLegislative",
-            state = State.WithLegislative(
-              politiciansFromLegislature = politicians
-            )
-          )
-        case (State.WithExecutive(executive), Event.RetrievedLegislativeBranchPoliticians(politicians)) =>
-          self.copy(
-            stateName = "WithPoliticians",
-            state = State.WithPoliticians(
-              politiciansFromExecutiveBranch = executive,
-              politiciansFromLegislature = politicians
-            )
-          )
-        case (State.WithPoliticians(executive, _), Event.RetrievedLegislativeBranchPoliticians(politicians)) =>
-          self.copy(
-            stateName = "WithPoliticians",
-            state = State.WithPoliticians(
-              politiciansFromExecutiveBranch = executive,
-              politiciansFromLegislature = politicians
-            )
-          )
-        case (_, Event.RetrievedLegislativeBranchPoliticians(politicians)) =>
-          self.copy(
-            stateName = "WithLegislative",
-            state = State.WithLegislative(
-              politiciansFromLegislature = politicians
-            )
-          )
-      }
-    }
-
-    sealed trait State extends Product with Serializable
-    object State {
-      case object Initial extends State {
-        def apply(politicians: Dataset[Politician]): WithExecutive =
-          WithExecutive(politicians)
-      }
-
-      final case class WithExecutive(
-        politiciansFromExecutiveBranch: Dataset[Politician]
-      ) extends State
-
-      final case class WithLegislative(
-        politiciansFromLegislature: Dataset[Politician]
-      ) extends State
-
-      final case class WithPoliticians(
-        politiciansFromExecutiveBranch: Dataset[Politician],
-        politiciansFromLegislature: Dataset[Politician]
-      ) extends State
-    }
+    final case class Report(
+      numberOfPresidents: Long,
+      numberOfVicePresidents: Long,
+      numberOfSenators: Long,
+      numberOfRepresentatives: Long
+    )
 
     final case class Politician(name: Name, birthday: String, position: String)
-    final case class CongressPerson(name: Name, birthday: String, position: String)
+    final case class CongressPerson(name: Name, birthday: String, position: String) {
+      def toPolitician: Politician = Politician(name = name, birthday = birthday, position = position)
+    }
 
-    final case class Executive(name: Name, term: Term)
+    final case class Executive(name: Name, birthday: String, position: String) {
+      def toPolitician: Politician = Politician(name = name, birthday = birthday, position = position)
+    }
     final case class President(name: Name)
     final case class VicePresident(name: Name)
 
