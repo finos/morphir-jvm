@@ -37,6 +37,8 @@ trait ChannelExports { channels =>
     def mapState[S](func: State => S): InputChannels[S, Params] =
       copy(state = func(state))
 
+    def tupled: (State, Params) = (state, params)
+
   }
 
   object InputChannels {

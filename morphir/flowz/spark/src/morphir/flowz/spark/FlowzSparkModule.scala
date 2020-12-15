@@ -162,26 +162,6 @@ trait FlowzSparkModule { sparkFlowz =>
           )
       )
 
-//    def validateAndSplitDataset[State, DataRow, SuccessValue, FailureValue](
-//      func: SparkSession => (State, DataRow) => (State, Validation[FailureValue, SuccessValue])
-//    ): Flow[State, State, SparkModule, Dataset[DataRow], Throwable, (Dataset[FailureValue], Dataset[SuccessValue])] =
-//      Flow[State, State, SparkModule, Dataset[DataRow], Throwable, (Dataset[FailureValue], Dataset[SuccessValue])](
-//        ZIO.environment[FlowContext[SparkModule, State, Dataset[DataRow]]].mapEffect { ctx =>
-//          val spark     = ctx.environment.get.sparkSession
-//          var state     = ctx.inputs.state;
-//          val inputData = ctx.inputs.params
-//          inputData.map {
-//            row =>
-//            func(spark)(state, row) match {
-//              case (nextState, Validation.Failure(failureValue)) =>
-//                state = nextState
-//                val result:(Option[FailureValue], Option[SuccessValue])
-//
-//            }
-//          }
-//        }
-//      )
-
     def withSpark[A](func: SparkSession => A): SparkStep[Any, Any, Throwable, A] =
       Flow(
         ZIO

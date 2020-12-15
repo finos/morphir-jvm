@@ -35,6 +35,13 @@ trait FlowzModule extends Types with ChannelExports with Context {
   ): Flow[StateIn, StateOut, Env, Params, Throwable, Out] =
     Flow.flow(func)
 
+  def flow[StateIn, StateOut, Inputs, Env, Params, Err, A, Out](
+    before: (StateIn, Params) => ZIO[Env, Err, Inputs]
+  )(
+    body: Inputs => ZIO[Env, Err, A]
+  )(after: A => ZIO[Env, Err, (StateOut, Out)]): Flow[StateIn, StateOut, Env, Params, Err, Out] =
+    Flow.flow(before)(body)(after)
+
   /**
    * Create a `Flow` by providing an effectual function that takes in some state and parameters and produces a tuple of the output state and result.
    */
@@ -48,6 +55,9 @@ trait FlowzModule extends Types with ChannelExports with Context {
   def stage[StateIn, StateOut, Env, Params, Err, Out](
     func: (StateIn, Params) => Flow[StateIn, StateOut, Env, Params, Err, Out]
   ): Flow[StateIn, StateOut, Env, Params, Err, Out] = Flow.stage(func)
+
+  def step[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
+    Flow.step(func)
 
   /**
    * A flow describes an operation which may have some state and input operations.
@@ -334,6 +344,19 @@ trait FlowzModule extends Types with ChannelExports with Context {
         OutputChannels(state = state, value = value)
       })
 
+    def flow[StateIn, StateOut, Inputs, Env, Params, Err, A, Out](
+      before: (StateIn, Params) => ZIO[Env, Err, Inputs]
+    )(
+      body: Inputs => ZIO[Env, Err, A]
+    )(after: A => ZIO[Env, Err, (StateOut, Out)]): Flow[StateIn, StateOut, Env, Params, Err, Out] =
+      Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].flatMap { ctx =>
+        (for {
+          inputs  <- before(ctx.inputs.state, ctx.inputs.params)
+          a       <- body(inputs)
+          outputs <- after(a).map { case (state, value) => OutputChannels(state = state, value = value) }
+        } yield outputs).provide(ctx.environment)
+      })
+
     /**
      * Create a `Flow`by providing an effectual function that takes in some state and parameters and produces a tuple of the output state and result.
      */
@@ -605,6 +628,11 @@ trait FlowzModule extends Types with ChannelExports with Context {
       Flow(ZIO.environment[FlowContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>
         val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
         OutputChannels(state = state, value = value)
+      })
+
+    def step[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
+      Flow(ZIO.environment[FlowContext.having.AnyState[Env, Params]].flatMap { ctx =>
+        func(ctx.inputs.params).map(FOuts.unified(_)).provide(ctx.environment)
       })
 
     def succeed[A](value: => A): UStep[Any, A] =
