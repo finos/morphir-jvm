@@ -4,9 +4,11 @@ import morphir.flowz.spark.{ default, sparkModule }
 import default._
 import sparkModule.SparkModule
 import flowzApi._
-import org.apache.spark.sql.{ DataFrame, Dataset, SparkSession }
+import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext, SparkSession }
 import org.apache.spark.sql.functions.{ explode, struct }
 import zio._
+
+import scala.annotation.nowarn
 
 object PresidentialSampleMain extends App {
   import models._
@@ -69,12 +71,13 @@ object PresidentialSampleMain extends App {
     val collectLegislativeBranchPoliticians = stage { (dataSources: RawDataSources, _: Any) =>
       sparkStep { spark => _: Any =>
         import spark.implicits._
-        val executiveDF = dataSources.legislatureData
-        val executiveDS = executiveDF
+        val dataFrame = dataSources.legislatureData
+        val executiveDS = dataFrame
           .select(
             struct($"last_name" as "last", $"first_name" as "first", $"middle_name" as "middle") as "name",
             $"birthday",
-            $"type" as "position"
+            $"type" as "position",
+            $"state"
           )
           .distinct()
           .as[CongressPerson]
@@ -83,36 +86,98 @@ object PresidentialSampleMain extends App {
 
     }
 
+    val getPresidentsCongressionalServiceRecord = stage { (data: DataSources, _: Any) =>
+      sparkStep { spark => _: Any =>
+        import spark.implicits._
+        @nowarn
+        implicit val sqlContext: SQLContext = spark.sqlContext
+        import io.getquill.QuillSparkContext
+        import io.getquill.QuillSparkContext._
+
+        val presidents = data.executive.filter(row => row.position == "prez")
+        val congress   = data.congress
+        QuillSparkContext.run {
+          for {
+            president <- liftQuery(presidents)
+            congressPerson <-
+              liftQuery(congress).leftJoin(congressPerson =>
+                president.name.first == congressPerson.name.first && president.name.last == congressPerson.name.last
+              )
+          } yield President(
+            name = president.name,
+            birthday = president.birthday,
+            servedInCongress = congressPerson.map(_.state).isDefined
+          )
+        }.distinct()
+      }.stateAs(data)
+
+    }
+
     val prepareDataSources = stage { (rawData: RawDataSources, _: Any) =>
-      collectExecutiveBranchPoliticians.zipWithPar(collectLegislativeBranchPoliticians) { (lOut, rOut) =>
-        val dataSources = DataSources(raw = rawData, executive = lOut.value, congress = rOut.value)
+      Step.mapParN(
+        collectExecutiveBranchPoliticians,
+        collectLegislativeBranchPoliticians
+      ) { (executive, congressional) =>
+        val dataSources = DataSources(
+          raw = rawData,
+          executive = executive.value,
+          congress = congressional.value
+        )
         OutputChannels(state = dataSources, value = dataSources)
+      } >>> getPresidentsCongressionalServiceRecord.mapOutputs { (dataSources, presidents) =>
+        val finalData = FinalDataSources(
+          raw = dataSources.raw,
+          congress = dataSources.congress,
+          executive = dataSources.executive,
+          presidents = presidents
+        )
+        (finalData, finalData)
       }
     }
 
-    val createReport = flowM { (data: DataSources, _: Any) =>
+    val createReport = flowM { (data: FinalDataSources, _: Any) =>
       for {
         numPrez     <- ZIO.effect(data.executive.filter(p => p.position == "prez").count())
         numVeep     <- ZIO.effect(data.executive.filter(p => p.position == "viceprez").count())
         numSenators <- ZIO.effect(data.congress.filter(p => p.position == "sen").count())
         numReps     <- ZIO.effect(data.congress.filter(p => p.position == "rep").count())
+        presidentsWhoServedInCongress <-
+          ZIO.effect(data.presidents.filter(pres => pres.servedInCongress).distinct().collect().toList)
+        numPrezWithCongressionalRecs <- ZIO.succeed(presidentsWhoServedInCongress.size)
       } yield (
         data,
         Report(
           numberOfPresidents = numPrez,
           numberOfVicePresidents = numVeep,
           numberOfSenators = numSenators,
-          numberOfRepresentatives = numReps
+          numberOfRepresentatives = numReps,
+          numberOfPresidentsWhoServedInCongress = numPrezWithCongressionalRecs,
+          presidentsWhoServedInCongress = presidentsWhoServedInCongress
         )
       )
     }
 
-    val printReport = flowM { (data: DataSources, report: Report) =>
+    val printReport = flowM { (data: FinalDataSources, report: Report) =>
       for {
         _ <- console.putStrLn(s"Number of Presidents: ${report.numberOfPresidents}")
         _ <- console.putStrLn(s"Number of Vice Presidents: ${report.numberOfVicePresidents}")
         _ <- console.putStrLn(s"Number of Senators: ${report.numberOfSenators}")
         _ <- console.putStrLn(s"Number of Representatives: ${report.numberOfRepresentatives}")
+        _ <- console.putStrLn(
+               s"Number of Presidents who served in congress: ${report.numberOfPresidentsWhoServedInCongress}"
+             )
+        _   <- console.putStrLn("====")
+        eol <- system.lineSeparator
+        presidentialReport <- ZIO.effect {
+                                report.presidentsWhoServedInCongress
+                                  .sortBy(_.birthday)
+                                  .mkString(
+                                    s"Presidents Who Served In Congress =============================$eol",
+                                    eol,
+                                    "===================================="
+                                  )
+                              }
+        _ <- console.putStrLn(presidentialReport)
       } yield (data, report)
     }
 
@@ -121,24 +186,36 @@ object PresidentialSampleMain extends App {
   object models {
     final case class Options(executiveFilePath: String, legislatorsPaths: Seq[String])
     final case class RawDataSources(executiveData: DataFrame, legislatureData: DataFrame)
-    final case class DataSources(raw: RawDataSources, congress: Dataset[CongressPerson], executive: Dataset[Executive])
+    final case class DataSources(
+      raw: RawDataSources,
+      congress: Dataset[CongressPerson],
+      executive: Dataset[Executive]
+    )
+    final case class FinalDataSources(
+      raw: RawDataSources,
+      congress: Dataset[CongressPerson],
+      executive: Dataset[Executive],
+      presidents: Dataset[President]
+    )
 
     final case class Report(
       numberOfPresidents: Long,
       numberOfVicePresidents: Long,
       numberOfSenators: Long,
-      numberOfRepresentatives: Long
+      numberOfRepresentatives: Long,
+      numberOfPresidentsWhoServedInCongress: Int,
+      presidentsWhoServedInCongress: List[President]
     )
 
     final case class Politician(name: Name, birthday: String, position: String)
-    final case class CongressPerson(name: Name, birthday: String, position: String) {
+    final case class CongressPerson(name: Name, birthday: String, position: String, state: String) {
       def toPolitician: Politician = Politician(name = name, birthday = birthday, position = position)
     }
 
     final case class Executive(name: Name, birthday: String, position: String) {
       def toPolitician: Politician = Politician(name = name, birthday = birthday, position = position)
     }
-    final case class President(name: Name)
+    final case class President(name: Name, birthday: String, servedInCongress: Boolean)
     final case class VicePresident(name: Name)
 
     final case class Term(`type`: String) {
