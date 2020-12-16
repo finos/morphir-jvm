@@ -59,7 +59,7 @@ trait FlowzSparkModule { sparkFlowz =>
       func: Params => RIO[Env with SparkModule, Out]
     ): SparkStep[Env, Params, Throwable, Out] =
       Flow.context[Env with SparkModule, Any, Params].flatMap { ctx =>
-        Flow(func(ctx.inputs.params).provide(ctx.environment).map(out => OutputChannels.fromValue(out)))
+        Flow(func(ctx.inputs.params).provide(ctx.environment).map(out => StepOutputs.fromValue(out)))
       }
 
   }
@@ -157,7 +157,7 @@ trait FlowzSparkModule { sparkFlowz =>
           .environment[FlowContext[Env with SparkModule, Any, Params]]
           .flatMap(ctx =>
             func(ctx.environment.get.sparkSession)(ctx.inputs.params)
-              .flatMap(value => ZIO.succeed(OutputChannels.unified(value)))
+              .flatMap(value => ZIO.succeed(StepOutputs.unified(value)))
               .provide(ctx.environment)
           )
       )
@@ -173,9 +173,7 @@ trait FlowzSparkModule { sparkFlowz =>
       Flow(
         ZIO
           .environment[FlowContext.having.Environment[Env with SparkModule]]
-          .flatMap(ctx =>
-            func(ctx.environment.get.sparkSession).map(OutputChannels.unified(_)).provide(ctx.environment)
-          )
+          .flatMap(ctx => func(ctx.environment.get.sparkSession).map(StepOutputs.unified(_)).provide(ctx.environment))
       )
   }
 

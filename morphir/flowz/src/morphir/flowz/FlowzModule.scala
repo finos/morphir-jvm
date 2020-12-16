@@ -15,7 +15,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
   type RFlow[-StateIn, +StateOut, -Env, -In, +Out]  = Flow[StateIn, StateOut, Env, In, Throwable, Out]
   type TaskFlow[-StateIn, +StateOut, -In, +Out]     = Flow[StateIn, StateOut, Any, In, Throwable, Out]
   type ForkedFlow[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
-    Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, OutputChannels[StateOut, Output]]]
+    Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
   type Step[-Env, -In, +Err, +Out] = Flow[Any, Out, Env, In, Err, Out]
 
   type RStep[-Env, -In, +Out] = Flow[Any, Out, Env, In, Throwable, Out]
@@ -62,8 +62,8 @@ trait FlowzModule extends Types with ChannelExports with Context {
   /**
    * A flow describes an operation which may have some state and input operations.
    */
-  sealed case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Output](
-    private[flowz] val effect: ZIO[FlowContext[Env, StateIn, Params], Err, OutputChannels[StateOut, Output]]
+  sealed case class Flow[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
+    private[flowz] val effect: ZIO[FlowContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]]
   ) { self =>
 
     /**
@@ -71,7 +71,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
      * and by connecting the output value of this flow to the input of the other.
      */
     def >>>[SOut2, Env1 <: Env, Err1 >: Err, Output2](
-      that: Flow[StateOut, SOut2, Env1, Output, Err1, Output2]
+      that: Flow[StateOut, SOut2, Env1, Value, Err1, Output2]
     ): Flow[StateIn, SOut2, Env1, Params, Err1, Output2] =
       self andThen that
 
@@ -82,40 +82,40 @@ trait FlowzModule extends Types with ChannelExports with Context {
 
     def <*>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
       that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] = self zip that
+    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] = self zip that
 
     def |+|[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
       that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
       Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
 
     def <&>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
       that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
       Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
 
     def <*[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err1 >: Err, StateOut2, Output2](
       that: Flow[StateIn1, StateOut2, Env1, Params1, Err1, Output2]
-    ): Flow[StateIn1, StateOut, Env1, Params1, Err1, Output] =
+    ): Flow[StateIn1, StateOut, Env1, Params1, Err1, Value] =
       Flow(self.effect <* that.effect)
 
     /**
      * Adapts the input provided to the flow using the provided function.
      */
-    def adaptParameters[Input0](func: Input0 => Params): Flow[StateIn, StateOut, Env, Input0, Err, Output] =
-      Flow[StateIn, StateOut, Env, Input0, Err, Output](self.effect.provideSome { ctx =>
+    def adaptParameters[Input0](func: Input0 => Params): Flow[StateIn, StateOut, Env, Input0, Err, Value] =
+      Flow[StateIn, StateOut, Env, Input0, Err, Value](self.effect.provideSome { ctx =>
         ctx.copy(inputs = ctx.inputs.copy(params = func(ctx.inputs.params)))
       })
 
     def andThen[SOut2, Env1 <: Env, Err1 >: Err, Output2](
-      that: Flow[StateOut, SOut2, Env1, Output, Err1, Output2]
+      that: Flow[StateOut, SOut2, Env1, Value, Err1, Output2]
     ): Flow[StateIn, SOut2, Env1, Params, Err1, Output2] =
       Flow(ZIO.environment[FlowContext[Env1, StateIn, Params]].flatMap { ctx =>
         self.effect.flatMap(out => that.effect.provide(ctx.updateInputs(out)))
       })
 
     def andThenEffect[Err1 >: Err, StateOut2, Output2](
-      thatEffect: ZIO[Output, Err1, OutputChannels[StateOut2, Output2]]
+      thatEffect: ZIO[Value, Err1, StepOutputs[StateOut2, Output2]]
     ): Flow[StateIn, StateOut2, Env, Params, Err1, Output2] =
       Flow(self.effect.map(out => out.value) andThen thatEffect)
 
@@ -124,7 +124,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
      */
     def as[Out2](out: => Out2): Flow[StateIn, StateOut, Env, Params, Err, Out2] = self.map(_ => out)
 
-    def delay(duration: zio.duration.Duration): Flow[StateIn, StateOut, Env with Clock, Params, Err, Output] =
+    def delay(duration: zio.duration.Duration): Flow[StateIn, StateOut, Env with Clock, Params, Err, Value] =
       Flow(
         for {
           ctx    <- ZIO.environment[FlowContext[Env with Clock, StateIn, Params]]
@@ -133,78 +133,78 @@ trait FlowzModule extends Types with ChannelExports with Context {
       )
 
     def flatMap[S, Env1 <: Env, P <: Params, Err1 >: Err, B](
-      func: Output => Flow[StateOut, S, Env1, P, Err1, B]
+      func: Value => Flow[StateOut, S, Env1, P, Err1, B]
     ): Flow[StateIn, S, Env1, P, Err1, B] =
       Flow(ZIO.environment[FlowContext[Env1, StateIn, P]].flatMap { ctx =>
         self.effect.flatMap(out => func(out.value).effect.provide(ctx.updateState(out.state)))
       })
 
     def flatten[S, Env1 <: Env, P <: Params, Err1 >: Err, B](implicit
-      ev: Output <:< Flow[StateOut, S, Env1, P, Err1, B]
+      ev: Value <:< Flow[StateOut, S, Env1, P, Err1, B]
     ): Flow[StateIn, S, Env1, P, Err1, B] =
       flatMap(ev)
 
-    def flipOutputs: Flow[StateIn, Output, Env, Params, Err, StateOut] =
+    def flipOutputs: Flow[StateIn, Value, Env, Params, Err, StateOut] =
       self.mapOutputs { case (state, value) => (value, state) }
 
-    def fork: ForkedFlow[StateIn, StateOut, Env, Params, Err, Output] =
-      new Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, OutputChannels[StateOut, Output]]](
+    def fork: ForkedFlow[StateIn, StateOut, Env, Params, Err, Value] =
+      new Flow[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Value]]](
         self.effect.fork.map { rt =>
-          OutputChannels(rt)
+          StepOutputs(rt)
         }
       )
 
-    def map[Out2](fn: Output => Out2): Flow[StateIn, StateOut, Env, Params, Err, Out2] = Flow(
+    def map[Out2](fn: Value => Out2): Flow[StateIn, StateOut, Env, Params, Err, Out2] = Flow(
       self.effect.map(success => success.map(fn))
     )
 
-    def mapEffect[Out2](fn: Output => Out2)(implicit
+    def mapEffect[Out2](fn: Value => Out2)(implicit
       ev: Err <:< Throwable
     ): RFlow[StateIn, StateOut, Env, Params, Out2] =
       Flow(self.effect.mapEffect(success => success.map(fn)))
 
-    def mapError[Err2](onError: Err => Err2): Flow[StateIn, StateOut, Env, Params, Err2, Output] =
+    def mapError[Err2](onError: Err => Err2): Flow[StateIn, StateOut, Env, Params, Err2, Value] =
       Flow(self.effect.mapError(onError))
 
     def mapOutputs[StateOut2, Output2](
-      func: (StateOut, Output) => (StateOut2, Output2)
+      func: (StateOut, Value) => (StateOut2, Output2)
     ): Flow[StateIn, StateOut2, Env, Params, Err, Output2] =
-      Flow(self.effect.map(out => OutputChannels.fromTuple(func(out.state, out.value))))
+      Flow(self.effect.map(out => StepOutputs.fromTuple(func(out.state, out.value))))
 
     def mapOutputChannels[StateOut2, Output2](
-      func: FOuts[StateOut, Output] => FOuts[StateOut2, Output2]
+      func: FOuts[StateOut, Value] => FOuts[StateOut2, Output2]
     ): Flow[StateIn, StateOut2, Env, Params, Err, Output2] =
       Flow(self.effect.map(func))
 
-    def mapState[SOut2](fn: StateOut => SOut2): Flow[StateIn, SOut2, Env, Params, Err, Output] = Flow(
+    def mapState[SOut2](fn: StateOut => SOut2): Flow[StateIn, SOut2, Env, Params, Err, Value] = Flow(
       self.effect.map(success => success.mapState(fn))
     )
 
     /**
      * Takes the output state and makes it also available as the result value of this flow.
      */
-    def outputState: Flow[StateIn, StateOut, Env, Params, Err, StateOut] =
+    def stateToValue: Flow[StateIn, StateOut, Env, Params, Err, StateOut] =
       self.mapOutputs((state, _) => (state, state))
 
-    def shiftStateToOutput: Flow[StateIn, Unit, Env, Params, Err, (StateOut, Output)] =
-      Flow(effect.map(success => OutputChannels(state = (), value = (success.state, success.value))))
+    def shiftStateToOutput: Flow[StateIn, Unit, Env, Params, Err, (StateOut, Value)] =
+      Flow(effect.map(success => StepOutputs(state = (), value = (success.state, success.value))))
 
     def run(implicit
       evAnyInput: Any <:< Params,
       evAnyState: Any <:< StateIn
-    ): ZIO[Env, Err, OutputChannels[StateOut, Output]] =
+    ): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
       self.effect.provideSome[Env](env => FlowContext(environment = env, params = (), state = ()))
 
-    def run(input: Params)(implicit evAnyState: Unit <:< StateIn): ZIO[Env, Err, OutputChannels[StateOut, Output]] =
+    def run(input: Params)(implicit evAnyState: Unit <:< StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
       self.effect.provideSome[Env](env => FlowContext(environment = env, params = input, state = ()))
 
-    def run(input: Params, initialState: StateIn): ZIO[Env, Err, OutputChannels[StateOut, Output]] =
+    def run(input: Params, initialState: StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
       self.effect.provideSome[Env](env => FlowContext(environment = env, params = input, state = initialState))
 
     /**
      * Make the state and the output value the same by making the state equal to the output.
      */
-    def unifyOutputs: Flow[StateIn, Output, Env, Params, Err, Output] =
+    def unifyOutputs: Flow[StateIn, Value, Env, Params, Err, Value] =
       self.mapOutputs { case (_, out) =>
         (out, out)
       }
@@ -212,12 +212,12 @@ trait FlowzModule extends Types with ChannelExports with Context {
     /**
      * Maps the output state value of this flow to the specified constant value.
      */
-    def stateAs[StateOut2](stateOut: => StateOut2): Flow[StateIn, StateOut2, Env, Params, Err, Output] =
+    def stateAs[StateOut2](stateOut: => StateOut2): Flow[StateIn, StateOut2, Env, Params, Err, Value] =
       self.mapState(_ => stateOut)
 
     def tap[Env1 <: Env, Err1 >: Err](
-      func: (StateOut, Output) => ZIO[Env1, Err1, Any]
-    ): Flow[StateIn, StateOut, Env1, Params, Err1, Output] =
+      func: (StateOut, Value) => ZIO[Env1, Err1, Any]
+    ): Flow[StateIn, StateOut, Env1, Params, Err1, Value] =
       Flow(
         ZIO
           .environment[FlowContext[Env1, StateIn, Params]]
@@ -226,7 +226,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
 
     def tapState[Env1 <: Env, Err1 >: Err](
       func: StateOut => ZIO[Env1, Err1, Any]
-    ): Flow[StateIn, StateOut, Env1, Params, Err1, Output] =
+    ): Flow[StateIn, StateOut, Env1, Params, Err1, Value] =
       Flow(
         ZIO
           .environment[FlowContext[Env1, StateIn, Params]]
@@ -234,8 +234,8 @@ trait FlowzModule extends Types with ChannelExports with Context {
       )
 
     def tapValue[Env1 <: Env, Err1 >: Err](
-      func: Output => ZIO[Env1, Err1, Any]
-    ): Flow[StateIn, StateOut, Env1, Params, Err1, Output] =
+      func: Value => ZIO[Env1, Err1, Any]
+    ): Flow[StateIn, StateOut, Env1, Params, Err1, Value] =
       Flow(
         ZIO
           .environment[FlowContext[Env1, StateIn, Params]]
@@ -243,18 +243,18 @@ trait FlowzModule extends Types with ChannelExports with Context {
       )
 
     def transformEff[StateOut2, Output2](
-      func: (StateOut, Output) => (StateOut2, Output2)
+      func: (StateOut, Value) => (StateOut2, Output2)
     )(implicit ev: Err <:< Throwable): Flow[StateIn, StateOut2, Env, Params, Throwable, Output2] =
-      Flow(self.effect.mapEffect(out => OutputChannels.fromTuple(func(out.state, out.value))))
+      Flow(self.effect.mapEffect(out => StepOutputs.fromTuple(func(out.state, out.value))))
 
     def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
       that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
       Flow((self.effect zip that.effect).map { case (left, right) => left zip right })
 
     def zipPar[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
       that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Output, Output2)] =
+    ): Flow[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
       Flow((self.effect zipPar that.effect).map { case (left, right) => left zip right })
 
     def zipWith[
@@ -268,9 +268,9 @@ trait FlowzModule extends Types with ChannelExports with Context {
       FinalOutput
     ](that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2])(
       f: (
-        OutputChannels[StateOut, Output],
-        OutputChannels[StateOut2, Output2]
-      ) => OutputChannels[FinalState, FinalOutput]
+        StepOutputs[StateOut, Value],
+        StepOutputs[StateOut2, Output2]
+      ) => StepOutputs[FinalState, FinalOutput]
     ): Flow[StateIn1, FinalState, Env1, In1, Err1, FinalOutput] =
       Flow((self.effect zipWith that.effect)(f))
 
@@ -284,7 +284,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
       FinalState,
       FinalOutput
     ](that: Flow[StateIn1, StateOut2, Env1, In1, Err1, Output2])(
-      f: (FOuts[StateOut, Output], FOuts[StateOut2, Output2]) => FOuts[FinalState, FinalOutput]
+      f: (FOuts[StateOut, Value], FOuts[StateOut2, Output2]) => FOuts[FinalState, FinalOutput]
     ): Flow[StateIn1, FinalState, Env1, In1, Err1, FinalOutput] =
       Flow((self.effect zipWithPar that.effect)(f))
   }
@@ -311,23 +311,23 @@ trait FlowzModule extends Types with ChannelExports with Context {
 
     def acceptingEnv[R]: RStep[R, Any, R] =
       Flow(ZIO.environment[FlowContext.having.Environment[R]].map { ctx =>
-        OutputChannels.fromValue(ctx.environment)
+        StepOutputs.fromValue(ctx.environment)
       })
 
     def acceptingState[S]: Flow[S, S, Any, Any, Nothing, S] =
       Flow(ZIO.environment[FlowContext.having.InputState[S]].map { ctx =>
-        OutputChannels(ctx.inputs.state, ctx.inputs.state)
+        StepOutputs(ctx.inputs.state, ctx.inputs.state)
       })
 
     def context[Env, StateIn, Params]: Flow[StateIn, StateIn, Env, Params, Nothing, FlowContext[Env, StateIn, Params]] =
       Flow(
         ZIO
           .environment[FlowContext[Env, StateIn, Params]]
-          .map(ctx => OutputChannels(value = ctx, state = ctx.inputs.state))
+          .map(ctx => StepOutputs(value = ctx, state = ctx.inputs.state))
       )
 
     def effect[Value](value: => Value): TaskStep[Any, Value] =
-      Flow(ZIO.environment[FlowContext.having.AnyInputs].mapEffect(_ => OutputChannels.fromValue(value)))
+      Flow(ZIO.environment[FlowContext.having.AnyInputs].mapEffect(_ => StepOutputs.fromValue(value)))
 
     def fail[Err](error: Err): Flow[Any, Nothing, Any, Any, Err, Nothing] =
       Flow(ZIO.environment[FlowContext.having.AnyInputs] *> ZIO.fail(error))
@@ -341,7 +341,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
     ): Flow[StateIn, StateOut, Env, Params, Throwable, Out] =
       Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].mapEffect { ctx =>
         val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-        OutputChannels(state = state, value = value)
+        StepOutputs(state = state, value = value)
       })
 
     def flow[StateIn, StateOut, Inputs, Env, Params, Err, A, Out](
@@ -353,7 +353,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
         (for {
           inputs  <- before(ctx.inputs.state, ctx.inputs.params)
           a       <- body(inputs)
-          outputs <- after(a).map { case (state, value) => OutputChannels(state = state, value = value) }
+          outputs <- after(a).map { case (state, value) => StepOutputs(state = state, value = value) }
         } yield outputs).provide(ctx.environment)
       })
 
@@ -365,7 +365,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
     ): Flow[StateIn, StateOut, Env, Params, Err, Out] =
       Flow(ZIO.environment[FlowContext[Env, StateIn, Params]].flatMap { ctx =>
         func(ctx.inputs.state, ctx.inputs.params).flatMap { case (state, value) =>
-          ZIO.succeed(OutputChannels(state = state, value = value))
+          ZIO.succeed(StepOutputs(state = state, value = value))
         }.provide(ctx.environment)
       })
 
@@ -373,37 +373,37 @@ trait FlowzModule extends Types with ChannelExports with Context {
       Flow(
         ZIO
           .environment[FlowContext.having.Environment[R]]
-          .flatMap(ctx => effect.map(OutputChannels.fromValue(_)).provide(ctx.environment))
+          .flatMap(ctx => effect.map(StepOutputs.fromValue(_)).provide(ctx.environment))
       )
 
     def fromFunction[In, Out](func: In => Out): Step[Any, In, Nothing, Out] =
       Flow(ZIO.environment[FlowContext.having.Parameters[In]].map { ctx =>
         val value = func(ctx.inputs.params)
-        OutputChannels(value = value, state = value)
+        StepOutputs(value = value, state = value)
       })
 
     def fromEither[Err, Value](value: Either[Err, Value]): Step[Any, Any, Err, Value] =
       Flow(for {
         _     <- ZIO.environment[FlowContext.having.AnyInputs]
         value <- ZIO.fromEither(value)
-      } yield OutputChannels.fromValue(value))
+      } yield StepOutputs.fromValue(value))
 
     def fromOption[Value](value: => Option[Value]): Step[Any, Any, Option[Nothing], Value] =
       Flow(for {
         _     <- ZIO.environment[FlowContext.having.AnyInputs]
         value <- ZIO.fromOption(value)
-      } yield OutputChannels.fromValue(value))
+      } yield StepOutputs.fromValue(value))
 
-    def fromOutputs[State, Output](channels: OutputChannels[State, Output]): USrcFlow[State, Output] =
+    def fromOutputs[State, Output](channels: StepOutputs[State, Output]): USrcFlow[State, Output] =
       Flow(ZIO.succeed(channels))
 
     def fromTry[Value](value: => Try[Value]): TaskStep[Any, Value] =
       Flow(for {
         _     <- ZIO.environment[FlowContext.having.AnyInputs]
         value <- ZIO.fromTry(value)
-      } yield OutputChannels.fromValue(value))
+      } yield StepOutputs.fromValue(value))
 
-    def importOutputs[State, Err, Output](effect: IO[Err, OutputChannels[State, Output]]): SrcFlow[State, Err, Output] =
+    def importOutputs[State, Err, Output](effect: IO[Err, StepOutputs[State, Output]]): SrcFlow[State, Err, Output] =
       Flow(effect)
 
     def inputs[StateIn, Params]: Flow[StateIn, (StateIn, Params), Any, Params, Nothing, (StateIn, Params)] =
@@ -411,11 +411,11 @@ trait FlowzModule extends Types with ChannelExports with Context {
         ZIO
           .environment[FlowContext[Any, StateIn, Params]]
           .map(ctx =>
-            OutputChannels(state = (ctx.inputs.state, ctx.inputs.params), value = (ctx.inputs.state, ctx.inputs.params))
+            StepOutputs(state = (ctx.inputs.state, ctx.inputs.params), value = (ctx.inputs.state, ctx.inputs.params))
           )
       )
 
-    def join[State, Err, Output](fiber: Fiber[Err, OutputChannels[State, Output]]): SrcFlow[State, Err, Output] =
+    def join[State, Err, Output](fiber: Fiber[Err, StepOutputs[State, Output]]): SrcFlow[State, Err, Output] =
       Flow(fiber.join)
 
     def get[State]: Flow[State, State, Any, Any, Nothing, State] =
@@ -441,10 +441,10 @@ trait FlowzModule extends Types with ChannelExports with Context {
     )(
       f: (FOuts[SA, A], FOuts[SB, B], FOuts[SC, C]) => FOuts[SD, D]
     ): Flow[S0, SD, R, P, Err, D] =
-      (flowA <&> flowB <&> flowC).mapOutputChannels { case OutputChannels(((a, b), c), ((sa, sb), sc)) =>
-        val outsA = OutputChannels(state = sa, value = a)
-        val outsB = OutputChannels(state = sb, value = b)
-        val outsC = OutputChannels(state = sc, value = c)
+      (flowA <&> flowB <&> flowC).mapOutputChannels { case StepOutputs(((a, b), c), ((sa, sb), sc)) =>
+        val outsA = StepOutputs(state = sa, value = a)
+        val outsB = StepOutputs(state = sb, value = b)
+        val outsC = StepOutputs(state = sc, value = c)
         f(outsA, outsB, outsC)
       }
 
@@ -457,11 +457,11 @@ trait FlowzModule extends Types with ChannelExports with Context {
       f: (FOuts[SA, A], FOuts[SB, B], FOuts[SC, C], FOuts[SD, D]) => FOuts[SF, F]
     ): Flow[S0, SF, R, P, Err, F] =
       (flowA <&> flowB <&> flowC <&> flowD).mapOutputChannels {
-        case OutputChannels((((a, b), c), d), (((sa, sb), sc), sd)) =>
-          val outsA = OutputChannels(state = sa, value = a)
-          val outsB = OutputChannels(state = sb, value = b)
-          val outsC = OutputChannels(state = sc, value = c)
-          val outsD = OutputChannels(state = sd, value = d)
+        case StepOutputs((((a, b), c), d), (((sa, sb), sc), sd)) =>
+          val outsA = StepOutputs(state = sa, value = a)
+          val outsB = StepOutputs(state = sb, value = b)
+          val outsC = StepOutputs(state = sc, value = c)
+          val outsD = StepOutputs(state = sd, value = d)
           f(outsA, outsB, outsC, outsD)
       }
 
@@ -475,12 +475,12 @@ trait FlowzModule extends Types with ChannelExports with Context {
       f: (FOuts[S1, A1], FOuts[S2, A2], FOuts[S3, A3], FOuts[S4, A4], FOuts[S5, A5]) => FOuts[S6, A6]
     ): Flow[S0, S6, R, P, Err, A6] =
       (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5).mapOutputChannels {
-        case OutputChannels(((((a, b), c), d), e), ((((sa, sb), sc), sd), se)) =>
-          val outsA = OutputChannels(state = sa, value = a)
-          val outsB = OutputChannels(state = sb, value = b)
-          val outsC = OutputChannels(state = sc, value = c)
-          val outsD = OutputChannels(state = sd, value = d)
-          val outsE = OutputChannels(state = se, value = e)
+        case StepOutputs(((((a, b), c), d), e), ((((sa, sb), sc), sd), se)) =>
+          val outsA = StepOutputs(state = sa, value = a)
+          val outsB = StepOutputs(state = sb, value = b)
+          val outsC = StepOutputs(state = sc, value = c)
+          val outsD = StepOutputs(state = sd, value = d)
+          val outsE = StepOutputs(state = se, value = e)
           f(outsA, outsB, outsC, outsD, outsE)
       }
 
@@ -495,13 +495,13 @@ trait FlowzModule extends Types with ChannelExports with Context {
       func: (FOuts[S1, A1], FOuts[S2, A2], FOuts[S3, A3], FOuts[S4, A4], FOuts[S5, A5], FOuts[S6, A6]) => FOuts[S7, A7]
     ): Flow[S0, S7, R, P, Err, A7] =
       (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6).mapOutputChannels {
-        case OutputChannels((((((a, b), c), d), e), f), (((((sa, sb), sc), sd), se), sf)) =>
-          val outsA = OutputChannels(state = sa, value = a)
-          val outsB = OutputChannels(state = sb, value = b)
-          val outsC = OutputChannels(state = sc, value = c)
-          val outsD = OutputChannels(state = sd, value = d)
-          val outsE = OutputChannels(state = se, value = e)
-          val outsF = OutputChannels(state = sf, value = f)
+        case StepOutputs((((((a, b), c), d), e), f), (((((sa, sb), sc), sd), se), sf)) =>
+          val outsA = StepOutputs(state = sa, value = a)
+          val outsB = StepOutputs(state = sb, value = b)
+          val outsC = StepOutputs(state = sc, value = c)
+          val outsD = StepOutputs(state = sd, value = d)
+          val outsE = StepOutputs(state = se, value = e)
+          val outsF = StepOutputs(state = sf, value = f)
           func(outsA, outsB, outsC, outsD, outsE, outsF)
       }
 
@@ -525,14 +525,14 @@ trait FlowzModule extends Types with ChannelExports with Context {
       ) => FOuts[S8, A8]
     ): Flow[S0, S8, R, P, Err, A8] =
       (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6 <&> flow7).mapOutputChannels {
-        case OutputChannels(((((((a, b), c), d), e), f), g), ((((((sa, sb), sc), sd), se), sf), sg)) =>
-          val outsA = OutputChannels(state = sa, value = a)
-          val outsB = OutputChannels(state = sb, value = b)
-          val outsC = OutputChannels(state = sc, value = c)
-          val outsD = OutputChannels(state = sd, value = d)
-          val outsE = OutputChannels(state = se, value = e)
-          val outsF = OutputChannels(state = sf, value = f)
-          val outsG = OutputChannels(state = sg, value = g)
+        case StepOutputs(((((((a, b), c), d), e), f), g), ((((((sa, sb), sc), sd), se), sf), sg)) =>
+          val outsA = StepOutputs(state = sa, value = a)
+          val outsB = StepOutputs(state = sb, value = b)
+          val outsC = StepOutputs(state = sc, value = c)
+          val outsD = StepOutputs(state = sd, value = d)
+          val outsE = StepOutputs(state = se, value = e)
+          val outsF = StepOutputs(state = sf, value = f)
+          val outsG = StepOutputs(state = sg, value = g)
           func(outsA, outsB, outsC, outsD, outsE, outsF, outsG)
       }
 
@@ -558,15 +558,15 @@ trait FlowzModule extends Types with ChannelExports with Context {
       ) => FOuts[S9, A9]
     ): Flow[S0, S9, R, P, Err, A9] =
       (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6 <&> flow7 <&> flow8).mapOutputChannels {
-        case OutputChannels((((((((a, b), c), d), e), f), g), h), (((((((sa, sb), sc), sd), se), sf), sg), sh)) =>
-          val outsA = OutputChannels(state = sa, value = a)
-          val outsB = OutputChannels(state = sb, value = b)
-          val outsC = OutputChannels(state = sc, value = c)
-          val outsD = OutputChannels(state = sd, value = d)
-          val outsE = OutputChannels(state = se, value = e)
-          val outsF = OutputChannels(state = sf, value = f)
-          val outsG = OutputChannels(state = sg, value = g)
-          val outsH = OutputChannels(state = sh, value = h)
+        case StepOutputs((((((((a, b), c), d), e), f), g), h), (((((((sa, sb), sc), sd), se), sf), sg), sh)) =>
+          val outsA = StepOutputs(state = sa, value = a)
+          val outsB = StepOutputs(state = sb, value = b)
+          val outsC = StepOutputs(state = sc, value = c)
+          val outsD = StepOutputs(state = sd, value = d)
+          val outsE = StepOutputs(state = se, value = e)
+          val outsF = StepOutputs(state = sf, value = f)
+          val outsG = StepOutputs(state = sg, value = g)
+          val outsH = StepOutputs(state = sh, value = h)
           func(outsA, outsB, outsC, outsD, outsE, outsF, outsG, outsH)
       }
 
@@ -582,7 +582,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
      * Returns a flow with the empty value.
      */
     val none: UStep[Any, Option[Nothing]] =
-      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels.none))
+      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(StepOutputs.none))
 
     /**
      * A step that returns the given parameters.
@@ -596,11 +596,11 @@ trait FlowzModule extends Types with ChannelExports with Context {
      * A flow that succeeds with a unit value.
      */
     val unit: UStep[Any, Unit] =
-      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels.unit))
+      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(StepOutputs.unit))
 
     def update[StateIn, StateOut](func: StateIn => StateOut): Flow[StateIn, StateOut, Any, Any, Nothing, Unit] =
       Flow(ZIO.environment[FlowContext.having.InputState[StateIn]].map { ctx =>
-        OutputChannels.fromState(func(ctx.inputs.state))
+        StepOutputs.fromState(func(ctx.inputs.state))
       })
 
     def set[S](state: S): Flow[Any, S, Any, Any, Nothing, Unit] =
@@ -619,7 +619,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
     ): Flow[StateIn, StateOut, Any, Params, Nothing, Out] =
       Flow(ZIO.environment[FlowContext.having.AnyEnv[StateIn, Params]].map { ctx =>
         val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-        OutputChannels(state = state, value = value)
+        StepOutputs(state = state, value = value)
       })
 
     def statefulEffect[StateIn, Params, StateOut, Out](
@@ -627,7 +627,7 @@ trait FlowzModule extends Types with ChannelExports with Context {
     ): Flow[StateIn, StateOut, Any, Params, Throwable, Out] =
       Flow(ZIO.environment[FlowContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>
         val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-        OutputChannels(state = state, value = value)
+        StepOutputs(state = state, value = value)
       })
 
     def step[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Env, Params, Err, Out] =
@@ -636,15 +636,15 @@ trait FlowzModule extends Types with ChannelExports with Context {
       })
 
     def succeed[A](value: => A): UStep[Any, A] =
-      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels.fromValue(value)))
+      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(StepOutputs.fromValue(value)))
 
     def succeed[Value, State](value: => Value, state: => State): USrcFlow[State, Value] =
-      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(OutputChannels(value = value, state = state)))
+      Flow(ZIO.environment[FlowContext.having.AnyInputs].as(StepOutputs(value = value, state = state)))
 
     def task[In, Out](func: In => Out): TaskStep[In, Out] =
       Flow(ZIO.environment[FlowContext.having.Parameters[In]].mapEffect { ctx =>
         val value = func(ctx.inputs.params)
-        OutputChannels(value = value, state = value)
+        StepOutputs(value = value, state = value)
       })
   }
 
@@ -682,14 +682,14 @@ trait FlowzModule extends Types with ChannelExports with Context {
   trait FiberSyntax {
     import FiberSyntax._
     implicit def toFiberOutputChannelOps[State, Err, Output](
-      fiber: Fiber[Err, OutputChannels[State, Err]]
+      fiber: Fiber[Err, StepOutputs[State, Err]]
     ): FiberOutputChannelOps[State, Err, Output] =
       new FiberOutputChannelOps[State, Err, Output](fiber)
 
   }
 
   object FiberSyntax {
-    class FiberOutputChannelOps[+State, +Err, +Output](val self: Fiber[Err, OutputChannels[State, Err]]) extends {
+    class FiberOutputChannelOps[+State, +Err, +Output](val self: Fiber[Err, StepOutputs[State, Err]]) extends {
       def joinFlow: SrcFlow[State, Err, Err] = Flow.join(self)
     }
   }

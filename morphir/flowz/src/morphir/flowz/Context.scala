@@ -2,12 +2,12 @@ package morphir.flowz
 
 trait Context extends ChannelExports {
 
-  sealed case class FlowContext[+Env, +State, +Params](environment: Env, inputs: InputChannels[State, Params]) { self =>
+  sealed case class FlowContext[+Env, +State, +Params](environment: Env, inputs: StepInputs[State, Params]) { self =>
 
     def updateInputs[S, P](state: S, params: P): FlowContext[Env, S, P] =
-      self.copy(inputs = InputChannels(state = state, params = params))
+      self.copy(inputs = StepInputs(state = state, params = params))
 
-    def updateInputs[S, A](outputs: OutputChannels[S, A]): FlowContext[Env, S, A] =
+    def updateInputs[S, A](outputs: StepOutputs[S, A]): FlowContext[Env, S, A] =
       self.copy(inputs = outputs.toInputs)
 
     def updateState[S](state: S): FlowContext[Env, S, Params] =
@@ -16,13 +16,13 @@ trait Context extends ChannelExports {
   }
   object FlowContext {
     def apply[Env, State, Params](environment: Env, state: State, params: Params): FlowContext[Env, State, Params] =
-      FlowContext(environment = environment, inputs = InputChannels(params = params, state = state))
+      FlowContext(environment = environment, inputs = StepInputs(params = params, state = state))
 
     def provideEnvironment[Env](env: => Env): FlowContext[Env, Unit, Unit] =
       setEnvironment(env)
 
     def setEnvironment[Env](env: => Env): FlowContext[Env, Unit, Unit] =
-      FlowContext(environment = env, inputs = InputChannels.unit)
+      FlowContext(environment = env, inputs = StepInputs.unit)
 
     object having {
 

@@ -123,7 +123,7 @@ object PresidentialSampleMain extends App {
           executive = executive.value,
           congress = congressional.value
         )
-        OutputChannels(state = dataSources, value = dataSources)
+        StepOutputs(state = dataSources, value = dataSources)
       } >>> getPresidentsCongressionalServiceRecord.mapOutputs { (dataSources, presidents) =>
         val finalData = FinalDataSources(
           raw = dataSources.raw,

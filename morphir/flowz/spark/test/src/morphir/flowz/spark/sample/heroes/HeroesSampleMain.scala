@@ -70,7 +70,7 @@ object HeroesSampleMain extends App {
   val loadDataSourcesPar: SparkFlow[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
     SparkFlow.mapParN(loadAbilities, loadHeroAbilities, loadPeople, loadAlterEgos) {
       case (abilitiesOut, heroAbilitiesOut, peopleOut, alterEgosOut) =>
-        OutputChannels.unified {
+        StepOutputs.unified {
           DataSources(
             abilities = abilitiesOut.value,
             heroAbilities = heroAbilitiesOut.value,
