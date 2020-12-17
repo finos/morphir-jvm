@@ -38,7 +38,10 @@ object Deps {
     val zioPrelude             = "1.0.0-RC1"
     val zioProcess             = "0.2.0"
     val newtype                = "0.4.4"
-    val decline                = "1.3.0"
+    def decline(scalaVersion:String)                =  scalaVersion match {
+      case version if version.startsWith("2.11") => "1.2.0"
+      case _ => "1.3.0"
+    }
     val pprint                 = "0.5.9"
     val scalameta              = "4.3.18"
     val directories            = "11"
@@ -273,7 +276,10 @@ object morphir extends Module {
         with MorphirPublishModule { self =>
 
       def artifactName = "morphir-flowz"
+      def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+      def compileIvyDeps      = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
       def ivyDeps      = Agg(
+        ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}",
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-config:${Versions.zioConfig}",
         ivy"dev.zio::zio-config-typesafe:${Versions.zioConfig}",
@@ -287,6 +293,7 @@ object morphir extends Module {
       object test extends Tests {
         def platformSegment: String = self.platformSegment
         def crossScalaVersion       = JvmMorphirFlowz.this.crossScalaVersion
+        override def ivyDeps = super.ivyDeps() ++ Agg(ivy"com.monovore::decline:${Versions.decline(crossScalaVersion)}")
       }
     }
 
