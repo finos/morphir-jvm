@@ -1,9 +1,8 @@
 package morphir.flowz.sample
 
-import morphir.flowz.default._
 import zio.IO
 
-object BasicFlow extends DefaultRunnableFlow {
+object BasicFlow {
   type Params                  = MyParameters
   type CommandLineParsingError = Throwable
 

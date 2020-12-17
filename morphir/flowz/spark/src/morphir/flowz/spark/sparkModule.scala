@@ -9,8 +9,13 @@ import scala.reflect.runtime.universe.TypeTag
 object sparkModule {
   type SparkModule = Has[SparkModule.Service]
 
+  def apply[A](f: SparkSession => A): ZIO[SparkModule, Throwable, A] = withSpark(f)
+
   def createDataset[A <: Product: TypeTag](data: Seq[A]): ZIO[SparkModule, Throwable, Dataset[A]] =
     ZIO.accessM[SparkModule](_.get.createDataset(data))
+
+  def createDatasetOf[A <: Product: TypeTag](data: A*): ZIO[SparkModule, Throwable, Dataset[A]] =
+    ZIO.accessM[SparkModule](_.get.createDatasetOf(data: _*))
 
   def getConfigValue(key: String): ZIO[SparkModule, NoSuchElementException, String] =
     ZIO.accessM[SparkModule](_.get.getConfigValue(key))
@@ -36,6 +41,7 @@ object sparkModule {
       def sparkSession: SparkSession
 
       def createDataset[A <: Product: TypeTag](data: Seq[A]): Task[Dataset[A]]
+      def createDatasetOf[A <: Product: TypeTag](items: A*): Task[Dataset[A]]
       def getConfigValue(key: String): IO[NoSuchElementException, String]
       def makeDataset[A](func: SparkSession => Dataset[A]): Task[Dataset[A]]
 
@@ -55,6 +61,11 @@ object sparkModule {
         def createDataset[A <: Product: TypeTag](data: Seq[A]): Task[Dataset[A]] = Task.effect {
           import sparkSession.implicits._
           sparkSession.createDataset(data)
+        }
+
+        def createDatasetOf[A <: Product: TypeTag](items: A*): Task[Dataset[A]] = Task.effect {
+          import sparkSession.implicits._
+          sparkSession.createDataset(items)
         }
 
         def getConfigValue(key: String): IO[NoSuchElementException, String] = Task.effect {
