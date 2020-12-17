@@ -61,14 +61,14 @@ object StepSpec extends DefaultRunnableSpec {
         )
       },
       testM("It should be possible to combine flows using zip") {
-        val flowA                                                            = Step.withOutputs("A")
-        val flowB                                                            = Step.withOutputs(1)
+        val flowA                                                            = Step.withStateAndValue("A")
+        val flowB                                                            = Step.withStateAndValue(1)
         val flow: Step[Any, (String, Int), Any, Any, Nothing, (String, Int)] = flowA zip flowB
         assertM(flow.run)(equalTo(StepOutputs(state = ("A", 1), value = ("A", 1))))
       },
       testM("It should be possible to combine flows using the zip operator <*>") {
-        val flowA                                                            = Step.withOutputs("A")
-        val flowB                                                            = Step.withOutputs(1)
+        val flowA                                                            = Step.withStateAndValue("A")
+        val flowB                                                            = Step.withStateAndValue(1)
         val flow: Step[Any, (String, Int), Any, Any, Nothing, (String, Int)] = flowA <*> flowB
         assertM(flow.run)(equalTo(StepOutputs(state = ("A", 1), value = ("A", 1))))
       },

@@ -1,8 +1,9 @@
 package morphir.flowz.spark.sample.heroes
 
 import io.getquill.QuillSparkContext
-import morphir.flowz.spark.default._, flowzApi._
-import sparkModule.SparkModule
+import morphir.flowz.api._
+import morphir.flowz.spark.SparkStep
+import morphir.flowz.spark.api._
 import org.apache.spark.sql.{ Dataset, SQLContext, SparkSession }
 import zio._
 import zio.clock.Clock
@@ -55,20 +56,20 @@ object HeroesSampleMain extends App {
     AlterEgo(firstName = "Jean", lastName = "Grey", heroName = "Phoenix", isSecret = true)
   )
 
-  val loadAbilities: SparkStep[Clock with Console with Random, Options, Throwable, Dataset[Ability]] =
+  val loadAbilities =
     createDataset(abilities)
 
-  val loadHeroAbilities: SparkStep[Clock with Console with Random, Options, Throwable, Dataset[HeroAbility]] =
+  val loadHeroAbilities =
     createDataset(heroAbilities)
 
-  val loadPeople: SparkStep[Clock with Console with Random, Options, Throwable, Dataset[Person]] =
+  val loadPeople =
     createDataset(people)
 
-  val loadAlterEgos: SparkStep[Clock with Console with Random, Options, Throwable, Dataset[AlterEgo]] =
+  val loadAlterEgos =
     createDataset(alterEgos)
 
-  val loadDataSourcesPar: SparkFlow[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
-    SparkFlow.mapParN(loadAbilities, loadHeroAbilities, loadPeople, loadAlterEgos) {
+  val loadDataSourcesPar: SparkStep[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
+    Step.mapParN(loadAbilities, loadHeroAbilities, loadPeople, loadAlterEgos) {
       case (abilitiesOut, heroAbilitiesOut, peopleOut, alterEgosOut) =>
         StepOutputs.unified {
           DataSources(
@@ -80,7 +81,7 @@ object HeroesSampleMain extends App {
         }
     }
 
-  val loadDataSourcesSeq: SparkFlow[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
+  val loadDataSourcesSeq: SparkStep[Any, DataSources, Clock with Console with Random, Options, Throwable, DataSources] =
     (for {
       abilities     <- loadAbilities
       heroAbilities <- loadHeroAbilities
@@ -91,9 +92,9 @@ object HeroesSampleMain extends App {
       heroAbilities = heroAbilities,
       people = people,
       alterEgos = alterEgos
-    )).unifyOutputs
+    )).valueAsState
 
-  val loadDataSources: SparkStep[Clock with Console with Random, Options, Throwable, DataSources] =
+  val loadDataSources =
     SparkStep.parameters[Options].flatMap { options: Options =>
       if (options.parallelLoads)
         loadDataSourcesPar
@@ -101,7 +102,7 @@ object HeroesSampleMain extends App {
         loadDataSourcesSeq
     }
 
-  val getAllHeroNames: SparkFlow[DataSources, DataSources, Any, Any, Throwable, Dataset[String]] =
+  val getAllHeroNames: SparkStep[DataSources, DataSources, Any, Any, Throwable, Dataset[String]] =
     SparkStep
       .state[DataSources]
       .flatMap { dataSources =>
@@ -119,7 +120,7 @@ object HeroesSampleMain extends App {
       .tapValue(dataset => ZIO.effect(dataset.show(false)))
 
   val getAllHeroAbilities
-    : SparkFlow[DataSources, DataSources, Any, Dataset[String], Throwable, Dataset[HeroAbilities]] =
+    : SparkStep[DataSources, DataSources, Any, Dataset[String], Throwable, Dataset[HeroAbilities]] =
     Step.context[Any, DataSources, Dataset[String]].flatMap { ctx =>
       val heroAbilities = ctx.inputs.state.heroAbilities
       val abilities     = ctx.inputs.state.abilities
@@ -147,8 +148,8 @@ object HeroesSampleMain extends App {
       }.stateAs(ctx.inputs.state)
     }
 
-  val parseCommandLine: Step[Any, List[String], Nothing, Options] =
-    Step.makeStep { args: List[String] =>
+  val parseCommandLine =
+    SparkStep { args: List[String] =>
       ZIO.succeed {
         val useParallelSources = args match {
           case head :: _ if head.equalsIgnoreCase("parallel")   => true
@@ -173,7 +174,7 @@ object HeroesSampleMain extends App {
     }
 
     val flow =
-      parseCommandLine >>> loadDataSources.unifyOutputs >>> getAllHeroNames >>> getAllHeroAbilities >>> SparkStep
+      parseCommandLine >>> loadDataSources.valueAsState >>> getAllHeroNames >>> getAllHeroAbilities >>> SparkStep
         .showDataset(false)
     flow
       .run(args)
@@ -187,7 +188,7 @@ object HeroesSampleMain extends App {
 
   def createDataset[A <: Product: ClassTag: TypeTag: zio.Tag](
     data: => Seq[A]
-  ): SparkStep[Clock with Console with Random, Options, Throwable, Dataset[A]] =
+  ): SparkStep[Any, Unit, Random with Clock with Console, Options, Throwable, Dataset[A]] =
     SparkStep.makeStep { options: Options =>
       val tag = zio.Tag[A]
       for {

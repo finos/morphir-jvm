@@ -1,3 +1,3 @@
 package morphir.flowz.spark
 
-trait SparkApi extends FlowzSparkModule with DatasetModule {}
+trait SparkApi extends SparkModuleExports with SparkSupport with DatasetModule {}

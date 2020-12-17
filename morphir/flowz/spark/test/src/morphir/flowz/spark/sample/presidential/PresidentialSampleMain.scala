@@ -1,9 +1,8 @@
 package morphir.flowz.spark.sample.presidential
 
-import morphir.flowz.spark.{ default, sparkModule }
-import default._
+import morphir.flowz.api._
+import morphir.flowz.spark.api._
 import sparkModule.SparkModule
-import flowzApi._
 import org.apache.spark.sql.{ DataFrame, Dataset, SQLContext, SparkSession }
 import org.apache.spark.sql.functions.{ explode, struct }
 import zio._
@@ -50,7 +49,7 @@ object PresidentialSampleMain extends App {
     }
 
     val initialize = stage { (_: Any, options: Options) =>
-      Flow.fromEffect(console.putStrLn(s"Options: $options")) *>
+      Step.fromEffect(console.putStrLn(s"Options: $options")) *>
         (loadExecutiveBranchInfo |+| loadLegislators).map { case (executiveData, legislatureData) =>
           RawDataSources(executiveData = executiveData, legislatureData = legislatureData)
         }.mapOutputs((_, out) => (out, out))
@@ -135,7 +134,7 @@ object PresidentialSampleMain extends App {
       }
     }
 
-    val createReport = flowM { (data: FinalDataSources, _: Any) =>
+    val createReport = Step { (data: FinalDataSources, _: Any) =>
       for {
         numPrez     <- ZIO.effect(data.executive.filter(p => p.position == "prez").count())
         numVeep     <- ZIO.effect(data.executive.filter(p => p.position == "viceprez").count())
@@ -144,9 +143,9 @@ object PresidentialSampleMain extends App {
         presidentsWhoServedInCongress <-
           ZIO.effect(data.presidents.filter(pres => pres.servedInCongress).distinct().collect().toList)
         numPrezWithCongressionalRecs <- ZIO.succeed(presidentsWhoServedInCongress.size)
-      } yield (
-        data,
-        Report(
+      } yield StepOutputs(
+        state = data,
+        value = Report(
           numberOfPresidents = numPrez,
           numberOfVicePresidents = numVeep,
           numberOfSenators = numSenators,
@@ -157,7 +156,7 @@ object PresidentialSampleMain extends App {
       )
     }
 
-    val printReport = flowM { (data: FinalDataSources, report: Report) =>
+    val printReport = Step { (data: FinalDataSources, report: Report) =>
       for {
         _ <- console.putStrLn(s"Number of Presidents: ${report.numberOfPresidents}")
         _ <- console.putStrLn(s"Number of Vice Presidents: ${report.numberOfVicePresidents}")
@@ -178,7 +177,7 @@ object PresidentialSampleMain extends App {
                                   )
                               }
         _ <- console.putStrLn(presidentialReport)
-      } yield (data, report)
+      } yield StepOutputs(state = data, value = report)
     }
 
   }

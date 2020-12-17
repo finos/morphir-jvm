@@ -4,6 +4,8 @@ import zio.Fiber
 import zio.prelude._
 
 package object flowz {
+  object api extends Api
+
   object CommandLineArgs extends Subtype[List[String]]
   type CommandLineArgs = CommandLineArgs.Type
 

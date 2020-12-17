@@ -5,7 +5,11 @@ import zio.clock.Clock
 
 import scala.util.Try
 
-trait Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] { self =>
+final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
+  effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
+  name: Option[String] = None,
+  description: Option[String] = None
+) { self =>
 
   /**
    * Connect this Step to the given Step. By connecting the output state of this Step to the input state of the other Step
@@ -44,7 +48,7 @@ trait Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] { self =>
    * Adapts the input provided to the Step using the provided function.
    */
   def adaptParameters[Input0](func: Input0 => Params): Step[StateIn, StateOut, Env, Input0, Err, Value] =
-    Step[StateIn, StateOut, Env, Input0, Err, Value](self.effect.provideSome { ctx =>
+    new Step[StateIn, StateOut, Env, Input0, Err, Value](self.effect.provideSome { ctx =>
       ctx.copy(inputs = ctx.inputs.copy(params = func(ctx.inputs.params)))
     })
 
@@ -72,10 +76,6 @@ trait Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] { self =>
         result <- self.effect.provide(ctx).delay(duration).provide(ctx.environment)
       } yield result
     )
-
-  def description: Option[String]
-
-  protected def effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]]
 
   def flatMap[S, Env1 <: Env, P <: Params, Err1 >: Err, B](
     func: Value => Step[StateOut, S, Env1, P, Err1, B]
@@ -125,10 +125,9 @@ trait Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] { self =>
     self.effect.map(success => success.mapState(fn))
   )
 
-  def name: Option[String]
-
-  def named(name: String): Step[StateIn, StateOut, Env, Params, Err, Value]
-  def describe(name: String): Step[StateIn, StateOut, Env, Params, Err, Value]
+  def named(name: String): Step[StateIn, StateOut, Env, Params, Err, Value] = copy(name = Option(name))
+  def describe(description: String): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    copy(description = Option(description))
 
   def run(implicit
     evAnyInput: Any <:< Params,
@@ -242,8 +241,34 @@ trait Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] { self =>
 object Step {
 
   def apply[StateIn, StateOut, Env, Params, Err, Value](
-    effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]]
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] = FromEffect(effect)
+    func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
+  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(
+      ZIO
+        .environment[StepContext[Env, StateIn, Params]]
+        .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment))
+    )
+
+  def apply[StateIn, StateOut, Env, Params, Err, Value](name: String)(
+    func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
+  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(
+      ZIO
+        .environment[StepContext[Env, StateIn, Params]]
+        .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment)),
+      name = Option(name)
+    )
+
+  def apply[StateIn, StateOut, Env, Params, Err, Value](name: String, description: String)(
+    func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
+  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(
+      ZIO
+        .environment[StepContext[Env, StateIn, Params]]
+        .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment)),
+      name = Option(name),
+      description = Option(description)
+    )
 
   def context[Env, StateIn, Params]: Step[StateIn, StateIn, Env, Params, Nothing, StepContext[Env, StateIn, Params]] =
     Step(
@@ -496,6 +521,10 @@ object Step {
   ): Step[StateIn, StateOut, Env, Params, Err, Out] =
     Step.context[Env, StateIn, Params].flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params))
 
+  def state[State]: Step[State, State, Any, Any, Nothing, State] = Step(
+    ZIO.environment[StepContext[Any, State, Any]].map(ctx => StepOutputs.setBoth(ctx.inputs.state))
+  )
+
   def stateful[StateIn, Params, StateOut, Out](
     func: (StateIn, Params) => (StateOut, Out)
   ): Step[StateIn, StateOut, Any, Params, Nothing, Out] =
@@ -524,11 +553,11 @@ object Step {
       StepOutputs(state = state, value = value)
     })
 
-  def succeed[Value](value: => Value): ConstantStep[Unit, Value] =
-    ConstantStep.succeed(value)
+  def succeed[Value](value: => Value): Step[Any, Unit, Any, Any, Nothing, Value] =
+    Step(ZIO.succeed(StepOutputs.fromValue(value)))
 
-  def succeed[State, Value](state: => State, value: => Value): ConstantStep[State, Value] =
-    ConstantStep.succeed(state = state, value = value)
+  def succeed[State, Value](state: => State, value: => Value): Step[Any, State, Any, Any, Nothing, Value] =
+    Step(ZIO.succeed(StepOutputs(state = state, value = value)))
 
   def name[StateIn, StateOut, Env, Params, Err, Value](name: String)(
     step: Step[StateIn, StateOut, Env, Params, Err, Value]
@@ -554,6 +583,15 @@ object Step {
    */
   val unit: Step[Any, Unit, Any, Any, Nothing, Unit] =
     Step(ZIO.environment[StepContext.having.AnyInputs].as(StepOutputs.unit))
+
+  def withStateAs[State](state: => State): Step[Any, State, Any, Any, Nothing, Unit] =
+    Step(ZIO.succeed(StepOutputs.fromState(state)))
+
+  def withValue[Value](value: => Value): Step[Any, Unit, Any, Any, Nothing, Value] =
+    Step(ZIO.succeed(StepOutputs.fromValue(value)))
+
+  def withStateAndValue[A](valueAndSate: => A): Step[Any, A, Any, Any, Nothing, A] =
+    Step(ZIO.succeed(valueAndSate).map(StepOutputs.setBoth(_)))
 
   def withEnvironment[Env, Err, State, Value](
     func: Env => ZIO[Env, Err, (State, Value)]
@@ -581,23 +619,11 @@ object Step {
         )
     )
 
-  def withOutputs[A](valueAndSate: A): ConstantStep[A, A] =
+  def withOutputs[A](valueAndSate: A): Step[Any, A, Any, Any, Nothing, A] =
     succeed(state = valueAndSate, value = valueAndSate)
 
   def withParams[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Any, Unit, Env, Params, Err, Out] =
     Step.parameters[Params].flatMap { params =>
       Step.fromEffect(func(params))
     }
-
-  private final case class FromEffect[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
-    effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
-    name: Option[String] = None,
-    description: Option[String] = None
-  ) extends Step[StateIn, StateOut, Env, Params, Err, Value] {
-    def named(name: String): Step[StateIn, StateOut, Env, Params, Err, Value] = copy(name = Option(name))
-
-    def describe(description: String): Step[StateIn, StateOut, Env, Params, Err, Value] =
-      copy(description = Option(description))
-  }
-
 }
