@@ -304,6 +304,13 @@ object Step {
         .flatMap(ctx => effect.map(StepOutputs.fromValue(_)).provide(ctx.environment))
     )
 
+  def fromEffect[P, R, E, A](func: P => ZIO[R, E, A]): Step[Any, Unit, R, P, E, A] =
+    Step(
+      ZIO
+        .environment[StepContext[R, Any, P]]
+        .flatMap(ctx => func(ctx.inputs.params).map(StepOutputs.fromValue(_)).provide(ctx.environment))
+    )
+
   def fromEither[Err, Value](value: Either[Err, Value]): Step[Any, Unit, Any, Any, Err, Value] =
     Step(for {
       _     <- ZIO.environment[StepContext.having.AnyInputs]
