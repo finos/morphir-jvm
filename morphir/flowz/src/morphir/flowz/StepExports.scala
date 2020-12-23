@@ -14,6 +14,9 @@ trait StepExports {
     func: (StateIn, Params) => (StateOut, Out)
   ): Step[StateIn, StateOut, Any, Params, Throwable, Out] = Step.step(func)
 
+  final type Stateless[-Env, -Params, +Err, +Value] = Step[Any, Unit, Env, Params, Err, Value]
+  val Stateless: Step.type = morphir.flowz.Step
+
   final type Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] =
     morphir.flowz.Step[StateIn, StateOut, Env, Params, Err, Value]
   val Step: morphir.flowz.Step.type = morphir.flowz.Step
