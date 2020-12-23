@@ -6,6 +6,8 @@ trait StepExports {
   type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
     Step[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
+  final type Activity[-Env, -Params, +Err, +Value] = Step[Any, Value, Env, Params, Err, Value]
+
   def stage[StateIn, StateOut, Env, Params, Err, Out](
     func: (StateIn, Params) => Step[StateIn, StateOut, Env, Params, Err, Out]
   ): Step[StateIn, StateOut, Env, Params, Err, Out] = Step.stage(func)
