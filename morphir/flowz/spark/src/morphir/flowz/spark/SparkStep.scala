@@ -17,7 +17,7 @@ object SparkStep {
     description: Option[String] = None
   ): SparkStep[StateIn, StateOut, Env, Params, Err, Value] =
     Step[StateIn, StateOut, Env with SparkModule, Params, Err, Value](
-      effect = effect,
+      rawEffect = effect,
       name = name,
       description = description
     )
