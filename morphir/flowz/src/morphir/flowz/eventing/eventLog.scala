@@ -1,19 +1,78 @@
 package morphir.flowz.eventing
+import morphir.flowz.eventing.behavior.AggregateBehavior
 import zio._
-import zio.prelude._
 import zio.stm._
 import zio.stream._
 
 object eventLog {
-  object EventStreamId extends Newtype[String]
-  type EventStreamId = EventStreamId.Type
+
+  def aggregate[E, S](initial: S)(update: (S, E) => Task[S]): Task[AggregateBehavior[E, S]] =
+    ZIO.succeed(new AggregateBehavior(initial, update))
+
+  def allIds[Event: Tag]: ZStream[EventLog[Event], Throwable, EventStreamId] =
+    ZStream.accessStream[EventLog[Event]](_.get.allIds)
+
+  def allAggregates[Event: Tag, State](
+    behavior: AggregateBehavior[Event, State]
+  ): ZStream[EventLog[Event], Throwable, Aggregate[Event, State]] =
+    ZStream.accessStream[EventLog[Event]](_.get.allAggregates(behavior))
+
+  def createAggregate[Event: Tag, State](
+    streamId: EventStreamId,
+    behavior: AggregateBehavior[Event, State]
+  ): ZIO[EventLog[Event], Throwable, Aggregate[Event, State]] =
+    ZIO.accessM[EventLog[Event]](_.get.createAggregate(streamId, behavior))
+
+  def load[Event: Tag, State](
+    streamId: EventStreamId,
+    behavior: AggregateBehavior[Event, State]
+  ): ZIO[EventLog[Event], Throwable, Aggregate[Event, State]] =
+    ZIO.accessM[EventLog[Event]](_.get.load(streamId, behavior))
+
+  def loadEvents[Event: Tag](streamId: EventStreamId): ZStream[EventLog[Event], Throwable, Event] =
+    ZStream.accessStream[EventLog[Event]](_.get.loadEvents(streamId))
+
+  def persistEvent[Event: Tag](streamId: EventStreamId, event: Event): RIO[EventLog[Event], Unit] =
+    ZIO.accessM(_.get.persistEvent(streamId, event))
 
   type EventLog[Event] = Has[EventLog.Service[Event]]
   object EventLog {
     trait Service[Event] {
-      def persistEvent(streamId: EventStreamId, event: Event): Task[Unit]
-      def loadEvents(streamId: EventStreamId): Stream[Throwable, Event]
+
       def allIds: Stream[Throwable, EventStreamId]
+
+      /**
+       * Stream of all aggregates stored
+       */
+      def allAggregates[State](behavior: AggregateBehavior[Event, State]): Stream[Throwable, Aggregate[Event, State]] =
+        allIds.mapM(load(_, behavior))
+
+      /**
+       * Create new empty aggregate
+       */
+      def createAggregate[State](
+        streamId: EventStreamId,
+        behavior: AggregateBehavior[Event, State]
+      ): Task[Aggregate[Event, State]] =
+        for {
+          initialStateRef <- Ref.make(behavior.initialState)
+        } yield new Aggregate[Event, State](streamId, initialStateRef, behavior.update, persistEvent)
+
+      def loadEvents(streamId: EventStreamId): Stream[Throwable, Event]
+
+      /**
+       * Load aggregate from event journal
+       */
+      def load[State](
+        streamId: EventStreamId,
+        behavior: AggregateBehavior[Event, State]
+      ): Task[Aggregate[Event, State]] =
+        for {
+          agg <- createAggregate[State](streamId, behavior)
+          res <- loadEvents(streamId).foldM(agg)(_ appendNoPersist _)
+        } yield res
+
+      def persistEvent(streamId: EventStreamId, event: Event): Task[Unit]
     }
 
     object Service {
@@ -49,6 +108,5 @@ object eventLog {
 
     def any[Event: Tag]: ZLayer[EventLog[Event], Nothing, EventLog[Event]] = ZLayer.requires[EventLog[Event]]
     def inMemory[Event: Tag]: ULayer[EventLog[Event]]                      = Service.inMemory[Event].toLayer
-
   }
 }

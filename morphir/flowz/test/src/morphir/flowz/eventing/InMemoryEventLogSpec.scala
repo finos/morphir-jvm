@@ -1,6 +1,5 @@
 package morphir.flowz.eventing
 
-import morphir.flowz.eventing.eventLog.EventStreamId
 import zio.Chunk
 import zio.stream.ZSink
 import zio.test._

@@ -6,7 +6,7 @@ import zio.clock.Clock
 import scala.util.Try
 
 final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
-  effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
+  private[flowz] val rawEffect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
   name: Option[String] = None,
   description: Option[String] = None
 ) { self =>
@@ -77,6 +77,8 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
       } yield result
     )
 
+  val effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]] = rawEffect
+
   def flatMap[S, Env1 <: Env, P <: Params, Err1 >: Err, B](
     func: Value => Step[StateOut, S, Env1, P, Err1, B]
   ): Step[StateIn, S, Env1, P, Err1, B] =
@@ -125,9 +127,76 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
     self.effect.map(success => success.mapState(fn))
   )
 
+  /**
+   * Executes this step and returns its value, if it succeeds, but otherwise executes the specified step.
+   */
+  def orElse[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err2, StateOut2 >: StateOut, Value2 >: Value](
+    that: => Step[StateIn1, StateOut2, Env1, Params1, Err2, Value2]
+  )(implicit ev: CanFail[Err]): Step[StateIn1, StateOut2, Env1, Params1, Err2, Value2] =
+    Step(self.effect orElse that.effect)
+
+  /**
+   * Returns a step that will produce the value of this step, unless it
+   * fails, in which case, it will produce the value of the specified step.
+   */
+  def orElseEither[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err2, ThatState >: StateOut, ThatValue](
+    that: => Step[StateIn1, ThatState, Env1, Params1, Err2, ThatValue]
+  )(implicit
+    ev: CanFail[Err]
+  ): Step[StateIn1, Either[StateOut, ThatState], Env1, Params1, Err2, Either[Value, ThatValue]] =
+    new Step((self.effect orElseEither that.effect).map {
+      case Left(outputs)  => StepOutputs(state = Left(outputs.state), value = Left(outputs.value))
+      case Right(outputs) => StepOutputs(state = Right(outputs.state), value = Right(outputs.value))
+    })
+
+  /**
+   * Executes this step and returns its value, if it succeeds, but otherwise fails with the specified error.
+   */
+  def orElseFail[State >: StateOut, Err1](error: Err1)(implicit
+    ev: CanFail[Err]
+  ): Step[StateIn, StateOut, Env, Params, Err1, Value] =
+    orElse(Step.fail(error))
+
+  /**
+   * Executes this step and returns its value, if it succeeds, but otherwise succeeds with the specified state and value.
+   */
+  def orElseSucceed[State >: StateOut, Value1 >: Value](state: => State, value: => Value1)(implicit
+    ev: CanFail[Err]
+  ): Step[StateIn, State, Env, Params, Nothing, Value1] =
+    orElse(Step.succeed(state = state, value = value))
+
   def named(name: String): Step[StateIn, StateOut, Env, Params, Err, Value] = copy(name = Option(name))
   def describe(description: String): Step[StateIn, StateOut, Env, Params, Err, Value] =
     copy(description = Option(description))
+
+  /**
+   * Repeats the step the specified number of times.
+   */
+  def repeatN(n: Int): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatN(n))
+
+  def repeatUntil(f: StepOutputs[StateOut, Value] => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatUntil(f))
+
+  def repeatUntil(statePredicate: StateOut => Boolean)(
+    valuePredicate: Value => Boolean
+  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatUntil(outputs => statePredicate(outputs.state) && valuePredicate(outputs.value)))
+
+  def repeatWhile(f: StepOutputs[StateOut, Value] => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatWhile(f))
+
+  def repeatWhileState(f: StateOut => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatWhile(outputs => f(outputs.state)))
+
+  def repeatWhileValue(f: Value => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatWhile(outputs => f(outputs.value)))
+
+  def retryN(n: Int)(implicit ev: CanFail[Err]): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.retryN(n))
+
+  def retryWhile(f: StepOutputs[StateOut, Value] => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
+    Step(effect.repeatWhile(f))
 
   def run(implicit
     evAnyInput: Any <:< Params,
