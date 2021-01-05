@@ -25,4 +25,7 @@ trait StepExports {
 
   final type StepInputs[+State, +Params] = morphir.flowz.StepInputs[State, Params]
   val StepInputs: morphir.flowz.StepInputs.type = morphir.flowz.StepInputs
+
+  final type StepContext[+Env, +State, +Params] = morphir.flowz.StepContext[Env, State, Params]
+  val StepContext: morphir.flowz.StepContext.type = morphir.flowz.StepContext
 }

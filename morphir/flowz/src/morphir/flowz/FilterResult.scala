@@ -16,6 +16,9 @@ final case class FilterResult[+X, +I] private (included: Option[I], excluded: Op
         )
     }
 
+  val isIncluded: Boolean = included.isDefined
+  val isExcluded: Boolean = !isIncluded
+
   /**
    * Convert to an `Either` where `Excluded` results are `Left` and `Included` results are `Right`
    */
