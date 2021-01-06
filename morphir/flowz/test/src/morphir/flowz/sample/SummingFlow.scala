@@ -5,10 +5,15 @@ import zio._
 
 object SummingFlow extends App {
   def run(args: List[String]): URIO[ZEnv, ExitCode] =
-    flow("sum-flow")
-      .setup(StepContext.fromParams[List[Int]])
+    flow("sum-flow").setupWithEffect { args: List[String] =>
+      val parsedItems = args.map(input => ZIO.effect(input.toInt))
+      ZIO
+        .collectAllSuccesses(parsedItems)
+        .map(StepContext.fromParams[List[Int]])
+    }
       .stages(Step.fromFunction { items: List[Int] => items.sum })
       .build
-      .run(List(1, 2, 3))
+      .run(List("1", "2", "3", "Four", "5"))
+      .flatMap(sum => console.putStrLn(s"Sum: $sum"))
       .exitCode
 }
