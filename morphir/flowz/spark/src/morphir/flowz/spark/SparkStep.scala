@@ -121,7 +121,7 @@ object SparkStep {
         .mapEffect(ctx => StepOutputs.setBoth(func(ctx.environment.get.sparkSession)(ctx.inputs.params)))
     )
 
-  def sparkStepM[Env, Params, Err, A](
+  def sparkStepEffect[Env, Params, Err, A](
     func: SparkSession => Params => ZIO[Env with SparkModule, Err, A]
   ): SparkStep[Any, A, Nothing, Params, Err, A] =
     SparkStep[Any, A, Env, Params, Err, A](
@@ -135,8 +135,18 @@ object SparkStep {
     )
 
   def state[State]: SparkStep[State, State, Any, Any, Nothing, State] = SparkStep(
-    ZIO.environment[StepContext[SparkModule, State, Any]].map(ctx => StepOutputs.setBoth(ctx.inputs.state))
+    ZIO.access[StepContext[SparkModule, State, Any]](ctx => StepOutputs.setBoth(ctx.inputs.state))
   )
+
+  def stateM[StateIn, StateOut, Env, Params, Err, Value](
+    func: StateIn => Step[Any, StateOut, Env with SparkModule, Params, Err, Value]
+  ): SparkStep[StateIn, StateOut, Env, Params, Err, Value] = SparkStep[StateIn, StateOut, Env, Params, Err, Value](
+    ZIO.accessM[StepContext[Env with SparkModule, StateIn, Params]](ctx => func(ctx.inputs.state).effect)
+  )
+
+  def toDataFrame[A]: SparkStep[Any, Unit, Any, Dataset[A], Throwable, DataFrame] = SparkStep { data: Dataset[A] =>
+    ZIO.effect(data.toDF())
+  }
 
   def transformDataset[A, B <: Product: ClassTag: TypeTag, S1, S2](
     func: (S1, Dataset[A]) => (S2, Dataset[B])
