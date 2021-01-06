@@ -210,6 +210,9 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   def run(input: Params, initialState: StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
     self.effect.provideSome[Env](env => StepContext(environment = env, params = input, state = initialState))
 
+  def run(context: StepContext[Env, StateIn, Params]): IO[Err, StepOutputs[StateOut, Value]] =
+    self.effect.provide(context)
+
   def shiftStateToOutput: Step[StateIn, Unit, Env, Params, Err, (StateOut, Value)] =
     Step(effect.map(success => StepOutputs(state = (), value = (success.state, success.value))))
 
