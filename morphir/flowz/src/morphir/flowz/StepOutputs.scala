@@ -23,7 +23,7 @@ final case class StepOutputs[+State, +Value](state: State, value: Value) { self 
 }
 
 object StepOutputs {
-  def assignBoth[A](value: => A): StepOutputs[A, A] = unified(value)
+  def assignBoth[A](value: A): StepOutputs[A, A] = unified(value)
 
   def fromState[State](state: => State): StepOutputs[State, Unit] =
     StepOutputs(state = state, value = ())
@@ -43,7 +43,7 @@ object StepOutputs {
   def fromTuple[Value, State](tuple: (State, Value)): StepOutputs[State, Value] =
     new StepOutputs(value = tuple._2, state = tuple._1)
 
-  def setBoth[A](value: => A): StepOutputs[A, A] = unified(value)
+  def setBoth[A](value: A): StepOutputs[A, A] = unified(value)
 
-  def unified[Value](value: => Value): StepOutputs[Value, Value] = StepOutputs(value, value)
+  def unified[Value](value: Value): StepOutputs[Value, Value] = StepOutputs(value, value)
 }
