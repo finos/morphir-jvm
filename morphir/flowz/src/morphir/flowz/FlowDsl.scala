@@ -124,12 +124,19 @@ trait FlowDsl {
     }
 
   }
+}
 
-  object demo {
+object demo extends zio.App {
+  import morphir.flowz.api._
+
+  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
     flow("sum-flow")
       .setup((args: List[Int]) => StepContext.fromParams(args))
-      .stages(Step.fromFunction { items: List[Int] => items.sum })
+      .stages(
+        stage((_: Any, items: List[Int]) => Step.succeed(items.sum))
+      )
       .build
       .run(List(1, 2, 3))
-  }
+      .flatMap(res => console.putStrLn(s"Result: $res"))
+      .exitCode
 }
