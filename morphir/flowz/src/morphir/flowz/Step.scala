@@ -310,7 +310,7 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
     Step((self.effect zipWithPar that.effect)(f))
 }
 
-object Step {
+object Step extends StepCompanion[Any] {
 
   def apply[StateIn, StateOut, Env, Params, Err, Value](
     func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
@@ -342,47 +342,6 @@ object Step {
       description = Option(description)
     )
 
-  def context[Env, StateIn, Params]: Step[StateIn, StateIn, Env, Params, Nothing, StepContext[Env, StateIn, Params]] =
-    Step(
-      ZIO
-        .environment[StepContext[Env, StateIn, Params]]
-        .map(ctx => StepOutputs(value = ctx, state = ctx.inputs.state))
-    )
-
-  def describe[StateIn, StateOut, Env, Params, Err, Value](description: String)(
-    step: Step[StateIn, StateOut, Env, Params, Err, Value]
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    step.describe(description)
-
-  def effect[Value](value: => Value): Step[Any, Unit, Any, Any, Throwable, Value] =
-    Step(ZIO.environment[StepContext.having.AnyInputs].mapEffect(_ => StepOutputs.fromValue(value)))
-
-//  def effect[State, Value](outputs: => (State, Value)): Step[Any, Unit, Any, Any, Throwable, Value] =
-//    Step(ZIO.environment[StepContext.having.AnyInputs].mapEffect { _ =>
-//      val (state, value) = outputs
-//      StepOutputs(state = state, value = value)
-//    })
-
-  def environment[Env]: Step[Any, Env, Env, Any, Nothing, Env] =
-    Step(ZIO.environment[StepContext.having.Environment[Env]].map(ctx => StepOutputs.setBoth(ctx.environment)))
-
-  def fail[Err](error: Err): Step[Any, Nothing, Any, Any, Err, Nothing] =
-    Step(ZIO.environment[StepContext.having.AnyInputs] *> ZIO.fail(error))
-
-  def fromEffect[R, E, A](effect: ZIO[R, E, A]): Step[Any, Unit, R, Any, E, A] =
-    Step(
-      ZIO
-        .environment[StepContext[R, Any, Any]]
-        .flatMap(ctx => effect.map(StepOutputs.fromValue(_)).provide(ctx.environment))
-    )
-
-  def fromEffect[P, R, E, A](func: P => ZIO[R, E, A]): Step[Any, Unit, R, P, E, A] =
-    Step(
-      ZIO
-        .environment[StepContext[R, Any, P]]
-        .flatMap(ctx => func(ctx.inputs.params).map(StepOutputs.fromValue(_)).provide(ctx.environment))
-    )
-
   def fromEither[Err, Value](value: Either[Err, Value]): Step[Any, Unit, Any, Any, Err, Value] =
     Step(for {
       _     <- ZIO.environment[StepContext.having.AnyInputs]
@@ -410,9 +369,6 @@ object Step {
       value <- ZIO.fromTry(value)
     } yield StepOutputs.fromValue(value))
 
-  def get[State]: Step[State, State, Any, Any, Nothing, State] =
-    modify[State, State, State](s => (s, s))
-
   def inputs[StateIn, Params]: Step[StateIn, (StateIn, Params), Any, Params, Nothing, (StateIn, Params)] =
     Step(
       ZIO
@@ -424,176 +380,6 @@ object Step {
 
   def join[State, Err, Output](fiber: Fiber[Err, StepOutputs[State, Output]]): Step[Any, State, Any, Any, Err, Output] =
     Step(fiber.join)
-
-  def mapN[S0, R, P, Err, SA, A, SB, B, SC, C](flowA: Step[S0, SA, R, P, Err, A], flowB: Step[S0, SB, R, P, Err, B])(
-    f: (StepOutputs[SA, A], StepOutputs[SB, B]) => StepOutputs[SC, C]
-  ): Step[S0, SC, R, P, Err, C] =
-    flowA.zipWith(flowB)(f)
-
-  def mapParN[S0, R, P, Err, SA, A, SB, B, SC, C](
-    flowA: Step[S0, SA, R, P, Err, A],
-    flowB: Step[S0, SB, R, P, Err, B]
-  )(
-    f: (StepOutputs[SA, A], StepOutputs[SB, B]) => StepOutputs[SC, C]
-  ): Step[S0, SC, R, P, Err, C] =
-    flowA.zipWithPar(flowB)(f)
-
-  def mapParN[S0, R, P, Err, SA, A, SB, B, SC, C, SD, D](
-    flowA: Step[S0, SA, R, P, Err, A],
-    flowB: Step[S0, SB, R, P, Err, B],
-    flowC: Step[S0, SC, R, P, Err, C]
-  )(
-    f: (StepOutputs[SA, A], StepOutputs[SB, B], StepOutputs[SC, C]) => StepOutputs[SD, D]
-  ): Step[S0, SD, R, P, Err, D] =
-    (flowA <&> flowB <&> flowC).mapOutputChannels { case StepOutputs(((sa, sb), sc), ((a, b), c)) =>
-      val outsA = StepOutputs(state = sa, value = a)
-      val outsB = StepOutputs(state = sb, value = b)
-      val outsC = StepOutputs(state = sc, value = c)
-      f(outsA, outsB, outsC)
-    }
-
-  def mapParN[S0, R, P, Err, SA, A, SB, B, SC, C, SD, D, SF, F](
-    flowA: Step[S0, SA, R, P, Err, A],
-    flowB: Step[S0, SB, R, P, Err, B],
-    flowC: Step[S0, SC, R, P, Err, C],
-    flowD: Step[S0, SD, R, P, Err, D]
-  )(
-    f: (StepOutputs[SA, A], StepOutputs[SB, B], StepOutputs[SC, C], StepOutputs[SD, D]) => StepOutputs[SF, F]
-  ): Step[S0, SF, R, P, Err, F] =
-    (flowA <&> flowB <&> flowC <&> flowD).mapOutputChannels {
-      case StepOutputs((((sa, sb), sc), sd), (((a, b), c), d)) =>
-        val outsA = StepOutputs(state = sa, value = a)
-        val outsB = StepOutputs(state = sb, value = b)
-        val outsC = StepOutputs(state = sc, value = c)
-        val outsD = StepOutputs(state = sd, value = d)
-        f(outsA, outsB, outsC, outsD)
-    }
-
-  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6](
-    flow1: Step[S0, S1, R, P, Err, A1],
-    flow2: Step[S0, S2, R, P, Err, A2],
-    flow3: Step[S0, S3, R, P, Err, A3],
-    flow4: Step[S0, S4, R, P, Err, A4],
-    flow5: Step[S0, S5, R, P, Err, A5]
-  )(
-    f: (
-      StepOutputs[S1, A1],
-      StepOutputs[S2, A2],
-      StepOutputs[S3, A3],
-      StepOutputs[S4, A4],
-      StepOutputs[S5, A5]
-    ) => StepOutputs[S6, A6]
-  ): Step[S0, S6, R, P, Err, A6] =
-    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5).mapOutputChannels {
-      case StepOutputs(((((sa, sb), sc), sd), se), ((((a, b), c), d), e)) =>
-        val outsA = StepOutputs(state = sa, value = a)
-        val outsB = StepOutputs(state = sb, value = b)
-        val outsC = StepOutputs(state = sc, value = c)
-        val outsD = StepOutputs(state = sd, value = d)
-        val outsE = StepOutputs(state = se, value = e)
-        f(outsA, outsB, outsC, outsD, outsE)
-    }
-
-  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6, S7, A7](
-    flow1: Step[S0, S1, R, P, Err, A1],
-    flow2: Step[S0, S2, R, P, Err, A2],
-    flow3: Step[S0, S3, R, P, Err, A3],
-    flow4: Step[S0, S4, R, P, Err, A4],
-    flow5: Step[S0, S5, R, P, Err, A5],
-    flow6: Step[S0, S6, R, P, Err, A6]
-  )(
-    func: (
-      StepOutputs[S1, A1],
-      StepOutputs[S2, A2],
-      StepOutputs[S3, A3],
-      StepOutputs[S4, A4],
-      StepOutputs[S5, A5],
-      StepOutputs[S6, A6]
-    ) => StepOutputs[S7, A7]
-  ): Step[S0, S7, R, P, Err, A7] =
-    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6).mapOutputChannels {
-      case StepOutputs((((((sa, sb), sc), sd), se), sf), (((((a, b), c), d), e), f)) =>
-        val outsA = StepOutputs(state = sa, value = a)
-        val outsB = StepOutputs(state = sb, value = b)
-        val outsC = StepOutputs(state = sc, value = c)
-        val outsD = StepOutputs(state = sd, value = d)
-        val outsE = StepOutputs(state = se, value = e)
-        val outsF = StepOutputs(state = sf, value = f)
-        func(outsA, outsB, outsC, outsD, outsE, outsF)
-    }
-
-  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6, S7, A7, S8, A8](
-    flow1: Step[S0, S1, R, P, Err, A1],
-    flow2: Step[S0, S2, R, P, Err, A2],
-    flow3: Step[S0, S3, R, P, Err, A3],
-    flow4: Step[S0, S4, R, P, Err, A4],
-    flow5: Step[S0, S5, R, P, Err, A5],
-    flow6: Step[S0, S6, R, P, Err, A6],
-    flow7: Step[S0, S7, R, P, Err, A7]
-  )(
-    func: (
-      StepOutputs[S1, A1],
-      StepOutputs[S2, A2],
-      StepOutputs[S3, A3],
-      StepOutputs[S4, A4],
-      StepOutputs[S5, A5],
-      StepOutputs[S6, A6],
-      StepOutputs[S7, A7]
-    ) => StepOutputs[S8, A8]
-  ): Step[S0, S8, R, P, Err, A8] =
-    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6 <&> flow7).mapOutputChannels {
-      case StepOutputs(((((((sa, sb), sc), sd), se), sf), sg), ((((((a, b), c), d), e), f), g)) =>
-        val outsA = StepOutputs(state = sa, value = a)
-        val outsB = StepOutputs(state = sb, value = b)
-        val outsC = StepOutputs(state = sc, value = c)
-        val outsD = StepOutputs(state = sd, value = d)
-        val outsE = StepOutputs(state = se, value = e)
-        val outsF = StepOutputs(state = sf, value = f)
-        val outsG = StepOutputs(state = sg, value = g)
-        func(outsA, outsB, outsC, outsD, outsE, outsF, outsG)
-    }
-
-  def mapParN[S0, R, P, Err, S1, A1, S2, A2, S3, A3, S4, A4, S5, A5, S6, A6, S7, A7, S8, A8, S9, A9](
-    flow1: Step[S0, S1, R, P, Err, A1],
-    flow2: Step[S0, S2, R, P, Err, A2],
-    flow3: Step[S0, S3, R, P, Err, A3],
-    flow4: Step[S0, S4, R, P, Err, A4],
-    flow5: Step[S0, S5, R, P, Err, A5],
-    flow6: Step[S0, S6, R, P, Err, A6],
-    flow7: Step[S0, S7, R, P, Err, A7],
-    flow8: Step[S0, S8, R, P, Err, A8]
-  )(
-    func: (
-      StepOutputs[S1, A1],
-      StepOutputs[S2, A2],
-      StepOutputs[S3, A3],
-      StepOutputs[S4, A4],
-      StepOutputs[S5, A5],
-      StepOutputs[S6, A6],
-      StepOutputs[S7, A7],
-      StepOutputs[S8, A8]
-    ) => StepOutputs[S9, A9]
-  ): Step[S0, S9, R, P, Err, A9] =
-    (flow1 <&> flow2 <&> flow3 <&> flow4 <&> flow5 <&> flow6 <&> flow7 <&> flow8).mapOutputChannels {
-      case StepOutputs((((((((sa, sb), sc), sd), se), sf), sg), sh), (((((((a, b), c), d), e), f), g), h)) =>
-        val outsA = StepOutputs(state = sa, value = a)
-        val outsB = StepOutputs(state = sb, value = b)
-        val outsC = StepOutputs(state = sc, value = c)
-        val outsD = StepOutputs(state = sd, value = d)
-        val outsE = StepOutputs(state = se, value = e)
-        val outsF = StepOutputs(state = sf, value = f)
-        val outsG = StepOutputs(state = sg, value = g)
-        val outsH = StepOutputs(state = sh, value = h)
-        func(outsA, outsB, outsC, outsD, outsE, outsF, outsG, outsH)
-    }
-
-  def modify[StateIn, StateOut, Output](
-    func: StateIn => (StateOut, Output)
-  ): Step[StateIn, StateOut, Any, Any, Nothing, Output] =
-    context[Any, StateIn, Any].flatMap { ctx =>
-      val (stateOut, output) = func(ctx.inputs.state)
-      Step.succeed(value = output, state = stateOut)
-    }
 
   def stage[StateIn, StateOut, Env, Params, Err, Out](
     func: (StateIn, Params) => Step[StateIn, StateOut, Env, Params, Err, Out]
@@ -632,30 +418,11 @@ object Step {
       StepOutputs(state = state, value = value)
     })
 
-  def succeed[Value](value: => Value): Step[Any, Unit, Any, Any, Nothing, Value] =
-    Step(ZIO.succeed(StepOutputs.fromValue(value)))
-
-  def succeed[State, Value](state: => State, value: => Value): Step[Any, State, Any, Any, Nothing, Value] =
-    Step(ZIO.succeed(StepOutputs(state = state, value = value)))
-
-  def name[StateIn, StateOut, Env, Params, Err, Value](name: String)(
-    step: Step[StateIn, StateOut, Env, Params, Err, Value]
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    step.named(name)
-
   /**
    * Returns a step with the empty value.
    */
   val none: Step[Any, Option[Nothing], Any, Any, Nothing, Option[Nothing]] =
     Step(ZIO.environment[StepContext.having.AnyInputs].as(StepOutputs.none))
-
-  /**
-   * A step that returns the given parameters.
-   */
-  def parameters[P]: Step[Any, P, Any, P, Nothing, P] =
-    Step.context[Any, Any, P].flatMap { ctx =>
-      Step.succeed(ctx.inputs.params, ctx.inputs.params)
-    }
 
   /**
    * A step that succeeds with a unit value.
