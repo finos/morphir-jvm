@@ -1,7 +1,7 @@
 package morphir.flowz
 
 import zio._
-
+import com.github.ghik.silencer.silent
 trait FlowDsl {
   def flow(name: String): Flow.Builder[Any, Any, Nothing, Unit, Nothing, Nothing, Any] =
     Flow.builder(name)
@@ -40,36 +40,81 @@ trait FlowDsl {
     def apply(name: String): Builder[Any, Any, Nothing, Unit, Nothing, Nothing, Any] =
       Builder(name)
 
-    sealed trait Builder[-StartupEnv, -Input, Env, State, Params, +Output, Phase] { self =>
+    sealed abstract class Builder[-StartupEnv, -Input, Env, State, Params, Output, Phase] { self =>
 
-      def setup[Input1 <: Input, Env1, State1, Params1](
+      protected def name: String
+      protected def setupEffect: Option[RIO[(StartupEnv, Input), StepContext[Env, State, Params]]]
+      protected def step: Option[Step[State, _, Env, Params, Throwable, Output]]
+      protected def report: Option[Output => ZIO[Env, Throwable, Any]]
+
+      final def setup[Input1 <: Input, Env1, State1, Params1](
         setupFunc: Input1 => StepContext[Env1, State1, Params1]
       )(implicit
-        ev: Any <:< Phase
-      ): Builder[StartupEnv, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup]
+        @silent("never used") ev: Any <:< Phase
+      ): Builder[StartupEnv, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup] = {
+        val setupEffect = ZIO.environment[(StartupEnv, Input1)].mapEffect { case (_, input) => setupFunc(input) }
+        Builder[StartupEnv, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup](
+          name = self.name,
+          setupEffect = Some(setupEffect),
+          step = None,
+          report = None
+        )
+      }
 
-      def setupWithEffect[StartupEnv1 <: StartupEnv, Input1 <: Input, Env1, State1, Params1](
+      final def setupWithEffect[StartupEnv1 <: StartupEnv, Input1 <: Input, Env1, State1, Params1](
         effectualSetupFunc: Input1 => RIO[StartupEnv1, StepContext[Env1, State1, Params1]]
       )(implicit
-        ev: Any <:< Phase
-      ): Builder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup]
+        @silent("never used") ev: Any <:< Phase
+      ): Builder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup] = {
+        val setupEffect = ZIO.environment[(StartupEnv1, Input1)].flatMap { case (startupEnv, input) =>
+          effectualSetupFunc(input).provide(startupEnv)
+        }
+        Builder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup](
+          name = self.name,
+          setupEffect = Some(setupEffect),
+          step = None,
+          report = None
+        )
+      }
 
-      def stages[Output1](
+      final def stages[Output1](
         step: Step[State, _, Env, Params, Throwable, Output1]
-      ): Builder[StartupEnv, Input, Env, State, Params, Output1, Phase with BuilderPhase.DefineStages]
+      ): Builder[StartupEnv, Input, Env, State, Params, Output1, Phase with BuilderPhase.DefineStages] =
+        Builder[StartupEnv, Input, Env, State, Params, Output1, Phase with BuilderPhase.DefineStages](
+          name = self.name,
+          setupEffect = self.setupEffect,
+          step = Some(step),
+          report = None
+        )
 
       def build(implicit
         ev: Phase <:< BuilderPhase.Setup with BuilderPhase.DefineStages
       ): Flow[StartupEnv, Input, Output]
 
-      def report(
+      final def report(
         f: Output => ZIO[Env, Throwable, Any]
-      ): Builder[StartupEnv, Input, Env, State, Params, Output, Phase with BuilderPhase.Report]
+      )(implicit
+        @silent("never used") ev: Phase <:< BuilderPhase.DefineStages
+      ): Builder[StartupEnv, Input, Env, State, Params, Output, Phase with BuilderPhase.Report] =
+        Builder[StartupEnv, Input, Env, State, Params, Output, Phase with BuilderPhase.Report](
+          name = self.name,
+          step = self.step,
+          setupEffect = self.setupEffect,
+          report = self.report.map(g => (o: Output) => f(o) *> g(o)) orElse Some(f)
+        )
     }
 
     object Builder {
       def apply(name: String): Builder[Any, Any, Nothing, Unit, Nothing, Nothing, Any] =
         FlowBuilder(name, None, None, None)
+
+      private def apply[StartupEnv, Input, Env, StateIn, Params, Output, Phase](
+        name: String,
+        setupEffect: Option[RIO[(StartupEnv, Input), StepContext[Env, StateIn, Params]]],
+        step: Option[Step[StateIn, _, Env, Params, Throwable, Output]],
+        report: Option[Output => ZIO[Env, Throwable, Any]]
+      ): Builder[StartupEnv, Input, Env, StateIn, Params, Output, Phase] =
+        FlowBuilder(name = name, setupEffect = setupEffect, step = step, report = report)
 
       private sealed case class FlowBuilder[StartupEnv, Input, Env, StateIn, Params, Output, Phase](
         name: String,
@@ -98,56 +143,6 @@ trait FlowDsl {
             }
           }
         }
-
-        def setup[Input1 <: Input, Env1, State1, Params1](
-          setupFunc: Input1 => StepContext[Env1, State1, Params1]
-        )(implicit
-          ev: Any <:< Phase
-        ): Builder[StartupEnv, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup] = {
-          val setupEffect = ZIO.environment[(StartupEnv, Input1)].mapEffect { case (_, input) => setupFunc(input) }
-          FlowBuilder[StartupEnv, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup](
-            name = self.name,
-            setupEffect = Some(setupEffect),
-            step = None,
-            report = None
-          )
-        }
-
-        def setupWithEffect[StartupEnv1 <: StartupEnv, Input1 <: Input, Env1, State1, Params1](
-          effectualSetupFunc: Input1 => RIO[StartupEnv1, StepContext[Env1, State1, Params1]]
-        )(implicit
-          ev: Any <:< Phase
-        ): Builder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup] = {
-          val setupEffect = ZIO.environment[(StartupEnv1, Input1)].flatMap { case (startupEnv, input) =>
-            effectualSetupFunc(input).provide(startupEnv)
-          }
-          FlowBuilder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup](
-            name = self.name,
-            setupEffect = Some(setupEffect),
-            step = None,
-            report = None
-          )
-        }
-
-        def stages[Output1](
-          step: Step[StateIn, _, Env, Params, Throwable, Output1]
-        ): Builder[StartupEnv, Input, Env, StateIn, Params, Output1, Phase with BuilderPhase.DefineStages] =
-          FlowBuilder[StartupEnv, Input, Env, StateIn, Params, Output1, Phase with BuilderPhase.DefineStages](
-            name = self.name,
-            setupEffect = self.setupEffect,
-            step = Some(step),
-            report = None
-          )
-
-        def report(
-          f: Output => ZIO[Env, Throwable, Any]
-        ): Builder[StartupEnv, Input, Env, StateIn, Params, Output, Phase with BuilderPhase.Report] =
-          FlowBuilder[StartupEnv, Input, Env, StateIn, Params, Output, Phase with BuilderPhase.Report](
-            name = self.name,
-            step = self.step,
-            setupEffect = self.setupEffect,
-            report = self.report.map(g => (o: Output) => f(o) *> g(o)) orElse Some(f)
-          )
 
       }
 

@@ -6,7 +6,7 @@ import zio._
 object SummingFlow extends App {
   def run(args: List[String]): URIO[ZEnv, ExitCode] =
     flow("sum-flow")
-      .setup(StepContext.fromParams[List[Int]])
+      .setup((items: List[Int]) => StepContext.fromParams[List[Int]](items))
       .stages(Step.fromFunction { items: List[Int] => items.sum })
       .build
       .run(List(1, 2, 3))
