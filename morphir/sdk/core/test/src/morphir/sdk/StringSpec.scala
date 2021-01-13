@@ -60,6 +60,13 @@ object StringSpec extends DefaultRunnableSpec {
       appendTests(
         ("butter", "fly", "butterfly")
       ): _*
+    ),
+    suite("String.join specs")(
+      joinTests(
+        ("a", List("H", "w", "ii", "n"), "Hawaiian"),
+        (" ", List("cat", "dog", "cow"), "cat dog cow"),
+        ("/", List("home", "evan", "Desktop"), "home/evan/Desktop")
+      ): _*
     )
   )
 
@@ -184,10 +191,19 @@ object StringSpec extends DefaultRunnableSpec {
       }
     }
 
-  def joinTests(cases: (Char.Char, List[String.String], String.String)*) =
+  def joinWithCharTests(cases: (Char.Char, List[String.String], String.String)*) =
     cases.map { case (sep, chunks, expected) =>
       test(
-        s"Given a List[String]: '$chunks' calling join should return '$expected'"
+        s"Given a List[String]: '$chunks' calling join with a Char separator should return '$expected'"
+      ) {
+        assert(String.join(sep)(chunks))(equalTo(expected))
+      }
+    }
+
+  def joinTests(cases: (String.String, List[String.String], String.String)*): Seq[ZSpec[Any, Nothing]] =
+    cases.map { case (sep, chunks, expected) =>
+      test(
+        s"Given a List[String]: '$chunks' calling join with a String separator should return '$expected'"
       ) {
         assert(String.join(sep)(chunks))(equalTo(expected))
       }
