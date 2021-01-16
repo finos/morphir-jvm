@@ -256,6 +256,9 @@ object morphir extends Module {
           with MorphirPublishModule { self =>
 
         def artifactName = "morphir-sdk-core"
+        def ivyDeps = Agg(
+          ivy"dev.zio::zio-prelude:${Versions.zioPrelude}"
+        )
         object test extends Tests {
           def platformSegment: String = self.platformSegment
           def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
