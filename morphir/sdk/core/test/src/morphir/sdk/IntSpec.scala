@@ -50,10 +50,8 @@ object IntSpec extends DefaultRunnableSpec {
       },
       testM("Dividing an Int value by an Int value") {
         check(Gen.anyLong, Gen.anyLong.filter(n => n != 0)) { (x: Int64, y: Int64) =>
-          val bigX             = BigInt(x)
-          val bigY             = BigInt(y)
-          val expected: BigInt = bigX / bigY
-          assert(sdk.Int.divide(bigX)(bigY))(equalTo(expected))
+          val expected: Long = x / y
+          assert(sdk.Int.divide(x)(y))(equalTo(expected))
         }
       }
     ),
@@ -84,9 +82,9 @@ object IntSpec extends DefaultRunnableSpec {
       },
       testM("Performing ModBy on Ints") {
         check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (longDivisor, longDividend) =>
-          val divisor                = BigInt(longDivisor)
-          val dividend               = BigInt(longDividend)
-          val expected: scala.BigInt = (dividend % divisor).abs
+          val divisor       = Int(longDivisor)
+          val dividend      = Int(longDividend)
+          val expected: Int = (dividend % divisor).abs
           assert(sdk.Int.modBy(divisor)(dividend))(equalTo(expected))
         }
       }
@@ -122,9 +120,9 @@ object IntSpec extends DefaultRunnableSpec {
       },
       testM("Performing remainderBy on Ints") {
         check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (longDivisor, longDividend) =>
-          val divisor                = BigInt(longDivisor)
-          val dividend               = BigInt(longDividend)
-          val expected: scala.BigInt = dividend % divisor
+          val divisor       = Int(longDivisor)
+          val dividend      = Int(longDividend)
+          val expected: Int = dividend % divisor
           assert(sdk.Int.remainderBy(divisor)(dividend))(equalTo(expected))
         }
       }

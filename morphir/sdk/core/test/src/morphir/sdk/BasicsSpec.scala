@@ -162,6 +162,14 @@ object BasicsSpec extends DefaultRunnableSpec {
           assert(Basics.lessThanOrEqual(d1)(d1))(equalTo(expected))
         }
       }
+    ),
+    suite("BoolSpec")(
+      test("Bool xor - true xor true")(
+        assert(Basics.xor(Basics.Bool(true))(Basics.Bool(true)))(isFalse)
+      ),
+      test("Bool xor - true xor false")(
+        assert(Basics.xor(Basics.Bool(true))(Basics.Bool(false)))(isFalse)
+      )
     )
   )
 }

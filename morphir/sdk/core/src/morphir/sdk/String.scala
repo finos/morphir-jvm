@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Basics.{ Bool, Float }
+import morphir.sdk.Basics.Bool
 import morphir.sdk.Char.Char
 import morphir.sdk.Maybe.Maybe
 
@@ -97,13 +97,14 @@ object String {
   def indices(substring: String)(str: String): List[Basics.Int] =
     indexes(substring)(str)
 
-  def toFloat(str: String): Maybe[Float] =
+  def toFloat(str: String): Maybe[morphir.sdk.Float.Float] =
     try Maybe.just(str.toDouble)
     catch {
       case _: NumberFormatException => Maybe.nothing
     }
 
-  def fromFloat(float: Float): String = float.toString
+  def fromFloat(float: morphir.sdk.Float.Float): String = float.toString
+  def fromFloat(float: scala.Float): String             = float.toString
 
   def fromChar(ch: Char): String = ch.toString
 

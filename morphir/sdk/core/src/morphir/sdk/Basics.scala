@@ -15,15 +15,17 @@ limitations under the License.
  */
 
 package morphir.sdk
+import morphir.sdk.{ Bool => BoolModule }
 
 object Basics {
 
   // Bool
-  type Bool = scala.Boolean
-  @inline def not(a: Bool): Bool          = !a
-  @inline def and(a: Bool)(b: Bool): Bool = a && b
-  @inline def or(a: Bool)(b: Bool): Bool  = a || b
-  @inline def xor(a: Bool)(b: Bool): Bool = (a && !b) || (!a && b)
+  type Bool = BoolModule.Bool
+  val Bool: BoolModule.Bool.type          = BoolModule.Bool
+  @inline def not(a: Bool): Bool          = BoolModule.not(a)
+  @inline def and(a: Bool)(b: Bool): Bool = BoolModule.and(a)(b)
+  @inline def or(a: Bool)(b: Bool): Bool  = BoolModule.or(a)(b)
+  @inline def xor(a: Bool)(b: Bool): Bool = BoolModule.xor(a)(b)
 
   // Equality
   @inline def equal[A](a: A)(b: A): Bool    = a == b
@@ -41,8 +43,8 @@ object Basics {
   def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
 
   // Int construction
-  type Int = scala.Long
-  def Int(v: scala.Long): Int = v
+  type Int = morphir.sdk.Int.Int
+  val Int: morphir.sdk.Int.Int.type = morphir.sdk.Int.Int
 
   // Int functions
   @inline def lessThan(a: Int)(b: Int): Bool           = a < b
@@ -66,7 +68,7 @@ object Basics {
     else a
 
   // Float construction
-  type Float = scala.Double
+  type Float = morphir.sdk.Float.Float
   @inline def Float(number: Number): Float =
     number.doubleValue()
 
@@ -95,13 +97,14 @@ object Basics {
   @inline def isNaN(a: Float): Bool      = a.isNaN
   @inline def isInfinite(a: Float): Bool = a.isInfinite
 
+  type Decimal = morphir.sdk.Decimal.Decimal
+  val Decimal: morphir.sdk.Decimal.Decimal.type = morphir.sdk.Decimal.Decimal
+
   // Utilities
   @inline def identity[A](a: A): A                                = scala.Predef.identity(a)
   @inline def always[A, B](a: A): B => A                          = _ => a
   @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C  = a => g(f(a))
   @inline def composeRight[A, B, C](f: A => B)(g: B => C): A => C = a => g(f(a))
   def never[A](nothing: Nothing): A                               = nothing
-
-  type Decimal = scala.BigDecimal
 
 }

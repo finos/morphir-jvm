@@ -20,6 +20,9 @@ import morphir.sdk.String.String
 
 object Bool {
   type Bool = Boolean
+  object Bool {
+    @inline def apply(value: Boolean): Bool = value
+  }
 
   val True: Bool  = true
   val False: Bool = false

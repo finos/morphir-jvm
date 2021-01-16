@@ -17,13 +17,18 @@ limitations under the License.
 package morphir.sdk
 
 object Int {
-  type Int   = scala.BigInt
+  type Int = scala.Long
+  object Int {
+    def apply(value: scala.Long): Int = value
+    def apply(value: scala.Int): Int  = value.longValue()
+  }
   type Int8  = scala.Byte
   type Int16 = scala.Short
   type Int32 = scala.Int
   type Int64 = scala.Long
 
-  @inline def divide(dividend: Int)(divisor: Int): Int = dividend / divisor
+  def apply(value: scala.Long): Int = value
+
   @inline def divide(dividend: Int8)(divisor: Int8): Int8 =
     (dividend / divisor).toByte
   @inline def divide(dividend: Int16)(divisor: Int16): Int16 =
@@ -33,7 +38,6 @@ object Int {
   @inline def divide(dividend: Int64)(divisor: Int64): Int64 =
     dividend / divisor
 
-  @inline def modBy(divisor: Int)(dividend: Int): Int = (dividend % divisor).abs
   @inline def modBy(divisor: Int8)(dividend: Int8): Int8 =
     (dividend % divisor).toByte.abs
   @inline def modBy(divisor: Int16)(dividend: Int16): Int16 =
@@ -43,7 +47,6 @@ object Int {
   @inline def modBy(divisor: Int64)(dividend: Int64): Int64 =
     (dividend % divisor).abs
 
-  @inline def remainderBy(divisor: Int)(dividend: Int): Int = dividend % divisor
   @inline def remainderBy(divisor: Int8)(dividend: Int8): Int8 =
     (dividend % divisor).toByte
   @inline def remainderBy(divisor: Int16)(dividend: Int16): Int16 =
