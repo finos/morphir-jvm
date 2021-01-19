@@ -3,8 +3,11 @@ package morphir.flowz
 import zio._
 import com.github.ghik.silencer.silent
 trait FlowDsl {
-  def flow[StartupEnv](name: String): Flow.Builder[StartupEnv, Any, Any, Any, Any, Any, Any] =
-    Flow.builder[StartupEnv](name)
+  def flow[StartupEnv, Input, Env, StateIn, Params](
+    name: String,
+    setup: => ContextSetup[StartupEnv, Input, Env, StateIn, Params]
+  ): Flow.Builder[StartupEnv, Input, Env, StateIn, Params, Any, Flow.BuilderPhase.Setup] =
+    Flow.builder(name)(setup)
 
   abstract class Flow[-StartupEnv, -Input, +Output] {
     type Env
@@ -28,8 +31,9 @@ trait FlowDsl {
       type Params       = Params0
     }
 
-    def builder[StartupEnv](name: String): Builder[StartupEnv, Any, Any, Any, Any, Any, Any] =
-      apply[StartupEnv](name)
+    def builder[StartupEnv, Input, Env, StateIn, Params](name: String)(
+      setup: => ContextSetup[StartupEnv, Input, Env, StateIn, Params]
+    ): Builder[StartupEnv, Input, Env, StateIn, Params, Any, BuilderPhase.Setup] = apply(name)(setup)
 
     object BuilderPhase {
       type Setup
@@ -37,8 +41,10 @@ trait FlowDsl {
       type Report
     }
 
-    def apply[StartupEnv](name: String): Builder[StartupEnv, Any, Any, Any, Any, Any, Any] =
-      Builder[StartupEnv](name)
+    def apply[StartupEnv, Input, Env, StateIn, Params](name: String)(
+      setup: => ContextSetup[StartupEnv, Input, Env, StateIn, Params]
+    ): Builder[StartupEnv, Input, Env, StateIn, Params, Any, BuilderPhase.Setup] =
+      Builder(name)(setup)
 
     sealed abstract class Builder[-StartupEnv, -Input, Env, State, Params, Output, Phase] { self =>
 
@@ -47,7 +53,7 @@ trait FlowDsl {
       protected def contextSetup: ContextSetup[StartupEnv, Input, Env, State, Params]
       protected def report: Option[Output => ZIO[Env, Throwable, Any]]
 
-      final def setup[StartupEnv1, Input1, Env1, State1, Params1](
+      final def setup[StartupEnv1 <: StartupEnv, Input1, Env1, State1, Params1](
         contextSetup: => ContextSetup[StartupEnv1, Input1, Env1, State1, Params1]
       ): Builder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup] =
         Builder[StartupEnv1, Input1, Env1, State1, Params1, Output, Phase with BuilderPhase.Setup](
@@ -57,8 +63,8 @@ trait FlowDsl {
           report = None
         )
 
-      final def setup[StartupEnv1, Input1, Env1, State1, Params1](
-        configure: ContextSetup[StartupEnv, Input, Env, State, Params] => ContextSetup[
+      final def setup[StartupEnv0 <: StartupEnv, StartupEnv1, Input1, Env1, State1, Params1](
+        configure: ContextSetup[StartupEnv0, Input, Env, State, Params] => ContextSetup[
           StartupEnv1,
           Input1,
           Env1,
@@ -101,11 +107,15 @@ trait FlowDsl {
     }
 
     object Builder {
-      def apply[StartupEnv](name: String): Builder[StartupEnv, Any, Any, Any, Any, Any, Any] =
+      def apply[StartupEnv, Input, Env, StateIn, Params](
+        name: String
+      )(
+        setup: => ContextSetup[StartupEnv, Input, Env, StateIn, Params]
+      ): Builder[StartupEnv, Input, Env, StateIn, Params, Any, BuilderPhase.Setup] =
         FlowBuilder(
           name = name,
           step = None,
-          contextSetup = ContextSetup.requiresStartupEnvironmentOfType[StartupEnv],
+          contextSetup = setup,
           report = None
         )
 
@@ -161,11 +171,12 @@ object demo extends zio.App {
   import morphir.flowz.api._
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
-    flow[ZEnv]("sum-flow").setup {
-      val setup =
-        ContextSetup.forCommandLineApp(args => ZIO.collectAllSuccesses(args.map(entry => ZIO.effect(entry.toInt))))
-      setup
-    }
+    flow(
+      name = "sum-flow",
+      setup = ContextSetup.forCommandLineApp(args =>
+        ZIO.accessM[console.Console](_ => ZIO.collectAllSuccesses(args.map(entry => ZIO.effect(entry.toInt))))
+      )
+    )
       .stages(
         stage((_: Any, items: List[Int]) => Step.succeed(items.sum))
       )
