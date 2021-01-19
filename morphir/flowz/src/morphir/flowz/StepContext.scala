@@ -17,6 +17,7 @@ final case class StepContext[+Env, +State, +Params](environment: Env, inputs: St
 
 object StepContext {
 
+  val unit: StepContext[Any, Any, Any]        = new StepContext(environment = (), inputs = StepInputs(state = (), params = ()))
   @inline val any: StepContext[Any, Any, Any] = StepContext.unit
 
   def apply[Env, State, Params](environment: Env, state: State, params: Params): StepContext[Env, State, Params] =
@@ -36,8 +37,6 @@ object StepContext {
 
   def setEnvironment[Env](env: => Env): StepContext[Env, Unit, Unit] =
     StepContext(environment = env, inputs = StepInputs.unit)
-
-  val unit: StepContext[Any, Any, Any] = StepContext(environment = (), state = (), params = ())
 
   object having {
 
