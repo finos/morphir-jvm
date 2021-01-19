@@ -28,19 +28,16 @@ object Basics {
   @inline def xor(a: Bool)(b: Bool): Bool = BoolModule.xor(a)(b)
 
   // Equality
-  @inline def equal[A](a: A)(b: A): Bool    = a == b
-  @inline def notEqual[A](a: A)(b: A): Bool = a != b
+  @inline def equal[A](a: A)(b: A): Bool    = BoolModule.equal(a)(b)
+  @inline def notEqual[A](a: A)(b: A): Bool = BoolModule.notEqual(a)(b)
 
   // Comparable
-  def lessThan[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].lt(a, b)
-  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool =
-    implicitly[Ordering[A]].lteq(a, b)
-  def greaterThan[A: Ordering](a: A)(b: A): Bool =
-    implicitly[Ordering[A]].gt(a, b)
-  def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool =
-    implicitly[Ordering[A]].gteq(a, b)
-  def min[A: Ordering](a: A)(b: A): A = if (lessThan(a)(b)) a else b
-  def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
+  @inline def lessThan[A: Ordering](a: A)(b: A): Bool           = BoolModule.lessThan(a)(b)
+  @inline def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool    = BoolModule.lessThanOrEqual(a)(b)
+  @inline def greaterThan[A: Ordering](a: A)(b: A): Bool        = BoolModule.greaterThan(a)(b)
+  @inline def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool = BoolModule.greaterThanOrEqual(a)(b)
+  @inline def min[A: Ordering](a: A)(b: A): A                   = BoolModule.min(a)(b)
+  @inline def max[A: Ordering](a: A)(b: A): A                   = BoolModule.max(a)(b)
 
   // Int construction
   type Int = morphir.sdk.Int.Int

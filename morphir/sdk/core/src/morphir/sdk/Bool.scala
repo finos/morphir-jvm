@@ -32,4 +32,19 @@ object Bool {
   @inline def or(a: Bool)(b: Bool): Bool    = a || b
   @inline def xor(a: Bool)(b: Bool): Bool   = a ^ b
   @inline def toString(value: Bool): String = value.toString
+
+  // Equality
+  @inline def equal[A](a: A)(b: A): Bool    = a == b
+  @inline def notEqual[A](a: A)(b: A): Bool = a != b
+
+  // Comparable
+  def lessThan[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].lt(a, b)
+  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool =
+    implicitly[Ordering[A]].lteq(a, b)
+  def greaterThan[A: Ordering](a: A)(b: A): Bool =
+    implicitly[Ordering[A]].gt(a, b)
+  def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool =
+    implicitly[Ordering[A]].gteq(a, b)
+  def min[A: Ordering](a: A)(b: A): A = if (lessThan(a)(b)) a else b
+  def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
 }

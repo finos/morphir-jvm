@@ -16,14 +16,13 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Basics.Bool
 import morphir.sdk.Char.Char
 import morphir.sdk.Maybe.Maybe
 
 object String {
   type String = scala.Predef.String
 
-  @inline def isEmpty(str: String): Bool = str.isEmpty()
+  @inline def isEmpty(str: String): Basics.Bool = str.isEmpty()
 
   @inline def length(str: String): Basics.Int = str.length().toLong
 
@@ -84,12 +83,12 @@ object String {
 
   def dropRight(n: Basics.Int)(str: String): String = str.dropRight(n.toInt)
 
-  def contains(substring: String)(str: String): Bool = str.contains(substring)
+  def contains(substring: String)(str: String): Basics.Bool = str.contains(substring)
 
-  def startsWith(substring: String)(str: String): Bool =
+  def startsWith(substring: String)(str: String): Basics.Bool =
     str.startsWith(substring)
 
-  def endsWith(substring: String)(str: String): Bool = str.endsWith(substring)
+  def endsWith(substring: String)(str: String): Basics.Bool = str.endsWith(substring)
 
   def indexes(substring: String)(str: String): List[Basics.Int] =
     str.r.findAllMatchIn(substring).map(_.start.toLong).toList
@@ -140,7 +139,7 @@ object String {
   def map(f: Char => Char)(str: String): String =
     str.toList.map(ch => f(Char.from(ch))).mkString
 
-  def filter(f: Char => Bool)(str: String): String =
+  def filter(f: Char => Basics.Bool)(str: String): String =
     str.toList.filter(ch => f(Char.from(ch))).mkString
 
   def foldl[B](f: Char => B => B)(z: B)(str: String): B =
@@ -149,10 +148,10 @@ object String {
   def foldr[B](f: Char => B => B)(z: B)(str: String): B =
     str.toList.foldRight(z)((next, soFar) => f(Char.from(next))(soFar))
 
-  def any(f: (Char => Bool))(str: String): Bool =
+  def any(f: (Char => Basics.Bool))(str: String): Basics.Bool =
     str.toList.exists(ch => f(Char.from(ch)))
 
-  def all(f: (Char => Bool))(str: String): Bool =
+  def all(f: (Char => Basics.Bool))(str: String): Basics.Bool =
     str.toList.forall(ch => f(Char.from(ch)))
 
   implicit class StringOps(private val self: String) extends AnyVal {
