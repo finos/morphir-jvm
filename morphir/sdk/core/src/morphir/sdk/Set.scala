@@ -15,10 +15,8 @@ limitations under the License.
  */
 package morphir.sdk
 
-import morphir.sdk.Bool.Bool
-
 object Set {
-  type Set[+A] = scala.collection.immutable.Set[A]
+  type Set[A] = scala.collection.immutable.Set[A]
   private val Set = scala.collection.immutable.Set
 
   /**
@@ -45,18 +43,17 @@ object Set {
   /**
    * Determine if a set is empty.
    */
-  @inline def isEmpty[A](set: Set[A]): Bool = set.isEmpty
+  @inline def isEmpty[A](set: Set[A]): Bool.Bool = set.isEmpty
 
   /**
    * Determine if a value is in a set.
    */
-  @inline def member[A](value: A)(set: Set[A]): Bool = set.contains(value)
+  @inline def member[A](value: A)(set: Set[A]): Bool.Bool = set.contains(value)
 
   /**
    * Determine the number of elements in a set.
    */
-  def size[A](set: Set[A]): morphir.sdk.Basics.Int =
-    set.size
+  def size[A](set: Set[A]): morphir.sdk.Basics.Int = Int(set.size)
 
   /**
    * Get the union of two sets. Keep all values.
@@ -107,13 +104,13 @@ object Set {
   /**
    * Only keep elements that pass the given test.
    */
-  def filter[A](predicate: A => Bool)(set: Set[A]): Set[A] =
+  def filter[A](predicate: A => Bool.Bool)(set: Set[A]): Set[A] =
     set.filter(predicate)
 
   /**
    * Create tow new sets. The first contains all the elements that passed the given test,
    * and the second contains all the elements that did not.
    */
-  def partition[A](predicate: A => Bool)(set: Set[A]): (Set[A], Set[A]) =
+  def partition[A](predicate: A => Bool.Bool)(set: Set[A]): (Set[A], Set[A]) =
     set.partition(predicate)
 }

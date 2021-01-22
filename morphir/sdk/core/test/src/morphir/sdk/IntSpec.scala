@@ -82,8 +82,8 @@ object IntSpec extends DefaultRunnableSpec {
       },
       testM("Performing ModBy on Ints") {
         check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (longDivisor, longDividend) =>
-          val divisor       = Int(longDivisor)
-          val dividend      = Int(longDividend)
+          val divisor       = sdk.Int.fromInt64(longDivisor)
+          val dividend      = sdk.Int.fromInt64(longDividend)
           val expected: Int = (dividend % divisor).abs
           assert(sdk.Int.modBy(divisor)(dividend))(equalTo(expected))
         }
@@ -120,8 +120,8 @@ object IntSpec extends DefaultRunnableSpec {
       },
       testM("Performing remainderBy on Ints") {
         check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (longDivisor, longDividend) =>
-          val divisor       = Int(longDivisor)
-          val dividend      = Int(longDividend)
+          val divisor       = sdk.Int.fromInt64(longDivisor)
+          val dividend      = sdk.Int.fromInt64(longDividend)
           val expected: Int = dividend % divisor
           assert(sdk.Int.remainderBy(divisor)(dividend))(equalTo(expected))
         }
