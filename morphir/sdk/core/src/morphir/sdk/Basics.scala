@@ -15,34 +15,44 @@ limitations under the License.
  */
 
 package morphir.sdk
+import morphir.sdk.{ Bool => BoolModule }
 
 object Basics {
 
+  sealed abstract class Order(val value: Int) extends Product with Serializable
+  object Order {
+    case object LT extends Order(-1)
+    case object EQ extends Order(0)
+    case object GT extends Order(1)
+  }
+
+  val LT: Order = Order.LT
+  val EQ: Order = Order.EQ
+  val GT: Order = Order.GT
+
   // Bool
-  type Bool = scala.Boolean
-  @inline def not(a: Bool): Bool          = !a
-  @inline def and(a: Bool)(b: Bool): Bool = a && b
-  @inline def or(a: Bool)(b: Bool): Bool  = a || b
-  @inline def xor(a: Bool)(b: Bool): Bool = (a && !b) || (!a && b)
+  type Bool = BoolModule.Bool
+  val Bool: BoolModule.Bool.type          = BoolModule.Bool
+  @inline def not(a: Bool): Bool          = BoolModule.not(a)
+  @inline def and(a: Bool)(b: Bool): Bool = BoolModule.and(a)(b)
+  @inline def or(a: Bool)(b: Bool): Bool  = BoolModule.or(a)(b)
+  @inline def xor(a: Bool)(b: Bool): Bool = BoolModule.xor(a)(b)
 
   // Equality
-  @inline def equal[A](a: A)(b: A): Bool    = a == b
-  @inline def notEqual[A](a: A)(b: A): Bool = a != b
+  @inline def equal[A](a: A)(b: A): Bool    = BoolModule.equal(a)(b)
+  @inline def notEqual[A](a: A)(b: A): Bool = BoolModule.notEqual(a)(b)
 
   // Comparable
-  def lessThan[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].lt(a, b)
-  def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool =
-    implicitly[Ordering[A]].lteq(a, b)
-  def greaterThan[A: Ordering](a: A)(b: A): Bool =
-    implicitly[Ordering[A]].gt(a, b)
-  def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool =
-    implicitly[Ordering[A]].gteq(a, b)
-  def min[A: Ordering](a: A)(b: A): A = if (lessThan(a)(b)) a else b
-  def max[A: Ordering](a: A)(b: A): A = if (greaterThan(a)(b)) a else b
+  @inline def lessThan[A: Ordering](a: A)(b: A): Bool           = BoolModule.lessThan(a)(b)
+  @inline def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool    = BoolModule.lessThanOrEqual(a)(b)
+  @inline def greaterThan[A: Ordering](a: A)(b: A): Bool        = BoolModule.greaterThan(a)(b)
+  @inline def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool = BoolModule.greaterThanOrEqual(a)(b)
+  @inline def min[A: Ordering](a: A)(b: A): A                   = BoolModule.min(a)(b)
+  @inline def max[A: Ordering](a: A)(b: A): A                   = BoolModule.max(a)(b)
 
   // Int construction
-  type Int = scala.Long
-  def Int(v: scala.Long): Int = v
+  type Int = morphir.sdk.Int.Int
+  val Int: morphir.sdk.Int.Int.type = morphir.sdk.Int.Int
 
   // Int functions
   @inline def lessThan(a: Int)(b: Int): Bool           = a < b
@@ -66,7 +76,7 @@ object Basics {
     else a
 
   // Float construction
-  type Float = scala.Double
+  type Float = morphir.sdk.Float.Float
   @inline def Float(number: Number): Float =
     number.doubleValue()
 
@@ -95,13 +105,14 @@ object Basics {
   @inline def isNaN(a: Float): Bool      = a.isNaN
   @inline def isInfinite(a: Float): Bool = a.isInfinite
 
+  type Decimal = morphir.sdk.Decimal.Decimal
+  val Decimal: morphir.sdk.Decimal.Decimal.type = morphir.sdk.Decimal.Decimal
+
   // Utilities
   @inline def identity[A](a: A): A                                = scala.Predef.identity(a)
   @inline def always[A, B](a: A): B => A                          = _ => a
   @inline def composeLeft[A, B, C](g: B => C)(f: A => B): A => C  = a => g(f(a))
   @inline def composeRight[A, B, C](f: A => B)(g: B => C): A => C = a => g(f(a))
   def never[A](nothing: Nothing): A                               = nothing
-
-  type Decimal = scala.BigDecimal
 
 }

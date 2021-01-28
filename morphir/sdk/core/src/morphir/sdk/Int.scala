@@ -17,13 +17,41 @@ limitations under the License.
 package morphir.sdk
 
 object Int {
-  type Int   = scala.BigInt
-  type Int8  = scala.Byte
-  type Int16 = scala.Short
-  type Int32 = scala.Int
-  type Int64 = scala.Long
+  type Int = scala.Long
+  val Int: scala.Long.type = scala.Long
 
-  @inline def divide(dividend: Int)(divisor: Int): Int = dividend / divisor
+  private[Int] type IntCompanion = scala.Long.type
+  private[Int] val IntCompanion: IntCompanion = scala.Long
+
+  /**
+   * Represents an 8 bit integer value.
+   */
+  type Int8 = scala.Byte
+  val Int8: scala.Byte.type = scala.Byte
+
+  /**
+   * Represents a 16 bit integer value.
+   */
+  type Int16 = scala.Short
+  val Int16: scala.Short.type = scala.Short
+
+  /**
+   * Represents a 32 bit integer value.
+   */
+  type Int32 = scala.Int
+  val Int32: scala.Int.type = scala.Int
+
+  /**
+   * Represents a 64 bit integer value.
+   */
+  type Int64 = scala.Long
+  val Int64: scala.Long.type = scala.Long
+
+  def apply(value: scala.Byte): Int  = value.longValue()
+  def apply(value: scala.Short): Int = value.longValue()
+  def apply(value: scala.Int): Int   = value.longValue()
+  def apply(value: scala.Long): Int  = value.longValue()
+
   @inline def divide(dividend: Int8)(divisor: Int8): Int8 =
     (dividend / divisor).toByte
   @inline def divide(dividend: Int16)(divisor: Int16): Int16 =
@@ -33,7 +61,6 @@ object Int {
   @inline def divide(dividend: Int64)(divisor: Int64): Int64 =
     dividend / divisor
 
-  @inline def modBy(divisor: Int)(dividend: Int): Int = (dividend % divisor).abs
   @inline def modBy(divisor: Int8)(dividend: Int8): Int8 =
     (dividend % divisor).toByte.abs
   @inline def modBy(divisor: Int16)(dividend: Int16): Int16 =
@@ -43,7 +70,6 @@ object Int {
   @inline def modBy(divisor: Int64)(dividend: Int64): Int64 =
     (dividend % divisor).abs
 
-  @inline def remainderBy(divisor: Int)(dividend: Int): Int = dividend % divisor
   @inline def remainderBy(divisor: Int8)(dividend: Int8): Int8 =
     (dividend % divisor).toByte
   @inline def remainderBy(divisor: Int16)(dividend: Int16): Int16 =
@@ -53,4 +79,51 @@ object Int {
   @inline def remainderBy(divisor: Int64)(dividend: Int64): Int64 =
     dividend % divisor
 
+  /**
+   * Turn an 8 bit integer value into an arbitrary precision integer to use in calculations.
+   */
+  def fromInt8(int: Int8): Basics.Int = Basics.Int(int)
+
+  def toInt8(int: Basics.Int): Maybe.Maybe[Int8] =
+    if (int < Int8.MinValue && int > Int8.MaxValue)
+      Maybe.nothing
+    else
+      Maybe.just(int.byteValue())
+
+  def fromInt16(int: Int16): Basics.Int = Basics.Int(int)
+
+  def toInt16(int: Basics.Int): Maybe.Maybe[Int16] =
+    if (int < Int16.MinValue && int > Int16.MaxValue)
+      Maybe.nothing
+    else
+      Maybe.just(int.shortValue())
+
+  def fromInt32(int: Int32): Basics.Int = Basics.Int(int)
+
+  def toInt32(int: Basics.Int): Maybe.Maybe[Int32] =
+    if (int < Int32.MinValue && int > Int32.MaxValue)
+      Maybe.nothing
+    else
+      Maybe.just(int.intValue())
+
+  /**
+   * Turn a 64 bit integer value into a arbitrary precision integer to use in calculations.
+   */
+  def fromInt64(int: Int64): Basics.Int = int
+
+  /**
+   * Turns an arbitrary precision integer into a 64 bit integer if it fits within the precision.
+   */
+  def toInt64(int: Basics.Int): Maybe.Maybe[Basics.Int] =
+    if (int < Int64.MinValue && int > Int64.MaxValue)
+      Maybe.nothing
+    else
+      Maybe.just(int.longValue())
+
+  private implicit class RichIntCompanion(private val _self: IntCompanion) extends AnyVal {
+    def apply(value: scala.Byte): Int  = value.longValue()
+    def apply(value: scala.Short): Int = value.longValue()
+    def apply(value: scala.Long): Int  = value.longValue()
+    def apply(value: scala.Int): Int   = value.longValue()
+  }
 }
