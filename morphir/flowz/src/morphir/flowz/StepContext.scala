@@ -8,20 +8,20 @@ final case class StepContext[+Env, +State, +Params](environment: Env, inputs: St
   def updateInputs[S, A](outputs: StepOutputs[S, A]): StepContext[Env, S, A] =
     self.copy(inputs = outputs.toInputs)
 
+  def updateParams[P](params: P): StepContext[Env, State, P] =
+    self.copy(inputs = self.inputs.copy(params = params))
+
   def updateState[S](state: S): StepContext[Env, S, Params] =
     self.copy(inputs = self.inputs.copy(state = state))
 }
 
 object StepContext {
 
+  val unit: StepContext[Any, Any, Any]        = new StepContext(environment = (), inputs = StepInputs(state = (), params = ()))
+  @inline val any: StepContext[Any, Any, Any] = StepContext.unit
+
   def apply[Env, State, Params](environment: Env, state: State, params: Params): StepContext[Env, State, Params] =
     StepContext(environment = environment, inputs = StepInputs(params = params, state = state))
-
-  def provideEnvironment[Env](env: => Env): StepContext[Env, Unit, Unit] =
-    setEnvironment(env)
-
-  def setEnvironment[Env](env: => Env): StepContext[Env, Unit, Unit] =
-    StepContext(environment = env, inputs = StepInputs.unit)
 
   def fromEnvironment[Env](environment: Env): StepContext[Env, Any, Any] =
     StepContext(environment, inputs = StepInputs.AnyInputs)
@@ -31,6 +31,12 @@ object StepContext {
 
   def fromState[State](state: State): StepContext[Any, State, Any] =
     StepContext(environment = (): Any, inputs = StepInputs.fromState(state))
+
+  def provideEnvironment[Env](env: => Env): StepContext[Env, Unit, Unit] =
+    setEnvironment(env)
+
+  def setEnvironment[Env](env: => Env): StepContext[Env, Unit, Unit] =
+    StepContext(environment = env, inputs = StepInputs.unit)
 
   object having {
 

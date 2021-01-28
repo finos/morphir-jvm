@@ -31,9 +31,9 @@ object Deps {
 
     val silencer               = "1.7.1"
     val scalaCollectionsCompat = "2.3.1"
-    val zio                    = "1.0.3"
-    val zioConfig              = "1.0.0-RC30-1"
-    val zioLogging             = "0.5.4"
+    val zio                    = "1.0.4"
+    val zioConfig              = "1.0.0-RC32"
+    val zioLogging             = "0.5.5"
     val zioNio                 = "1.0.0-RC10"
     val zioPrelude             = "1.0.0-RC1"
     val zioProcess             = "0.2.0"
