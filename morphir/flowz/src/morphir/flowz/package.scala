@@ -9,7 +9,7 @@ package object flowz {
   type Activity[-Env, -Params, +Err, +Value] = Step[Any, Value, Env, Params, Err, Value]
   type IOStep[-Params, +Err, +Value]         = Step[Any, Unit, Any, Params, Err, Value]
   type TaskStep[-Params, +Value]             = Step[Any, Unit, Any, Params, Throwable, Value]
-  type UStep[-Params, +Value]                = Step[Any, Unit, Any, Params, Nothing, Value]
+  type UStep[-Params, +Value]                = Step[Any, Any, Any, Params, Nothing, Value]
 
   object CommandLineArgs extends Subtype[List[String]]
   type CommandLineArgs = CommandLineArgs.Type

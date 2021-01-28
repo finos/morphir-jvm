@@ -79,31 +79,31 @@ object SparkStep {
 
   def mapDataset[A, B <: Product: ClassTag: TypeTag](
     func: A => B
-  ): Step[Any, Dataset[A], Any, Dataset[A], Throwable, Dataset[B]] =
-    Step.parameters[Dataset[A]].mapEffect { dataset: Dataset[A] =>
+  ): Step[Any, Dataset[B], Any, Dataset[A], Throwable, Dataset[B]] =
+    Step.accessParametersM { dataset: Dataset[A] =>
       import dataset.sparkSession.implicits._
-      dataset.map(func)
+      Step.fromEffect(ZIO.effect(dataset.map(func))).mapOutputs { case (_, ds) => (ds, ds) }
     }
 
   def parameters[Params]: SparkStep[Any, Params, Any, Params, Nothing, Params] =
     SparkStep(ZIO.environment[StepContext[SparkModule, Any, Params]].map(ctx => StepOutputs.setBoth(ctx.inputs.params)))
 
-  def showDataset[A](): Step[Any, Dataset[A], Any, Dataset[A], Throwable, Dataset[A]] =
+  def showDataset[A](): Step[Any, Any, Any, Dataset[A], Throwable, Dataset[A]] =
     Step.parameters[Dataset[A]].tapValue { dataset =>
       ZIO.effect(dataset.show())
     }
 
-  def showDataset[A](truncate: Boolean): Step[Any, Dataset[A], Any, Dataset[A], Throwable, Dataset[A]] =
+  def showDataset[A](truncate: Boolean): Step[Any, Any, Any, Dataset[A], Throwable, Dataset[A]] =
     Step.parameters[Dataset[A]].tapValue { dataset =>
       ZIO.effect(dataset.show(truncate))
     }
 
-  def showDataset[A](numRows: Int, truncate: Boolean): Step[Any, Dataset[A], Any, Dataset[A], Throwable, Dataset[A]] =
+  def showDataset[A](numRows: Int, truncate: Boolean): Step[Any, Any, Any, Dataset[A], Throwable, Dataset[A]] =
     Step.parameters[Dataset[A]].tapValue { dataset =>
       ZIO.effect(dataset.show(numRows, truncate))
     }
 
-  def showDataset[A](numRows: Int, truncate: Int): Step[Any, Dataset[A], Any, Dataset[A], Throwable, Dataset[A]] =
+  def showDataset[A](numRows: Int, truncate: Int): Step[Any, Any, Any, Dataset[A], Throwable, Dataset[A]] =
     Step.parameters[Dataset[A]].tapValue { dataset =>
       ZIO.effect(dataset.show(numRows, truncate))
     }

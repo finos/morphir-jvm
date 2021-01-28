@@ -4,6 +4,12 @@ import zio._
 
 abstract class StepCompanion[-BaseEnv] {
 
+  /**
+   * A step that uses its parameters to build another Step.
+   */
+  def accessParametersM[SIn, SOut, R, P, E, A](func: P => Step[SIn, SOut, R, P, E, A]): Step[SIn, SOut, R, P, E, A] =
+    Step(ZIO.accessM[StepContext[R, SIn, P]](ctx => func(ctx.inputs.params).effect))
+
   /** Defines a step that does not rely on state. */
   def act[Params, Out](f: Params => Out): Activity[Any, Params, Throwable, Out] =
     Step(
@@ -278,13 +284,16 @@ abstract class StepCompanion[-BaseEnv] {
   /**
    * A step that returns the given parameters.
    */
-  def parameters[P]: Step[Any, P, Any, P, Nothing, P] =
-    Step.context[Any, Any, P].flatMap { ctx =>
-      Step.succeed(ctx.inputs.params, ctx.inputs.params)
-    }
+  def parameters[P]: Step[Any, Any, BaseEnv, P, Nothing, P] =
+    new Step[Any, Any, BaseEnv, P, Nothing, P](ZIO.fromFunction(ctx => ctx.toOutputs))
 
-  def succeed[Value](value: => Value): Step[Any, Unit, Any, Any, Nothing, Value] =
-    Step(ZIO.succeed(StepOutputs.fromValue(value)))
+  /**
+   * Returns a step that models success with the specified value.
+   */
+  def succeed[Value](value: => Value): Step[Any, Any, Any, Any, Nothing, Value] =
+    Step(
+      ZIO.accessM[StepContext[Any, Any, Any]](ctx => ZIO.succeed(StepOutputs(state = ctx.inputs.state, value = value)))
+    )
 
   def succeed[State, Value](state: => State, value: => Value): Step[Any, State, Any, Any, Nothing, Value] =
     Step(ZIO.succeed(StepOutputs(state = state, value = value)))

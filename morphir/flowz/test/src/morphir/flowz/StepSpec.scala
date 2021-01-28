@@ -22,6 +22,13 @@ object StepSpec extends DefaultRunnableSpec {
           output <- Step.succeed(42).run
         } yield assert(output)(equalTo(StepOutputs.fromValue(42)))
       ),
+      testM(
+        "It should be possible to create a flow that always succeeds with a value (and it should pass-thru the state)"
+      )(
+        for {
+          output <- Step.succeed(42).run("Hello", List("--help"))
+        } yield assert(output)(equalTo(StepOutputs(value = 42, state = List("--help"))))
+      ),
       testM("It should be possible to create a flow that always succeeds with the given output and state")(
         for {
           actual <- Step.succeed(value = 42, state = "What is the answer?").run
@@ -88,8 +95,8 @@ object StepSpec extends DefaultRunnableSpec {
       }
     ),
     testM("It should be possible to rename a step without affecting its value") {
-      val theStep                                           = Step.succeed("Good Boy!")
-      val named: Step[Any, Unit, Any, Any, Nothing, String] = Step.name("Praise")(theStep)
+      val theStep = Step.succeed("Good Boy!")
+      val named   = Step.name("Praise")(theStep)
 
       for {
         original <- theStep.run
@@ -97,8 +104,8 @@ object StepSpec extends DefaultRunnableSpec {
       } yield assert(actual)(equalTo(original))
     },
     testM("It should be possible to rename a step without affecting its value") {
-      val theStep                                           = Step.succeed("Good Boy!")
-      val named: Step[Any, Unit, Any, Any, Nothing, String] = Step.name("Praise")(theStep)
+      val theStep = Step.succeed("Good Boy!")
+      val named   = Step.name("Praise")(theStep)
 
       for {
         original <- theStep.run
