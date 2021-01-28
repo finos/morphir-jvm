@@ -19,6 +19,17 @@ import morphir.sdk.{ Bool => BoolModule }
 
 object Basics {
 
+  sealed abstract class Order(val value: Int) extends Product with Serializable
+  object Order {
+    case object LT extends Order(-1)
+    case object EQ extends Order(0)
+    case object GT extends Order(1)
+  }
+
+  val LT: Order = Order.LT
+  val EQ: Order = Order.EQ
+  val GT: Order = Order.GT
+
   // Bool
   type Bool = BoolModule.Bool
   val Bool: BoolModule.Bool.type          = BoolModule.Bool
