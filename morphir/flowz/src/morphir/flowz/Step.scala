@@ -67,7 +67,7 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   /**
    * Maps the success value of this flow to the specified constant value.
    */
-  def as[Out2](out: => Out2): Step[StateIn, StateOut, Env, Params, Err, Out2] = self.map(_ => out)
+  def as[Out2](out: => Out2): Step[StateIn, StateOut, Env, Params, Err, Out2] = self.mapValue(_ => out)
 
   def delay(duration: zio.duration.Duration): Step[StateIn, StateOut, Env with Clock, Params, Err, Value] =
     Step(
@@ -101,14 +101,20 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
       }
     )
 
-  def map[Out2](fn: Value => Out2): Step[StateIn, StateOut, Env, Params, Err, Out2] = Step(
-    self.effect.map(success => success.map(fn))
+  def map[StateOut2, Value2](
+    fn: StepOutputs[StateOut, Value] => StepOutputs[StateOut2, Value2]
+  ): Step[StateIn, StateOut2, Env, Params, Err, Value2] = new Step(
+    self.effect.map(fn)
+  )
+
+  def mapValue[Out2](fn: Value => Out2): Step[StateIn, StateOut, Env, Params, Err, Out2] = Step(
+    self.effect.map(success => success.mapValue(fn))
   )
 
   def mapEffect[Out2](fn: Value => Out2)(implicit
     ev: Err <:< Throwable
   ): Step[StateIn, StateOut, Env, Params, Throwable, Out2] =
-    Step(self.effect.mapEffect(success => success.map(fn)))
+    Step(self.effect.mapEffect(success => success.mapValue(fn)))
 
   def mapError[Err2](onError: Err => Err2): Step[StateIn, StateOut, Env, Params, Err2, Value] =
     Step(self.effect.mapError(onError))
@@ -163,7 +169,7 @@ final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   def orElseSucceed[State >: StateOut, Value1 >: Value](state: => State, value: => Value1)(implicit
     ev: CanFail[Err]
   ): Step[StateIn, State, Env, Params, Nothing, Value1] =
-    orElse(Step.succeed(state = state, value = value))
+    orElse(Step.succeedWith(state = state, value = value))
 
   def named(name: String): Step[StateIn, StateOut, Env, Params, Err, Value] = copy(name = Option(name))
   def describe(description: String): Step[StateIn, StateOut, Env, Params, Err, Value] =
@@ -466,9 +472,9 @@ object Step extends StepCompanion[Any] {
     )
 
   def withOutputs[A](valueAndSate: A): Step[Any, A, Any, Any, Nothing, A] =
-    succeed(state = valueAndSate, value = valueAndSate)
+    succeedWith(state = valueAndSate, value = valueAndSate)
 
-  def withParams[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Any, Unit, Env, Params, Err, Out] =
+  def withParams[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Any, Any, Env, Params, Err, Out] =
     Step.parameters[Params].flatMap { params =>
       Step.fromEffect(func(params))
     }

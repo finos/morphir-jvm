@@ -14,7 +14,9 @@ final case class StepContext[+Env, +State, +Params](environment: Env, inputs: St
   def updateState[S](state: S): StepContext[Env, S, Params] =
     self.copy(inputs = self.inputs.copy(state = state))
 
-  def toOutputs: StepOutputs[State, Params] = StepOutputs(state = inputs.state, value = inputs.params)
+  def toOutputs: StepOutputs[State, Params] =
+    StepOutputs(state = inputs.state, value = inputs.params)
+
   def toOutputs[A](value: => A): StepOutputs[State, A] =
     StepOutputs(state = inputs.state, value = value)
 }

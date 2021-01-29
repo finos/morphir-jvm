@@ -86,11 +86,11 @@ abstract class StepCompanion[-BaseEnv] {
   def fail[Err](error: Err): Step[Any, Nothing, BaseEnv, Any, Err, Nothing] =
     Step(ZIO.environment[StepContext.having.AnyInputs] *> ZIO.fail(error))
 
-  def fromEffect[R, E, A](effect: ZIO[R, E, A]): Step[Any, Unit, R, Any, E, A] =
+  def fromEffect[R, E, A](effect: ZIO[R, E, A]): Step[Any, Any, R, Any, E, A] =
     Step(
       ZIO
         .environment[StepContext[R, Any, Any]]
-        .flatMap(ctx => effect.map(StepOutputs.fromValue(_)).provide(ctx.environment))
+        .flatMap(ctx => effect.map(ctx.toOutputs(_)).provide(ctx.environment))
     )
 
   def fromEffect[P, R, E, A](func: P => ZIO[R, E, A]): Step[Any, Unit, R, P, E, A] =
@@ -273,7 +273,7 @@ abstract class StepCompanion[-BaseEnv] {
   ): Step[StateIn, StateOut, Any, Any, Nothing, Output] =
     context[Any, StateIn, Any].flatMap { ctx =>
       val (stateOut, output) = func(ctx.inputs.state)
-      Step.succeed(value = output, state = stateOut)
+      Step.succeedWith(value = output, state = stateOut)
     }
 
   def name[StateIn, StateOut, Env, Params, Err, Value](name: String)(
@@ -288,6 +288,12 @@ abstract class StepCompanion[-BaseEnv] {
     new Step[Any, Any, BaseEnv, P, Nothing, P](ZIO.fromFunction(ctx => ctx.toOutputs))
 
   /**
+   * Constructs a step that sets the state to the specified value.
+   */
+  def set[S](s: S): Step[Any, S, Any, Any, Nothing, Any] =
+    modify((_: Any) => (s, ()))
+
+  /**
    * Returns a step that models success with the specified value.
    */
   def succeed[Value](value: => Value): Step[Any, Any, Any, Any, Nothing, Value] =
@@ -295,7 +301,7 @@ abstract class StepCompanion[-BaseEnv] {
       ZIO.accessM[StepContext[Any, Any, Any]](ctx => ZIO.succeed(StepOutputs(state = ctx.inputs.state, value = value)))
     )
 
-  def succeed[State, Value](state: => State, value: => Value): Step[Any, State, Any, Any, Nothing, Value] =
+  def succeedWith[State, Value](state: => State, value: => Value): Step[Any, State, Any, Any, Nothing, Value] =
     Step(ZIO.succeed(StepOutputs(state = state, value = value)))
 
 }

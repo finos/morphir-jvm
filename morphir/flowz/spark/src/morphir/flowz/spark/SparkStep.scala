@@ -72,7 +72,7 @@ object SparkStep {
 
   def makeStep[Env, Params, Err, Out](
     func: Params => ZIO[Env with SparkModule, Err, Out]
-  ): Step[Any, Unit, Env with SparkModule, Params, Err, Out] =
+  ): Step[Any, Any, Env with SparkModule, Params, Err, Out] =
     Step.parameters[Params].flatMap { params =>
       Step.fromEffect(func(params))
     }

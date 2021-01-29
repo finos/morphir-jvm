@@ -1,7 +1,12 @@
 package morphir.flowz
 
 final case class StepOutputs[+State, +Value](state: State, value: Value) { self =>
-  def map[Value2](func: Value => Value2): StepOutputs[State, Value2] =
+  def map[State2, Value2](func: (State, Value) => (State2, Value2)): StepOutputs[State2, Value2] = {
+    val (newState, newValue) = func(state, value)
+    StepOutputs(value = newValue, state = newState)
+  }
+
+  def mapValue[Value2](func: Value => Value2): StepOutputs[State, Value2] =
     StepOutputs(value = func(value), state = state)
 
   def mapState[State2](func: State => State2): StepOutputs[State2, Value] =

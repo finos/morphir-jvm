@@ -31,7 +31,7 @@ object StepSpec extends DefaultRunnableSpec {
       ),
       testM("It should be possible to create a flow that always succeeds with the given output and state")(
         for {
-          actual <- Step.succeed(value = 42, state = "What is the answer?").run
+          actual <- Step.succeedWith(value = 42, state = "What is the answer?").run
         } yield assert(actual)(equalTo(StepOutputs(state = "What is the answer?", value = 42)))
       ),
       testM("It should be possible to create a flow that always fails with a value")(
@@ -67,6 +67,14 @@ object StepSpec extends DefaultRunnableSpec {
           equalTo(StepOutputs(state = List("Hello", "World"), value = Option("Hello")))
         )
       },
+      testM("The parameters constructor should pass through the state it is given") {
+        val givenState = List("A", "B", "C")
+        val givenParam = "Hello"
+        val sut        = Step.parameters[String]
+        assertM(sut.run(givenParam, givenState))(
+          equalTo(StepOutputs(state = givenState, value = givenParam))
+        )
+      },
       testM("It should be possible to combine flows using zip") {
         val flowA                                                            = Step.withStateAndValue("A")
         val flowB                                                            = Step.withStateAndValue(1)
@@ -89,7 +97,7 @@ object StepSpec extends DefaultRunnableSpec {
           out <- (for {
                    cfg             <- Step.succeed(Map("profile.local.host" -> "127.0.0.1", "profile.default.host" -> "finos.org"))
                    selectedProfile <- Step.fromEffect(zio.system.envOrElse("PROFILE", "default"))
-                   host            <- Step.succeed(cfg.getOrElse(s"profile.$selectedProfile.host", "morhir.org"))
+                   host            <- Step.succeed(cfg.getOrElse(s"profile.$selectedProfile.host", "morphir.org"))
                  } yield host).run.map(_.value)
         } yield assert(out)(equalTo("127.0.0.1"))
       }
