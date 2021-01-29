@@ -9,8 +9,8 @@ trait DatasetModule { self =>
 
   def filterDataset[State, DataRow, Exclude: Encoder: TypeTag, Include: Encoder: TypeTag](
     func: SparkSession => (State, DataRow) => (State, FilterResult[Exclude, Include])
-  ): Stage[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]] =
-    Stage[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]](
+  ): Act[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]] =
+    Act[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]](
       ZIO.environment[StageContext[SparkModule, State, Dataset[DataRow]]].mapEffect { ctx =>
         val spark       = ctx.environment.get.sparkSession
         var outputState = ctx.inputs.state

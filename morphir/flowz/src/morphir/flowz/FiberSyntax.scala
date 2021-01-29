@@ -13,6 +13,6 @@ trait FiberSyntax {
 
 object FiberSyntax {
   class FiberOutputChannelOps[+State, +Err, +Output](val self: Fiber[Err, StepOutputs[State, Err]]) extends {
-    def joinFlow: Stage[Any, State, Any, Any, Err, Err] = Stage.join(self)
+    def joinFlow: Act[Any, State, Any, Any, Err, Err] = Act.join(self)
   }
 }
