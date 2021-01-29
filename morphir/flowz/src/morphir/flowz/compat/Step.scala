@@ -1,6 +1,6 @@
 package morphir.flowz.compat
 
-import morphir.flowz.{ Step => Step_ }
+import morphir.flowz.{ Stage => Step_ }
 object Step {
 
   /**

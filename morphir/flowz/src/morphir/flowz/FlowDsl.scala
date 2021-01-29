@@ -16,7 +16,7 @@ trait FlowDsl {
 
     def name: String
     def context(input: Input): RIO[StartupEnv, StepContext[Env, InitialState, Params]]
-    def step: Step[InitialState, _, Env, Params, Throwable, Output]
+    def step: Stage[InitialState, _, Env, Params, Throwable, Output]
     def run(input: Input): RIO[StartupEnv, Output] =
       for {
         stepContext <- context(input)
@@ -49,7 +49,7 @@ trait FlowDsl {
     sealed abstract class Builder[-StartupEnv, -Input, Env, State, Params, Output, Phase] { self =>
 
       protected def name: String
-      protected def step: Option[Step[State, _, Env, Params, Throwable, Output]]
+      protected def step: Option[Stage[State, _, Env, Params, Throwable, Output]]
       protected def contextSetup: ContextSetup[StartupEnv, Input, Env, State, Params]
       protected def report: Option[Output => ZIO[Env, Throwable, Any]]
 
@@ -80,7 +80,7 @@ trait FlowDsl {
         )
 
       final def stages[Output1](
-        step: Step[State, _, Env, Params, Throwable, Output1]
+        step: Stage[State, _, Env, Params, Throwable, Output1]
       ): Builder[StartupEnv, Input, Env, State, Params, Output1, Phase with BuilderPhase.DefineStages] =
         Builder[StartupEnv, Input, Env, State, Params, Output1, Phase with BuilderPhase.DefineStages](
           name = self.name,
@@ -121,7 +121,7 @@ trait FlowDsl {
 
       private def apply[StartupEnv, Input, Env, StateIn, Params, Output, Phase](
         name: String,
-        step: Option[Step[StateIn, _, Env, Params, Throwable, Output]],
+        step: Option[Stage[StateIn, _, Env, Params, Throwable, Output]],
         contextSetup: ContextSetup[StartupEnv, Input, Env, StateIn, Params],
         report: Option[Output => ZIO[Env, Throwable, Any]]
       ): Builder[StartupEnv, Input, Env, StateIn, Params, Output, Phase] =
@@ -134,7 +134,7 @@ trait FlowDsl {
 
       private sealed case class FlowBuilder[StartupEnv, Input, Env, StateIn, Params, Output, Phase](
         name: String,
-        step: Option[Step[StateIn, _, Env, Params, Throwable, Output]],
+        step: Option[Stage[StateIn, _, Env, Params, Throwable, Output]],
         contextSetup: ContextSetup[StartupEnv, Input, Env, StateIn, Params],
         report: Option[Output => ZIO[Env, Throwable, Any]]
       ) extends Builder[StartupEnv, Input, Env, StateIn, Params, Output, Phase] { self =>
@@ -154,7 +154,7 @@ trait FlowDsl {
             def context(input: Input): RIO[StartupEnv, StepContext[Env, InitialState, Params]] =
               self.contextSetup.makeContext(input)
 
-            def step: Step[InitialState, _, Env, Params, Throwable, Output] = self.step.get.tap { case (_, output) =>
+            def step: Stage[InitialState, _, Env, Params, Throwable, Output] = self.step.get.tap { case (_, output) =>
               self.report.fold[ZIO[Env, Throwable, Any]](ZIO.unit)(_(output))
             }
           }

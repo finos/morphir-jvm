@@ -18,8 +18,8 @@ trait StepExports {
     Step[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
   final type Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value] =
-    morphir.flowz.Step[StateIn, StateOut, Env, Params, Err, Value]
-  val Step: morphir.flowz.Step.type = morphir.flowz.Step
+    morphir.flowz.Stage[StateIn, StateOut, Env, Params, Err, Value]
+  val Step: morphir.flowz.Stage.type = morphir.flowz.Stage
 
   final type IOStep[-Params, +Err, +Value] = Step[Any, Unit, Any, Params, Err, Value]
   final type TaskStep[-Params, +Value]     = Step[Any, Unit, Any, Params, Throwable, Value]
