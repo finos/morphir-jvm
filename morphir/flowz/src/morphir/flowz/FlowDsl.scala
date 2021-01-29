@@ -15,7 +15,7 @@ trait FlowDsl {
     type Params
 
     def name: String
-    def context(input: Input): RIO[StartupEnv, StepContext[Env, InitialState, Params]]
+    def context(input: Input): RIO[StartupEnv, StageContext[Env, InitialState, Params]]
     def step: Stage[InitialState, _, Env, Params, Throwable, Output]
     def run(input: Input): RIO[StartupEnv, Output] =
       for {
@@ -151,7 +151,7 @@ trait FlowDsl {
 
             def name: String = self.name
 
-            def context(input: Input): RIO[StartupEnv, StepContext[Env, InitialState, Params]] =
+            def context(input: Input): RIO[StartupEnv, StageContext[Env, InitialState, Params]] =
               self.contextSetup.makeContext(input)
 
             def step: Stage[InitialState, _, Env, Params, Throwable, Output] = self.step.get.tap { case (_, output) =>

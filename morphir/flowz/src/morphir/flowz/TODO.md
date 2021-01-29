@@ -47,9 +47,9 @@ flow("")
 Consider how we can build up a flow from its services and state.
 
 ```scala
-import morphir.flowz.{StepContext, StepInputs}
+import morphir.flowz.{StageContext, StepInputs}
 def context[In,Env,State,Params]
   (makeInputs: In => StepInputs[State,Params])
-  (setup: StepInputs[State,Params] => StepContext[Env,State,Params])
+  (setup: StepInputs[State,Params] => StageContext[Env,State,Params])
 ```
 

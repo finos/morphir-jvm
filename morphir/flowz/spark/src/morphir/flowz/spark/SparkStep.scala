@@ -1,7 +1,7 @@
 package morphir.flowz.spark
 
 import morphir.flowz.spark.sparkModule.SparkModule
-import morphir.flowz.{ Stage, StepContext, StepOutputs }
+import morphir.flowz.{ Stage, StageContext, StepOutputs }
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql._
 import zio._
@@ -12,7 +12,7 @@ import scala.reflect.runtime.universe.TypeTag
 object SparkStep {
 
   def apply[StateIn, StateOut, Env, Params, Err, Value](
-    effect: ZIO[StepContext[Env with SparkModule, StateIn, Params], Err, StepOutputs[StateOut, Value]],
+    effect: ZIO[StageContext[Env with SparkModule, StateIn, Params], Err, StepOutputs[StateOut, Value]],
     name: Option[String] = None,
     description: Option[String] = None
   ): SparkStep[StateIn, StateOut, Env, Params, Err, Value] =
@@ -44,7 +44,7 @@ object SparkStep {
   ): SparkStep[Any, Dataset[A], Any, Any, Throwable, Dataset[A]] =
     SparkStep(
       ZIO
-        .environment[StepContext.having.Environment[SparkModule]]
+        .environment[StageContext.having.Environment[SparkModule]]
         .mapEffect { ctx =>
           val spark = ctx.environment.get.sparkSession
           StepOutputs.setBoth(func(spark)(spark.implicits.newProductEncoder))
@@ -56,7 +56,7 @@ object SparkStep {
   ): SparkStep[Any, Dataset[A], Any, Any, Throwable, Dataset[A]] =
     SparkStep(
       ZIO
-        .environment[StepContext.having.Environment[SparkModule]]
+        .environment[StageContext.having.Environment[SparkModule]]
         .mapEffect { ctx =>
           val spark = ctx.environment.get.sparkSession
           StepOutputs.setBoth(spark.createDataset(data)(spark.implicits.newProductEncoder))
@@ -66,7 +66,7 @@ object SparkStep {
   def environment[Env]: SparkStep[Any, Env, Nothing, Any, Nothing, Env with SparkModule] =
     SparkStep[Any, Env, Nothing, Any, Nothing, Env with SparkModule](
       ZIO
-        .environment[StepContext.having.Environment[Env with SparkModule]]
+        .environment[StageContext.having.Environment[Env with SparkModule]]
         .map(ctx => StepOutputs.setBoth(ctx.environment))
     )
 
@@ -86,7 +86,9 @@ object SparkStep {
     }
 
   def parameters[Params]: SparkStep[Any, Params, Any, Params, Nothing, Params] =
-    SparkStep(ZIO.environment[StepContext[SparkModule, Any, Params]].map(ctx => StepOutputs.setBoth(ctx.inputs.params)))
+    SparkStep(
+      ZIO.environment[StageContext[SparkModule, Any, Params]].map(ctx => StepOutputs.setBoth(ctx.inputs.params))
+    )
 
   def showDataset[A](): Stage[Any, Any, Any, Dataset[A], Throwable, Dataset[A]] =
     Stage.parameters[Dataset[A]].tapValue { dataset =>
@@ -117,7 +119,7 @@ object SparkStep {
   def sparkStep[Params, A](func: SparkSession => Params => A): SparkStep[Any, A, Any, Params, Throwable, A] =
     SparkStep(
       ZIO
-        .environment[StepContext[SparkModule, Any, Params]]
+        .environment[StageContext[SparkModule, Any, Params]]
         .mapEffect(ctx => StepOutputs.setBoth(func(ctx.environment.get.sparkSession)(ctx.inputs.params)))
     )
 
@@ -126,7 +128,7 @@ object SparkStep {
   ): SparkStep[Any, A, Nothing, Params, Err, A] =
     SparkStep[Any, A, Env, Params, Err, A](
       ZIO
-        .environment[StepContext[Env with SparkModule, Any, Params]]
+        .environment[StageContext[Env with SparkModule, Any, Params]]
         .flatMap(ctx =>
           func(ctx.environment.get.sparkSession)(ctx.inputs.params)
             .flatMap(value => ZIO.succeed(StepOutputs.unified(value)))
@@ -135,13 +137,13 @@ object SparkStep {
     )
 
   def state[State]: SparkStep[State, State, Any, Any, Nothing, State] = SparkStep(
-    ZIO.access[StepContext[SparkModule, State, Any]](ctx => StepOutputs.setBoth(ctx.inputs.state))
+    ZIO.access[StageContext[SparkModule, State, Any]](ctx => StepOutputs.setBoth(ctx.inputs.state))
   )
 
   def stateM[StateIn, StateOut, Env, Params, Err, Value](
     func: StateIn => Stage[Any, StateOut, Env with SparkModule, Params, Err, Value]
   ): SparkStep[StateIn, StateOut, Env, Params, Err, Value] = SparkStep[StateIn, StateOut, Env, Params, Err, Value](
-    ZIO.accessM[StepContext[Env with SparkModule, StateIn, Params]](ctx => func(ctx.inputs.state).effect)
+    ZIO.accessM[StageContext[Env with SparkModule, StateIn, Params]](ctx => func(ctx.inputs.state).effect)
   )
 
   def toDataFrame[A]: SparkStep[Any, Unit, Any, Dataset[A], Throwable, DataFrame] = SparkStep { data: Dataset[A] =>
@@ -156,7 +158,7 @@ object SparkStep {
   def withSpark[A](func: SparkSession => A): SparkStep[Any, A, Any, Any, Throwable, A] =
     SparkStep(
       ZIO
-        .environment[StepContext.having.Environment[SparkModule]]
+        .environment[StageContext.having.Environment[SparkModule]]
         .mapEffect(ctx => StepOutputs.setBoth(func(ctx.environment.get.sparkSession)))
     )
 
@@ -165,7 +167,7 @@ object SparkStep {
   ): SparkStep[Any, A, Env, Any, Err, A] =
     SparkStep[Any, A, Env, Any, Err, A](
       ZIO
-        .environment[StepContext.having.Environment[Env with SparkModule]]
+        .environment[StageContext.having.Environment[Env with SparkModule]]
         .flatMap(ctx => func(ctx.environment.get.sparkSession).map(StepOutputs.unified(_)).provide(ctx.environment))
     )
 }

@@ -6,7 +6,7 @@ import zio.clock.Clock
 import scala.util.Try
 
 final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
-  private[flowz] val rawEffect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
+  private[flowz] val rawEffect: ZIO[StageContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
   name: Option[String] = None,
   description: Option[String] = None
 ) { self =>
@@ -55,7 +55,7 @@ final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   def andThen[SOut2, Env1 <: Env, Err1 >: Err, Output2](
     that: Stage[StateOut, SOut2, Env1, Value, Err1, Output2]
   ): Stage[StateIn, SOut2, Env1, Params, Err1, Output2] =
-    Stage(ZIO.environment[StepContext[Env1, StateIn, Params]].flatMap { ctx =>
+    Stage(ZIO.environment[StageContext[Env1, StateIn, Params]].flatMap { ctx =>
       self.effect.flatMap(out => that.effect.provide(ctx.updateInputs(out)))
     })
 
@@ -72,17 +72,17 @@ final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   def delay(duration: zio.duration.Duration): Stage[StateIn, StateOut, Env with Clock, Params, Err, Value] =
     Stage(
       for {
-        ctx    <- ZIO.environment[StepContext[Env with Clock, StateIn, Params]]
+        ctx    <- ZIO.environment[StageContext[Env with Clock, StateIn, Params]]
         result <- self.effect.provide(ctx).delay(duration).provide(ctx.environment)
       } yield result
     )
 
-  val effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]] = rawEffect
+  val effect: ZIO[StageContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]] = rawEffect
 
   def flatMap[S, Env1 <: Env, P <: Params, Err1 >: Err, B](
     func: Value => Stage[StateOut, S, Env1, P, Err1, B]
   ): Stage[StateIn, S, Env1, P, Err1, B] =
-    Stage(ZIO.environment[StepContext[Env1, StateIn, P]].flatMap { ctx =>
+    Stage(ZIO.environment[StageContext[Env1, StateIn, P]].flatMap { ctx =>
       self.effect.flatMap(out => func(out.value).effect.provide(ctx.updateState(out.state)))
     })
 
@@ -208,15 +208,15 @@ final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
     evAnyInput: Any <:< Params,
     evAnyState: Any <:< StateIn
   ): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
-    self.effect.provideSome[Env](env => StepContext(environment = env, params = (), state = ()))
+    self.effect.provideSome[Env](env => StageContext(environment = env, params = (), state = ()))
 
   def run(input: Params)(implicit evAnyState: Unit <:< StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
-    self.effect.provideSome[Env](env => StepContext(environment = env, params = input, state = ()))
+    self.effect.provideSome[Env](env => StageContext(environment = env, params = input, state = ()))
 
   def run(input: Params, initialState: StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
-    self.effect.provideSome[Env](env => StepContext(environment = env, params = input, state = initialState))
+    self.effect.provideSome[Env](env => StageContext(environment = env, params = input, state = initialState))
 
-  def run(context: StepContext[Env, StateIn, Params]): IO[Err, StepOutputs[StateOut, Value]] =
+  def run(context: StageContext[Env, StateIn, Params]): IO[Err, StepOutputs[StateOut, Value]] =
     self.effect.provide(context)
 
   def shiftStateToOutput: Stage[StateIn, Unit, Env, Params, Err, (StateOut, Value)] =
@@ -239,7 +239,7 @@ final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   ): Stage[StateIn, StateOut, Env1, Params, Err1, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env1, StateIn, Params]]
+        .environment[StageContext[Env1, StateIn, Params]]
         .flatMap(ctx => self.effect.tap(out => func(out.state, out.value).provide(ctx.environment)))
     )
 
@@ -248,7 +248,7 @@ final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   ): Stage[StateIn, StateOut, Env1, Params, Err1, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env1, StateIn, Params]]
+        .environment[StageContext[Env1, StateIn, Params]]
         .flatMap(ctx => self.effect.tap(out => func(out.state).provide(ctx.environment)))
     )
 
@@ -257,7 +257,7 @@ final case class Stage[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
   ): Stage[StateIn, StateOut, Env1, Params, Err1, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env1, StateIn, Params]]
+        .environment[StageContext[Env1, StateIn, Params]]
         .flatMap(ctx => self.effect.tap(out => func(out.value).provide(ctx.environment)))
     )
 
@@ -323,7 +323,7 @@ object Stage extends StepCompanion[Any] {
   ): Stage[StateIn, StateOut, Env, Params, Err, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env, StateIn, Params]]
+        .environment[StageContext[Env, StateIn, Params]]
         .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment))
     )
 
@@ -332,7 +332,7 @@ object Stage extends StepCompanion[Any] {
   ): Stage[StateIn, StateOut, Env, Params, Err, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env, StateIn, Params]]
+        .environment[StageContext[Env, StateIn, Params]]
         .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment)),
       name = Option(name)
     )
@@ -342,7 +342,7 @@ object Stage extends StepCompanion[Any] {
   ): Stage[StateIn, StateOut, Env, Params, Err, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env, StateIn, Params]]
+        .environment[StageContext[Env, StateIn, Params]]
         .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment)),
       name = Option(name),
       description = Option(description)
@@ -350,19 +350,19 @@ object Stage extends StepCompanion[Any] {
 
   def fromEither[Err, Value](value: Either[Err, Value]): Stage[Any, Unit, Any, Any, Err, Value] =
     Stage(for {
-      _     <- ZIO.environment[StepContext.having.AnyInputs]
+      _     <- ZIO.environment[StageContext.having.AnyInputs]
       value <- ZIO.fromEither(value)
     } yield StepOutputs.fromValue(value))
 
   def fromFunction[In, Out](func: In => Out): Stage[Any, Out, Any, In, Nothing, Out] =
-    Stage(ZIO.environment[StepContext.having.Parameters[In]].map { ctx =>
+    Stage(ZIO.environment[StageContext.having.Parameters[In]].map { ctx =>
       val value = func(ctx.inputs.params)
       StepOutputs(value = value, state = value)
     })
 
   def fromOption[Value](value: => Option[Value]): Stage[Any, Unit, Any, Any, Option[Nothing], Value] =
     Stage(for {
-      _     <- ZIO.environment[StepContext.having.AnyInputs]
+      _     <- ZIO.environment[StageContext.having.AnyInputs]
       value <- ZIO.fromOption(value)
     } yield StepOutputs.fromValue(value))
 
@@ -371,14 +371,14 @@ object Stage extends StepCompanion[Any] {
 
   def fromTry[Value](value: => Try[Value]): Stage[Any, Unit, Any, Any, Throwable, Value] =
     Stage(for {
-      _     <- ZIO.environment[StepContext.having.AnyInputs]
+      _     <- ZIO.environment[StageContext.having.AnyInputs]
       value <- ZIO.fromTry(value)
     } yield StepOutputs.fromValue(value))
 
   def inputs[StateIn, Params]: Stage[StateIn, (StateIn, Params), Any, Params, Nothing, (StateIn, Params)] =
     Stage(
       ZIO
-        .environment[StepContext[Any, StateIn, Params]]
+        .environment[StageContext[Any, StateIn, Params]]
         .map(ctx =>
           StepOutputs(state = (ctx.inputs.state, ctx.inputs.params), value = (ctx.inputs.state, ctx.inputs.params))
         )
@@ -395,13 +395,13 @@ object Stage extends StepCompanion[Any] {
     Stage.context[Env, StateIn, Params].flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params))
 
   def state[State]: Stage[State, State, Any, Any, Nothing, State] = Stage(
-    ZIO.environment[StepContext[Any, State, Any]].map(ctx => StepOutputs.setBoth(ctx.inputs.state))
+    ZIO.environment[StageContext[Any, State, Any]].map(ctx => StepOutputs.setBoth(ctx.inputs.state))
   )
 
   def stateful[StateIn, Params, StateOut, Out](
     func: (StateIn, Params) => (StateOut, Out)
   ): Stage[StateIn, StateOut, Any, Params, Nothing, Out] =
-    Stage(ZIO.environment[StepContext.having.AnyEnv[StateIn, Params]].map { ctx =>
+    Stage(ZIO.environment[StageContext.having.AnyEnv[StateIn, Params]].map { ctx =>
       val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
       StepOutputs(state = state, value = value)
     })
@@ -409,7 +409,7 @@ object Stage extends StepCompanion[Any] {
   def statefulEffect[StateIn, Params, StateOut, Out](
     func: (StateIn, Params) => (StateOut, Out)
   ): Stage[StateIn, StateOut, Any, Params, Throwable, Out] =
-    Stage(ZIO.environment[StepContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>
+    Stage(ZIO.environment[StageContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>
       val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
       StepOutputs(state = state, value = value)
     })
@@ -421,7 +421,7 @@ object Stage extends StepCompanion[Any] {
   def step[StateIn, StateOut, Params, Out](
     func: (StateIn, Params) => (StateOut, Out)
   ): Stage[StateIn, StateOut, Any, Params, Throwable, Out] =
-    Stage(ZIO.environment[StepContext[Any, StateIn, Params]].mapEffect { ctx =>
+    Stage(ZIO.environment[StageContext[Any, StateIn, Params]].mapEffect { ctx =>
       val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
       StepOutputs(state = state, value = value)
     })
@@ -430,13 +430,13 @@ object Stage extends StepCompanion[Any] {
    * Returns a step with the empty value.
    */
   val none: Stage[Any, Option[Nothing], Any, Any, Nothing, Option[Nothing]] =
-    Stage(ZIO.environment[StepContext.having.AnyInputs].as(StepOutputs.none))
+    Stage(ZIO.environment[StageContext.having.AnyInputs].as(StepOutputs.none))
 
   /**
    * A step that succeeds with a unit value.
    */
   val unit: Stage[Any, Unit, Any, Any, Nothing, Unit] =
-    Stage(ZIO.environment[StepContext.having.AnyInputs].as(StepOutputs.unit))
+    Stage(ZIO.environment[StageContext.having.AnyInputs].as(StepOutputs.unit))
 
   def withStateAs[State](state: => State): Stage[Any, State, Any, Any, Nothing, Unit] =
     Stage(ZIO.succeed(StepOutputs.fromState(state)))
@@ -452,7 +452,7 @@ object Stage extends StepCompanion[Any] {
   ): Stage[Any, State, Env, Any, Err, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env, Any, Any]]
+        .environment[StageContext[Env, Any, Any]]
         .flatMap(ctx =>
           func(ctx.environment).map { case (state, value) =>
             StepOutputs(state = state, value = value)
@@ -465,7 +465,7 @@ object Stage extends StepCompanion[Any] {
   ): Stage[Any, State, Env, Any, Err, Value] =
     Stage(
       ZIO
-        .environment[StepContext[Env, Any, Any]]
+        .environment[StageContext[Env, Any, Any]]
         .flatMap(ctx =>
           effect.map { case (state, value) =>
             StepOutputs(state = state, value = value)

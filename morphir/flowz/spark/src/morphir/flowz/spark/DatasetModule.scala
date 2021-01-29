@@ -11,7 +11,7 @@ trait DatasetModule { self =>
     func: SparkSession => (State, DataRow) => (State, FilterResult[Exclude, Include])
   ): Stage[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]] =
     Stage[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]](
-      ZIO.environment[StepContext[SparkModule, State, Dataset[DataRow]]].mapEffect { ctx =>
+      ZIO.environment[StageContext[SparkModule, State, Dataset[DataRow]]].mapEffect { ctx =>
         val spark       = ctx.environment.get.sparkSession
         var outputState = ctx.inputs.state
         val inputData   = ctx.inputs.params

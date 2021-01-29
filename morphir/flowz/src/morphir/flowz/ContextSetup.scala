@@ -16,10 +16,10 @@ trait ContextSetup[-StartupEnv, -Input, +Env, +State, +Params] { self =>
     ContextSetup[StartupEnv1, Input1, Env0 with Env1, (State, State1), (Params, Params1)] { input: Input1 =>
       self.recipe.provideSome[StartupEnv1]((_, input)).zipWith(other.recipe.provideSome[StartupEnv1]((_, input))) {
         case (
-              StepContext(leftEnv, StepInputs(leftState, leftParams)),
-              StepContext(rightEnv, StepInputs(rightState, rightParams))
+              StageContext(leftEnv, StepInputs(leftState, leftParams)),
+              StageContext(rightEnv, StepInputs(rightState, rightParams))
             ) =>
-          StepContext(
+          StageContext(
             environment = ev.union(leftEnv, rightEnv),
             state = (leftState, rightState),
             params = (leftParams, rightParams)
@@ -46,7 +46,7 @@ trait ContextSetup[-StartupEnv, -Input, +Env, +State, +Params] { self =>
       self.recipe.provideSome[StartupEnv](env => (env, adapter(input)))
     )
 
-  def makeContext(input: Input): RIO[StartupEnv, StepContext[Env, State, Params]] =
+  def makeContext(input: Input): RIO[StartupEnv, StageContext[Env, State, Params]] =
     recipe.provideSome[StartupEnv](env => (env, input))
 
   def derivesParamsWith[Input1 <: Input, Params1](
@@ -61,7 +61,7 @@ trait ContextSetup[-StartupEnv, -Input, +Env, +State, +Params] { self =>
   /**
    * The effect that can be used to build the `StepContext`
    */
-  def recipe: ZIO[(StartupEnv, Input), Throwable, StepContext[Env, State, Params]]
+  def recipe: ZIO[(StartupEnv, Input), Throwable, StageContext[Env, State, Params]]
 
   /**
    * Apply further configuration.
@@ -92,14 +92,14 @@ trait ContextSetup[-StartupEnv, -Input, +Env, +State, +Params] { self =>
 object ContextSetup {
 
   def apply[StartupEnv, Input, Env, State, Params](
-    f: Input => RIO[StartupEnv, StepContext[Env, State, Params]]
+    f: Input => RIO[StartupEnv, StageContext[Env, State, Params]]
   ): ContextSetup[StartupEnv, Input, Env, State, Params] = Create[StartupEnv, Input, Env, State, Params](f)
 
   /**
    * Create a `ContextSetup` from a setup function (which is potentially side-effecting).
    */
   def create[Input, Env, State, Params](
-    setupFunc: Input => StepContext[Env, State, Params]
+    setupFunc: Input => StageContext[Env, State, Params]
   ): ContextSetup[Any, Input, Env, State, Params] =
     ContextSetup { input: Input => ZIO.effect(setupFunc(input)) }
 
@@ -108,7 +108,7 @@ object ContextSetup {
    * This configuration only requires ZIO's ZEnv, and accepts command line args (as a list of strings).
    */
   val default: ContextSetup[ZEnv, List[String], ZEnv, Any, Any] = ContextSetup { _: List[String] =>
-    ZIO.access[ZEnv](StepContext.fromEnvironment)
+    ZIO.access[ZEnv](StageContext.fromEnvironment)
   }
 
   def deriveParams[Input, Params](
@@ -117,13 +117,13 @@ object ContextSetup {
     ContextSetup { input =>
       ZIO
         .accessM[(Any, Input)] { case (env, input) =>
-          ZIO.effect(StepContext(environment = env, state = (), params = f(input)))
+          ZIO.effect(StageContext(environment = env, state = (), params = f(input)))
         }
         .provide(((), input))
     }
 
   val empty: ContextSetup[Any, Any, Any, Any, Any] = ContextSetup { _: Any =>
-    ZIO.succeed(StepContext.any)
+    ZIO.succeed(StageContext.any)
   }
 
   /**
@@ -134,7 +134,7 @@ object ContextSetup {
   ): ContextSetup[StartupEnv, List[String], StartupEnv, Any, Params] =
     ContextSetup[StartupEnv, List[String], StartupEnv, Any, Params]((cmdLineArgs: List[String]) =>
       ZIO.accessM[StartupEnv] { env =>
-        func(cmdLineArgs).map(params => StepContext(environment = env, state = (), params = params))
+        func(cmdLineArgs).map(params => StageContext(environment = env, state = (), params = params))
       }
     )
 
@@ -142,7 +142,7 @@ object ContextSetup {
    * Creates a context setup that uses its initial startup requirements as the environment of the created context.
    */
   def givenEnvironmentAtStartup[R]: ContextSetup[R, Any, R, Any, Any] = ContextSetup { _: Any =>
-    ZIO.access[R](env => StepContext(environment = env, state = (), params = ()))
+    ZIO.access[R](env => StageContext(environment = env, state = (), params = ()))
   }
 
   def requiresEnvironmentOfType[R]: ContextSetup[R, Any, R, Any, Any] =
@@ -151,8 +151,8 @@ object ContextSetup {
       /**
        * The effect that can be used to build the `StepContext`
        */
-      def recipe: ZIO[(R, Any), Throwable, StepContext[R, Any, Any]] = ZIO.access[(R, Any)] { case (env, _) =>
-        StepContext.fromEnvironment(env)
+      def recipe: ZIO[(R, Any), Throwable, StageContext[R, Any, Any]] = ZIO.access[(R, Any)] { case (env, _) =>
+        StageContext.fromEnvironment(env)
       }
     }
 
@@ -160,38 +160,38 @@ object ContextSetup {
    * Creates a new context setup that requires input of the provided type
    */
   def requiresInputOfType[Input]: ContextSetup[Any, Input, Any, Any, Any] = ContextSetup { _: Input =>
-    ZIO.succeed(StepContext(environment = (), state = (), params = ()))
+    ZIO.succeed(StageContext(environment = (), state = (), params = ()))
   }
 
   def uses[StartupEnv]: ContextSetup[StartupEnv, Any, StartupEnv, Any, Any] = ContextSetup { _: Any =>
-    ZIO.access[StartupEnv](StepContext.fromEnvironment)
+    ZIO.access[StartupEnv](StageContext.fromEnvironment)
   }
 
   //def make[StartupEnv, Input, Env, State, Params](effect:ZIO[Input, Throwable, StepContext[Env, State, Params]])
   //def make[R, StartupEnv, Input, Env, State, Params](effect:ZIO[R, Throwable, StepContext[Env, State, Params]]) = ???
 
   val withNoRequirements: ContextSetup[Any, Any, Any, Any, Any] = ContextSetup { _: Any =>
-    ZIO.succeed(StepContext(environment = (), state = (), params = ()))
+    ZIO.succeed(StageContext(environment = (), state = (), params = ()))
   }
 
   final case class CreateFromRecipe[StartupEnv, Input, Env, State, Params](
-    recipe0: RIO[(StartupEnv, Input), StepContext[Env, State, Params]]
+    recipe0: RIO[(StartupEnv, Input), StageContext[Env, State, Params]]
   ) extends ContextSetup[StartupEnv, Input, Env, State, Params] {
 
     /**
      * The effect that can be used to build the `StepContext`
      */
-    def recipe: ZIO[(StartupEnv, Input), Throwable, StepContext[Env, State, Params]] = recipe0
+    def recipe: ZIO[(StartupEnv, Input), Throwable, StageContext[Env, State, Params]] = recipe0
   }
 
   final case class Create[StartupEnv, Input, Env, State, Params](
-    f: Input => RIO[StartupEnv, StepContext[Env, State, Params]]
+    f: Input => RIO[StartupEnv, StageContext[Env, State, Params]]
   ) extends ContextSetup[StartupEnv, Input, Env, State, Params] {
 
     /**
      * The effect that can be used to build the `StepContext`
      */
-    def recipe: ZIO[(StartupEnv, Input), Throwable, StepContext[Env, State, Params]] =
+    def recipe: ZIO[(StartupEnv, Input), Throwable, StageContext[Env, State, Params]] =
       ZIO.accessM[(StartupEnv, Input)] { case (env, input) =>
         f(input).provide(env)
       }
