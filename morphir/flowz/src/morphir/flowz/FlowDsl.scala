@@ -15,7 +15,7 @@ trait FlowDsl {
     type Params
 
     def name: String
-    def context(input: Input): RIO[StartupEnv, StageContext[Env, InitialState, Params]]
+    def context(input: Input): RIO[StartupEnv, ActContext[Env, InitialState, Params]]
     def step: Act[InitialState, _, Env, Params, Throwable, Output]
     def run(input: Input): RIO[StartupEnv, Output] =
       for {
@@ -151,7 +151,7 @@ trait FlowDsl {
 
             def name: String = self.name
 
-            def context(input: Input): RIO[StartupEnv, StageContext[Env, InitialState, Params]] =
+            def context(input: Input): RIO[StartupEnv, ActContext[Env, InitialState, Params]] =
               self.contextSetup.makeContext(input)
 
             def step: Act[InitialState, _, Env, Params, Throwable, Output] = self.step.get.tap { case (_, output) =>
@@ -178,7 +178,7 @@ object demo extends zio.App {
       )
     )
       .stages(
-        stage((_: Any, items: List[Int]) => Step.succeed(items.sum))
+        stage((_: Any, items: List[Int]) => Act.succeed(items.sum))
       )
       .report(res => console.putStrLn(s"Result: $res"))
       .build

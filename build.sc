@@ -34,25 +34,26 @@ object Deps {
     val zio                    = "1.0.4"
     val zioConfig              = "1.0.0-RC32"
     val zioLogging             = "0.5.5"
+    val zioMagic               = "0.1.8"
     val zioNio                 = "1.0.0-RC10"
     val zioPrelude             = "1.0.0-RC1"
     val zioProcess             = "0.2.0"
     val newtype                = "0.4.4"
-    def decline(scalaVersion:String)                =  scalaVersion match {
+    def decline(scalaVersion: String) = scalaVersion match {
       case version if version.startsWith("2.11") => "1.2.0"
-      case _ => "1.3.0"
+      case _                                     => "1.3.0"
     }
-    val pprint                 = "0.5.9"
-    val scalameta              = "4.3.18"
-    val directories            = "11"
-    val enumeratum             = "1.6.1"
-    val macroParadise          = "2.1.1"
-    val upickle                = "1.1.0"
-    val slf4zio                = "1.0.0"
-    val scalactic              = "3.1.2"
-    val scalaUri               = "2.2.2"
-    val oslib                  = "0.6.2"
-    val quill                  = "3.6.0-RC3"
+    val pprint        = "0.5.9"
+    val scalameta     = "4.3.18"
+    val directories   = "11"
+    val enumeratum    = "1.6.1"
+    val macroParadise = "2.1.1"
+    val upickle       = "1.1.0"
+    val slf4zio       = "1.0.0"
+    val scalactic     = "3.1.2"
+    val scalaUri      = "2.2.2"
+    val oslib         = "0.6.2"
+    val quill         = "3.6.0-RC3"
   }
 }
 
@@ -66,13 +67,13 @@ trait MorphirScalaModule extends ScalaModule with TpolecatModule { self =>
 trait MorphirScalafixModule extends ScalafixModule
 
 trait MorphirPublishModule extends GitVersionedPublishModule {
-  def packageDescription        = T(artifactName())
-  def pomSettings               = PomSettings(
+  def packageDescription = T(artifactName())
+  def pomSettings = PomSettings(
     description = packageDescription(),
     organization = "org.morphir",
-    url = "https://github.com/MorganStanley/morphir-jvm",
+    url = "https://github.com/finos/morphir-jvm",
     licenses = Seq(License.`Apache-2.0`),
-    versionControl = VersionControl.github("MorganStanley", "morphir-jvm"),
+    versionControl = VersionControl.github("finos", "morphir-jvm"),
     developers = Seq(
       Developer(
         "DamianReeves",
@@ -136,8 +137,8 @@ trait CommonJvmModule extends MorphirCommonModule {
 trait CommonJsModule extends MorphirCommonModule with ScalaJSModule {
   def platformSegment = "js"
   def crossScalaJSVersion: String
-  def scalaJSVersion  = crossScalaJSVersion
-  def millSourcePath  = super.millSourcePath / os.up / os.up
+  def scalaJSVersion = crossScalaJSVersion
+  def millSourcePath = super.millSourcePath / os.up / os.up
   trait Tests extends super.Tests with MorphirTestModule {
     def platformSegment = "js"
     def scalaJSVersion  = crossScalaJSVersion
@@ -160,7 +161,7 @@ trait MorphirTestModule extends MorphirScalaModule with TestModule {
     Seq("zio.test.sbt.ZTestFramework")
 
   def offset: os.RelPath = os.rel
-  def sources            = T.sources(
+  def sources = T.sources(
     super
       .sources()
       .++(
@@ -202,7 +203,7 @@ object morphir extends Module {
         /*with MorphirScalafixModule*/ { self =>
 
       def artifactName = "morphir-ir"
-      def ivyDeps      = Agg(
+      def ivyDeps = Agg(
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.lihaoyi::upickle:${Versions.upickle}",
@@ -276,10 +277,10 @@ object morphir extends Module {
         with CommonJvmModule
         with MorphirPublishModule { self =>
 
-      def artifactName = "morphir-flowz"
+      def artifactName        = "morphir-flowz"
       def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
       def compileIvyDeps      = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
-      def ivyDeps      = Agg(
+      def ivyDeps = Agg(
         ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}",
         ivy"com.github.mlangc:slf4zio_2.11:${Versions.slf4zio}",
         ivy"dev.zio::zio:${Versions.zio}",
@@ -295,7 +296,10 @@ object morphir extends Module {
       object test extends Tests {
         def platformSegment: String = self.platformSegment
         def crossScalaVersion       = JvmMorphirFlowz.this.crossScalaVersion
-        override def ivyDeps = super.ivyDeps() ++ Agg(ivy"com.monovore::decline:${Versions.decline(crossScalaVersion)}")
+        override def ivyDeps = super.ivyDeps() ++ Agg(
+          ivy"com.monovore::decline:${Versions.decline(crossScalaVersion)}",
+          ivy"io.github.kitlangton::zio-magic:${Versions.zioMagic}"
+        )
       }
     }
 
@@ -315,7 +319,7 @@ object morphir extends Module {
 
         def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
         def compileIvyDeps      = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
-        def ivyDeps             = Agg(
+        def ivyDeps = Agg(
           ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}",
           ivy"com.github.mlangc:slf4zio_2.11:${Versions.slf4zio}",
           ivy"io.getquill::quill-spark:${Versions.quill}",
@@ -328,8 +332,10 @@ object morphir extends Module {
           def platformSegment: String = self.platformSegment
           def crossScalaVersion       = JvmMorphirFlowzSpark.this.crossScalaVersion
           override def ivyDeps = super.ivyDeps() ++
-            Agg(ivy"dev.zio::zio-logging:${Versions.zioLogging}",
-              ivy"dev.zio::zio-logging-slf4j:${Versions.zioLogging}")
+            Agg(
+              ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+              ivy"dev.zio::zio-logging-slf4j:${Versions.zioLogging}"
+            )
         }
       }
     }

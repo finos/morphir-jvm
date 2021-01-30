@@ -2,19 +2,21 @@ package morphir.flowz
 
 import zio._
 
-abstract class StageCompanion[-BaseEnv] {
+abstract class ActCompanion[-BaseEnv] {
 
   /**
    * A step that uses its parameters to build another Step.
    */
-  def accessParametersM[SIn, SOut, R, P, E, A](func: P => Act[SIn, SOut, R, P, E, A]): Act[SIn, SOut, R, P, E, A] =
-    Act(ZIO.accessM[StageContext[R, SIn, P]](ctx => func(ctx.inputs.params).effect))
+  def accessParametersM[SIn, SOut, R, P, E, A](
+    func: P => Act[SIn, SOut, R, P, E, A]
+  ): Act[SIn, SOut, R, P, E, A] =
+    Act(ZIO.accessM[ActContext[R, SIn, P]](ctx => func(ctx.inputs.params).effect))
 
   /** Defines a step that does not rely on state. */
   def act[Params, Out](f: Params => Out): Activity[Any, Params, Throwable, Out] =
     Act(
       ZIO
-        .environment[StageContext.having.Parameters[Params]]
+        .environment[ActContext.having.Parameters[Params]]
         .mapEffect(ctx => StepOutputs.assignBoth(f(ctx.inputs.params)))
     )
 
@@ -22,7 +24,7 @@ abstract class StageCompanion[-BaseEnv] {
   def act[Params, Out](name: String)(f: Params => Out): Activity[Any, Params, Throwable, Out] =
     Act(
       ZIO
-        .environment[StageContext.having.Parameters[Params]]
+        .environment[ActContext.having.Parameters[Params]]
         .mapEffect(ctx => StepOutputs.assignBoth(f(ctx.inputs.params))),
       name = Option(name)
     )
@@ -31,7 +33,7 @@ abstract class StageCompanion[-BaseEnv] {
   def act[Params, Out](name: String, description: String)(f: Params => Out): Activity[Any, Params, Throwable, Out] =
     Act(
       ZIO
-        .environment[StageContext.having.Parameters[Params]]
+        .environment[ActContext.having.Parameters[Params]]
         .mapEffect(ctx => StepOutputs.assignBoth(f(ctx.inputs.params))),
       name = Option(name),
       description = Option(description)
@@ -39,7 +41,7 @@ abstract class StageCompanion[-BaseEnv] {
 
   /** Defines a step that performs some effect which does not rely on state. */
   def activity[Env, Params, Err, Value](func: Params => ZIO[Env, Err, Value]): Activity[Env, Params, Err, Value] =
-    Act(ZIO.accessM[StageContext[Env, Any, Params]] { ctx =>
+    Act(ZIO.accessM[ActContext[Env, Any, Params]] { ctx =>
       func(ctx.inputs.params).map(value => StepOutputs(state = value, value = value)).provide(ctx.environment)
     })
 
@@ -48,7 +50,7 @@ abstract class StageCompanion[-BaseEnv] {
     func: Params => ZIO[Env, Err, Value]
   ): Activity[Env, Params, Err, Value] =
     Act(
-      ZIO.accessM[StageContext[Env, Any, Params]] { ctx =>
+      ZIO.accessM[ActContext[Env, Any, Params]] { ctx =>
         func(ctx.inputs.params).map(value => StepOutputs(state = value, value = value)).provide(ctx.environment)
       },
       name = Option(name)
@@ -58,17 +60,17 @@ abstract class StageCompanion[-BaseEnv] {
     func: Params => ZIO[Env, Err, Value]
   ): Activity[Env, Params, Err, Value] =
     Act(
-      ZIO.accessM[StageContext[Env, Any, Params]] { ctx =>
+      ZIO.accessM[ActContext[Env, Any, Params]] { ctx =>
         func(ctx.inputs.params).map(value => StepOutputs(state = value, value = value)).provide(ctx.environment)
       },
       name = Option(name),
       description = Option(description)
     )
 
-  def context[Env, StateIn, Params]: Act[StateIn, StateIn, Env, Params, Nothing, StageContext[Env, StateIn, Params]] =
+  def context[Env, StateIn, Params]: Act[StateIn, StateIn, Env, Params, Nothing, ActContext[Env, StateIn, Params]] =
     Act(
       ZIO
-        .environment[StageContext[Env, StateIn, Params]]
+        .environment[ActContext[Env, StateIn, Params]]
         .map(ctx => StepOutputs(value = ctx, state = ctx.inputs.state))
     )
 
@@ -77,26 +79,26 @@ abstract class StageCompanion[-BaseEnv] {
   ): Act[StateIn, StateOut, Env, Params, Err, Value] =
     step.describe(description)
 
-  def effect[Value](value: => Value): TaskStep[Any, Value] =
-    Act(ZIO.environment[StageContext.having.AnyInputs].mapEffect(_ => StepOutputs.fromValue(value)))
+  def effect[Value](value: => Value): TaskAct[Any, Value] =
+    Act(ZIO.environment[ActContext.having.AnyInputs].mapEffect(_ => StepOutputs.fromValue(value)))
 
   def environment[Env <: BaseEnv]: Act[Any, Env, Env, Any, Nothing, Env] =
-    Act(ZIO.environment[StageContext.having.Environment[Env]].map(ctx => StepOutputs.setBoth(ctx.environment)))
+    Act(ZIO.environment[ActContext.having.Environment[Env]].map(ctx => StepOutputs.setBoth(ctx.environment)))
 
   def fail[Err](error: Err): Act[Any, Nothing, BaseEnv, Any, Err, Nothing] =
-    Act(ZIO.environment[StageContext.having.AnyInputs] *> ZIO.fail(error))
+    Act(ZIO.environment[ActContext.having.AnyInputs] *> ZIO.fail(error))
 
   def fromEffect[R, E, A](effect: ZIO[R, E, A]): Act[Any, Any, R, Any, E, A] =
     Act(
       ZIO
-        .environment[StageContext[R, Any, Any]]
+        .environment[ActContext[R, Any, Any]]
         .flatMap(ctx => effect.map(ctx.toOutputs(_)).provide(ctx.environment))
     )
 
   def fromEffect[P, R, E, A](func: P => ZIO[R, E, A]): Act[Any, Unit, R, P, E, A] =
     Act(
       ZIO
-        .environment[StageContext[R, Any, P]]
+        .environment[ActContext[R, Any, P]]
         .flatMap(ctx => func(ctx.inputs.params).map(StepOutputs.fromValue(_)).provide(ctx.environment))
     )
 
@@ -106,7 +108,10 @@ abstract class StageCompanion[-BaseEnv] {
   def get[State]: Act[State, State, Any, Any, Nothing, State] =
     modify[State, State, State](s => (s, s))
 
-  def mapN[S0, R, P, Err, SA, A, SB, B, SC, C](flowA: Act[S0, SA, R, P, Err, A], flowB: Act[S0, SB, R, P, Err, B])(
+  def mapN[S0, R, P, Err, SA, A, SB, B, SC, C](
+    flowA: Act[S0, SA, R, P, Err, A],
+    flowB: Act[S0, SB, R, P, Err, B]
+  )(
     f: (StepOutputs[SA, A], StepOutputs[SB, B]) => StepOutputs[SC, C]
   ): Act[S0, SC, R, P, Err, C] =
     flowA.zipWith(flowB)(f)
@@ -298,7 +303,7 @@ abstract class StageCompanion[-BaseEnv] {
    */
   def succeed[Value](value: => Value): Act[Any, Any, Any, Any, Nothing, Value] =
     Act(
-      ZIO.accessM[StageContext[Any, Any, Any]](ctx => ZIO.succeed(StepOutputs(state = ctx.inputs.state, value = value)))
+      ZIO.accessM[ActContext[Any, Any, Any]](ctx => ZIO.succeed(StepOutputs(state = ctx.inputs.state, value = value)))
     )
 
   def succeedWith[State, Value](state: => State, value: => Value): Act[Any, State, Any, Any, Nothing, Value] =
