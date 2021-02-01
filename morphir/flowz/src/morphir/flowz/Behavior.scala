@@ -5,6 +5,11 @@ import zio._
 import scala.annotation.nowarn
 
 abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
+
+  final lazy val asEffect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]] = toEffect
+
+  def map[B](f: A => B): Behavior[SIn, SOut, Msg, R, E, B] = ???
+
   protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorResult[SOut, A]]
 
   /**
@@ -12,6 +17,10 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    */
   final def run(state: SIn, message: Msg): ZIO[R, E, BehaviorResult[SOut, A]] =
     behavior(state, message)
+
+  def toEffect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
+    behavior(stateIn, msg).provide(r)
+  }
 
   /**
    * Triggers the behavior, thus producing an effect.
@@ -21,9 +30,9 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
 }
 object Behavior {
   def apply[State, StateOut, Msg, R, E, A](
-    f: (State, Msg) => ZIO[R, E, (StateOut, A)]
+    f: (State, Msg) => ZIO[R, E, BehaviorResult[StateOut, A]]
   ): Behavior[State, StateOut, Msg, R, E, A] =
-    Stateful[State, StateOut, Msg, R, E, A](ZIO.accessM[(State, Msg, R)] { case (state, msg, r) =>
+    FromEffect[State, StateOut, Msg, R, E, A](ZIO.accessM[(State, Msg, R)] { case (state, msg, r) =>
       f(state, msg).provide(r)
     })
 
@@ -36,23 +45,20 @@ object Behavior {
     }
 
   implicit def behaviorFromFunctionM[SIn, SOut, Msg, R, Err, A](
-    f: (SIn, Msg) => ZIO[R, Err, (SOut, A)]
+    f: (SIn, Msg) => ZIO[R, Err, BehaviorResult[SOut, A]]
   ): Behavior[SIn, SOut, Msg, R, Err, A] =
     Behavior[SIn, SOut, Msg, R, Err, A](f)
 
   def fromEffect[SIn, SOut, Msg, R, E, A](
-    effect: ZIO[(SIn, Msg, R), E, (SOut, A)]
+    effect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]]
   )(@nowarn evState: NeedsInputState[SIn], @nowarn evMsg: NeedsMsg[Msg]): Behavior[SIn, SOut, Msg, R, E, A] =
     new Behavior[SIn, SOut, Msg, R, E, A] {
       protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorResult[SOut, A]] =
-        effect.provideSome[R](r => (state, message, r)).map(BehaviorResult.fromPair)
+        effect.provideSome[R](r => (state, message, r))
     }
 
-  def fromEffect[S, R, E, A](effect: ZIO[R, E, (S, A)]): Behavior[Any, S, Any, R, E, A] =
-    new Behavior[Any, S, Any, R, E, A] {
-      protected def behavior(state: Any, message: Any): ZIO[R, E, BehaviorResult[S, A]] =
-        effect.map(BehaviorResult.fromPair)
-    }
+  def fromEffect[S, R, E, A](effect: ZIO[R, E, BehaviorResult[S, A]]): Behavior[Any, S, Any, R, E, A] =
+    FromEffect(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => effect.provide(r) })
 
   /**
    * Constructs a behavior that always fails with the given error.
@@ -71,6 +77,14 @@ object Behavior {
     protected def behavior(state: Any, message: Any): ZIO[Any, E, BehaviorResult[Nothing, Nothing]] = ZIO.fail(error)
   }
 
+  final case class FromEffect[StateIn, StateOut, Msg, Env, E, A](
+    zio: ZIO[(StateIn, Msg, Env), E, BehaviorResult[StateOut, A]]
+  ) extends Behavior[StateIn, StateOut, Msg, Env, E, A] {
+    override lazy val toEffect: ZIO[(StateIn, Msg, Env), E, BehaviorResult[StateOut, A]] = zio
+    protected def behavior(state: StateIn, message: Msg): ZIO[Env, E, BehaviorResult[StateOut, A]] =
+      zio.provideSome[Env](env => (state, message, env))
+  }
+
   final case class Succeed[S, A](newState: S, value: A) extends EffectBehavior[S, Nothing, A] {
     protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, BehaviorResult[S, A]] =
       ZIO.succeed((newState, value))
@@ -84,10 +98,11 @@ object Behavior {
   /**
    * Represents a stateful behavior that is constructed from an effect.
    */
-  final case class Stateful[State, StateOut, Msg, R, E, A](private val effect: ZIO[(State, Msg, R), E, (StateOut, A)])
-      extends Behavior[State, StateOut, Msg, R, E, A] {
+  final case class Stateful[State, StateOut, Msg, R, E, A](
+    private val effect: BehaviorEffect[State, StateOut, Msg, R, E, A]
+  ) extends Behavior[State, StateOut, Msg, R, E, A] {
     protected def behavior(state: State, message: Msg): ZIO[R, E, BehaviorResult[StateOut, A]] =
-      effect.map(BehaviorResult.fromPair).provideSome[R](r => (state, message, r))
+      effect.provideSome[R](r => (state, message, r))
   }
 
   /**
