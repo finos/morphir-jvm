@@ -15,7 +15,7 @@ object SparkStep {
     effect: ZIO[StageContext[Env with SparkModule, StateIn, Params], Err, StepOutputs[StateOut, Value]],
     name: Option[String] = None,
     description: Option[String] = None
-  ): SparkStep[StateIn, StateOut, Env, Params, Err, Value] =
+  ): SparkBehavior[StateIn, StateOut, Env, Params, Err, Value] =
     Act[StateIn, StateOut, Env with SparkModule, Params, Err, Value](
       rawEffect = effect,
       name = name,
@@ -41,7 +41,7 @@ object SparkStep {
 
   def createDataset[A <: Product: ClassTag: TypeTag](
     func: SparkSession => Encoder[A] => Dataset[A]
-  ): SparkStep[Any, Dataset[A], Any, Any, Throwable, Dataset[A]] =
+  ): SparkBehavior[Any, Dataset[A], Any, Any, Throwable, Dataset[A]] =
     SparkStep(
       ZIO
         .environment[StageContext.having.Environment[SparkModule]]
@@ -53,7 +53,7 @@ object SparkStep {
 
   def createDataset[A <: Product: ClassTag: TypeTag](
     data: => Seq[A]
-  ): SparkStep[Any, Dataset[A], Any, Any, Throwable, Dataset[A]] =
+  ): SparkBehavior[Any, Dataset[A], Any, Any, Throwable, Dataset[A]] =
     SparkStep(
       ZIO
         .environment[StageContext.having.Environment[SparkModule]]
@@ -63,7 +63,7 @@ object SparkStep {
         }
     )
 
-  def environment[Env]: SparkStep[Any, Env, Nothing, Any, Nothing, Env with SparkModule] =
+  def environment[Env]: SparkBehavior[Any, Env, Nothing, Any, Nothing, Env with SparkModule] =
     SparkStep[Any, Env, Nothing, Any, Nothing, Env with SparkModule](
       ZIO
         .environment[StageContext.having.Environment[Env with SparkModule]]
@@ -85,7 +85,7 @@ object SparkStep {
       Act.fromEffect(ZIO.effect(dataset.map(func))).mapOutputs { case (_, ds) => (ds, ds) }
     }
 
-  def parameters[Params]: SparkStep[Any, Params, Any, Params, Nothing, Params] =
+  def parameters[Params]: SparkBehavior[Any, Params, Any, Params, Nothing, Params] =
     SparkStep(
       ZIO.environment[StageContext[SparkModule, Any, Params]].map(ctx => StepOutputs.setBoth(ctx.inputs.params))
     )
@@ -116,7 +116,7 @@ object SparkStep {
       (sparkSession, sparkSession)
     }
 
-  def sparkStep[Params, A](func: SparkSession => Params => A): SparkStep[Any, A, Any, Params, Throwable, A] =
+  def sparkStep[Params, A](func: SparkSession => Params => A): SparkBehavior[Any, A, Any, Params, Throwable, A] =
     SparkStep(
       ZIO
         .environment[StageContext[SparkModule, Any, Params]]
@@ -125,7 +125,7 @@ object SparkStep {
 
   def sparkStepEffect[Env, Params, Err, A](
     func: SparkSession => Params => ZIO[Env with SparkModule, Err, A]
-  ): SparkStep[Any, A, Nothing, Params, Err, A] =
+  ): SparkBehavior[Any, A, Nothing, Params, Err, A] =
     SparkStep[Any, A, Env, Params, Err, A](
       ZIO
         .environment[StageContext[Env with SparkModule, Any, Params]]
@@ -136,17 +136,17 @@ object SparkStep {
         )
     )
 
-  def state[State]: SparkStep[State, State, Any, Any, Nothing, State] = SparkStep(
+  def state[State]: SparkBehavior[State, State, Any, Any, Nothing, State] = SparkStep(
     ZIO.access[StageContext[SparkModule, State, Any]](ctx => StepOutputs.setBoth(ctx.inputs.state))
   )
 
   def stateM[StateIn, StateOut, Env, Params, Err, Value](
     func: StateIn => Act[Any, StateOut, Env with SparkModule, Params, Err, Value]
-  ): SparkStep[StateIn, StateOut, Env, Params, Err, Value] = SparkStep[StateIn, StateOut, Env, Params, Err, Value](
+  ): SparkBehavior[StateIn, StateOut, Env, Params, Err, Value] = SparkStep[StateIn, StateOut, Env, Params, Err, Value](
     ZIO.accessM[StageContext[Env with SparkModule, StateIn, Params]](ctx => func(ctx.inputs.state).effect)
   )
 
-  def toDataFrame[A]: SparkStep[Any, Unit, Any, Dataset[A], Throwable, DataFrame] = SparkStep { data: Dataset[A] =>
+  def toDataFrame[A]: SparkBehavior[Any, Unit, Any, Dataset[A], Throwable, DataFrame] = SparkStep { data: Dataset[A] =>
     ZIO.effect(data.toDF())
   }
 
@@ -155,7 +155,7 @@ object SparkStep {
   ): Act[S1, S2, Any, Dataset[A], Throwable, Dataset[B]] =
     Act.statefulEffect(func)
 
-  def withSpark[A](func: SparkSession => A): SparkStep[Any, A, Any, Any, Throwable, A] =
+  def withSpark[A](func: SparkSession => A): SparkBehavior[Any, A, Any, Any, Throwable, A] =
     SparkStep(
       ZIO
         .environment[StageContext.having.Environment[SparkModule]]
@@ -164,7 +164,7 @@ object SparkStep {
 
   def withSparkEffect[Env, Err, A](
     func: SparkSession => ZIO[Env, Err, A]
-  ): SparkStep[Any, A, Env, Any, Err, A] =
+  ): SparkBehavior[Any, A, Env, Any, Err, A] =
     SparkStep[Any, A, Env, Any, Err, A](
       ZIO
         .environment[StageContext.having.Environment[Env with SparkModule]]

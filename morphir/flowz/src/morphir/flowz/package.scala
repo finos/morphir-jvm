@@ -1,6 +1,6 @@
 package morphir
 
-import zio.{ Fiber, ZManaged }
+import zio._
 import zio.prelude._
 
 package object flowz {
@@ -24,13 +24,34 @@ package object flowz {
   type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
     Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
-  type ReturnBehavior[+A]     = Behavior[Any, Any, Any, Any, Nothing, A]
-  type EffectBehavior[+E, +A] = Behavior[Any, Any, Any, Any, E, A]
+  type ReturnBehavior[+A]         = Behavior[Any, Any, Any, Any, Nothing, A]
+  type EffectBehavior[+S, +E, +A] = Behavior[Any, S, Any, Any, E, A]
 
-  def process[In, R, Err, Out](label: String)(children: Flow[In, R, Err, Out]*): Flow[In, R, Err, Out] =
+//  def behavior[InputState, OutputState, Msg, R, Err, A](
+//    f: (InputState, Msg) => ZIO[R, Err, (OutputState, A)]
+//  )(implicit ev: CanFail[Err]): Behavior[InputState, OutputState, Msg, R, Err, A] =
+//    Behavior[InputState, OutputState, Msg, R, Err, A](f)
+
+//  def behavior[SIn, OutputState, Msg, R, E, A](
+//    effect: ZIO[R with InputState[SIn], E, A]
+//  ): Behavior[SIn, OutputState, Msg, R, Nothing, A] =
+//    Behavior[SIn, OutputState, Msg, R, E, A](effect)
+
+  def behavior[InputState, OutputState, Msg, R, A](
+    f: (InputState, Msg) => URIO[R, (OutputState, A)]
+  ): Behavior[InputState, OutputState, Msg, R, Nothing, A] =
+    Behavior[InputState, OutputState, Msg, R, Nothing, A](f)
+
+  def outputting[OutputState, Value](state: OutputState, value: Value): EffectBehavior[OutputState, Nothing, Value] =
+    Behavior.outputting(state, value)
+
+  def process[SIn, SOut, In, R, Err, Out](label: String)(
+    children: Flow[SIn, SOut, In, R, Err, Out]*
+  ): Flow[SIn, SOut, In, R, Err, Out] =
     Flow.process(label, ZManaged.succeed(children.toVector))
 
   def step[SIn, SOut, In, R, Err, Out](label: String)(
     behavior: Behavior[SIn, SOut, In, R, Err, Out]
-  ): Flow[In, R, Err, Out] = Flow.step(label, behavior)
+  ): Flow[SIn, SOut, In, R, Err, Out] = Flow.step(label, behavior)
+
 }

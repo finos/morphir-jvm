@@ -9,22 +9,26 @@ trait DatasetModule { self =>
 
   def filterDataset[State, DataRow, Exclude: Encoder: TypeTag, Include: Encoder: TypeTag](
     func: SparkSession => (State, DataRow) => (State, FilterResult[Exclude, Include])
-  ): Act[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]] =
-    Act[State, State, SparkModule, Dataset[DataRow], Throwable, Dataset[FilterResult[Exclude, Include]]](
-      ZIO.environment[StageContext[SparkModule, State, Dataset[DataRow]]].mapEffect { ctx =>
-        val spark       = ctx.environment.get.sparkSession
-        var outputState = ctx.inputs.state
-        val inputData   = ctx.inputs.params
-
-        import spark.implicits._
-        val dataset = inputData.map { row =>
-          val (nextState, filterRow) = func(spark)(outputState, row)
-          outputState = nextState
-          filterRow
+  ): Behavior[State, State, Dataset[DataRow], SparkModule, Throwable, Dataset[FilterResult[Exclude, Include]]] =
+    new Behavior[State, State, Dataset[DataRow], SparkModule, Throwable, Dataset[FilterResult[Exclude, Include]]] {
+      protected def behavior(
+        state: State,
+        message: Dataset[DataRow]
+      ): ZIO[SparkModule, Throwable, BehaviorResult[State, Dataset[FilterResult[Exclude, Include]]]] =
+        ZIO.environment[SparkModule].mapEffect { sparkModule =>
+          val spark       = sparkModule.get.sparkSession
+          var outputState = state
+          val inputData   = message
+          import spark.implicits._
+          val dataset = inputData.map { row =>
+            val (nextState, filterRow) = func(spark)(outputState, row)
+            outputState = nextState
+            filterRow
+          }
+          BehaviorResult(state = outputState, value = dataset)
         }
-        StepOutputs(state = outputState, value = dataset)
-      }
-    )
+    }
+
 }
 
 trait DatasetExports { exports => }
