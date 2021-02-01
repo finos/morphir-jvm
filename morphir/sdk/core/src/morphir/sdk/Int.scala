@@ -18,7 +18,6 @@ package morphir.sdk
 
 object Int {
   type Int = scala.Long
-  val Int: scala.Long.type = scala.Long
 
   private[Int] type IntCompanion = scala.Long.type
   private[Int] val IntCompanion: IntCompanion = scala.Long
@@ -120,10 +119,12 @@ object Int {
     else
       Maybe.just(int.longValue())
 
-  private implicit class RichIntCompanion(private val _self: IntCompanion) extends AnyVal {
-    def apply(value: scala.Byte): Int  = value.longValue()
-    def apply(value: scala.Short): Int = value.longValue()
-    def apply(value: scala.Long): Int  = value.longValue()
-    def apply(value: scala.Int): Int   = value.longValue()
+  object Int {
+    def apply(value: scala.Int): morphir.sdk.Int.Int    = value.longValue()
+    def apply(value: scala.Long): morphir.sdk.Int.Int   = value
+    def apply(value: scala.Short): morphir.sdk.Int.Int  = value.longValue()
+    def apply(value: scala.Byte): morphir.sdk.Int.Int   = value.longValue()
+    def apply(value: scala.Float): morphir.sdk.Int.Int  = value.longValue()
+    def apply(value: scala.Double): morphir.sdk.Int.Int = value.longValue()
   }
 }
