@@ -52,8 +52,8 @@ object StringSpec extends DefaultRunnableSpec {
     ),
     suite("String.fromInt specs")(
       fromIntTests(
-        1L  -> "1",
-        -1L -> "-1"
+        1  -> "1",
+        -1 -> "-1"
       ): _*
     ),
     suite("String.append specs")(
