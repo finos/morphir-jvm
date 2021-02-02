@@ -20,21 +20,24 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Get this behavior as an effect.
    */
-  protected final lazy val asEffect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]] = toEffect
+  protected final lazy val asEffect: BehaviorEffect[SIn, SOut, Msg, R, E, A] = toEffect
 
   /**
    * Defines the underlying behavior.
    */
   protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorResult[SOut, A]]
 
-  // def flatMap[SOut1, Msg1 <: Msg, R1 <: R, E1 >: E, B](
-  //   f: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
-  // ): Behavior[SIn, SOut1, Msg1, R1, E1, B] =
-  //   Behavior[SIn, SOut1, Msg1, R1, E1, B](
-  //     ZIO.accessM[(SIn, Msg, R)] { case (s1, msg, r) =>
-  //       asEffect.provide((s1, msg, r)).flatMap(res => f(res.result).asEffect)
-  //     }
-  //   )
+  def flatMap[SOut1, Msg1 <: Msg, R1 <: R, E1 >: E, B](
+    f: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn, SOut1, Msg1, R1, E1, B] =
+    Behavior[SIn, SOut1, Msg1, R1, E1, B](
+      ZIO.accessM[(SIn, Msg1, R1)] { case (s1, msg, r) =>
+        asEffect.provide((s1, msg, r)).flatMap { res: BehaviorResult[SOut, A] =>
+          val thatEffect = f(res.result).asEffect
+          thatEffect.provide((res.state, msg, r))
+        }
+      }
+    )
 
   //def getState =
 
@@ -94,7 +97,7 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    * Provide the behavior with its initial state
    */
   final def provideState(initialState: SIn): Behavior[Any, SOut, Msg, R, E, A] =
-    Behavior(ZIO.accessM[(Any, Msg, R)] { case (_, msg, r) => asEffect.provide((initialState, msg, r)) })
+    Behavior(asEffect.provideState(initialState))
 
   /**
    * Runs the behavior.

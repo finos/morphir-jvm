@@ -3,7 +3,7 @@ package morphir
 import zio._
 import zio.prelude._
 
-package object flowz {
+package object flowz extends BehaviorEffectSyntax {
   object api extends Api
 
   type Activity[-Env, -Params, +Err, +Value] = Act[Any, Value, Env, Params, Err, Value]
