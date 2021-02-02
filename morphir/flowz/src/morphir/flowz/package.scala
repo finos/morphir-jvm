@@ -3,7 +3,7 @@ package morphir
 import zio._
 import zio.prelude._
 
-package object flowz extends BehaviorEffectSyntax {
+package object flowz {
   object api extends Api
 
   type Activity[-Env, -Params, +Err, +Value] = Act[Any, Value, Env, Params, Err, Value]
@@ -24,8 +24,7 @@ package object flowz extends BehaviorEffectSyntax {
   type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
     Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
-  type BehaviorEffect[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[(SIn, Msg, Env), E, BehaviorResult[SOut, A]]
-  type ReturnBehavior[S, +A]                           = Behavior[S, S, Any, Any, Nothing, A]
+  type BehaviorEffect[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[(SIn, Msg, Env), E, BehaviorSuccess[SOut, A]]
 
   /**
    * Provides a description of an independent behavior which does not
@@ -44,7 +43,7 @@ package object flowz extends BehaviorEffectSyntax {
 //    Behavior[SIn, OutputState, Msg, R, E, A](effect)
 
   def behavior[InputState, OutputState, Msg, R, A](
-    f: (InputState, Msg) => URIO[R, BehaviorResult[OutputState, A]]
+    f: (InputState, Msg) => URIO[R, BehaviorSuccess[OutputState, A]]
   ): Behavior[InputState, OutputState, Msg, R, Nothing, A] =
     Behavior.behaviorFromFunctionM(f)
 

@@ -3,9 +3,11 @@ package morphir.flowz
 import morphir.flowz.Flow.FlowCase
 import zio._
 
-final case class Flow[-SIn, +SOut, -In, -R, +Err, +Out](
-  caseValue: FlowCase[SIn, SOut, In, R, Err, Out, Flow[SIn, SOut, In, R, Err, Out]]
-)
+final case class Flow[-StateIn, +StateOut, -Msg, -Env, +Err, +Result](
+  caseValue: FlowCase[StateIn, StateOut, Msg, Env, Err, Result, Flow[StateIn, StateOut, Msg, Env, Err, Result]]
+) {
+  def run(initialState: StateIn, message: Msg): ZIO[Env, Err, (StateOut, Result)] = ???
+}
 
 object Flow {
 
@@ -40,7 +42,17 @@ object Flow {
 
 object example {
 
-  val flow = process("hello")(
-    step("step2")(outputting(state = List("Oops"), value = 42))
+  object behaviors {
+    val behavior1 = Behavior.unit
+    val stateful  = Behavior.get[List[String]]
+  }
+
+  val flow = process("init")(
+    process("load data")(
+      process("inner")(
+        step("Get accounts")(behaviors.behavior1),
+        step("Get trade file")(Behavior.unit)
+      )
+    )
   )
 }

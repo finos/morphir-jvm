@@ -7,7 +7,7 @@ import scala.annotation.nowarn
 object BehaviorEffect {
 
   def apply[StateIn, StateOut, Msg, Env, E, A](
-    func: (StateIn, Msg) => ZIO[Env, E, BehaviorResult[StateOut, A]]
+    func: (StateIn, Msg) => ZIO[Env, E, BehaviorSuccess[StateOut, A]]
   )(implicit
     @nowarn evStateIn: NeedsInputState[StateIn],
     @nowarn evMsg: NeedsMsg[Msg],
@@ -17,7 +17,7 @@ object BehaviorEffect {
     ZIO.accessM[(StateIn, Msg, Env)] { case (stateIn, msg, env) => func(stateIn, msg).provide(env) }
 
   implicit def effectFromFunc[StateIn, StateOut, Msg, Env, E, A](
-    func: (StateIn, Msg) => ZIO[Env, E, BehaviorResult[StateOut, A]]
+    func: (StateIn, Msg) => ZIO[Env, E, BehaviorSuccess[StateOut, A]]
   )(implicit
     evStateIn: NeedsInputState[StateIn],
     evMsg: NeedsMsg[Msg],
@@ -34,7 +34,7 @@ object BehaviorEffect {
     @nowarn evCanFail: CanFail[E]
   ): BehaviorEffect[StateIn, StateOut, Msg, Env, E, A] =
     ZIO.accessM[(StateIn, Msg, Env)] { case (stateIn, msg, env) =>
-      func(stateIn, msg).map(BehaviorResult.fromPair).provide(env)
+      func(stateIn, msg).map(BehaviorSuccess.fromPair).provide(env)
     }
 
 }
