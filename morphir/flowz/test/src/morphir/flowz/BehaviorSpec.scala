@@ -37,6 +37,25 @@ object BehaviorSpec extends DefaultRunnableSpec {
               }
               .run(List("John", "Joe"), "Jack")
         } yield assert(result)(equalTo(BehaviorResult(state = List("Jack", "John", "Joe"), result = "kcaJ")))
+      ),
+      testM("It should be possible to construct a behavior that gets the initial state unchanged.")(
+        for {
+          result <- Behavior.get[Set[Int]].run(Set(1, 2, 3, 4), Set(5, 6, 7, 8))
+        } yield assert(result)(equalTo(BehaviorResult(Set(1, 2, 3, 4), Set(1, 2, 3, 4))))
+      ),
+      testM("It should be possible to construct a behavior that sets the state to a value.")(
+        checkM(Gen.alphaNumericString, Gen.alphaNumericString) { (input, s1) =>
+          for {
+            result <- Behavior.set(input).run(s1, "Something")
+          } yield assert(result)(equalTo(BehaviorResult(state = input, result = ())))
+        }
+      )
+    ),
+    suite("Operations")(
+      testM("It should be possible to return a different constant value using as")(
+        for {
+          result <- Behavior.unit.as("Foo").run("S1", ())
+        } yield assert(result)(equalTo(BehaviorResult("S1", "Foo")))
       )
     )
   )

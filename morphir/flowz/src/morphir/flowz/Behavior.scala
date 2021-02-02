@@ -6,25 +6,37 @@ import scala.annotation.nowarn
 
 /**
  * A behavior is a purely functional description of a computation that requires
- * an environment `R`, an initial state of `SIn` and an input message `Msg`.
- * it may fail with either an `E` or succeed with an updated state `SOut` and a result `A`.
+ * an environment `R`, an initial state of `SIn` and an input/update message `Msg`.
+ * It may fail with either an `E` or succeed with an updated state `SOut` and a result `A`.
  */
 abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   import Behavior._
 
   /**
+   * Maps the success value of this behavior to a constant value.
+   */
+  final def as[B](b: => B): Behavior[SIn, SOut, Msg, R, E, B] = map(_ => b)
+
+  /**
    * Get this behavior as an effect.
    */
-  final lazy val asEffect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]] = toEffect
+  protected final lazy val asEffect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]] = toEffect
 
   /**
    * Defines the underlying behavior.
    */
   protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorResult[SOut, A]]
 
-  def flatMap[SOut1, Msg1 <: Msg, R1 <: R, E1 >: E, B](
-    f: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
-  ): Behavior[SIn, SOut1, Msg1, R1, E1, B] = ???
+  // def flatMap[SOut1, Msg1 <: Msg, R1 <: R, E1 >: E, B](
+  //   f: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
+  // ): Behavior[SIn, SOut1, Msg1, R1, E1, B] =
+  //   Behavior[SIn, SOut1, Msg1, R1, E1, B](
+  //     ZIO.accessM[(SIn, Msg, R)] { case (s1, msg, r) =>
+  //       asEffect.provide((s1, msg, r)).flatMap(res => f(res.result).asEffect)
+  //     }
+  //   )
+
+  //def getState =
 
   /**
    * Returns a behavior whose success is mapped by the specified function f.
@@ -39,6 +51,50 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   final def mapState[SOut2](f: SOut => SOut2): Behavior[SIn, SOut2, Msg, R, E, A] = FromEffect(
     asEffect.map(_.mapState(f))
   )
+
+  /**
+   * Provide the behavior all its required inputs and its environment
+   */
+  final def provide(initialState: SIn, message: Msg, environment: R): IndieBehavior[SOut, E, A] =
+    Behavior(asEffect.provide((initialState, message, environment)))
+
+  /**
+   * Provide the behavior all its required inputs and its environment
+   */
+  final def provide(message: Msg)(implicit ev1: Any <:< SIn, ev2: Any <:< R): IndieBehavior[SOut, E, A] =
+    Behavior(asEffect.provide(((), message, ())))
+
+  /**
+   * Provide the behavior all its required inputs and its environment
+   */
+  final def provide(initialState: SIn, message: Msg)(implicit ev1: Any <:< R): IndieBehavior[SOut, E, A] =
+    Behavior(asEffect.provide((initialState, message, ())))
+
+  /**
+   * Provide the behavior with its environment.
+   */
+  final def provideEnvironment(environment: R): Behavior[SIn, SOut, Msg, Any, E, A] =
+    Behavior(ZIO.accessM[(SIn, Msg, Any)] { case (initialState, message, _) =>
+      asEffect.provide((initialState, message, environment))
+    })
+
+  /**
+   * Provide the behavior with its initial state and message.
+   */
+  final def provideInputs(initialState: SIn, message: Msg): Behavior[Any, SOut, Any, R, E, A] =
+    Behavior(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => asEffect.provide((initialState, message, r)) })
+
+  /**
+   * Provide the behavior with its update message.
+   */
+  final def provideMessage(message: Msg): Behavior[SIn, SOut, Any, R, E, A] =
+    Behavior(ZIO.accessM[(SIn, Any, R)] { case (initialState, _, r) => asEffect.provide((initialState, message, r)) })
+
+  /**
+   * Provide the behavior with its initial state
+   */
+  final def provideState(initialState: SIn): Behavior[Any, SOut, Msg, R, E, A] =
+    Behavior(ZIO.accessM[(Any, Msg, R)] { case (_, msg, r) => asEffect.provide((initialState, msg, r)) })
 
   /**
    * Runs the behavior.
@@ -84,7 +140,7 @@ object Behavior {
   /**
    * Constructs a behavior that always fails with the given error.
    */
-  def fail[E](error: E): EffectBehavior[Nothing, E, Nothing] = Fail(error)
+  def fail[E](error: E): IndieBehavior[Nothing, E, Nothing] = Fail(error)
 
   def fromEffect[SIn, SOut, Msg, R, E, A](
     effect: ZIO[(SIn, Msg, R), E, BehaviorResult[SOut, A]]
@@ -97,11 +153,25 @@ object Behavior {
   def fromEffect[S, R, E, A](effect: ZIO[R, E, BehaviorResult[S, A]]): Behavior[Any, S, Any, R, E, A] =
     FromEffect(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => effect.provide(r) })
 
+  /**
+   * Constructs a Behavior that gets the initial state unchanged.
+   */
+  def get[S]: Behavior[S, S, Any, Any, Nothing, S] =
+    modify(s => (s, s))
+
+  /**
+   * Constructs a Behavior from a modify function.
+   */
   def modify[S1, S2, A](f: S1 => (S2, A)): Behavior[S1, S2, Any, Any, Nothing, A] =
     Modify(f)
 
-  def outputting[S, Value](state: S, value: Value): EffectBehavior[S, Nothing, Value] =
+  def outputting[S, Value](state: S, value: Value): IndieBehavior[S, Nothing, Value] =
     Succeed(newState = state, value = value)
+
+  /**
+   * Conatructs a Behavior that sets the state to the specified value.å
+   */
+  def set[S](state: S): Behavior[Any, S, Any, Any, Nothing, Unit] = modify(_ => (state, ()))
 
   /**
    * Constructs a stateless behavior.
@@ -114,7 +184,10 @@ object Behavior {
   /**
    * Constructs a behavior that always succeeds with the given value.
    */
-  def succeed[A](value: => A): ReturnBehavior[A] = Return(value)
+  def succeed[S, A](value: => A): ReturnBehavior[S, A] = Return(value)
+
+  def unit[S]: Behavior[S, S, Any, Any, Nothing, Unit] =
+    succeed(())
 
   /**
    * Constructs a behavior from a function that produces a new state and a result given an initial state and a message.
@@ -125,7 +198,7 @@ object Behavior {
       BehaviorResult(s2, a)
     })
 
-  final case class Fail[E](error: E) extends EffectBehavior[Nothing, E, Nothing] {
+  final case class Fail[E](error: E) extends IndieBehavior[Nothing, E, Nothing] {
     protected def behavior(state: Any, message: Any): ZIO[Any, E, BehaviorResult[Nothing, Nothing]] = ZIO.fail(error)
   }
 
@@ -152,13 +225,13 @@ object Behavior {
 
   // }
 
-  final case class Succeed[S, A](newState: S, value: A) extends EffectBehavior[S, Nothing, A] {
+  final case class Succeed[S, A](newState: S, value: A) extends IndieBehavior[S, Nothing, A] {
     protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, BehaviorResult[S, A]] =
       ZIO.succeed((newState, value))
   }
 
-  final case class Return[A](value: A) extends StatelessBehavior[Any, Any, Nothing, A] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, BehaviorResult[Any, A]] =
+  final case class Return[S, A](value: A) extends Behavior[S, S, Any, Any, Nothing, A] {
+    protected def behavior(state: S, message: Any): ZIO[Any, Nothing, BehaviorResult[S, A]] =
       ZIO.succeed((state, value))
   }
 
