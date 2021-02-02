@@ -13,7 +13,7 @@ object Decimal {
     def apply(value: BigDec): Decimal                  = value
     def apply(value: scala.BigDecimal): Decimal        = value.bigDecimal
     def apply(value: morphir.sdk.Float.Float): Decimal = BigDecimal.exact(value).bigDecimal
-    def apply(value: morphir.sdk.Int.Int): Decimal     = BigDecimal.exact(value).bigDecimal
+    def apply(value: morphir.sdk.Int.Int): Decimal     = BigDecimal(value).bigDecimal
 
   }
 

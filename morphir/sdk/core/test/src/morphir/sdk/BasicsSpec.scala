@@ -75,9 +75,9 @@ object BasicsSpec extends DefaultRunnableSpec {
     ),
     suite("Basics.power spec")(
       testM("Power an Int value by another Int value") {
-        check(Gen.anyLong, Gen.long(-10, 10)) { (d1: Basics.Int, d2: Basics.Int) =>
+        check(Gen.anyInt, Gen.int(-10, 10)) { (d1: Basics.Int, d2: Basics.Int) =>
           val expected = d1 ^ d2
-          assert(Basics.power(d1)(d2))(equalTo(expected.toLong))
+          assert(Basics.power(d1)(d2))(equalTo(expected))
         }
       }
     ),
