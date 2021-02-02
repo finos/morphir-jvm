@@ -17,10 +17,10 @@ limitations under the License.
 package morphir.sdk
 
 object Int {
-  type Int = scala.Long
+  type Int = scala.Int
 
-  private[Int] type IntCompanion = scala.Long.type
-  private[Int] val IntCompanion: IntCompanion = scala.Long
+  private[Int] type IntCompanion = scala.Int.type
+  private[Int] val IntCompanion: IntCompanion = scala.Int
 
   /**
    * Represents an 8 bit integer value.
@@ -46,10 +46,10 @@ object Int {
   type Int64 = scala.Long
   val Int64: scala.Long.type = scala.Long
 
-  def apply(value: scala.Byte): Int  = value.longValue()
-  def apply(value: scala.Short): Int = value.longValue()
-  def apply(value: scala.Int): Int   = value.longValue()
-  def apply(value: scala.Long): Int  = value.longValue()
+  def apply(value: scala.Byte): Int  = value.intValue()
+  def apply(value: scala.Short): Int = value.intValue()
+  def apply(value: scala.Int): Int   = value.intValue()
+  def apply(value: scala.Long): Int  = value.intValue()
 
   @inline def divide(dividend: Int8)(divisor: Int8): Int8 =
     (dividend / divisor).toByte
@@ -108,23 +108,23 @@ object Int {
   /**
    * Turn a 64 bit integer value into a arbitrary precision integer to use in calculations.
    */
-  def fromInt64(int: Int64): Basics.Int = int
+  def fromInt64(int: Int64): Basics.Int = int.intValue()
 
   /**
    * Turns an arbitrary precision integer into a 64 bit integer if it fits within the precision.
    */
-  def toInt64(int: Basics.Int): Maybe.Maybe[Basics.Int] =
+  def toInt64(int: Basics.Int): Maybe.Maybe[Int64] =
     if (int < Int64.MinValue && int > Int64.MaxValue)
       Maybe.nothing
     else
       Maybe.just(int.longValue())
 
   object Int {
-    def apply(value: scala.Int): morphir.sdk.Int.Int    = value.longValue()
-    def apply(value: scala.Long): morphir.sdk.Int.Int   = value
-    def apply(value: scala.Short): morphir.sdk.Int.Int  = value.longValue()
-    def apply(value: scala.Byte): morphir.sdk.Int.Int   = value.longValue()
-    def apply(value: scala.Float): morphir.sdk.Int.Int  = value.longValue()
-    def apply(value: scala.Double): morphir.sdk.Int.Int = value.longValue()
+    def apply(value: scala.Int): morphir.sdk.Int.Int    = value.intValue()
+    def apply(value: scala.Long): morphir.sdk.Int.Int   = value.intValue()
+    def apply(value: scala.Short): morphir.sdk.Int.Int  = value.intValue()
+    def apply(value: scala.Byte): morphir.sdk.Int.Int   = value.intValue()
+    def apply(value: scala.Float): morphir.sdk.Int.Int  = value.intValue()
+    def apply(value: scala.Double): morphir.sdk.Int.Int = value.intValue()
   }
 }

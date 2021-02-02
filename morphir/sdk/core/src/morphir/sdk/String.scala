@@ -24,7 +24,7 @@ object String {
 
   @inline def isEmpty(str: String): Basics.Bool = str.isEmpty()
 
-  @inline def length(str: String): Basics.Int = str.length().toLong
+  @inline def length(str: String): Basics.Int = str.length()
 
   @inline def reverse(str: String): String = str.reverse
 
@@ -51,7 +51,7 @@ object String {
     target.split(sep).toList //TODO: These aren't exactly the same
 
   def toInt(text: String): Maybe[Basics.Int] =
-    try Maybe.just(text.toLong)
+    try Maybe.just(text.toInt)
     catch {
       case _: NumberFormatException => Maybe.nothing
     }
@@ -100,7 +100,7 @@ object String {
   def endsWith(substring: String)(str: String): Basics.Bool = str.endsWith(substring)
 
   def indexes(substring: String)(str: String): List[Basics.Int] =
-    str.r.findAllMatchIn(substring).map(_.start.toLong).toList
+    str.r.findAllMatchIn(substring).map(_.start).toList
 
   def indices(substring: String)(str: String): List[Basics.Int] =
     indexes(substring)(str)

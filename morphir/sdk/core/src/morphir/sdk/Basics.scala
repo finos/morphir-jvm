@@ -92,12 +92,15 @@ object Basics {
   @inline def multiply(a: Float)(b: Float): Float          = a * b
   @inline def divide(a: Float)(b: Float): Float            = a / b
   @inline def toFloat(a: Int): Float                       = a.toDouble
-  @inline def round(a: Float): Int                         = a.round
-  @inline def floor(a: Float): Int                         = a.floor.round
-  @inline def ceiling(a: Float): Int                       = a.ceil.round
-  @inline def truncate(a: Float): Int                      = if (a >= 0) floor(a) else -floor(-a)
-  @inline def negate(a: Float): Float                      = -a
-  @inline def abs(a: Float): Float                         = Math.abs(a)
+  @inline def round(a: Float): Int =
+    a.round.intValue() //TODO: Look at truncation (need to update the SDK to return an Int64 here)
+  @inline def floor(a: Float): Int =
+    a.floor.intValue //TODO: Look at truncation (need to update the SDK to return an Int64 here)
+  @inline def ceiling(a: Float): Int =
+    a.ceil.intValue //TODO: Look at truncation (need to update the SDK to return an Int64 here)
+  @inline def truncate(a: Float): Int = if (a >= 0) floor(a) else -floor(-a)
+  @inline def negate(a: Float): Float = -a
+  @inline def abs(a: Float): Float    = Math.abs(a)
   @inline def clamp(min: Float)(max: Float)(a: Float): Float =
     if (a < min) min
     else if (a > max) max
