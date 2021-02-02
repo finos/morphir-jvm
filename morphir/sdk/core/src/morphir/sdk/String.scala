@@ -41,13 +41,13 @@ object String {
   @inline def fromInt(int: Basics.Int): String =
     int.toString
 
-  @inline def append(first: String, second: String): String = first + second
+  @inline def append(first: String)(second: String): String = first + second
 
   @inline def ++(first: String, second: String): String = first + second
 
   @inline def concat(strings: List[String]): String = strings.mkString
 
-  @inline def split(sep: String, target: String): List[String] =
+  @inline def split(sep: String)(target: String): List[String] =
     target.split(sep).toList //TODO: These aren't exactly the same
 
   def toInt(text: String): Maybe[Basics.Int] =
