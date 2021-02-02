@@ -3,24 +3,22 @@ package morphir.flowz
 import scala.annotation.implicitAmbiguous
 
 /**
- * A value of type `NeedsInputState[E]` provides implicit evidence that a behavior with
- * error type `E` can fail, that is, that `E` is not equal to `Nothing`.
+ * A value of type `NeedsInputState[R]` provides implicit evidence that a behavior, flow, step, or effect with
+ * input state type `S` needs a state value, that is, that `S` is not equal to
+ * `Any`.
  */
-sealed abstract class NeedsInputState[-S]
+sealed abstract class NeedsInputState[+S]
 
-object NeedsInputState extends NeedsInputState[Any] {
+object NeedsInputState extends NeedsInputState[Nothing] {
 
   implicit def needsInputState[S]: NeedsInputState[S] = NeedsInputState
 
-  // Provide multiple ambiguous values so an implicit NeedsInputState[Nothing] cannot be found.
-  // Provide multiple ambiguous values so an implicit CanFail[Nothing] cannot be found.
+  // Provide multiple ambiguous values so an implicit NeedsInputState[Any] cannot be found.
   @implicitAmbiguous(
-    "This error handling operation assumes your effect can fail. However, " +
-      "your effect has Nothing for the error type, which means it cannot " +
-      "fail, so there is no need to handle the failure. To find out which " +
-      "method you can use instead of this operation, please see the " +
-      "reference chart at: https://zio.dev/docs/can_fail"
+    "This operation assumes that your behavior, flow, step, or effect requires an input state. " +
+      "However, your behavior has Any for the input state type, which means it " +
+      "has no requirement, so there is no need to provide the input state."
   )
-  implicit val needsInputStateAmbiguous1: NeedsInputState[Nothing] = NeedsInputState
-  implicit val needsInputStateAmbiguous2: NeedsInputState[Nothing] = NeedsInputState
+  implicit val needsInputStateAmbiguous1: NeedsInputState[Any] = NeedsInputState
+  implicit val needsInputStateAmbiguous2: NeedsInputState[Any] = NeedsInputState
 }

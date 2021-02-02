@@ -24,8 +24,9 @@ package object flowz {
   type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
     Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
-  type ReturnBehavior[+A]         = Behavior[Any, Any, Any, Any, Nothing, A]
-  type EffectBehavior[+S, +E, +A] = Behavior[Any, S, Any, Any, E, A]
+  type BehaviorEffect[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[(SIn, Msg, Env), E, BehaviorResult[SOut, A]]
+  type ReturnBehavior[+A]                              = Behavior[Any, Any, Any, Any, Nothing, A]
+  type EffectBehavior[+S, +E, +A]                      = Behavior[Any, S, Any, Any, E, A]
 
 //  def behavior[InputState, OutputState, Msg, R, Err, A](
 //    f: (InputState, Msg) => ZIO[R, Err, (OutputState, A)]
@@ -38,9 +39,9 @@ package object flowz {
 //    Behavior[SIn, OutputState, Msg, R, E, A](effect)
 
   def behavior[InputState, OutputState, Msg, R, A](
-    f: (InputState, Msg) => URIO[R, (OutputState, A)]
+    f: (InputState, Msg) => URIO[R, BehaviorResult[OutputState, A]]
   ): Behavior[InputState, OutputState, Msg, R, Nothing, A] =
-    Behavior[InputState, OutputState, Msg, R, Nothing, A](f)
+    Behavior.behaviorFromFunctionM(f)
 
   def outputting[OutputState, Value](state: OutputState, value: Value): EffectBehavior[OutputState, Nothing, Value] =
     Behavior.outputting(state, value)

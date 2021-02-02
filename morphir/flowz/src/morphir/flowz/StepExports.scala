@@ -11,9 +11,6 @@ trait StepExports {
     func: (StateIn, Params) => (StateOut, Out)
   ): Step[StateIn, StateOut, Any, Params, Throwable, Out] = Step.step(func)
 
-  final type Activity[-Env, -Params, +Err, +Value] = Step[Any, Value, Env, Params, Err, Value]
-  val Activity: morphir.flowz.Activity.type = morphir.flowz.Activity
-
   type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
     Step[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 

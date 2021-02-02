@@ -11,13 +11,13 @@ import scala.annotation.implicitNotFound
     "However, your behavior has Any for the input state type, which means it " +
     "has no requirement, so there is no need to provide the input state."
 )
-sealed abstract class NeedsInputState[-S]
+sealed abstract class NeedsInputState[+S]
 
-object NeedsInputState extends NeedsInputState[Any] {
+object NeedsInputState extends NeedsInputState[Nothing] {
 
   implicit def needsInputState[S]: NeedsInputState[S] = NeedsInputState
 
   // Provide multiple ambiguous values so an implicit NeedsInputState[Nothing] cannot be found.
-  implicit val needsInputStateAmbiguous1: NeedsInputState[Nothing] = NeedsInputState
-  implicit val needsInputStateAmbiguous2: NeedsInputState[Nothing] = NeedsInputState
+  implicit val needsInputStateAmbiguous1: NeedsInputState[Any] = NeedsInputState
+  implicit val needsInputStateAmbiguous2: NeedsInputState[Any] = NeedsInputState
 }

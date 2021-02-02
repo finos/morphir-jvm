@@ -1,3 +1,3 @@
 package morphir.flowz
 
-trait Api extends StepExports with ActivityExports with FiberSyntax with FlowDsl
+trait Api extends StepExports with FiberSyntax with FlowDsl
