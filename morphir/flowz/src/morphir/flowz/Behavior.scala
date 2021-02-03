@@ -18,6 +18,22 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     self andThen that
 
   /**
+   * A variant of flatMap that ignores the values (result and state)  produced by this behavior.
+   */
+  def *>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, SOut1, Msg1, R1, E1, B] =
+    Behavior(self.asEffect *> that.asEffect)
+
+  /**
+   * Sequences the specified behavior after this behavior, but ignores the
+   * values (result and state) produced by the behavior.
+   */
+  def <*[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, SOut, Msg1, R1, E1, A] = Behavior(self.asEffect <* that.asEffect)
+
+  /**
    * Executes the given behavior upon the successful execution of this behavior.
    */
   def andThen[SOut2, R1 <: R, E1 >: E, B](
@@ -156,15 +172,27 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    */
   final def trigger(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
-  def zip[SIn1 <: SIn, R1 <: R, Msg1 <: Msg, E1 >: E, SOut1, B](
+  def zip[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
   ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] =
     Behavior((self.asEffect zip that.asEffect) map { case (left, right) => left zip right })
 
-//  def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
-//                                                                                             that: Act[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-//                                                                                           ): Act[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
-//    Act((self.effect zip that.effect).map { case (left, right) => left zip right })
+  def zipPar[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] =
+    Behavior((self.asEffect zipPar that.asEffect) map { case (left, right) => left zip right })
+
+  def zipWith[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](that: Behavior[SIn1, SOut1, Msg1, R1, E1, B])(
+    f: (BehaviorSuccess[SOut, A], BehaviorSuccess[SOut1, B]) => BehaviorSuccess[S, C]
+  ): Behavior[SIn1, S, Msg1, R1, E1, C] =
+    Behavior((self.asEffect zipWith that.asEffect)(f))
+
+  def zipWithPar[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  )(
+    f: (BehaviorSuccess[SOut, A], BehaviorSuccess[SOut1, B]) => BehaviorSuccess[S, C]
+  ): Behavior[SIn1, S, Msg1, R1, E1, C] =
+    Behavior((self.asEffect zipWithPar that.asEffect)(f))
 }
 object Behavior extends BehaviorEffectSyntax {
   def apply[InitialState, StateOut, Msg, R, E, A](

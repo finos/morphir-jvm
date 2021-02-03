@@ -19,13 +19,14 @@ object Flow {
 
   def step[SIn, SOut, In, R, Err, Out](
     label: String,
-    behavior: Behavior[SIn, SOut, In, R, Err, Out]
-  ): Flow[SIn, SOut, In, R, Err, Out] = Flow(StepCase(label, behavior))
+    behavior: Behavior[SIn, SOut, In, R, Err, Out],
+    annotations: StepAnnotationMap
+  ): Flow[SIn, SOut, In, R, Err, Out] = Flow(StepCase(label, behavior, annotations))
 
   sealed abstract class FlowCase[-SIn, +SOut, -In, -R, +Err, +Out, +A] { self =>
     final def map[B](f: A => B): FlowCase[SIn, SOut, In, R, Err, Out, B] = self match {
-      case ProcessCase(label, children) => ProcessCase(label, children.map(_.map(f)))
-      case StepCase(label, behavior)    => StepCase(label, behavior)
+      case ProcessCase(label, children)           => ProcessCase(label, children.map(_.map(f)))
+      case StepCase(label, behavior, annotations) => StepCase(label, behavior, annotations)
     }
   }
 
@@ -36,7 +37,8 @@ object Flow {
 
   final case class StepCase[-SIn, +SOut, -In, -R, +Err, +Out, A](
     label: String,
-    behavior: Behavior[SIn, SOut, In, R, Err, Out]
+    behavior: Behavior[SIn, SOut, In, R, Err, Out],
+    annotations: StepAnnotationMap
   ) extends FlowCase[SIn, SOut, In, R, Err, Out, A]
 }
 

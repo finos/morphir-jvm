@@ -3,8 +3,13 @@ package morphir
 import zio._
 import zio.prelude._
 
+import scala.collection.immutable.SortedSet
+
 package object flowz {
   object api extends Api
+
+  type Annotations   = Has[Annotations.Service]
+  type Annotated[+A] = (A, StepAnnotationMap)
 
   type Activity[-Env, -Params, +Err, +Value] = Act[Any, Value, Env, Params, Err, Value]
   type IOAct[-Params, +Err, +Value]          = Act[Any, Unit, Any, Params, Err, Value]
@@ -57,6 +62,80 @@ package object flowz {
 
   def step[SIn, SOut, In, R, Err, Out](label: String)(
     behavior: Behavior[SIn, SOut, In, R, Err, Out]
-  ): Flow[SIn, SOut, In, R, Err, Out] = Flow.step(label, behavior)
+  ): Flow[SIn, SOut, In, R, Err, Out] = Flow.step(label, behavior, StepAnnotationMap.empty)
 
+  /**
+   * The `Annotations` trait provides access to an annotation map that tests
+   * can add arbitrary annotations to. Each annotation consists of a string
+   * identifier, an initial value, and a function for combining two values.
+   * Annotations form monoids and you can think of `Annotations` as a more
+   * structured logging service or as a super polymorphic version of the writer
+   * monad effect.
+   */
+  object Annotations {
+
+    trait Service extends Serializable {
+      def annotate[V](key: StepAnnotation[V], value: V): UIO[Unit]
+      def get[V](key: StepAnnotation[V]): UIO[V]
+      def withAnnotation[R, E, A](zio: ZIO[R, E, A]): ZIO[R, Annotated[E], Annotated[A]]
+      def supervisedFibers: UIO[SortedSet[Fiber.Runtime[Any, Any]]]
+    }
+
+    /**
+     * Accesses an `Annotations` instance in the environment and appends the
+     * specified annotation to the annotation map.
+     */
+    def annotate[V](key: StepAnnotation[V], value: V): URIO[Annotations, Unit] =
+      ZIO.accessM(_.get.annotate(key, value))
+
+    /**
+     * Accesses an `Annotations` instance in the environment and retrieves the
+     * annotation of the specified type, or its default value if there is none.
+     */
+    def get[V](key: StepAnnotation[V]): URIO[Annotations, V] =
+      ZIO.accessM(_.get.get(key))
+
+    /**
+     * Constructs a new `Annotations` service.
+     */
+    val live: Layer[Nothing, Annotations] =
+      ZLayer.fromEffect(FiberRef.make(StepAnnotationMap.empty).map { fiberRef =>
+        new Annotations.Service {
+          def annotate[V](key: StepAnnotation[V], value: V): UIO[Unit] =
+            fiberRef.update(_.annotate(key, value))
+          def get[V](key: StepAnnotation[V]): UIO[V] =
+            fiberRef.get.map(_.get(key))
+          def withAnnotation[R, E, A](zio: ZIO[R, E, A]): ZIO[R, Annotated[E], Annotated[A]] =
+            fiberRef.locally(StepAnnotationMap.empty) {
+              zio.foldM(e => fiberRef.get.map((e, _)).flip, a => fiberRef.get.map((a, _)))
+            }
+          def supervisedFibers: UIO[SortedSet[Fiber.Runtime[Any, Any]]] =
+            ZIO.descriptorWith { descriptor =>
+              get(StepAnnotation.fibers).flatMap {
+                case Left(_) =>
+                  ZIO.succeed(SortedSet.empty[Fiber.Runtime[Any, Any]]) //TODO: Possible to do succeedNow????
+                case Right(refs) =>
+                  ZIO
+                    .foreach(refs)(_.get)
+                    .map(_.foldLeft(SortedSet.empty[Fiber.Runtime[Any, Any]])(_ ++ _))
+                    .map(_.filter(_.id != descriptor.id))
+              }
+            }
+        }
+      })
+
+    /**
+     * Accesses an `Annotations` instance in the environment and executes the
+     * specified effect with an empty annotation map, returning the annotation
+     * map along with the result of execution.
+     */
+    def withAnnotation[R <: Annotations, E, A](zio: ZIO[R, E, A]): ZIO[R, Annotated[E], Annotated[A]] =
+      ZIO.accessM(_.get.withAnnotation(zio))
+
+    /**
+     * Returns a set of all fibers in this test.
+     */
+    def supervisedFibers: ZIO[Annotations, Nothing, SortedSet[Fiber.Runtime[Any, Any]]] =
+      ZIO.accessM(_.get.supervisedFibers)
+  }
 }
