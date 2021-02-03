@@ -72,13 +72,22 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    */
   protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]]
 
+  /**
+   * Returns a behavior that models the execution of this behavior, followed by
+   * the passing of its value to the specified continuation function `k`,
+   * followed by the behavior that it returns.
+   *
+   * {{{
+   * val parsed = readFile("foo.txt").flatMap(file => parseFile(file))
+   * }}}
+   */
   def flatMap[SOut1, Msg1 <: Msg, R1 <: R, E1 >: E, B](
-    f: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
+    k: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
   ): Behavior[SIn, SOut1, Msg1, R1, E1, B] =
     Behavior[SIn, SOut1, Msg1, R1, E1, B](
       ZIO.accessM[(SIn, Msg1, R1)] { case (_, msg, r) =>
         asEffect.flatMap { res: BehaviorSuccess[SOut, A] =>
-          f(res.result).asEffect.provide((res.state, msg, r))
+          k(res.result).asEffect.provide((res.state, msg, r))
         }
       }
     )
