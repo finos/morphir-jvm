@@ -133,7 +133,7 @@ object StringSpec extends DefaultRunnableSpec {
       test(
         s"Given Strings: '$first' and '$second' calling append should return '$expected'"
       ) {
-        assert(String.append(first, second))(equalTo(expected))
+        assert(String.append(first)(second))(equalTo(expected))
       }
     }
 
@@ -151,7 +151,7 @@ object StringSpec extends DefaultRunnableSpec {
       test(
         s"Given Strings: '$target' and 'sep' calling split should return '$expected'"
       ) {
-        assert(String.split(sep, target))(equalTo(expected))
+        assert(String.split(sep)(target))(equalTo(expected))
       }
     }
 
