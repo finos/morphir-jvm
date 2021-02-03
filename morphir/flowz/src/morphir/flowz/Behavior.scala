@@ -26,6 +26,20 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     Behavior(self.asEffect *> that.asEffect)
 
   /**
+   * An operator alias for zip.
+   */
+  def <*>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zip that
+
+  /**
+   * An operator alias for zipPar.
+   */
+  def |+|[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zipPar that
+
+  /**
    * Sequences the specified behavior after this behavior, but ignores the
    * values (result and state) produced by the behavior.
    */
@@ -172,6 +186,8 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    */
   final def trigger(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
+  final def trigger(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
+
   def zip[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
   ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] =
@@ -226,6 +242,20 @@ object Behavior extends BehaviorEffectSyntax {
     FromEffect(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => effect.provide(r) })
 
   /**
+   * Create a behavior by providing a possibly impure function.
+   *
+   * For example:
+   *
+   * {{{
+   *   val intConverter = Behavior.fromFunction { numberStr:String =>
+   *      numberStr.toInt
+   *   }
+   * }}}
+   */
+  def fromFunction[In, Out](f: In => Out): FuncBehavior[In, Out] =
+    MessageHandler(ZIO.accessM[In](input => ZIO.effect(f(input))))
+
+  /**
    * Constructs a Behavior that gets the initial state unchanged.
    */
   def get[S]: Behavior[S, S, Any, Any, Nothing, S] =
@@ -244,15 +274,15 @@ object Behavior extends BehaviorEffectSyntax {
     SetOutputs(newState = state, value = value)
 
   /**
-   * Conatructs a Behavior that sets the state to the specified value.å
+   * Constructs a Behavior that sets the state to the specified value.å
    */
   def set[S](state: S): Behavior[Any, S, Any, Any, Nothing, Unit] = modify(_ => (state, ()))
 
   /**
-   * Constructs a stateless behavior.
+   * Constructs a stateless behavior from a function that produces an effect.
    */
   def stateless[Msg, R, E, A](f: Msg => ZIO[R, E, A]): StatelessBehavior[Msg, R, E, A] =
-    new StatelessBehavior[Msg, R, E, A] {
+    new AbstractStatelessBehavior[Msg, R, E, A] {
       protected def behavior(state: Any, message: Msg): ZIO[R, E, BehaviorSuccess[Any, A]] = f(message).map(state -> _)
     }
 
@@ -266,6 +296,7 @@ object Behavior extends BehaviorEffectSyntax {
 
   /**
    * Constructs a behavior from a function that produces a new state and a result given an initial state and a message.
+   * This function is expected to be pure without side effects and should not throw any exceptions.
    */
   def update[S1, S2, Msg, A](f: (S1, Msg) => (S2, A)): Behavior[S1, S2, Msg, Any, Nothing, A] =
     Stateful(ZIO.access[(S1, Msg, Any)] { case (s1, msg, _) =>
@@ -286,7 +317,7 @@ object Behavior extends BehaviorEffectSyntax {
   }
 
   final case class MessageHandler[-Msg, +Err, +A](private val zio: ZIO[Msg, Err, A])
-      extends Behavior[Any, Any, Msg, Any, Err, A] {
+      extends AbstractStatelessBehavior[Msg, Any, Err, A] {
 
     protected def behavior(state: Any, message: Msg): ZIO[Any, Err, BehaviorSuccess[Any, A]] =
       zio.map(result => BehaviorSuccess(state = state, result = result)).provide(message)
@@ -299,14 +330,6 @@ object Behavior extends BehaviorEffectSyntax {
       ZIO.effectTotal(func(state))
 
   }
-
-  // final case class FromUpdateFunction[State, Msg, R, Err, Model](
-  //   updateFunc: (State, Msg) => Behavior[State, State, Msg, R, Err, Model]
-  // ) extends Behavior[State, State, Msg, R, Err, Model] {
-  //   protected def behavior(state: State, message: Msg): ZIO[R, Err, BehaviorResult[State, Model]] =
-  //     updateFunc(state, message).behavior(state, message)
-
-  // }
 
   final case class SetOutputs[S, A](newState: S, value: A) extends IndieBehavior[S, Nothing, A] {
     protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, BehaviorSuccess[S, A]] =
@@ -332,7 +355,7 @@ object Behavior extends BehaviorEffectSyntax {
    * Represents a stateless behavior that is constructed from an effect.
    */
   final case class Stateless[Msg, R, E, A](private val effect: ZIO[(Msg, R), E, A])
-      extends StatelessBehavior[Msg, R, E, A] {
+      extends AbstractStatelessBehavior[Msg, R, E, A] {
     protected def behavior(state: Any, message: Msg): ZIO[R, E, BehaviorSuccess[Any, A]] =
       effect.map(value => BehaviorSuccess(state, value)).provideSome[R](r => (message, r))
   }

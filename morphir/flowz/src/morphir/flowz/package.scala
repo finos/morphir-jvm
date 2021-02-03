@@ -6,15 +6,8 @@ import zio.prelude._
 import scala.collection.immutable.SortedSet
 
 package object flowz {
-  object api extends Api
-
   type Annotations   = Has[Annotations.Service]
   type Annotated[+A] = (A, StepAnnotationMap)
-
-  type Activity[-Env, -Params, +Err, +Value] = Act[Any, Value, Env, Params, Err, Value]
-  type IOAct[-Params, +Err, +Value]          = Act[Any, Unit, Any, Params, Err, Value]
-  type TaskAct[-Params, +Value]              = Act[Any, Unit, Any, Params, Throwable, Value]
-  type UAct[-Params, +Value]                 = Act[Any, Any, Any, Params, Nothing, Value]
 
   object CommandLineArgs extends Subtype[List[String]]
   type CommandLineArgs = CommandLineArgs.Type
@@ -24,12 +17,26 @@ package object flowz {
 
   type FlowHostContext[+R] = (R, CommandLineArgs, Variables)
 
-  type UFlowHost[+HostParams] = FlowHost[Any, Nothing, HostParams]
-
-  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
-    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
+//  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
+//    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
   type BehaviorEffect[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[(SIn, Msg, Env), E, BehaviorSuccess[SOut, A]]
+
+  type StatelessBehavior[-Msg, -R, +E, +A] = Behavior[Any, Any, Msg, R, E, A]
+
+  /**
+   * A type alias for a behavior that acts like an impure function, taking in an input message
+   * (also referred to as input/parameters) and produces a single value, possibly failing
+   * with a `Throwable`.
+   *
+   * For example:
+   *
+   * {{{
+   *   val intConverter:FuncBehavior[String,Int] =
+   *    Behavior.fromFunction { numberStr:String => numberStr.toInt }
+   * }}}
+   */
+  type FuncBehavior[-Msg, +A] = Behavior[Any, Any, Msg, Any, Throwable, A]
 
   /**
    * Provides a description of an independent behavior which does not
@@ -113,7 +120,8 @@ package object flowz {
             ZIO.descriptorWith { descriptor =>
               get(StepAnnotation.fibers).flatMap {
                 case Left(_) =>
-                  ZIO.succeed(SortedSet.empty[Fiber.Runtime[Any, Any]]) //TODO: Possible to do succeedNow????
+                  val emptySet = SortedSet.empty[Fiber.Runtime[Any, Any]]
+                  ZIO.succeed(emptySet)
                 case Right(refs) =>
                   ZIO
                     .foreach(refs)(_.get)
