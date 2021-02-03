@@ -79,4 +79,4 @@ jobs:
         gpg --batch --yes --import private.key
         rm private.key
 
-        ./mill mill.scalalib.PublishModule/publishAll --sonatypeCreds ${{ secrets.SONATYPE_USERNAME }}:${{ secrets.SONATYPE_PASSWORD }} --gpgArgs --passphrase,${{ secrets.PGP_PASSPHRASE }},--batch,--yes,-a,-b,--pinentry-mode,loopback --publishArtifacts __.publishArtifacts --awaitTimeout 900000 --readTimeout 600000 --readTimeout 600000 --connectTimout 60000 --release true
+        ./mill mill.scalalib.PublishModule/publishAll --sonatypeCreds ${{ secrets.SONATYPE_USERNAME }}:${{ secrets.SONATYPE_PASSWORD }} --gpgArgs --passphrase,${{ secrets.PGP_PASSPHRASE }},--batch,--yes,-a,-b,--pinentry-mode,loopback --publishArtifacts __.publishArtifacts --awaitTimeout 900000 --readTimeout 600000 --release true
