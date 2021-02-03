@@ -2,8 +2,6 @@ package morphir.flowz
 
 import zio._
 
-import scala.annotation.nowarn
-
 /**
  * A behavior is a purely functional description of a computation that requires
  * an environment `R`, an initial state of `SIn` and an input/update message `Msg`.
@@ -11,6 +9,23 @@ import scala.annotation.nowarn
  */
 abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   import Behavior._
+
+  /**
+   * Connect this Behavior to the given Behavior by connecting the output state of this Behavior to the input state
+   * of the other Behavior and by connecting the result of this Behavior to the input of the other.
+   */
+  def >>>[SOut2, R1 <: R, E1 >: E, B](that: Behavior[SOut, SOut2, A, R1, E1, B]): Behavior[SIn, SOut2, Msg, R1, E1, B] =
+    self andThen that
+
+  /**
+   * Executes the given behavior upon the successful execution of this behavior.
+   */
+  def andThen[SOut2, R1 <: R, E1 >: E, B](
+    that: Behavior[SOut, SOut2, A, R1, E1, B]
+  ): Behavior[SIn, SOut2, Msg, R1, E1, B] =
+    Behavior(ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r) =>
+      self.asEffect.flatMap(success => that.asEffect.provide((success.state, success.result, r)))
+    })
 
   /**
    * Maps the success value of this behavior to a constant value.
@@ -116,6 +131,22 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, A] =
     run((), ()).map(_.result)
 
+  /**
+   * Returns a behavior that effectfully "peeks" at the success of this behavior.
+   *
+   * {{{
+   * readFile("data.json").tap(putStrLn)
+   * }}}
+   */
+  def tap[R1 <: R, E1 >: E](
+    func: BehaviorSuccess[SOut, A] => ZIO[R1, E1, Any]
+  ): Behavior[SIn, SOut, Msg, R1, E1, A] =
+    Behavior[SIn, SOut, Msg, R1, E1, A](
+      ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r1) =>
+        self.asEffect.tap(success => func(success).provide(r1))
+      }
+    )
+
   def toEffect: ZIO[(SIn, Msg, R), E, BehaviorSuccess[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
     behavior(stateIn, msg).provide(r)
   }
@@ -125,6 +156,15 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    */
   final def trigger(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
+  def zip[SIn1 <: SIn, R1 <: R, Msg1 <: Msg, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] =
+    Behavior((self.asEffect zip that.asEffect) map { case (left, right) => left zip right })
+
+//  def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
+//                                                                                             that: Act[StateIn1, StateOut2, Env1, In1, Err1, Output2]
+//                                                                                           ): Act[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
+//    Act((self.effect zip that.effect).map { case (left, right) => left zip right })
 }
 object Behavior extends BehaviorEffectSyntax {
   def apply[InitialState, StateOut, Msg, R, E, A](
@@ -146,11 +186,13 @@ object Behavior extends BehaviorEffectSyntax {
 
   def fromEffect[SIn, SOut, Msg, R, E, A](
     effect: ZIO[(SIn, Msg, R), E, BehaviorSuccess[SOut, A]]
-  )(@nowarn evState: NeedsInputState[SIn], @nowarn evMsg: NeedsMsg[Msg]): Behavior[SIn, SOut, Msg, R, E, A] =
+  )(evState: NeedsInputState[SIn], evMsg: NeedsMsg[Msg]): Behavior[SIn, SOut, Msg, R, E, A] = {
+    val _ = (evState, evMsg) //NOTE: Suppresses the warning about these not being used
     new Behavior[SIn, SOut, Msg, R, E, A] {
       protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] =
         effect.provideSome[R](r => (state, message, r))
     }
+  }
 
   def fromEffect[S, R, E, A](effect: ZIO[R, E, BehaviorSuccess[S, A]]): Behavior[Any, S, Any, R, E, A] =
     FromEffect(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => effect.provide(r) })

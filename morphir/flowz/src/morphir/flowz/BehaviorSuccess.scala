@@ -1,19 +1,24 @@
 package morphir.flowz
 
-final case class BehaviorSuccess[+State, +Value](state: State, result: Value) { self =>
-  def flatMap[State2, Value2](f: Value => BehaviorSuccess[State2, Value2]): BehaviorSuccess[State2, Value2] =
+final case class BehaviorSuccess[+S, +A](state: S, result: A) { self =>
+  def flatMap[State2, Value2](f: A => BehaviorSuccess[State2, Value2]): BehaviorSuccess[State2, Value2] =
     f(result)
 
-  def map[Value2](f: Value => Value2): BehaviorSuccess[State, Value2] =
+  def map[B](f: A => B): BehaviorSuccess[S, B] =
     copy(result = f(self.result))
 
-  def mapState[State2](f: State => State2): BehaviorSuccess[State2, Value] =
+  def mapState[S1](f: S => S1): BehaviorSuccess[S1, A] =
     copy(state = f(self.state))
 
-  def transform[State2, Value2](
-    f: BehaviorSuccess[State, Value] => BehaviorSuccess[State2, Value2]
-  ): BehaviorSuccess[State2, Value2] =
+  def transform[S1, B](
+    f: BehaviorSuccess[S, A] => BehaviorSuccess[S1, B]
+  ): BehaviorSuccess[S1, B] =
     f(self)
+
+  def zip[S1, B](
+    that: BehaviorSuccess[S1, B]
+  ): BehaviorSuccess[(S, S1), (A, B)] =
+    BehaviorSuccess(state = (state, that.state), result = (result, that.result))
 }
 
 object BehaviorSuccess {

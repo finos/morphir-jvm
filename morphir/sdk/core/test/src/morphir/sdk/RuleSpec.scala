@@ -17,7 +17,7 @@ limitations under the License.
 package morphir.sdk
 
 import zio.test.Assertion._
-import zio.test.{ suite, _ }
+import zio.test._
 
 object RuleSpec extends DefaultRunnableSpec {
   def spec = suite("RuleSpec")(
