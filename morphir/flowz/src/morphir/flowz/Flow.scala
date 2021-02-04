@@ -6,7 +6,7 @@ import zio._
 final case class Flow[-StateIn, +StateOut, -Msg, -Env, +Err, +Result](
   caseValue: FlowCase[StateIn, StateOut, Msg, Env, Err, Result, Flow[StateIn, StateOut, Msg, Env, Err, Result]]
 ) {
-  def run(initialState: StateIn, message: Msg): ZIO[Env, Err, FlowSuccess[StateOut, Result]] = ???
+  def run(initialState: StateIn, message: Msg): ZIO[Env, FlowFailure[Err], FlowSuccess[StateOut, Result]] = ???
 }
 
 object Flow {
