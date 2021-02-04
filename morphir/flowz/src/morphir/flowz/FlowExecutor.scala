@@ -1,8 +1,11 @@
 package morphir.flowz
 
-import zio.{ Has, Layer, UIO }
+import zio.{ ExecutionStrategy, Has, Layer, RIO, UIO }
 
-abstract class FlowExecutor[+R <: Has[_], E] {
-  def run(flow: Flow[Any, Any, Any, R, E, Unit]): UIO[ExecutedFlow[E]]
+abstract class FlowExecutor[InitialState, Msg, +R <: Has[_], E] {
+  def run(flow: ExecutableFlow[InitialState, Msg, R, E], executionStrategy: ExecutionStrategy)(
+    initialize: RIO[FlowBaseEnv, (InitialState, Msg)]
+  ): UIO[ExecutedFlow[E]]
+
   def environment: Layer[Nothing, R]
 }

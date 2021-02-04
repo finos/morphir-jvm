@@ -17,9 +17,9 @@ package object flowz {
   object Variables extends Subtype[Map[String, String]]
   type Variables = Variables.Type
 
-  type RunnableFlow[-InitialState, -Msg, -R, +E] = Flow[InitialState, Any, Msg, R, E, ExitCode]
-  type FlowArgs                                  = Has[FlowArguments]
-  type FlowBaseEnv                               = FlowArgs with Instrumentation with Annotations with Clock
+  type ExecutableFlow[-InitialState, -Msg, -R, +E] = Flow[InitialState, Any, Msg, R, E, ExitCode]
+  type FlowArgs                                    = Has[FlowArguments]
+  type FlowBaseEnv                                 = FlowArgs with Instrumentation with Annotations with Clock
 
 //  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
