@@ -1,6 +1,8 @@
 package morphir
 
+import morphir.flowz.instrumentation.Instrumentation
 import zio._
+import zio.clock.Clock
 import zio.prelude._
 
 import scala.collection.immutable.SortedSet
@@ -15,7 +17,9 @@ package object flowz {
   object Variables extends Subtype[Map[String, String]]
   type Variables = Variables.Type
 
-  type FlowHostContext[+R] = (R, CommandLineArgs, Variables)
+  type RunnableFlow[-InitialState, -Msg, -R, +E] = Flow[InitialState, Any, Msg, R, E, ExitCode]
+  type FlowArgs                                  = Has[FlowArguments]
+  type FlowBaseEnv                               = FlowArgs with Instrumentation with Annotations with Clock
 
 //  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
