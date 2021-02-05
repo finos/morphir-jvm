@@ -3,4 +3,4 @@ package morphir.flowz
 /**
  * Represents a behavior that does not use state.
  */
-abstract class AbstractStatelessBehavior[-Msg, -R, +E, +A] extends Behavior[Any, Any, Msg, R, E, A] {}
+abstract class AbstractStatelessBehavior[-InputMsg, -R, +E, +A] extends Behavior[Any, Any, InputMsg, R, E, A] {}

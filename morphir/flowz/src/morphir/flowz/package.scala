@@ -18,16 +18,16 @@ package object flowz {
   object Variables extends Subtype[Map[String, String]]
   type Variables = Variables.Type
 
-  type ExecutableFlow[-InitialState, -Msg, -R, +E] = Flow[InitialState, Any, Msg, R, E, ExitCode]
-  type FlowArgs                                    = Has[FlowArguments]
-  type FlowBaseEnv                                 = Instrumentor with Clock
+  type ExecutableFlow[-InitialState, -InputMsg, -R, +E] = Flow[InitialState, Any, InputMsg, R, E, ExitCode]
+  type FlowArgs                                         = Has[FlowArguments]
+  type FlowBaseEnv                                      = Instrumentor with Clock
 
 //  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
-  type BehaviorEffect[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[(SIn, Msg, Env), E, BehaviorSuccess[SOut, A]]
+  type BehaviorEffect[-SIn, +SOut, -InputMsg, -Env, +E, +A] = ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
 
-  type StatelessBehavior[-Msg, -R, +E, +A] = Behavior[Any, Any, Msg, R, E, A]
+  type StatelessBehavior[-InputMsg, -R, +E, +A] = Behavior[Any, Any, InputMsg, R, E, A]
 
   /**
    * A type alias for a behavior that acts like an impure function, taking in an input message
@@ -41,7 +41,7 @@ package object flowz {
    *    Behavior.fromFunction { numberStr:String => numberStr.toInt }
    * }}}
    */
-  type FuncBehavior[-Msg, +A] = Behavior[Any, Any, Msg, Any, Throwable, A]
+  type FuncBehavior[-InputMsg, +A] = Behavior[Any, Any, InputMsg, Any, Throwable, A]
 
   /**
    * Provides a description of an independent behavior which does not
@@ -59,9 +59,9 @@ package object flowz {
 //  ): Behavior[SIn, OutputState, Msg, R, Nothing, A] =
 //    Behavior[SIn, OutputState, Msg, R, E, A](effect)
 
-  def behavior[InputState, OutputState, Msg, R, A](
-    f: (InputState, Msg) => URIO[R, BehaviorSuccess[OutputState, A]]
-  ): Behavior[InputState, OutputState, Msg, R, Nothing, A] =
+  def behavior[InitialState, OutputState, InputMsg, R, A](
+    f: (InitialState, InputMsg) => URIO[R, BehaviorSuccess[OutputState, A]]
+  ): Behavior[InitialState, OutputState, InputMsg, R, Nothing, A] =
     Behavior.behaviorFromFunctionM(f)
 
   def outputting[OutputState, Value](state: OutputState, value: Value): IndieBehavior[OutputState, Nothing, Value] =
@@ -70,7 +70,7 @@ package object flowz {
   def process[SIn, SOut, In, R, Err, Out](label: String)(
     children: Flow[SIn, SOut, In, R, Err, Out]*
   ): Flow[SIn, SOut, In, R, Err, Out] =
-    Flow.process(label, ZManaged.succeed(children.toVector))
+    Flow.process(label, children = ZManaged.succeed(children.toVector))
 
   def step[SIn, SOut, In, R, Err, Out](label: String)(
     behavior: Behavior[SIn, SOut, In, R, Err, Out]
@@ -163,4 +163,17 @@ package object flowz {
      */
     val silent: FlowReporter[Any] = (_, _) => ZIO.unit
   }
+
+  type Msg[A] = Has[MsgOf[A]]
+  object MsgOf extends SubtypeF
+  type MsgOf[A] = MsgOf.Type[A]
+
+  type InputVal[A] = Has[Input[A]]
+  object Input extends SubtypeF
+  type Input[A] = Input.Type[A]
+
+  type InputState[S] = Has[Input[S]]
+  object StateIn extends SubtypeF
+  type StateIn[S] = StateIn.Type[S]
+
 }

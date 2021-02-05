@@ -26,6 +26,12 @@ object Property {
     new Property[V](identifier, initial, combine, tag)
 
   /**
+   * An annotation which counts ignored steps.
+   */
+  val ignored: Property[Int] =
+    Property("ignored", 0, _ + _)
+
+  /**
    * An annotation which tags steps with strings.
    */
   val tagged: Property[Set[String]] =
