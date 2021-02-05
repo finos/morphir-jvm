@@ -6,6 +6,7 @@ import zio._
 final case class FlowRunner[+InitialState, Msg, R <: Has[_], E](
   executor: FlowExecutor[InitialState, Msg, R, E],
   platform: Platform = Platform.makeDefault().withReportFailure(_ => ()),
+  reporter: FlowReporter[E] = FlowReporter.silent, //TODO: Make this a default one that actually does something
   bootstrap: Layer[Nothing, FlowBaseEnv] = FlowBaseEnv.default
 ) { self =>
   lazy val runtime: Runtime[Unit] = Runtime((), platform)
@@ -15,8 +16,7 @@ final case class FlowRunner[+InitialState, Msg, R <: Has[_], E](
    */
   def run(flow: ExecutableFlow[InitialState, Msg, R, E]): URIO[FlowBaseEnv, ExecutedFlow[E]] =
     executor.run(flow, ExecutionStrategy.ParallelN(4)).timed.flatMap { case (duration, results) =>
-      //reporter(duration, results).as(results)
-      ???
+      reporter(duration, results).as(results)
     }
 
   /**

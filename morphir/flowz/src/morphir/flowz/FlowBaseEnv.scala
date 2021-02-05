@@ -7,5 +7,5 @@ import zio.clock.Clock
 
 object FlowBaseEnv {
   val default: Layer[Nothing, FlowBaseEnv] =
-    Console.live ++ Clock.live >+> Instrumentor.default
+    Console.live ++ Clock.live >+> Instrumentor.console()
 }

@@ -1,7 +1,8 @@
 package morphir.flowz
+import morphir.flowz.instrumentation.{ InstrumentationEvent, InstrumentationLogging }
 import zio.clock.Clock
 import zio.console.Console
-import zio.logging.{ Logger, Logging }
+import zio.logging.{ LogFormat, LogLevel, Logger }
 import zio.{ Has, UIO, URIO, ZIO, ZLayer }
 
 object instrumentor {
@@ -24,7 +25,10 @@ object instrumentor {
       logger: Logger[InstrumentationEvent] => LoggingInstrumentor(logger)
     }
 
-    val default: ZLayer[Console with Clock, Nothing, Instrumentor] =
-      Logging.console().map(_.get.contramap[InstrumentationEvent](e))
+    def console(
+      logLevel: LogLevel = LogLevel.Info,
+      format: LogFormat[InstrumentationEvent] = InstrumentationEvent.logFormats.coloredConsoleLogFormat
+    ): ZLayer[Console with Clock, Nothing, Instrumentor] =
+      InstrumentationLogging.console(logLevel, format).map(l => Has(LoggingInstrumentor(l.get)))
   }
 }

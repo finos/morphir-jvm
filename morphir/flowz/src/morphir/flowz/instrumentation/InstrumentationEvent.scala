@@ -1,5 +1,6 @@
-package morphir.flowz
+package morphir.flowz.instrumentation
 
+import morphir.flowz.NodePath
 import zio.logging.LogFormat.LineFormatter
 import zio.logging.{ LogContext, LogFormat }
 
