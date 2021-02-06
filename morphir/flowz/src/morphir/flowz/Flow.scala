@@ -25,6 +25,25 @@ final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
         Flow.StepCase(label, behavior, annotations.annotate(key, value))
     }
 
+  final def annotated: Flow[InitialState, StateOut, InputMsg, Env with Properties, Annotated[Err], Annotated[Result]] =
+    transform[InitialState, StateOut, InputMsg, Env with Properties, Annotated[Err], Annotated[Result]] {
+      case ProcessCase(label, children) => Flow.ProcessCase(label, children.mapError((_, PropertyMap.empty)))
+      case StepCase(label, behavior, annotations) =>
+        Flow.StepCase(label, Properties.withAnnotation(behavior.toEffect), annotations)
+    }
+
+  /**
+   * Run is an alternative to execute that provides information around individual Behavior success.
+   */
+  def exec[State](
+    initialState: State,
+    message: InputMsg
+  )(implicit
+    ev1: State <:< InitialState,
+    ev2: StateOut <:< InitialState
+  ): ZManaged[Env, Err, BehaviorSuccess[List[State], List[Result]]] = ???
+  //ZManaged.accessManaged[(Any, Any, Any)] { env => }
+
   def execute(
     initialState: InitialState,
     message: InputMsg
@@ -97,7 +116,7 @@ object Flow {
 
   final case class StepCase[-SIn, +SOut, -InputMsg, -R, +Err, +Out](
     label: String,
-    behavior: Behavior[SIn, SOut, InputMsg, R, Err, Out],
+    behavior: Behavior[SIn, SOut, InputMsg, R, Err, Out], // ~ ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
     annotations: PropertyMap
   ) extends FlowCase[SIn, SOut, InputMsg, R, Err, Out, Nothing]
 
@@ -108,6 +127,8 @@ object Flow {
       f: M => M
     )(implicit ev: Has.IsHas[Env1], tag: Tag[M]): Flow[SIn, SOut, InputMsg, Env1, Err, Result] = ???
   }
+
+  //ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
 }
 
 object example {
@@ -117,12 +138,12 @@ object example {
     val stateful  = Behavior.get[List[String]]
   }
 
-  val flow = process("init")()
-//    process("load data")(
-//      process("inner")(
-//        step("Get accounts")(behaviors.behavior1),
-//        step("Get trade file")(Behavior.unit)
-//      )
-//    )
-  //)
+  val flow = process("init")(
+    process("load data")(
+      process("inner")(
+        step("Get accounts")(behaviors.behavior1),
+        step("Get trade file")(Behavior.unit)
+      )
+    )
+  )
 }

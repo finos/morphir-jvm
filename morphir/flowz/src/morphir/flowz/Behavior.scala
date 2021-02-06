@@ -1,14 +1,25 @@
 package morphir.flowz
 
+import morphir.flowz.Properties
 import zio._
 
 /**
  * A behavior is a purely functional description of a computation that requires
- * an environment `R`, an initial state of `SIn` and an input/update message `In`.
+ * an environment `R`, an initial state of `SIn` and an input/update message `Msg`.
  * It may fail with either an `E` or succeed with an updated state `SOut` and a result `A`.
  */
-abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
+abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   import Behavior._
+
+  /**
+   * Returns a behavior that executes both this behavior and the specified behavior,
+   * in parallel, returning the result of the provided behavior. If either side fails,
+   * then the other side will be interrupted, interrupting the result.
+   */
+  def &>[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
+    that: Behavior[SIn1, SOut1, In1, R1, E1, B]
+  ): Behavior[SIn1, SOut1, In1, R1, E1, B] =
+    self.zipWithPar(that)((_, b) => b)
 
   /**
    * Connect this Behavior to the given Behavior by connecting the output state of this Behavior to the input state
@@ -16,36 +27,53 @@ abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
    */
   def >>>[SOut2, R1 <: R, E1 >: E, B](
     that: Behavior[SOut, SOut2, A, R1, E1, B]
-  ): Behavior[SIn, SOut2, In, R1, E1, B] =
+  ): Behavior[SIn, SOut2, Msg, R1, E1, B] =
     self andThen that
 
   /**
    * A variant of flatMap that ignores the values (result and state)  produced by this behavior.
    */
-  def *>[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B](
-    that: Behavior[SIn1, SOut1, In1, R1, E1, B]
-  ): Behavior[SIn1, SOut1, In1, R1, E1, B] =
+  def *>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, SOut1, Msg1, R1, E1, B] =
     Behavior(self.asEffect *> that.asEffect)
 
   /**
    * An operator alias for zip.
    */
-  def <*>[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B](
+  def <*>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zip that
+
+  /**
+   * Returns a behavior that executes both this behavior and the specified behavior,
+   * in parallel, this behavior's result is returned. If either side fails,
+   * then the other side will be interrupted, thus interrupting the result.
+   */
+  def <&[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
     that: Behavior[SIn1, SOut1, In1, R1, E1, B]
-  ): Behavior[SIn1, (SOut, SOut1), In1, R1, E1, (A, B)] = self zip that
+  ): Behavior[SIn1, SOut, In1, R1, E1, A] =
+    self.zipWithPar(that)((a, _) => a)
+
+  /**
+   * An operator alias for zip.
+   */
+  def <&>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zipPar that
 
   /**
    * An operator alias for zipPar.
    */
-  def |+|[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B](
-    that: Behavior[SIn1, SOut1, In1, R1, E1, B]
-  ): Behavior[SIn1, (SOut, SOut1), In1, R1, E1, (A, B)] = self zipPar that
+  def |+|[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Behavior[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Behavior[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zipPar that
 
   /**
    * Sequences the specified behavior after this behavior, but ignores the
    * values (result and state) produced by the behavior.
    */
-  def <*[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B](
+  def <*[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Behavior[SIn1, SOut1, In1, R1, E1, B]
   ): Behavior[SIn1, SOut, In1, R1, E1, A] = Behavior(self.asEffect <* that.asEffect)
 
@@ -54,25 +82,34 @@ abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
    */
   def andThen[SOut2, R1 <: R, E1 >: E, B](
     that: Behavior[SOut, SOut2, A, R1, E1, B]
-  ): Behavior[SIn, SOut2, In, R1, E1, B] =
-    Behavior(ZIO.accessM[(SIn, In, R1)] { case (_, _, r) =>
+  ): Behavior[SIn, SOut2, Msg, R1, E1, B] =
+    Behavior(ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r) =>
       self.asEffect.flatMap(success => that.asEffect.provide((success.state, success.result, r)))
     })
 
   /**
    * Maps the success value of this behavior to a constant value.
    */
-  final def as[B](b: => B): Behavior[SIn, SOut, In, R, E, B] = map(_ => b)
+  final def as[B](b: => B): Behavior[SIn, SOut, Msg, R, E, B] = map(_ => b)
 
   /**
    * Get this behavior as an effect.
    */
-  protected final lazy val asEffect: BehaviorEffect[SIn, SOut, In, R, E, A] = toEffect
+  protected final lazy val asEffect: BehaviorEffect[SIn, SOut, Msg, R, E, A] = toEffect
 
   /**
    * Defines the underlying behavior.
    */
-  protected def behavior(state: SIn, message: In): ZIO[R, E, BehaviorSuccess[SOut, A]]
+  protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]]
+
+  /**
+   * Returns a behavior whose failure and success channels have been mapped by the specified pair of
+   * functions, f and g.
+   */
+  def bimap[E2, B](f: E => E2, g: A => B)(implicit ev: CanFail[E]): Behavior[SIn, SOut, Msg, R, E2, B] =
+    Behavior(ZIO.accessM[(SIn, Msg, R)] { env =>
+      self.asEffect.provide(env).bimap(f, _.map(g))
+    })
 
   /**
    * Returns a behavior that models the execution of this behavior, followed by
@@ -83,7 +120,7 @@ abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
    * val parsed = readFile("foo.txt").flatMap(file => parseFile(file))
    * }}}
    */
-  def flatMap[SOut1, In1 <: In, R1 <: R, E1 >: E, B](
+  def flatMap[SOut1, In1 <: Msg, R1 <: R, E1 >: E, B](
     k: A => Behavior[SOut, SOut1, In1, R1, E1, B]
   ): Behavior[SIn, SOut1, In1, R1, E1, B] =
     Behavior[SIn, SOut1, In1, R1, E1, B](
@@ -94,82 +131,119 @@ abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
       }
     )
 
-  //def getState =
+  /**
+   * A more powerful version of `foldM` that allows recovering from any kind of failure except interruptions.
+   */
+  def foldCauseM[SIn0 <: SIn, SOut1, Msg1 <: Msg, R1 <: R, E1, B](
+    failure: Cause[E] => Behavior[SIn0, SOut1, Msg1, R1, E1, B],
+    success: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
+  )(implicit ev: CanFail[E]): Behavior[SIn0, SOut1, Msg1, R1, E1, B] =
+    fromFunctionM { case (initialState, msg, r1) =>
+      self.asEffect
+        .foldCauseM(
+          failure = { cause => failure(cause).toEffect },
+          success = { a => success(a.result).toEffect.provide((a.state, msg, r1)) }
+        )
+        .provide((initialState, msg, r1))
+    }
+
+  /**
+   * Recovers from errors by accepting one behavior to execute for the case of an
+   * error, and one behavior to execute for the case of success.
+   */
+  def foldM[SIn0 <: SIn, SOut1, Msg1 <: Msg, R1 <: R, E1, B](
+    failure: E => Behavior[SIn0, SOut1, Msg1, R1, E1, B],
+    success: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
+  )(implicit ev: CanFail[E]): Behavior[SIn0, SOut1, Msg1, R1, E1, B] =
+    fromFunctionM { case (initialState, msg, r1) =>
+      self.asEffect
+        .foldM(
+          failure = { cause => failure(cause).toEffect },
+          success = { a => success(a.result).toEffect.provide((a.state, msg, r1)) }
+        )
+        .provide((initialState, msg, r1))
+    }
+
+  /**
+   * Exposes  the output state into the value channel.
+   */
+  def getState: Behavior[SIn, SOut, Msg, R, E, (SOut, A)] =
+    flatMap(a => get.map(s => (s, a)))
 
   /**
    * Returns a behavior whose success is mapped by the specified function f.
    */
-  final def map[B](f: A => B): Behavior[SIn, SOut, In, R, E, B] = FromEffect(asEffect.map(_.map(f)))
+  final def map[B](f: A => B): Behavior[SIn, SOut, Msg, R, E, B] = FromEffect(asEffect.map(_.map(f)))
 
   final def mapResults[SOut2, B](
     f: BehaviorSuccess[SOut, A] => BehaviorSuccess[SOut2, B]
-  ): Behavior[SIn, SOut2, In, R, E, B] =
+  ): Behavior[SIn, SOut2, Msg, R, E, B] =
     FromEffect(asEffect.map(res => res.transform(f)))
 
-  final def mapState[SOut2](f: SOut => SOut2): Behavior[SIn, SOut2, In, R, E, A] = FromEffect(
+  final def mapState[SOut2](f: SOut => SOut2): Behavior[SIn, SOut2, Msg, R, E, A] = FromEffect(
     asEffect.map(_.mapState(f))
   )
 
   /**
    * Provide the behavior all its required inputs and its environment
    */
-  final def provide(initialState: SIn, message: In, environment: R): IndieBehavior[SOut, E, A] =
+  final def provide(initialState: SIn, message: Msg, environment: R): IndieBehavior[SOut, E, A] =
     Behavior(asEffect.provide((initialState, message, environment)))
 
   /**
    * Provide the behavior all its required inputs and its environment
    */
-  final def provide(message: In)(implicit ev1: Any <:< SIn, ev2: Any <:< R): IndieBehavior[SOut, E, A] =
+  final def provide(message: Msg)(implicit ev1: Any <:< SIn, ev2: Any <:< R): IndieBehavior[SOut, E, A] =
     Behavior(asEffect.provide(((), message, ())))
 
   /**
    * Provide the behavior all its required inputs and its environment
    */
-  final def provide(initialState: SIn, message: In)(implicit ev1: Any <:< R): IndieBehavior[SOut, E, A] =
+  final def provide(initialState: SIn, message: Msg)(implicit ev1: Any <:< R): IndieBehavior[SOut, E, A] =
     Behavior(asEffect.provide((initialState, message, ())))
 
   /**
    * Provide the behavior with its environment.
    */
-  final def provideEnvironment(environment: R): Behavior[SIn, SOut, In, Any, E, A] =
-    Behavior(ZIO.accessM[(SIn, In, Any)] { case (initialState, message, _) =>
+  final def provideEnvironment(environment: R): Behavior[SIn, SOut, Msg, Any, E, A] =
+    Behavior(ZIO.accessM[(SIn, Msg, Any)] { case (initialState, message, _) =>
       asEffect.provide((initialState, message, environment))
     })
 
   /**
    * Provide the behavior with its initial state and message.
    */
-  final def provideInputs(initialState: SIn, message: In): Behavior[Any, SOut, Any, R, E, A] =
+  final def provideInputs(initialState: SIn, message: Msg): Behavior[Any, SOut, Any, R, E, A] =
     Behavior(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => asEffect.provide((initialState, message, r)) })
 
   /**
    * Provide the behavior with its update message.
    */
-  final def provideMessage(message: In): Behavior[SIn, SOut, Any, R, E, A] =
+  final def provideMessage(message: Msg): Behavior[SIn, SOut, Any, R, E, A] =
     Behavior(ZIO.accessM[(SIn, Any, R)] { case (initialState, _, r) => asEffect.provide((initialState, message, r)) })
 
   /**
    * Provide the behavior with its initial state
    */
-  final def provideState(initialState: SIn): Behavior[Any, SOut, In, R, E, A] =
+  final def provideState(initialState: SIn): Behavior[Any, SOut, Msg, R, E, A] =
     Behavior(asEffect.provideState(initialState))
 
   /**
    * Runs the behavior.
    */
-  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< In, ev3: Any <:< R): ZIO[R, E, BehaviorSuccess[SOut, A]] =
+  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg, ev3: Any <:< R): ZIO[R, E, BehaviorSuccess[SOut, A]] =
     run((), ()).provide(ev3(()))
 
   /**
    * Runs the behavior.
    */
-  final def run(state: SIn, message: In): ZIO[R, E, BehaviorSuccess[SOut, A]] =
+  final def run(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] =
     behavior(state, message)
 
   /**
    * Runs the behavior.
    */
-  final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< In): ZIO[R, E, A] =
+  final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, A] =
     run((), ()).map(_.result)
 
   /**
@@ -181,42 +255,59 @@ abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
    */
   def tap[R1 <: R, E1 >: E](
     func: BehaviorSuccess[SOut, A] => ZIO[R1, E1, Any]
-  ): Behavior[SIn, SOut, In, R1, E1, A] =
-    Behavior[SIn, SOut, In, R1, E1, A](
-      ZIO.accessM[(SIn, In, R1)] { case (_, _, r1) =>
+  ): Behavior[SIn, SOut, Msg, R1, E1, A] =
+    Behavior[SIn, SOut, Msg, R1, E1, A](
+      ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r1) =>
         self.asEffect.tap(success => func(success).provide(r1))
       }
     )
 
-  def toEffect: ZIO[(SIn, In, R), E, BehaviorSuccess[SOut, A]] = ZIO.accessM[(SIn, In, R)] { case (stateIn, msg, r) =>
+  def toEffect: ZIO[(SIn, Msg, R), E, BehaviorSuccess[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
     behavior(stateIn, msg).provide(r)
   }
 
   /**
    * Triggers the behavior, thus producing an effect.
    */
-  final def trigger(state: SIn, message: In): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
+  final def trigger(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
-  final def trigger(message: In)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
+  final def trigger(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
-  def zip[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B](
+  def withAnnotation[R1 <: R with Properties]: Behavior[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] = ???
+//    Behavior(
+//      for {
+//
+//      } yield ???
+//      ZIO.accessM[(SIn, Msg, R1)] { case (_,_,r1) =>
+//        Properties
+//          .withAnnotation(asEffect)
+//          .bimap(
+//            identity,
+//            { case (value, map) =>
+//              value.map(a => (a, map))
+//            }
+//          )
+//      }
+//    )
+
+  def zip[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Behavior[SIn1, SOut1, In1, R1, E1, B]
   ): Behavior[SIn1, (SOut, SOut1), In1, R1, E1, (A, B)] =
     Behavior((self.asEffect zip that.asEffect) map { case (left, right) => left zip right })
 
-  def zipPar[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B](
+  def zipPar[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Behavior[SIn1, SOut1, In1, R1, E1, B]
   ): Behavior[SIn1, (SOut, SOut1), In1, R1, E1, (A, B)] =
     Behavior((self.asEffect zipPar that.asEffect) map { case (left, right) => left zip right })
 
-  def zipWith[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B, S, C](
+  def zipWith[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
     that: Behavior[SIn1, SOut1, In1, R1, E1, B]
   )(
     f: (BehaviorSuccess[SOut, A], BehaviorSuccess[SOut1, B]) => BehaviorSuccess[S, C]
   ): Behavior[SIn1, S, In1, R1, E1, C] =
     Behavior((self.asEffect zipWith that.asEffect)(f))
 
-  def zipWithPar[SIn1 <: SIn, In1 <: In, R1 <: R, E1 >: E, SOut1, B, S, C](
+  def zipWithPar[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
     that: Behavior[SIn1, SOut1, In1, R1, E1, B]
   )(
     f: (BehaviorSuccess[SOut, A], BehaviorSuccess[SOut1, B]) => BehaviorSuccess[S, C]
@@ -224,6 +315,9 @@ abstract class Behavior[-SIn, +SOut, -In, -R, +E, +A] { self =>
     Behavior((self.asEffect zipWithPar that.asEffect)(f))
 }
 object Behavior extends BehaviorEffectSyntax {
+
+  def accessBehavior[R]: AccessBehaviorPartiallyApplied[R] = new AccessBehaviorPartiallyApplied[R]
+
   def apply[InitialState, StateOut, In, R, E, A](
     effect: BehaviorEffect[InitialState, StateOut, In, R, E, A]
   ): Behavior[InitialState, StateOut, In, R, E, A] =
@@ -235,6 +329,10 @@ object Behavior extends BehaviorEffectSyntax {
     FromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
       f(state, msg).provide(r)
     })
+
+  def environment[R]: StatelessBehavior[Any, R, Nothing, R] = Stateless[Any, R, Nothing, R](
+    ZIO.access[(Any, R)] { case (_, r) => r }
+  )
 
   /**
    * Constructs a behavior that always fails with the given error.
@@ -267,6 +365,17 @@ object Behavior extends BehaviorEffectSyntax {
    */
   def fromFunction[In, Out](f: In => Out): FuncBehavior[In, Out] =
     MessageHandler(ZIO.accessM[In](input => ZIO.effect(f(input))))
+
+  /**
+   * Lifts an effectful function whose effect requires no environment into
+   * a behavior that requires the input to the function.
+   */
+  def fromFunctionM[SIn, SOut, In, R, Err, A](
+    f: (SIn, In, R) => IO[Err, BehaviorSuccess[SOut, A]]
+  ): Behavior[SIn, SOut, In, R, Err, A] =
+    FromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
+      f(state, msg, r)
+    })
 
   /**
    * Constructs a Behavior that gets the initial state unchanged.
@@ -371,5 +480,12 @@ object Behavior extends BehaviorEffectSyntax {
       extends AbstractStatelessBehavior[In, R, E, A] {
     protected def behavior(state: Any, message: In): ZIO[R, E, BehaviorSuccess[Any, A]] =
       effect.map(value => BehaviorSuccess(state, value)).provideSome[R](r => (message, r))
+  }
+
+  final class AccessBehaviorPartiallyApplied[R](private val dummy: Boolean = true) extends AnyVal {
+    def apply[SIn, SOut, Msg, E, A](f: R => Behavior[SIn, SOut, Msg, R, E, A]): Behavior[SIn, SOut, Msg, R, E, A] =
+      Behavior(ZIO.accessM[(SIn, Msg, R)] { case (_, _, r) =>
+        f(r).toEffect
+      })
   }
 }

@@ -9,8 +9,8 @@ import zio.prelude._
 import scala.collection.immutable.SortedSet
 
 package object flowz {
-  type Properties   = Has[Properties.Service]
-  type Extended[+A] = (A, PropertyMap)
+  type Properties    = Has[Properties.Service]
+  type Annotated[+A] = (A, PropertyMap)
 
   object CommandLineArgs extends Subtype[List[String]]
   type CommandLineArgs = CommandLineArgs.Type
@@ -26,6 +26,8 @@ package object flowz {
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
   type BehaviorEffect[-SIn, +SOut, -InputMsg, -Env, +E, +A] = ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
+
+  type Activity[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[SIn with Msg with Env, E, BehaviorSuccess[SOut, A]]
 
   type StatelessBehavior[-InputMsg, -R, +E, +A] = Behavior[Any, Any, InputMsg, R, E, A]
 
@@ -89,7 +91,7 @@ package object flowz {
     trait Service extends Serializable {
       def addProperty[V](key: Property[V], value: V): UIO[Unit]
       def get[V](key: Property[V]): UIO[V]
-      def withProperty[R, E, A](zio: ZIO[R, E, A]): ZIO[R, Extended[E], Extended[A]]
+      def withAnnotation[R, E, A](zio: ZIO[R, E, A]): ZIO[R, Annotated[E], Annotated[A]]
       def supervisedFibers: UIO[SortedSet[Fiber.Runtime[Any, Any]]]
     }
 
@@ -117,7 +119,7 @@ package object flowz {
             fiberRef.update(_.annotate(key, value))
           def get[V](key: Property[V]): UIO[V] =
             fiberRef.get.map(_.get(key))
-          def withProperty[R, E, A](zio: ZIO[R, E, A]): ZIO[R, Extended[E], Extended[A]] =
+          def withAnnotation[R, E, A](zio: ZIO[R, E, A]): ZIO[R, Annotated[E], Annotated[A]] =
             fiberRef.locally(PropertyMap.empty) {
               zio.foldM(e => fiberRef.get.map((e, _)).flip, a => fiberRef.get.map((a, _)))
             }
@@ -142,8 +144,8 @@ package object flowz {
      * specified effect with an empty annotation map, returning the annotation
      * map along with the result of execution.
      */
-    def withProperty[R <: Properties, E, A](zio: ZIO[R, E, A]): ZIO[R, Extended[E], Extended[A]] =
-      ZIO.accessM(_.get.withProperty(zio))
+    def withAnnotation[R <: Properties, E, A](zio: ZIO[R, E, A]): ZIO[R, Annotated[E], Annotated[A]] =
+      ZIO.accessM(_.get.withAnnotation(zio))
 
     /**
      * Returns a set of all fibers in this test.
@@ -163,17 +165,4 @@ package object flowz {
      */
     val silent: FlowReporter[Any] = (_, _) => ZIO.unit
   }
-
-  type Msg[A] = Has[MsgOf[A]]
-  object MsgOf extends SubtypeF
-  type MsgOf[A] = MsgOf.Type[A]
-
-  type InputVal[A] = Has[Input[A]]
-  object Input extends SubtypeF
-  type Input[A] = Input.Type[A]
-
-  type InputState[S] = Has[Input[S]]
-  object StateIn extends SubtypeF
-  type StateIn[S] = StateIn.Type[S]
-
 }

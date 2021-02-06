@@ -4,16 +4,16 @@ import zio.{ CanFail, NeedsEnv, ZIO }
 
 object BehaviorEffect {
 
-  def apply[InitialState, StateOut, In, Env, E, A](
-    func: (InitialState, In) => ZIO[Env, E, BehaviorSuccess[StateOut, A]]
+  def apply[InitialState, StateOut, Msg, Env, E, A](
+    func: (InitialState, Msg) => ZIO[Env, E, BehaviorSuccess[StateOut, A]]
   )(implicit
     evStateIn: NeedsInputState[InitialState],
-    evMsg: NeedsMsg[In],
+    evMsg: NeedsMsg[Msg],
     evEnv: NeedsEnv[Env],
     evCanFail: CanFail[E]
-  ): BehaviorEffect[InitialState, StateOut, In, Env, E, A] = {
+  ): BehaviorEffect[InitialState, StateOut, Msg, Env, E, A] = {
     val _ = (evStateIn, evMsg, evCanFail)
-    ZIO.accessM[(InitialState, In, Env)] { case (stateIn, msg, env) => func(stateIn, msg).provide(env) }
+    ZIO.accessM[(InitialState, Msg, Env)] { case (stateIn, msg, env) => func(stateIn, msg).provide(env) }
   }
 
   implicit def effectFromFunc[InitialState, StateOut, In, Env, E, A](
