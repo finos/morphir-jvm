@@ -29,7 +29,7 @@ final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
     transform[InitialState, StateOut, InputMsg, Env with Properties, Annotated[Err], Annotated[Result]] {
       case ProcessCase(label, children) => Flow.ProcessCase(label, children.mapError((_, PropertyMap.empty)))
       case StepCase(label, behavior, annotations) =>
-        Flow.StepCase(label, Properties.withAnnotation(behavior.toEffect), annotations)
+        Flow.StepCase(label, behavior.withAnnotation, annotations)
     }
 
   /**

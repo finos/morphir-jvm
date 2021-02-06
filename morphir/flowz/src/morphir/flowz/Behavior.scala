@@ -1,6 +1,5 @@
 package morphir.flowz
 
-import morphir.flowz.Properties
 import zio._
 
 /**
@@ -112,6 +111,17 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     })
 
   /**
+   * Returns a behavior whose failure and success have been lifted into an
+   * `Either`. The resulting computation cannot fail, because the failure case
+   * has been exposed as part of the `Either` success case.
+   */
+  def either[S >: SOut <: SIn](implicit ev: CanFail[E]): Behavior[S, S, Msg, R, Nothing, Either[E, A]] =
+    foldM(
+      failure = e => modify(s => (s, Left(e))),
+      success = a => modify(s => (s, Right(a)))
+    )
+
+  /**
    * Returns a behavior that models the execution of this behavior, followed by
    * the passing of its value to the specified continuation function `k`,
    * followed by the behavior that it returns.
@@ -132,12 +142,23 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     )
 
   /**
+   * Folds over the failed or successful results of this behavior to yield
+   * a behavior that does not fail, but succeeds with the value of the left
+   * or right function passed to `fold`.
+   */
+  def fold[S >: SOut <: SIn, B](failure: E => B, success: A => B)(implicit
+    ev: CanFail[E]
+  ): Behavior[S, S, Msg, R, Nothing, B] =
+    self.foldM(e => modify(s => (s, failure(e): B)), a => modify(s => (s, success(a))))
+
+  /**
    * A more powerful version of `foldM` that allows recovering from any kind of failure except interruptions.
    */
   def foldCauseM[SIn0 <: SIn, SOut1, Msg1 <: Msg, R1 <: R, E1, B](
     failure: Cause[E] => Behavior[SIn0, SOut1, Msg1, R1, E1, B],
     success: A => Behavior[SOut, SOut1, Msg1, R1, E1, B]
-  )(implicit ev: CanFail[E]): Behavior[SIn0, SOut1, Msg1, R1, E1, B] =
+  )(implicit ev: CanFail[E]): Behavior[SIn0, SOut1, Msg1, R1, E1, B] = {
+    val _ = ev
     fromFunctionM { case (initialState, msg, r1) =>
       self.asEffect
         .foldCauseM(
@@ -146,6 +167,7 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
         )
         .provide((initialState, msg, r1))
     }
+  }
 
   /**
    * Recovers from errors by accepting one behavior to execute for the case of an
@@ -173,14 +195,32 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Returns a behavior whose success is mapped by the specified function f.
    */
-  final def map[B](f: A => B): Behavior[SIn, SOut, Msg, R, E, B] = FromEffect(asEffect.map(_.map(f)))
+  final def map[B](f: A => B): Behavior[SIn, SOut, Msg, R, E, B] = fromEffect(asEffect.map(_.map(f)))
+
+  /**
+   * Returns a behavior with its error channel mapped using the specified
+   * function. This can be used to lift a "smaller" error into a "larger"
+   * error.
+   */
+  final def mapError[E2](f: E => E2)(implicit ev: CanFail[E]): Behavior[SIn, SOut, Msg, R, E2, A] =
+    Behavior(self.asEffect.mapError(f))
+
+  /**
+   * Returns a behavior with its full cause of failure mapped using the
+   * specified function. This can be used to transform errors while
+   * preserving the original structure of `Cause`.
+   */
+  final def mapErrorCause[E2](f: Cause[E] => Cause[E2])(implicit ev: CanFail[E]): Behavior[SIn, SOut, Msg, R, E2, A] = {
+    val _ = ev
+    Behavior(self.asEffect.mapErrorCause(f))
+  }
 
   final def mapResults[SOut2, B](
     f: BehaviorSuccess[SOut, A] => BehaviorSuccess[SOut2, B]
   ): Behavior[SIn, SOut2, Msg, R, E, B] =
-    FromEffect(asEffect.map(res => res.transform(f)))
+    fromEffect(asEffect.map(res => res.transform(f)))
 
-  final def mapState[SOut2](f: SOut => SOut2): Behavior[SIn, SOut2, Msg, R, E, A] = FromEffect(
+  final def mapState[SOut2](f: SOut => SOut2): Behavior[SIn, SOut2, Msg, R, E, A] = fromEffect(
     asEffect.map(_.mapState(f))
   )
 
@@ -273,8 +313,16 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
 
   final def trigger(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
-  def withAnnotation[R1 <: R with Properties]: Behavior[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] = ???
-//    Behavior(
+  def withAnnotation[R1 <: R with Properties]: Behavior[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] =
+    accessBehavior[R1] { r =>
+      Behavior.fromEffect(
+        r.get.withAnnotation(self.asEffect).map { case (success, map) =>
+          success.map(a => (a, map))
+        }
+      )
+    }
+
+  //    Behavior(
 //      for {
 //
 //      } yield ???
@@ -321,12 +369,12 @@ object Behavior extends BehaviorEffectSyntax {
   def apply[InitialState, StateOut, In, R, E, A](
     effect: BehaviorEffect[InitialState, StateOut, In, R, E, A]
   ): Behavior[InitialState, StateOut, In, R, E, A] =
-    FromEffect[InitialState, StateOut, In, R, E, A](effect)
+    fromEffect[InitialState, StateOut, In, R, E, A](effect)
 
   implicit def behaviorFromFunctionM[SIn, SOut, In, R, Err, A](
     f: (SIn, In) => ZIO[R, Err, BehaviorSuccess[SOut, A]]
   ): Behavior[SIn, SOut, In, R, Err, A] =
-    FromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
+    fromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
       f(state, msg).provide(r)
     })
 
@@ -339,18 +387,20 @@ object Behavior extends BehaviorEffectSyntax {
    */
   def fail[E](error: E): IndieBehavior[Nothing, E, Nothing] = Fail(error)
 
-  def fromEffect[SIn, SOut, In, R, E, A](
-    effect: ZIO[(SIn, In, R), E, BehaviorSuccess[SOut, A]]
-  )(evState: NeedsInputState[SIn], evMsg: NeedsMsg[In]): Behavior[SIn, SOut, In, R, E, A] = {
-    val _ = (evState, evMsg) //NOTE: Suppresses the warning about these not being used
-    new Behavior[SIn, SOut, In, R, E, A] {
-      protected def behavior(state: SIn, message: In): ZIO[R, E, BehaviorSuccess[SOut, A]] =
-        effect.provideSome[R](r => (state, message, r))
-    }
-  }
+//  def fromEffect[SIn, SOut, In, R, E, A](
+//    effect: ZIO[(SIn, In, R), E, BehaviorSuccess[SOut, A]]
+//  )(evState: NeedsInputState[SIn], evMsg: NeedsMsg[In]): Behavior[SIn, SOut, In, R, E, A] = {
+//    val _ = (evState, evMsg) //NOTE: Suppresses the warning about these not being used
+//    new Behavior[SIn, SOut, In, R, E, A] {
+//      protected def behavior(state: SIn, message: In): ZIO[R, E, BehaviorSuccess[SOut, A]] =
+//        effect.provideSome[R](r => (state, message, r))
+//    }
+//  }
 
-  def fromEffect[S, R, E, A](effect: ZIO[R, E, BehaviorSuccess[S, A]]): Behavior[Any, S, Any, R, E, A] =
-    FromEffect(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => effect.provide(r) })
+  def fromEffect[SIn, SOut, Msg, R, E, A](
+    effect: ZIO[(SIn, Msg, R), E, BehaviorSuccess[SOut, A]]
+  ): Behavior[SIn, SOut, Msg, R, E, A] =
+    FromEffect(effect)
 
   /**
    * Create a behavior by providing a possibly impure function.
@@ -373,7 +423,7 @@ object Behavior extends BehaviorEffectSyntax {
   def fromFunctionM[SIn, SOut, In, R, Err, A](
     f: (SIn, In, R) => IO[Err, BehaviorSuccess[SOut, A]]
   ): Behavior[SIn, SOut, In, R, Err, A] =
-    FromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
+    fromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
       f(state, msg, r)
     })
 
@@ -411,7 +461,7 @@ object Behavior extends BehaviorEffectSyntax {
   /**
    * Constructs a behavior that always succeeds with the given value.
    */
-  def succeed[S, A](value: => A): Behavior[Any, Any, Any, Any, Nothing, A] = Succeed(value)
+  def succeed[A](value: => A): Behavior[Any, Any, Any, Any, Nothing, A] = Succeed(value)
 
   val unit: Behavior[Any, Any, Any, Any, Nothing, Unit] =
     succeed(())
@@ -487,5 +537,9 @@ object Behavior extends BehaviorEffectSyntax {
       Behavior(ZIO.accessM[(SIn, Msg, R)] { case (_, _, r) =>
         f(r).toEffect
       })
+  }
+
+  final class FromEffectFn[-SIn, +SOut, -Msg, -R, +E, +A] extends ((SIn, Msg) => ZIO[R, E, (SOut, A)]) {
+    def apply(initialState: SIn, message: Msg): ZIO[R, E, (SOut, A)] = ???
   }
 }
