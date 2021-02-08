@@ -25,9 +25,9 @@ package object flowz {
 //  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
 
-  type BehaviorEffect[-SIn, +SOut, -InputMsg, -Env, +E, +A] = ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
+  type ZBehavior[-SIn, +SOut, -InputMsg, -Env, +E, +A] = ZIO[(SIn, InputMsg, Env), E, StepSuccess[SOut, A]]
 
-  type Activity[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[SIn with Msg with Env, E, BehaviorSuccess[SOut, A]]
+  type Activity[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[SIn with Msg with Env, E, StepSuccess[SOut, A]]
 
   type StatelessStep[-InputMsg, -R, +E, +A] = Step[Any, Any, InputMsg, R, E, A]
 

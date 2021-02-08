@@ -94,12 +94,12 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Get this behavior as an effect.
    */
-  protected final lazy val asEffect: BehaviorEffect[SIn, SOut, Msg, R, E, A] = toEffect
+  protected final lazy val asEffect: ZBehavior[SIn, SOut, Msg, R, E, A] = toEffect
 
   /**
    * Defines the underlying behavior.
    */
-  protected def behavior(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]]
+  protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]]
 
   /**
    * Returns a behavior whose failure and success channels have been mapped by the specified pair of
@@ -135,7 +135,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   ): Step[SIn, SOut1, In1, R1, E1, B] =
     Step[SIn, SOut1, In1, R1, E1, B](
       ZIO.accessM[(SIn, In1, R1)] { case (_, msg, r) =>
-        asEffect.flatMap { res: BehaviorSuccess[SOut, A] =>
+        asEffect.flatMap { res: StepSuccess[SOut, A] =>
           k(res.result).asEffect.provide((res.state, msg, r))
         }
       }
@@ -216,7 +216,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   }
 
   final def mapResults[SOut2, B](
-    f: BehaviorSuccess[SOut, A] => BehaviorSuccess[SOut2, B]
+    f: StepSuccess[SOut, A] => StepSuccess[SOut2, B]
   ): Step[SIn, SOut2, Msg, R, E, B] =
     fromEffect(asEffect.map(res => res.transform(f)))
 
@@ -271,13 +271,13 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Runs the behavior.
    */
-  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg, ev3: Any <:< R): ZIO[R, E, BehaviorSuccess[SOut, A]] =
+  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg, ev3: Any <:< R): ZIO[R, E, StepSuccess[SOut, A]] =
     run((), ()).provide(ev3(()))
 
   /**
    * Runs the behavior.
    */
-  final def run(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] =
+  final def run(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
     behavior(state, message)
 
   /**
@@ -294,7 +294,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    * }}}
    */
   def tap[R1 <: R, E1 >: E](
-    func: BehaviorSuccess[SOut, A] => ZIO[R1, E1, Any]
+    func: StepSuccess[SOut, A] => ZIO[R1, E1, Any]
   ): Step[SIn, SOut, Msg, R1, E1, A] =
     Step[SIn, SOut, Msg, R1, E1, A](
       ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r1) =>
@@ -302,17 +302,17 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
       }
     )
 
-  def toEffect: ZIO[(SIn, Msg, R), E, BehaviorSuccess[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
+  def toEffect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
     behavior(stateIn, msg).provide(r)
   }
 
   /**
    * Executes the step, thus producing an effect.
    */
-  final def execute(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
+  final def execute(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] = run(state, message)
 
-  final def execute(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]]      = run((), message)
-  final def execute(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run((), ())
+  final def execute(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, StepSuccess[SOut, A]]      = run((), message)
+  final def execute(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, StepSuccess[SOut, A]] = run((), ())
 
   def withAnnotation[R1 <: R with Properties]: Step[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] =
     accessBehavior[R1] { r =>
@@ -352,30 +352,30 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   def zipWith[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
     that: Step[SIn1, SOut1, In1, R1, E1, B]
   )(
-    f: (BehaviorSuccess[SOut, A], BehaviorSuccess[SOut1, B]) => BehaviorSuccess[S, C]
+    f: (StepSuccess[SOut, A], StepSuccess[SOut1, B]) => StepSuccess[S, C]
   ): Step[SIn1, S, In1, R1, E1, C] =
     Step((self.asEffect zipWith that.asEffect)(f))
 
   def zipWithPar[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
     that: Step[SIn1, SOut1, In1, R1, E1, B]
   )(
-    f: (BehaviorSuccess[SOut, A], BehaviorSuccess[SOut1, B]) => BehaviorSuccess[S, C]
+    f: (StepSuccess[SOut, A], StepSuccess[SOut1, B]) => StepSuccess[S, C]
   ): Step[SIn1, S, In1, R1, E1, C] =
     Step((self.asEffect zipWithPar that.asEffect)(f))
 }
-object Step extends StepArities with BehaviorEffectSyntax {
+object Step extends StepArities with ZBehaviorSyntax {
 
   def accessBehavior[R]: AccessBehaviorPartiallyApplied[R] = new AccessBehaviorPartiallyApplied[R]
   def accessService[R]: AccessServicePartially[R]          = new AccessServicePartially[R]
   def accessServiceM[R]: AccessServiceMPartially[R]        = new AccessServiceMPartially[R]
 
   def apply[InitialState, StateOut, In, R, E, A](
-    effect: BehaviorEffect[InitialState, StateOut, In, R, E, A]
+    effect: ZBehavior[InitialState, StateOut, In, R, E, A]
   ): Step[InitialState, StateOut, In, R, E, A] =
     fromEffect[InitialState, StateOut, In, R, E, A](effect)
 
   implicit def behaviorFromFunctionM[SIn, SOut, In, R, Err, A](
-    f: (SIn, In) => ZIO[R, Err, BehaviorSuccess[SOut, A]]
+    f: (SIn, In) => ZIO[R, Err, StepSuccess[SOut, A]]
   ): Step[SIn, SOut, In, R, Err, A] =
     fromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
       f(state, msg).provide(r)
@@ -391,17 +391,17 @@ object Step extends StepArities with BehaviorEffectSyntax {
   def fail[E](error: E): IndieStep[Nothing, E, Nothing] = Fail(error)
 
 //  def fromEffect[SIn, SOut, In, R, E, A](
-//    effect: ZIO[(SIn, In, R), E, BehaviorSuccess[SOut, A]]
+//    effect: ZIO[(SIn, In, R), E, StepSuccess[SOut, A]]
 //  )(evState: NeedsInputState[SIn], evMsg: NeedsMsg[In]): Step[SIn, SOut, In, R, E, A] = {
 //    val _ = (evState, evMsg) //NOTE: Suppresses the warning about these not being used
 //    new Step[SIn, SOut, In, R, E, A] {
-//      protected def behavior(state: SIn, message: In): ZIO[R, E, BehaviorSuccess[SOut, A]] =
+//      protected def behavior(state: SIn, message: In): ZIO[R, E, StepSuccess[SOut, A]] =
 //        effect.provideSome[R](r => (state, message, r))
 //    }
 //  }
 
   def fromEffect[SIn, SOut, Msg, R, E, A](
-    effect: ZIO[(SIn, Msg, R), E, BehaviorSuccess[SOut, A]]
+    effect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]]
   ): Step[SIn, SOut, Msg, R, E, A] =
     FromEffect(effect)
 
@@ -424,7 +424,7 @@ object Step extends StepArities with BehaviorEffectSyntax {
    * a behavior that requires the input to the function.
    */
   def fromFunctionM[SIn, SOut, In, R, Err, A](
-    f: (SIn, In, R) => IO[Err, BehaviorSuccess[SOut, A]]
+    f: (SIn, In, R) => IO[Err, StepSuccess[SOut, A]]
   ): Step[SIn, SOut, In, R, Err, A] =
     fromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
       f(state, msg, r)
@@ -469,7 +469,7 @@ object Step extends StepArities with BehaviorEffectSyntax {
    */
   def stateless[In, R, E, A](f: In => ZIO[R, E, A]): StatelessStep[In, R, E, A] =
     new AbstractStatelessStep[In, R, E, A] {
-      protected def behavior(state: Any, message: In): ZIO[R, E, BehaviorSuccess[Any, A]] = f(message).map(state -> _)
+      protected def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] = f(message).map(state -> _)
     }
 
   /**
@@ -487,58 +487,58 @@ object Step extends StepArities with BehaviorEffectSyntax {
   def update[S1, S2, In, A](f: (S1, In) => (S2, A)): Step[S1, S2, In, Any, Nothing, A] =
     Stateful(ZIO.access[(S1, In, Any)] { case (s1, msg, _) =>
       val (s2, a) = f(s1, msg)
-      BehaviorSuccess(s2, a)
+      StepSuccess(s2, a)
     })
 
   final case class Fail[E](error: E) extends IndieStep[Nothing, E, Nothing] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, E, BehaviorSuccess[Nothing, Nothing]] = ZIO.fail(error)
+    protected def behavior(state: Any, message: Any): ZIO[Any, E, StepSuccess[Nothing, Nothing]] = ZIO.fail(error)
   }
 
   final case class FromEffect[SIn, SOut, In, Env, E, A](
-    zio: ZIO[(SIn, In, Env), E, BehaviorSuccess[SOut, A]]
+    zio: ZIO[(SIn, In, Env), E, StepSuccess[SOut, A]]
   ) extends Step[SIn, SOut, In, Env, E, A] {
-    override lazy val toEffect: ZIO[(SIn, In, Env), E, BehaviorSuccess[SOut, A]] = zio
-    protected def behavior(state: SIn, message: In): ZIO[Env, E, BehaviorSuccess[SOut, A]] =
+    override lazy val toEffect: ZIO[(SIn, In, Env), E, StepSuccess[SOut, A]] = zio
+    protected def behavior(state: SIn, message: In): ZIO[Env, E, StepSuccess[SOut, A]] =
       zio.provideSome[Env](env => (state, message, env))
   }
 
   final case class FromZIO[-R, +E, +A](zio: ZIO[R, E, A]) extends Step[Any, Any, Any, R, E, A] {
-    protected def behavior(state: Any, message: Any): ZIO[R, E, BehaviorSuccess[Any, A]] =
-      zio.map(a => BehaviorSuccess(state = state, result = a))
+    protected def behavior(state: Any, message: Any): ZIO[R, E, StepSuccess[Any, A]] =
+      zio.map(a => StepSuccess(state = state, result = a))
   }
 
   final case class MessageHandler[-In, +Err, +A](private val zio: ZIO[In, Err, A])
       extends AbstractStatelessStep[In, Any, Err, A] {
 
-    protected def behavior(state: Any, message: In): ZIO[Any, Err, BehaviorSuccess[Any, A]] =
-      zio.map(result => BehaviorSuccess(state = state, result = result)).provide(message)
+    protected def behavior(state: Any, message: In): ZIO[Any, Err, StepSuccess[Any, A]] =
+      zio.map(result => StepSuccess(state = state, result = result)).provide(message)
 
   }
 
   final case class Modify[-S1, +S2, +A](func: S1 => (S2, A)) extends Step[S1, S2, Any, Any, Nothing, A] {
 
-    protected def behavior(state: S1, message: Any): ZIO[Any, Nothing, BehaviorSuccess[S2, A]] =
+    protected def behavior(state: S1, message: Any): ZIO[Any, Nothing, StepSuccess[S2, A]] =
       ZIO.effectTotal(func(state))
 
   }
 
   final case class SetOutputs[S, A](newState: S, value: A) extends IndieStep[S, Nothing, A] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, BehaviorSuccess[S, A]] =
+    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[S, A]] =
       ZIO.succeed((newState, value))
   }
 
   final case class Succeed[+A](value: A) extends Step[Any, Any, Any, Any, Nothing, A] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, BehaviorSuccess[Any, A]] =
-      ZIO.succeed(BehaviorSuccess(state, value))
+    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[Any, A]] =
+      ZIO.succeed(StepSuccess(state, value))
   }
 
   /**
    * Represents a stateful behavior that is constructed from an effect.
    */
   final case class Stateful[S, StateOut, In, R, E, A](
-    private val effect: BehaviorEffect[S, StateOut, In, R, E, A]
+    private val effect: ZBehavior[S, StateOut, In, R, E, A]
   ) extends Step[S, StateOut, In, R, E, A] {
-    protected def behavior(state: S, message: In): ZIO[R, E, BehaviorSuccess[StateOut, A]] =
+    protected def behavior(state: S, message: In): ZIO[R, E, StepSuccess[StateOut, A]] =
       effect.provideSome[R](r => (state, message, r))
   }
 
@@ -547,8 +547,8 @@ object Step extends StepArities with BehaviorEffectSyntax {
    */
   final case class Stateless[In, R, E, A](private val effect: ZIO[(In, R), E, A])
       extends AbstractStatelessStep[In, R, E, A] {
-    protected def behavior(state: Any, message: In): ZIO[R, E, BehaviorSuccess[Any, A]] =
-      effect.map(value => BehaviorSuccess(state, value)).provideSome[R](r => (message, r))
+    protected def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] =
+      effect.map(value => StepSuccess(state, value)).provideSome[R](r => (message, r))
   }
 
   final class AccessServicePartially[R](private val dummy: Boolean = true) extends AnyVal {

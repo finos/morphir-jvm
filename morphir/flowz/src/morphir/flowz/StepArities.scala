@@ -6,7 +6,7 @@ trait StepArities {
     behaviorA: Step[SIn, SA, Msg, R, E, A],
     behaviorB: Step[SIn, SB, Msg, R, E, B]
   )(
-    f: (BehaviorSuccess[SA, A], BehaviorSuccess[SB, B]) => BehaviorSuccess[SOut, Result]
+    f: (StepSuccess[SA, A], StepSuccess[SB, B]) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
     behaviorA.zipWith(behaviorB)(f)
 
@@ -14,7 +14,7 @@ trait StepArities {
     behaviorA: Step[SIn, SA, Msg, R, E, A],
     behaviorB: Step[SIn, SB, Msg, R, E, B]
   )(
-    f: (BehaviorSuccess[SA, A], BehaviorSuccess[SB, B]) => BehaviorSuccess[SOut, Result]
+    f: (StepSuccess[SA, A], StepSuccess[SB, B]) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
     behaviorA.zipWithPar(behaviorB)(f)
 
@@ -23,10 +23,10 @@ trait StepArities {
     behaviorB: Step[SIn, SB, Msg, R, E, B],
     behaviorC: Step[SIn, SC, Msg, R, E, C]
   )(
-    f: (BehaviorSuccess[SA, A], BehaviorSuccess[SB, B], BehaviorSuccess[SC, C]) => BehaviorSuccess[SOut, Result]
+    f: (StepSuccess[SA, A], StepSuccess[SB, B], StepSuccess[SC, C]) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
-    (behaviorA <*> behaviorB <*> behaviorC).mapResults { case BehaviorSuccess(((sa, sb), sc), ((a, b), c)) =>
-      f(BehaviorSuccess(sa, a), BehaviorSuccess(sb, b), BehaviorSuccess(sc, c))
+    (behaviorA <*> behaviorB <*> behaviorC).mapResults { case StepSuccess(((sa, sb), sc), ((a, b), c)) =>
+      f(StepSuccess(sa, a), StepSuccess(sb, b), StepSuccess(sc, c))
     }
 
   final def mapParN[SIn, SA, SB, SC, Msg, R, E, A, B, C, SOut, Result](
@@ -34,10 +34,10 @@ trait StepArities {
     behaviorB: Step[SIn, SB, Msg, R, E, B],
     behaviorC: Step[SIn, SC, Msg, R, E, C]
   )(
-    f: (BehaviorSuccess[SA, A], BehaviorSuccess[SB, B], BehaviorSuccess[SC, C]) => BehaviorSuccess[SOut, Result]
+    f: (StepSuccess[SA, A], StepSuccess[SB, B], StepSuccess[SC, C]) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
-    (behaviorA <&> behaviorB <&> behaviorC).mapResults { case BehaviorSuccess(((sa, sb), sc), ((a, b), c)) =>
-      f(BehaviorSuccess(sa, a), BehaviorSuccess(sb, b), BehaviorSuccess(sc, c))
+    (behaviorA <&> behaviorB <&> behaviorC).mapResults { case StepSuccess(((sa, sb), sc), ((a, b), c)) =>
+      f(StepSuccess(sa, a), StepSuccess(sb, b), StepSuccess(sc, c))
     }
 
   final def mapN[SIn, SA, SB, SC, SD, Msg, R, E, A, B, C, D, SOut, Result](
@@ -47,15 +47,15 @@ trait StepArities {
     behaviorD: Step[SIn, SD, Msg, R, E, D]
   )(
     f: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
     (behaviorA <*> behaviorB <*> behaviorC <*> behaviorD).mapResults {
-      case BehaviorSuccess((((sa, sb), sc), sd), (((a, b), c), d)) =>
-        f(BehaviorSuccess(sa, a), BehaviorSuccess(sb, b), BehaviorSuccess(sc, c), BehaviorSuccess(sd, d))
+      case StepSuccess((((sa, sb), sc), sd), (((a, b), c), d)) =>
+        f(StepSuccess(sa, a), StepSuccess(sb, b), StepSuccess(sc, c), StepSuccess(sd, d))
     }
 
   final def mapParN[SIn, SA, SB, SC, SD, Msg, R, E, A, B, C, D, SOut, Result](
@@ -65,15 +65,15 @@ trait StepArities {
     behaviorD: Step[SIn, SD, Msg, R, E, D]
   )(
     f: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
     (behaviorA <&> behaviorB <&> behaviorC <&> behaviorD).mapResults {
-      case BehaviorSuccess((((sa, sb), sc), sd), (((a, b), c), d)) =>
-        f(BehaviorSuccess(sa, a), BehaviorSuccess(sb, b), BehaviorSuccess(sc, c), BehaviorSuccess(sd, d))
+      case StepSuccess((((sa, sb), sc), sd), (((a, b), c), d)) =>
+        f(StepSuccess(sa, a), StepSuccess(sb, b), StepSuccess(sc, c), StepSuccess(sd, d))
     }
 
   final def mapN[SIn, SA, SB, SC, SD, SE, Msg, R, Err, A, B, C, D, E, SOut, Result](
@@ -84,21 +84,21 @@ trait StepArities {
     behaviorE: Step[SIn, SE, Msg, R, Err, E]
   )(
     f: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <*> behaviorB <*> behaviorC <*> behaviorD <*> behaviorE).mapResults {
-      case BehaviorSuccess(((((sa, sb), sc), sd), se), ((((a, b), c), d), e)) =>
+      case StepSuccess(((((sa, sb), sc), sd), se), ((((a, b), c), d), e)) =>
         f(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e)
         )
     }
 
@@ -110,21 +110,21 @@ trait StepArities {
     behaviorE: Step[SIn, SE, Msg, R, Err, E]
   )(
     f: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <&> behaviorB <&> behaviorC <&> behaviorD <&> behaviorE).mapResults {
-      case BehaviorSuccess(((((sa, sb), sc), sd), se), ((((a, b), c), d), e)) =>
+      case StepSuccess(((((sa, sb), sc), sd), se), ((((a, b), c), d), e)) =>
         f(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e)
         )
     }
 
@@ -137,23 +137,23 @@ trait StepArities {
     behaviorF: Step[SIn, SF, Msg, R, Err, F]
   )(
     fn: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E],
-      BehaviorSuccess[SF, F]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E],
+      StepSuccess[SF, F]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <*> behaviorB <*> behaviorC <*> behaviorD <*> behaviorE <*> behaviorF).mapResults {
-      case BehaviorSuccess((((((sa, sb), sc), sd), se), sf), (((((a, b), c), d), e), f)) =>
+      case StepSuccess((((((sa, sb), sc), sd), se), sf), (((((a, b), c), d), e), f)) =>
         fn(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e),
-          BehaviorSuccess(sf, f)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e),
+          StepSuccess(sf, f)
         )
     }
 
@@ -166,23 +166,23 @@ trait StepArities {
     behaviorF: Step[SIn, SF, Msg, R, Err, F]
   )(
     fn: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E],
-      BehaviorSuccess[SF, F]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E],
+      StepSuccess[SF, F]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <&> behaviorB <&> behaviorC <&> behaviorD <&> behaviorE <&> behaviorF).mapResults {
-      case BehaviorSuccess((((((sa, sb), sc), sd), se), sf), (((((a, b), c), d), e), f)) =>
+      case StepSuccess((((((sa, sb), sc), sd), se), sf), (((((a, b), c), d), e), f)) =>
         fn(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e),
-          BehaviorSuccess(sf, f)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e),
+          StepSuccess(sf, f)
         )
     }
 
@@ -196,25 +196,25 @@ trait StepArities {
     behaviorG: Step[SIn, SG, Msg, R, Err, G]
   )(
     fn: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E],
-      BehaviorSuccess[SF, F],
-      BehaviorSuccess[SG, G]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E],
+      StepSuccess[SF, F],
+      StepSuccess[SG, G]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <*> behaviorB <*> behaviorC <*> behaviorD <*> behaviorE <*> behaviorF <*> behaviorG).mapResults {
-      case BehaviorSuccess(((((((sa, sb), sc), sd), se), sf), sg), ((((((a, b), c), d), e), f), g)) =>
+      case StepSuccess(((((((sa, sb), sc), sd), se), sf), sg), ((((((a, b), c), d), e), f), g)) =>
         fn(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e),
-          BehaviorSuccess(sf, f),
-          BehaviorSuccess(sg, g)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e),
+          StepSuccess(sf, f),
+          StepSuccess(sg, g)
         )
     }
 
@@ -228,25 +228,25 @@ trait StepArities {
     behaviorG: Step[SIn, SG, Msg, R, Err, G]
   )(
     fn: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E],
-      BehaviorSuccess[SF, F],
-      BehaviorSuccess[SG, G]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E],
+      StepSuccess[SF, F],
+      StepSuccess[SG, G]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <&> behaviorB <&> behaviorC <&> behaviorD <&> behaviorE <&> behaviorF <&> behaviorG).mapResults {
-      case BehaviorSuccess(((((((sa, sb), sc), sd), se), sf), sg), ((((((a, b), c), d), e), f), g)) =>
+      case StepSuccess(((((((sa, sb), sc), sd), se), sf), sg), ((((((a, b), c), d), e), f), g)) =>
         fn(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e),
-          BehaviorSuccess(sf, f),
-          BehaviorSuccess(sg, g)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e),
+          StepSuccess(sf, f),
+          StepSuccess(sg, g)
         )
     }
 
@@ -261,27 +261,27 @@ trait StepArities {
     behaviorH: Step[SIn, SH, Msg, R, Err, H]
   )(
     fn: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E],
-      BehaviorSuccess[SF, F],
-      BehaviorSuccess[SG, G],
-      BehaviorSuccess[SH, H]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E],
+      StepSuccess[SF, F],
+      StepSuccess[SG, G],
+      StepSuccess[SH, H]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <*> behaviorB <*> behaviorC <*> behaviorD <*> behaviorE <*> behaviorF <*> behaviorG <*> behaviorH).mapResults {
-      case BehaviorSuccess((((((((sa, sb), sc), sd), se), sf), sg), sh), (((((((a, b), c), d), e), f), g), h)) =>
+      case StepSuccess((((((((sa, sb), sc), sd), se), sf), sg), sh), (((((((a, b), c), d), e), f), g), h)) =>
         fn(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e),
-          BehaviorSuccess(sf, f),
-          BehaviorSuccess(sg, g),
-          BehaviorSuccess(sh, h)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e),
+          StepSuccess(sf, f),
+          StepSuccess(sg, g),
+          StepSuccess(sh, h)
         )
     }
 
@@ -296,39 +296,39 @@ trait StepArities {
     behaviorH: Step[SIn, SH, Msg, R, Err, H]
   )(
     fn: (
-      BehaviorSuccess[SA, A],
-      BehaviorSuccess[SB, B],
-      BehaviorSuccess[SC, C],
-      BehaviorSuccess[SD, D],
-      BehaviorSuccess[SE, E],
-      BehaviorSuccess[SF, F],
-      BehaviorSuccess[SG, G],
-      BehaviorSuccess[SH, H]
-    ) => BehaviorSuccess[SOut, Result]
+      StepSuccess[SA, A],
+      StepSuccess[SB, B],
+      StepSuccess[SC, C],
+      StepSuccess[SD, D],
+      StepSuccess[SE, E],
+      StepSuccess[SF, F],
+      StepSuccess[SG, G],
+      StepSuccess[SH, H]
+    ) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, Err, Result] =
     (behaviorA <&> behaviorB <&> behaviorC <&> behaviorD <&> behaviorE <&> behaviorF <&> behaviorG <&> behaviorH).mapResults {
-      case BehaviorSuccess((((((((sa, sb), sc), sd), se), sf), sg), sh), (((((((a, b), c), d), e), f), g), h)) =>
+      case StepSuccess((((((((sa, sb), sc), sd), se), sf), sg), sh), (((((((a, b), c), d), e), f), g), h)) =>
         fn(
-          BehaviorSuccess(sa, a),
-          BehaviorSuccess(sb, b),
-          BehaviorSuccess(sc, c),
-          BehaviorSuccess(sd, d),
-          BehaviorSuccess(se, e),
-          BehaviorSuccess(sf, f),
-          BehaviorSuccess(sg, g),
-          BehaviorSuccess(sh, h)
+          StepSuccess(sa, a),
+          StepSuccess(sb, b),
+          StepSuccess(sc, c),
+          StepSuccess(sd, d),
+          StepSuccess(se, e),
+          StepSuccess(sf, f),
+          StepSuccess(sg, g),
+          StepSuccess(sh, h)
         )
     }
 
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SOut, Result](
     fn: ((SA, A), (SB, B)) => (SOut, Result)
-  ): (BehaviorSuccess[SA, A], BehaviorSuccess[SB, B]) => BehaviorSuccess[SOut, Result] = { case (successA, successB) =>
+  ): (StepSuccess[SA, A], StepSuccess[SB, B]) => StepSuccess[SOut, Result] = { case (successA, successB) =>
     fn(successA.toTuple, successB.toTuple)
   }
 
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SC, C, SOut, Result](
     fn: ((SA, A), (SB, B), (SC, C)) => (SOut, Result)
-  ): (BehaviorSuccess[SA, A], BehaviorSuccess[SB, B], BehaviorSuccess[SC, C]) => BehaviorSuccess[SOut, Result] = {
+  ): (StepSuccess[SA, A], StepSuccess[SB, B], StepSuccess[SC, C]) => StepSuccess[SOut, Result] = {
     case (successA, successB, successC) =>
       fn(successA.toTuple, successB.toTuple, successC.toTuple)
   }
@@ -336,50 +336,50 @@ trait StepArities {
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SC, C, SD, D, SOut, Result](
     fn: ((SA, A), (SB, B), (SC, C), (SD, D)) => (SOut, Result)
   ): (
-    BehaviorSuccess[SA, A],
-    BehaviorSuccess[SB, B],
-    BehaviorSuccess[SC, C],
-    BehaviorSuccess[SD, D]
-  ) => BehaviorSuccess[SOut, Result] = { case (successA, successB, successC, successD) =>
+    StepSuccess[SA, A],
+    StepSuccess[SB, B],
+    StepSuccess[SC, C],
+    StepSuccess[SD, D]
+  ) => StepSuccess[SOut, Result] = { case (successA, successB, successC, successD) =>
     fn(successA.toTuple, successB.toTuple, successC.toTuple, successD.toTuple)
   }
 
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SC, C, SD, D, SE, E, SOut, Result](
     fn: ((SA, A), (SB, B), (SC, C), (SD, D), (SE, E)) => (SOut, Result)
   ): (
-    BehaviorSuccess[SA, A],
-    BehaviorSuccess[SB, B],
-    BehaviorSuccess[SC, C],
-    BehaviorSuccess[SD, D],
-    BehaviorSuccess[SE, E]
-  ) => BehaviorSuccess[SOut, Result] = { case (successA, successB, successC, successD, successE) =>
+    StepSuccess[SA, A],
+    StepSuccess[SB, B],
+    StepSuccess[SC, C],
+    StepSuccess[SD, D],
+    StepSuccess[SE, E]
+  ) => StepSuccess[SOut, Result] = { case (successA, successB, successC, successD, successE) =>
     fn(successA.toTuple, successB.toTuple, successC.toTuple, successD.toTuple, successE.toTuple)
   }
 
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SC, C, SD, D, SE, E, SF, F, SOut, Result](
     fn: ((SA, A), (SB, B), (SC, C), (SD, D), (SE, E), (SF, F)) => (SOut, Result)
   ): (
-    BehaviorSuccess[SA, A],
-    BehaviorSuccess[SB, B],
-    BehaviorSuccess[SC, C],
-    BehaviorSuccess[SD, D],
-    BehaviorSuccess[SE, E],
-    BehaviorSuccess[SF, F]
-  ) => BehaviorSuccess[SOut, Result] = { case (successA, successB, successC, successD, successE, successF) =>
+    StepSuccess[SA, A],
+    StepSuccess[SB, B],
+    StepSuccess[SC, C],
+    StepSuccess[SD, D],
+    StepSuccess[SE, E],
+    StepSuccess[SF, F]
+  ) => StepSuccess[SOut, Result] = { case (successA, successB, successC, successD, successE, successF) =>
     fn(successA.toTuple, successB.toTuple, successC.toTuple, successD.toTuple, successE.toTuple, successF.toTuple)
   }
 
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SC, C, SD, D, SE, E, SF, F, SG, G, SOut, Result](
     fn: ((SA, A), (SB, B), (SC, C), (SD, D), (SE, E), (SF, F), (SG, G)) => (SOut, Result)
   ): (
-    BehaviorSuccess[SA, A],
-    BehaviorSuccess[SB, B],
-    BehaviorSuccess[SC, C],
-    BehaviorSuccess[SD, D],
-    BehaviorSuccess[SE, E],
-    BehaviorSuccess[SF, F],
-    BehaviorSuccess[SG, G]
-  ) => BehaviorSuccess[SOut, Result] = { case (successA, successB, successC, successD, successE, successF, successG) =>
+    StepSuccess[SA, A],
+    StepSuccess[SB, B],
+    StepSuccess[SC, C],
+    StepSuccess[SD, D],
+    StepSuccess[SE, E],
+    StepSuccess[SF, F],
+    StepSuccess[SG, G]
+  ) => StepSuccess[SOut, Result] = { case (successA, successB, successC, successD, successE, successF, successG) =>
     fn(
       successA.toTuple,
       successB.toTuple,
@@ -394,15 +394,15 @@ trait StepArities {
   final implicit def toSuccessMergeFunc[SA, A, SB, B, SC, C, SD, D, SE, E, SF, F, SG, G, SH, H, SOut, Result](
     fn: ((SA, A), (SB, B), (SC, C), (SD, D), (SE, E), (SF, F), (SG, G), (SH, H)) => (SOut, Result)
   ): (
-    BehaviorSuccess[SA, A],
-    BehaviorSuccess[SB, B],
-    BehaviorSuccess[SC, C],
-    BehaviorSuccess[SD, D],
-    BehaviorSuccess[SE, E],
-    BehaviorSuccess[SF, F],
-    BehaviorSuccess[SG, G],
-    BehaviorSuccess[SH, H]
-  ) => BehaviorSuccess[SOut, Result] = {
+    StepSuccess[SA, A],
+    StepSuccess[SB, B],
+    StepSuccess[SC, C],
+    StepSuccess[SD, D],
+    StepSuccess[SE, E],
+    StepSuccess[SF, F],
+    StepSuccess[SG, G],
+    StepSuccess[SH, H]
+  ) => StepSuccess[SOut, Result] = {
     case (successA, successB, successC, successD, successE, successF, successG, successH) =>
       fn(
         successA.toTuple,
@@ -424,7 +424,7 @@ object mapNExamples extends zio.App {
     val behaviorA = Step.set("SA").as('A')
     val behaviorB = Step.set(List("SA")).as("B")
     val finalBehavior = Step.mapN(behaviorA, behaviorB) { case (a, b) =>
-      BehaviorSuccess(state = (a.state, b.state), result = (a.result, b.result))
+      StepSuccess(state = (a.state, b.state), result = (a.result, b.result))
     }
 
     val finalBehaviorAlt = Step.mapN(behaviorA, behaviorB) { case (a, b) =>

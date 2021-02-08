@@ -41,7 +41,7 @@ final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
   )(implicit
     ev1: State <:< InitialState,
     ev2: StateOut <:< InitialState
-  ): ZManaged[Env, Err, BehaviorSuccess[List[State], List[Result]]] = ???
+  ): ZManaged[Env, Err, StepSuccess[List[State], List[Result]]] = ???
   //ZManaged.accessManaged[(Any, Any, Any)] { env => }
 
   def execute(
@@ -116,7 +116,7 @@ object Flow {
 
   final case class StepCase[-SIn, +SOut, -InputMsg, -R, +Err, +Out](
     label: String,
-    behavior: Step[SIn, SOut, InputMsg, R, Err, Out], // ~ ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
+    behavior: Step[SIn, SOut, InputMsg, R, Err, Out], // ~ ZIO[(SIn, InputMsg, Env), E, StepSuccess[SOut, A]]
     annotations: PropertyMap
   ) extends FlowCase[SIn, SOut, InputMsg, R, Err, Out, Nothing]
 
@@ -128,7 +128,7 @@ object Flow {
     )(implicit ev: Has.IsHas[Env1], tag: Tag[M]): Flow[SIn, SOut, InputMsg, Env1, Err, Result] = ???
   }
 
-  //ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
+  //ZIO[(SIn, InputMsg, Env), E, StepSuccess[SOut, A]]
 }
 
 object example {

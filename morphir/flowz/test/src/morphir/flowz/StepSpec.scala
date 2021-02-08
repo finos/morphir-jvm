@@ -16,7 +16,7 @@ object StepSpec extends DefaultRunnableSpec {
       )(
         for {
           result <- Step.succeed(42).run(21, ())
-        } yield assert(result)(equalTo(BehaviorSuccess(21, 42)))
+        } yield assert(result)(equalTo(StepSuccess(21, 42)))
       ),
       testM("It should be possible to construct a Step that always fails with a given value")(
         for {
@@ -26,7 +26,7 @@ object StepSpec extends DefaultRunnableSpec {
       testM("It should be possible to construct a Step that modifies its output given an initial state")(
         for {
           result <- Step.modify { text: String => s"$text:${text.size}" -> text.size }.run("Hello", ())
-        } yield assert(result)(equalTo(BehaviorSuccess("Hello:5", 5)))
+        } yield assert(result)(equalTo(StepSuccess("Hello:5", 5)))
       ),
       testM("It should be possible to construct a Step from a simple update function")(
         for {
@@ -36,18 +36,18 @@ object StepSpec extends DefaultRunnableSpec {
                 (msg :: initialState, msg.reverse)
               }
               .run(List("John", "Joe"), "Jack")
-        } yield assert(result)(equalTo(BehaviorSuccess(state = List("Jack", "John", "Joe"), result = "kcaJ")))
+        } yield assert(result)(equalTo(StepSuccess(state = List("Jack", "John", "Joe"), result = "kcaJ")))
       ),
       testM("It should be possible to construct a behavior that gets the initial state unchanged.")(
         for {
           result <- Step.get[Set[Int]].run(Set(1, 2, 3, 4), Set(5, 6, 7, 8))
-        } yield assert(result)(equalTo(BehaviorSuccess(Set(1, 2, 3, 4), Set(1, 2, 3, 4))))
+        } yield assert(result)(equalTo(StepSuccess(Set(1, 2, 3, 4), Set(1, 2, 3, 4))))
       ),
       testM("It should be possible to construct a behavior that sets the state to a value.")(
         checkM(Gen.alphaNumericString, Gen.alphaNumericString) { (input, s1) =>
           for {
             result <- Step.set(input).run(s1, "Something")
-          } yield assert(result)(equalTo(BehaviorSuccess(state = input, result = ())))
+          } yield assert(result)(equalTo(StepSuccess(state = input, result = ())))
         }
       )
     ),
@@ -55,13 +55,13 @@ object StepSpec extends DefaultRunnableSpec {
       testM("It should be possible to return a different constant value using as")(
         for {
           result <- Step.unit.as("Foo").run("S1", ())
-        } yield assert(result)(equalTo(BehaviorSuccess("S1", "Foo")))
+        } yield assert(result)(equalTo(StepSuccess("S1", "Foo")))
       )
     ),
     suite("Combining")(
       testM("It should be possible to sequence flows using flatMap") {
         val behavior = Step.succeed("true").flatMap(value => Step.succeed(s"The answer is: $value")).run(21, 21)
-        assertM(behavior)(equalTo(BehaviorSuccess(21, "The answer is: true")))
+        assertM(behavior)(equalTo(StepSuccess(21, "The answer is: true")))
       }
     )
   )
