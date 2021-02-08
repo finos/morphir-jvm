@@ -10,6 +10,8 @@ final case class BehaviorSuccess[+S, +A](state: S, result: A) { self =>
   def mapState[S1](f: S => S1): BehaviorSuccess[S1, A] =
     copy(state = f(self.state))
 
+  def toTuple: (S, A) = (state, result)
+
   def transform[S1, B](
     f: BehaviorSuccess[S, A] => BehaviorSuccess[S1, B]
   ): BehaviorSuccess[S1, B] =

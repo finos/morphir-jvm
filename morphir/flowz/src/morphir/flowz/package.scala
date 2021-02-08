@@ -31,6 +31,8 @@ package object flowz {
 
   type StatelessBehavior[-InputMsg, -R, +E, +A] = Behavior[Any, Any, InputMsg, R, E, A]
 
+  type ZIOBehavior[-R, +E, +A] = Behavior[Any, Any, Any, R, E, A]
+
   /**
    * A type alias for a behavior that acts like an impure function, taking in an input message
    * (also referred to as input/parameters) and produces a single value, possibly failing

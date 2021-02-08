@@ -311,7 +311,8 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
    */
   final def trigger(state: SIn, message: Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
 
-  final def trigger(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]] = run(state, message)
+  final def trigger(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, BehaviorSuccess[SOut, A]]      = run((), message)
+  final def trigger(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, BehaviorSuccess[SOut, A]] = run((), ())
 
   def withAnnotation[R1 <: R with Properties]: Behavior[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] =
     accessBehavior[R1] { r =>
@@ -362,9 +363,11 @@ abstract class Behavior[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   ): Behavior[SIn1, S, In1, R1, E1, C] =
     Behavior((self.asEffect zipWithPar that.asEffect)(f))
 }
-object Behavior extends BehaviorEffectSyntax {
+object Behavior extends BehaviorArities with BehaviorEffectSyntax {
 
   def accessBehavior[R]: AccessBehaviorPartiallyApplied[R] = new AccessBehaviorPartiallyApplied[R]
+  def accessService[R]: AccessServicePartially[R]          = new AccessServicePartially[R]
+  def accessServiceM[R]: AccessServiceMPartially[R]        = new AccessServiceMPartially[R]
 
   def apply[InitialState, StateOut, In, R, E, A](
     effect: BehaviorEffect[InitialState, StateOut, In, R, E, A]
@@ -428,6 +431,11 @@ object Behavior extends BehaviorEffectSyntax {
     })
 
   /**
+   * Creates a behavior from a typical `ZIO` effect which does not have input state and message components.
+   */
+  def fromZIO[R, E, A](effect: ZIO[R, E, A]): ZIOBehavior[R, E, A] = FromZIO[R, E, A](effect)
+
+  /**
    * Constructs a Behavior that gets the initial state unchanged.
    */
   def get[S]: Behavior[S, S, Any, Any, Nothing, S] =
@@ -444,6 +452,12 @@ object Behavior extends BehaviorEffectSyntax {
 
   def outputting[S, Value](state: S, value: Value): IndieBehavior[S, Nothing, Value] =
     SetOutputs(newState = state, value = value)
+
+  /**
+   * Accesses the specified service in the environment of the behavior.
+   */
+  def service[R: Tag]: ZIOBehavior[Has[R], Nothing, R] =
+    fromZIO(ZIO.service[R])
 
   /**
    * Constructs a Behavior that sets the state to the specified value.å
@@ -486,6 +500,11 @@ object Behavior extends BehaviorEffectSyntax {
     override lazy val toEffect: ZIO[(SIn, In, Env), E, BehaviorSuccess[SOut, A]] = zio
     protected def behavior(state: SIn, message: In): ZIO[Env, E, BehaviorSuccess[SOut, A]] =
       zio.provideSome[Env](env => (state, message, env))
+  }
+
+  final case class FromZIO[-R, +E, +A](zio: ZIO[R, E, A]) extends Behavior[Any, Any, Any, R, E, A] {
+    protected def behavior(state: Any, message: Any): ZIO[R, E, BehaviorSuccess[Any, A]] =
+      zio.map(a => BehaviorSuccess(state = state, result = a))
   }
 
   final case class MessageHandler[-In, +Err, +A](private val zio: ZIO[In, Err, A])
@@ -532,6 +551,16 @@ object Behavior extends BehaviorEffectSyntax {
       effect.map(value => BehaviorSuccess(state, value)).provideSome[R](r => (message, r))
   }
 
+  final class AccessServicePartially[R](private val dummy: Boolean = true) extends AnyVal {
+    def apply[A](f: R => A)(implicit tag: Tag[R]): ZIOBehavior[Has[R], Nothing, A] =
+      Behavior.fromZIO(ZIO.service[R].flatMap(r => ZIO.effectTotal(f(r))))
+  }
+
+  final class AccessServiceMPartially[R](private val dummy: Boolean = true) extends AnyVal {
+    def apply[E, A](f: R => IO[E, A])(implicit tag: Tag[R]): ZIOBehavior[Has[R], E, A] =
+      Behavior.fromZIO(ZIO.service[R].flatMap(r => f(r)))
+  }
+
   final class AccessBehaviorPartiallyApplied[R](private val dummy: Boolean = true) extends AnyVal {
     def apply[SIn, SOut, Msg, E, A](f: R => Behavior[SIn, SOut, Msg, R, E, A]): Behavior[SIn, SOut, Msg, R, E, A] =
       Behavior(ZIO.accessM[(SIn, Msg, R)] { case (_, _, r) =>
@@ -541,5 +570,15 @@ object Behavior extends BehaviorEffectSyntax {
 
   final class FromEffectFn[-SIn, +SOut, -Msg, -R, +E, +A] extends ((SIn, Msg) => ZIO[R, E, (SOut, A)]) {
     def apply(initialState: SIn, message: Msg): ZIO[R, E, (SOut, A)] = ???
+  }
+}
+
+object behaviorExample extends App {
+  import zio.console.Console
+
+  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
+    val behavior1 = Behavior.accessServiceM[Console.Service](_.putStrLn("Hi"))
+    //val behavior1 = Behavior.fromZIO(console.putStrLn("Hi"))
+    behavior1.trigger.exitCode
   }
 }
