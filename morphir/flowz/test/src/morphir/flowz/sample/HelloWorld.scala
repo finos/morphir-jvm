@@ -9,7 +9,7 @@ object HelloWorld extends App {
       console.putStrLn(s"Hello, ${greeting.getOrElse("world")}")
     }
 
-    helloBehavior.execute(args.headOption).exitCode
+    helloBehavior.run(args.headOption).exitCode
 
   }
 }

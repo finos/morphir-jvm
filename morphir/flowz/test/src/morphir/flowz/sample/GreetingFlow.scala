@@ -21,6 +21,6 @@ object GreetingFlow extends App {
 
     val myStep = getTarget >>> greeter
 
-    myStep.execute(args).exitCode
+    myStep.run(args).exitCode
   }
 }

@@ -3,7 +3,7 @@ package morphir.flowz
 import zio._
 
 /**
- * A behavior is a purely functional description of a computation that requires
+ * A step is a purely functional description of a computation that requires
  * an environment `R`, an initial state of `SIn` and an input/update message `Msg`.
  * It may fail with either an `E` or succeed with an updated state `SOut` and a result `A`.
  */
@@ -11,8 +11,8 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   import Step._
 
   /**
-   * Returns a behavior that executes both this behavior and the specified behavior,
-   * in parallel, returning the result of the provided behavior. If either side fails,
+   * Returns a step that executes both this step and the specified step,
+   * in parallel, returning the result of the provided step. If either side fails,
    * then the other side will be interrupted, interrupting the result.
    */
   def &>[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
@@ -30,7 +30,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     self andThen that
 
   /**
-   * A variant of flatMap that ignores the values (result and state)  produced by this behavior.
+   * A variant of flatMap that ignores the values (result and state)  produced by this step.
    */
   def *>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Step[SIn1, SOut1, Msg1, R1, E1, B]
@@ -45,8 +45,8 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   ): Step[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zip that
 
   /**
-   * Returns a behavior that executes both this behavior and the specified behavior,
-   * in parallel, this behavior's result is returned. If either side fails,
+   * Returns a step that executes both this step and the specified step,
+   * in parallel, this step's result is returned. If either side fails,
    * then the other side will be interrupted, thus interrupting the result.
    */
   def <&[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
@@ -69,15 +69,15 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   ): Step[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zipPar that
 
   /**
-   * Sequences the specified behavior after this behavior, but ignores the
-   * values (result and state) produced by the behavior.
+   * Sequences the specified step after this step, but ignores the
+   * values (result and state) produced by the step.
    */
   def <*[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Step[SIn1, SOut1, In1, R1, E1, B]
   ): Step[SIn1, SOut, In1, R1, E1, A] = Step(self.asEffect <* that.asEffect)
 
   /**
-   * Executes the given behavior upon the successful execution of this behavior.
+   * Executes the given step upon the successful execution of this step.
    */
   def andThen[SOut2, R1 <: R, E1 >: E, B](
     that: Step[SOut, SOut2, A, R1, E1, B]
@@ -87,22 +87,22 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     })
 
   /**
-   * Maps the success value of this behavior to a constant value.
+   * Maps the success value of this step to a constant value.
    */
   final def as[B](b: => B): Step[SIn, SOut, Msg, R, E, B] = map(_ => b)
 
   /**
-   * Get this behavior as an effect.
+   * Get this Step as an effect.
    */
   protected final lazy val asEffect: ZBehavior[SIn, SOut, Msg, R, E, A] = toEffect
 
   /**
-   * Defines the underlying behavior.
+   * Defines the underlying behavior of this `Step`.
    */
   protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]]
 
   /**
-   * Returns a behavior whose failure and success channels have been mapped by the specified pair of
+   * Returns a step whose failure and success channels have been mapped by the specified pair of
    * functions, f and g.
    */
   def bimap[E2, B](f: E => E2, g: A => B)(implicit ev: CanFail[E]): Step[SIn, SOut, Msg, R, E2, B] =
@@ -111,7 +111,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     })
 
   /**
-   * Returns a behavior whose failure and success have been lifted into an
+   * Returns a step whose failure and success have been lifted into an
    * `Either`. The resulting computation cannot fail, because the failure case
    * has been exposed as part of the `Either` success case.
    */
@@ -122,9 +122,9 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     )
 
   /**
-   * Returns a behavior that models the execution of this behavior, followed by
+   * Returns a step that models the execution of this step, followed by
    * the passing of its value to the specified continuation function `k`,
-   * followed by the behavior that it returns.
+   * followed by the step that it returns.
    *
    * {{{
    * val parsed = readFile("foo.txt").flatMap(file => parseFile(file))
@@ -142,8 +142,8 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     )
 
   /**
-   * Folds over the failed or successful results of this behavior to yield
-   * a behavior that does not fail, but succeeds with the value of the left
+   * Folds over the failed or successful results of this step to yield
+   * a step that does not fail, but succeeds with the value of the left
    * or right function passed to `fold`.
    */
   def fold[S >: SOut <: SIn, B](failure: E => B, success: A => B)(implicit
@@ -170,8 +170,8 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   }
 
   /**
-   * Recovers from errors by accepting one behavior to execute for the case of an
-   * error, and one behavior to execute for the case of success.
+   * Recovers from errors by accepting one step to execute for the case of an
+   * error, and one step to execute for the case of success.
    */
   def foldM[SIn0 <: SIn, SOut1, Msg1 <: Msg, R1 <: R, E1, B](
     failure: E => Step[SIn0, SOut1, Msg1, R1, E1, B],
@@ -187,18 +187,18 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     }
 
   /**
-   * Exposes  the output state into the value channel.
+   * Exposes the output state into the value channel.
    */
   def getState: Step[SIn, SOut, Msg, R, E, (SOut, A)] =
     flatMap(a => get.map(s => (s, a)))
 
   /**
-   * Returns a behavior whose success is mapped by the specified function f.
+   * Returns a step whose success is mapped by the specified function f.
    */
   final def map[B](f: A => B): Step[SIn, SOut, Msg, R, E, B] = fromEffect(asEffect.map(_.map(f)))
 
   /**
-   * Returns a behavior with its error channel mapped using the specified
+   * Returns a step with its error channel mapped using the specified
    * function. This can be used to lift a "smaller" error into a "larger"
    * error.
    */
@@ -206,7 +206,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     Step(self.asEffect.mapError(f))
 
   /**
-   * Returns a behavior with its full cause of failure mapped using the
+   * Returns a step with its full cause of failure mapped using the
    * specified function. This can be used to transform errors while
    * preserving the original structure of `Cause`.
    */
@@ -225,25 +225,25 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   )
 
   /**
-   * Provide the behavior all its required inputs and its environment
+   * Provide the step all its required inputs and its environment
    */
   final def provide(initialState: SIn, message: Msg, environment: R): IndieStep[SOut, E, A] =
     Step(asEffect.provide((initialState, message, environment)))
 
   /**
-   * Provide the behavior all its required inputs and its environment
+   * Provide the step all its required inputs and its environment
    */
   final def provide(message: Msg)(implicit ev1: Any <:< SIn, ev2: Any <:< R): IndieStep[SOut, E, A] =
     Step(asEffect.provide(((), message, ())))
 
   /**
-   * Provide the behavior all its required inputs and its environment
+   * Provide the step all its required inputs and its environment
    */
   final def provide(initialState: SIn, message: Msg)(implicit ev1: Any <:< R): IndieStep[SOut, E, A] =
     Step(asEffect.provide((initialState, message, ())))
 
   /**
-   * Provide the behavior with its environment.
+   * Provide the step with its environment.
    */
   final def provideEnvironment(environment: R): Step[SIn, SOut, Msg, Any, E, A] =
     Step(ZIO.accessM[(SIn, Msg, Any)] { case (initialState, message, _) =>
@@ -251,43 +251,48 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     })
 
   /**
-   * Provide the behavior with its initial state and message.
+   * Provide the step with its initial state and message.
    */
   final def provideInputs(initialState: SIn, message: Msg): Step[Any, SOut, Any, R, E, A] =
     Step(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => asEffect.provide((initialState, message, r)) })
 
   /**
-   * Provide the behavior with its update message.
+   * Provide the step with its update message.
    */
   final def provideMessage(message: Msg): Step[SIn, SOut, Any, R, E, A] =
     Step(ZIO.accessM[(SIn, Any, R)] { case (initialState, _, r) => asEffect.provide((initialState, message, r)) })
 
   /**
-   * Provide the behavior with its initial state
+   * Provide the step with its initial state
    */
   final def provideState(initialState: SIn): Step[Any, SOut, Msg, R, E, A] =
     Step(asEffect.provideState(initialState))
 
   /**
-   * Runs the behavior.
+   * Runs the step.
    */
-  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg, ev3: Any <:< R): ZIO[R, E, StepSuccess[SOut, A]] =
-    run((), ()).provide(ev3(()))
+  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, StepSuccess[SOut, A]] =
+    run((), ())
 
   /**
-   * Runs the behavior.
+   * Runs the step.
    */
   final def run(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
     behavior(state, message)
 
   /**
-   * Runs the behavior.
+   * Runs the step.
+   */
+  final def run(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, StepSuccess[SOut, A]] = run((), message)
+
+  /**
+   * Runs the step.
    */
   final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, A] =
     run((), ()).map(_.result)
 
   /**
-   * Returns a behavior that effectfully "peeks" at the success of this behavior.
+   * Returns a step that effectfully "peeks" at the success of this behavior.
    *
    * {{{
    * readFile("data.json").tap(putStrLn)
@@ -306,38 +311,14 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     behavior(stateIn, msg).provide(r)
   }
 
-  /**
-   * Executes the step, thus producing an effect.
-   */
-  final def execute(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] = run(state, message)
-
-  final def execute(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, StepSuccess[SOut, A]]      = run((), message)
-  final def execute(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, StepSuccess[SOut, A]] = run((), ())
-
   def withAnnotation[R1 <: R with Properties]: Step[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] =
-    accessBehavior[R1] { r =>
+    accessStep[R1] { r =>
       Step.fromEffect(
         r.get.withAnnotation(self.asEffect).map { case (success, map) =>
           success.map(a => (a, map))
         }
       )
     }
-
-  //    Step(
-//      for {
-//
-//      } yield ???
-//      ZIO.accessM[(SIn, Msg, R1)] { case (_,_,r1) =>
-//        Properties
-//          .withAnnotation(asEffect)
-//          .bimap(
-//            identity,
-//            { case (value, map) =>
-//              value.map(a => (a, map))
-//            }
-//          )
-//      }
-//    )
 
   def zip[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Step[SIn1, SOut1, In1, R1, E1, B]
@@ -365,9 +346,9 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
 }
 object Step extends StepArities with ZBehaviorSyntax {
 
-  def accessBehavior[R]: AccessBehaviorPartiallyApplied[R] = new AccessBehaviorPartiallyApplied[R]
-  def accessService[R]: AccessServicePartially[R]          = new AccessServicePartially[R]
-  def accessServiceM[R]: AccessServiceMPartially[R]        = new AccessServiceMPartially[R]
+  def accessStep[R]: AccessStepPartiallyApplied[R]  = new AccessStepPartiallyApplied[R]
+  def accessService[R]: AccessServicePartially[R]   = new AccessServicePartially[R]
+  def accessServiceM[R]: AccessServiceMPartially[R] = new AccessServiceMPartially[R]
 
   def apply[InitialState, StateOut, In, R, E, A](
     effect: ZBehavior[InitialState, StateOut, In, R, E, A]
@@ -561,7 +542,7 @@ object Step extends StepArities with ZBehaviorSyntax {
       Step.fromZIO(ZIO.service[R].flatMap(r => f(r)))
   }
 
-  final class AccessBehaviorPartiallyApplied[R](private val dummy: Boolean = true) extends AnyVal {
+  final class AccessStepPartiallyApplied[R](private val dummy: Boolean = true) extends AnyVal {
     def apply[SIn, SOut, Msg, E, A](f: R => Step[SIn, SOut, Msg, R, E, A]): Step[SIn, SOut, Msg, R, E, A] =
       Step(ZIO.accessM[(SIn, Msg, R)] { case (_, _, r) =>
         f(r).toEffect
@@ -573,12 +554,12 @@ object Step extends StepArities with ZBehaviorSyntax {
   }
 }
 
-object behaviorExample extends App {
+object stepExample extends App {
   import zio.console.Console
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
     val behavior1 = Step.accessServiceM[Console.Service](_.putStrLn("Hi"))
     //val behavior1 = Step.fromZIO(console.putStrLn("Hi"))
-    behavior1.execute.exitCode
+    behavior1.run.exitCode
   }
 }
