@@ -29,47 +29,39 @@ package object flowz {
 
   type Activity[-SIn, +SOut, -Msg, -Env, +E, +A] = ZIO[SIn with Msg with Env, E, BehaviorSuccess[SOut, A]]
 
-  type StatelessBehavior[-InputMsg, -R, +E, +A] = Behavior[Any, Any, InputMsg, R, E, A]
+  type StatelessStep[-InputMsg, -R, +E, +A] = Step[Any, Any, InputMsg, R, E, A]
 
-  type ZIOBehavior[-R, +E, +A] = Behavior[Any, Any, Any, R, E, A]
+  type ZIOStep[-R, +E, +A] = Step[Any, Any, Any, R, E, A]
 
   /**
-   * A type alias for a behavior that acts like an impure function, taking in an input message
+   * A type alias for a step that acts like an impure function, taking in an input message
    * (also referred to as input/parameters) and produces a single value, possibly failing
    * with a `Throwable`.
    *
    * For example:
    *
    * {{{
-   *   val intConverter:FuncBehavior[String,Int] =
-   *    Behavior.fromFunction { numberStr:String => numberStr.toInt }
+   *   val intConverter:FuncStep[String,Int] =
+   *    Step.fromFunction { numberStr:String => numberStr.toInt }
    * }}}
    */
-  type FuncBehavior[-InputMsg, +A] = Behavior[Any, Any, InputMsg, Any, Throwable, A]
+  type FuncStep[-InputMsg, +A] = Step[Any, Any, InputMsg, Any, Throwable, A]
 
   /**
    * Provides a description of an independent behavior which does not
    * rely on any inputs to produce its outputs.
    */
-  type IndieBehavior[+S, +E, +A] = Behavior[Any, S, Any, Any, E, A]
+  type IndieStep[+S, +E, +A] = Step[Any, S, Any, Any, E, A]
 
 //  def behavior[InputState, OutputState, Msg, R, Err, A](
 //    f: (InputState, Msg) => ZIO[R, Err, (OutputState, A)]
-//  )(implicit ev: CanFail[Err]): Behavior[InputState, OutputState, Msg, R, Err, A] =
-//    Behavior[InputState, OutputState, Msg, R, Err, A](f)
+//  )(implicit ev: CanFail[Err]): Step[InputState, OutputState, Msg, R, Err, A] =
+//    Step[InputState, OutputState, Msg, R, Err, A](f)
 
 //  def behavior[SIn, OutputState, Msg, R, E, A](
 //    effect: ZIO[R with InputState[SIn], E, A]
-//  ): Behavior[SIn, OutputState, Msg, R, Nothing, A] =
-//    Behavior[SIn, OutputState, Msg, R, E, A](effect)
-
-  def behavior[InitialState, OutputState, InputMsg, R, A](
-    f: (InitialState, InputMsg) => URIO[R, BehaviorSuccess[OutputState, A]]
-  ): Behavior[InitialState, OutputState, InputMsg, R, Nothing, A] =
-    Behavior.behaviorFromFunctionM(f)
-
-  def outputting[OutputState, Value](state: OutputState, value: Value): IndieBehavior[OutputState, Nothing, Value] =
-    Behavior.outputting(state, value)
+//  ): Step[SIn, OutputState, Msg, R, Nothing, A] =
+//    Step[SIn, OutputState, Msg, R, E, A](effect)
 
   def process[SIn, SOut, In, R, Err, Out](label: String)(
     children: Flow[SIn, SOut, In, R, Err, Out]*
@@ -77,7 +69,7 @@ package object flowz {
     Flow.process(label, children = ZManaged.succeed(children.toVector))
 
   def step[SIn, SOut, In, R, Err, Out](label: String)(
-    behavior: Behavior[SIn, SOut, In, R, Err, Out]
+    behavior: Step[SIn, SOut, In, R, Err, Out]
   ): Flow[SIn, SOut, In, R, Err, Out] = Flow.step(label, behavior, PropertyMap.empty)
 
   /**

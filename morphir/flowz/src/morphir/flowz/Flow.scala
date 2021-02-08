@@ -33,7 +33,7 @@ final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
     }
 
   /**
-   * Run is an alternative to execute that provides information around individual Behavior success.
+   * Run is an alternative to execute that provides information around individual Step success.
    */
   def exec[State](
     initialState: State,
@@ -98,7 +98,7 @@ object Flow {
 
   def step[SIn, SOut, In, R, Err, Out](
     label: String,
-    behavior: Behavior[SIn, SOut, In, R, Err, Out],
+    behavior: Step[SIn, SOut, In, R, Err, Out],
     annotations: PropertyMap
   ): Flow[SIn, SOut, In, R, Err, Out] = Flow(StepCase(label, behavior, annotations))
 
@@ -116,7 +116,7 @@ object Flow {
 
   final case class StepCase[-SIn, +SOut, -InputMsg, -R, +Err, +Out](
     label: String,
-    behavior: Behavior[SIn, SOut, InputMsg, R, Err, Out], // ~ ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
+    behavior: Step[SIn, SOut, InputMsg, R, Err, Out], // ~ ZIO[(SIn, InputMsg, Env), E, BehaviorSuccess[SOut, A]]
     annotations: PropertyMap
   ) extends FlowCase[SIn, SOut, InputMsg, R, Err, Out, Nothing]
 
@@ -134,15 +134,15 @@ object Flow {
 object example {
 
   object behaviors {
-    val behavior1 = Behavior.unit
-    val stateful  = Behavior.get[List[String]]
+    val behavior1 = Step.unit
+    val stateful  = Step.get[List[String]]
   }
 
   val flow = process("init")(
     process("load data")(
       process("inner")(
         step("Get accounts")(behaviors.behavior1),
-        step("Get trade file")(Behavior.unit)
+        step("Get trade file")(Step.unit)
       )
     )
   )
