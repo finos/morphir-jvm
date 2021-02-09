@@ -1,6 +1,6 @@
 package morphir.flowz.experimental
 
-import morphir.flowz._
+import morphir.flowz.{ Annotated, Properties, Property, PropertyMap, Step, StepSuccess }
 import zio._
 
 final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
@@ -133,16 +133,16 @@ object Flow {
 }
 
 object example {
-
+  import morphir.flowz.experimental.{ process, step }
   object behaviors {
-    val behavior1 = Step.unit
-    val stateful  = Step.get[List[String]]
+    val step1    = Step.unit
+    val stateful = Step.get[List[String]]
   }
 
   val flow = process("init")(
     process("load data")(
       process("inner")(
-        step("Get accounts")(behaviors.behavior1),
+        step("Get accounts")(behaviors.step1),
         step("Get trade file")(Step.unit)
       )
     )

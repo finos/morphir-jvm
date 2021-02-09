@@ -425,15 +425,15 @@ object mapNExamples extends zio.App {
   import morphir.flowz.instrumentation.InstrumentationLogging
 
   def run(args: List[String]): URIO[ZEnv, ExitCode] = {
-    val stepA = Step.set("SA").as('A')
-    val stepB = Step.set(List("SA")).as("B")
-    val finalStep = Step.mapN(stepA, stepB) { case (a, b) =>
+    val stepA = step("step A")(Step.set("SA").as('A'))
+    val stepB = step("step B")(Step.set(List("SA")).as("B"))
+    val finalStep = step("final-1")(Step.mapN(stepA, stepB) { case (a, b) =>
       StepSuccess(state = (a.state, b.state), result = (a.result, b.result))
-    }
+    })
 
-    val finalStepAlt = Step.mapN(stepA, stepB) { case (a, b) =>
+    val finalStepAlt = step("final-2")(Step.mapN(stepA, stepB) { case (a, b) =>
       ((a.state, b.state), (a.result, b.result))
-    }
+    })
 
     (
       (finalStep.run.tap(res => console.putStrLn(s"Result Orig: $res")) *>

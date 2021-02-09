@@ -59,24 +59,10 @@ package object flowz {
 
   type StepUid = uidGenerator.Uid
 
-//  def behavior[InputState, OutputState, Msg, R, Err, A](
-//    f: (InputState, Msg) => ZIO[R, Err, (OutputState, A)]
-//  )(implicit ev: CanFail[Err]): Step[InputState, OutputState, Msg, R, Err, A] =
-//    Step[InputState, OutputState, Msg, R, Err, A](f)
-
-//  def behavior[SIn, OutputState, Msg, R, E, A](
-//    effect: ZIO[R with InputState[SIn], E, A]
-//  ): Step[SIn, OutputState, Msg, R, Nothing, A] =
-//    Step[SIn, OutputState, Msg, R, E, A](effect)
-
-  def process[SIn, SOut, In, R, Err, Out](label: String)(
-    children: Flow[SIn, SOut, In, R, Err, Out]*
-  ): Flow[SIn, SOut, In, R, Err, Out] =
-    Flow.process(label, children = ZManaged.succeed(children.toVector))
-
-  def step[SIn, SOut, In, R, Err, Out](label: String)(
-    behavior: Step[SIn, SOut, In, R, Err, Out]
-  ): Flow[SIn, SOut, In, R, Err, Out] = Flow.step(label, behavior, PropertyMap.empty)
+  def step[SIn, SOut, Msg, R, Err, A](
+    label: String
+  )(theStep: Step[SIn, SOut, Msg, R, Err, A]): RunnableStep[SIn, SOut, Msg, R, Err, A] =
+    RunnableStep.step(label)(theStep)
 
   /**
    * The `Properties` trait provides access to a property map that flows and behaviors

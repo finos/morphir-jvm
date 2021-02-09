@@ -1,6 +1,5 @@
 package morphir.flowz
 
-import morphir.flowz.instrumentation.InstrumentationEvent
 import zio._
 
 /**
@@ -100,7 +99,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Defines the underlying behavior of this `Step`.
    */
-  protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]]
+  protected[flowz] def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]]
 
   /**
    * Returns a step whose failure and success channels have been mapped by the specified pair of
@@ -272,37 +271,6 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
     Step(asEffect.provideState(initialState))
 
   /**
-   * Runs the step.
-   */
-  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
-    run((), ())
-
-  /**
-   * Runs the step.
-   */
-  final def run(state: SIn, message: Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
-    for {
-      uid           <- StepUid.nextUid
-      labelResolved <- ZIO.succeed(label getOrElse "N/A")
-      _ <- iLog.trace(
-             InstrumentationEvent.runningStep(s"Running Step[Label=$labelResolved; Uid=$uid;]", uid, labelResolved)
-           )
-      result <- behavior(state, message)
-    } yield result
-
-  /**
-   * Runs the step.
-   */
-  final def run(message: Msg)(implicit ev: Any <:< SIn): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
-    run((), message)
-
-  /**
-   * Runs the step.
-   */
-  final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R with StepRuntimeEnv, E, A] =
-    run((), ()).map(_.result)
-
-  /**
    * Returns a step that effectfully "peeks" at the success of this behavior.
    *
    * {{{
@@ -385,16 +353,6 @@ object Step extends StepArities with ZBehaviorSyntax {
    */
   def fail[E](error: E): IndieStep[Nothing, E, Nothing] = Fail(error)
 
-//  def fromEffect[SIn, SOut, In, R, E, A](
-//    effect: ZIO[(SIn, In, R), E, StepSuccess[SOut, A]]
-//  )(evState: NeedsInputState[SIn], evMsg: NeedsMsg[In]): Step[SIn, SOut, In, R, E, A] = {
-//    val _ = (evState, evMsg) //NOTE: Suppresses the warning about these not being used
-//    new Step[SIn, SOut, In, R, E, A] {
-//      protected def behavior(state: SIn, message: In): ZIO[R, E, StepSuccess[SOut, A]] =
-//        effect.provideSome[R](r => (state, message, r))
-//    }
-//  }
-
   def fromEffect[SIn, SOut, Msg, R, E, A](
     effect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]]
   ): Step[SIn, SOut, Msg, R, E, A] =
@@ -464,7 +422,8 @@ object Step extends StepArities with ZBehaviorSyntax {
    */
   def stateless[In, R, E, A](f: In => ZIO[R, E, A]): StatelessStep[In, R, E, A] =
     new AbstractStatelessStep[In, R, E, A] {
-      protected def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] = f(message).map(state -> _)
+      protected[flowz] def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] =
+        f(message).map(state -> _)
     }
 
   /**
@@ -486,54 +445,55 @@ object Step extends StepArities with ZBehaviorSyntax {
     })
 
   final case class Fail[E](error: E) extends IndieStep[Nothing, E, Nothing] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, E, StepSuccess[Nothing, Nothing]] = ZIO.fail(error)
+    protected[flowz] def behavior(state: Any, message: Any): ZIO[Any, E, StepSuccess[Nothing, Nothing]] =
+      ZIO.fail(error)
   }
 
   final case class FromEffect[SIn, SOut, In, Env, E, A](
     zio: ZIO[(SIn, In, Env), E, StepSuccess[SOut, A]]
   ) extends Step[SIn, SOut, In, Env, E, A] {
     override lazy val toEffect: ZIO[(SIn, In, Env), E, StepSuccess[SOut, A]] = zio
-    protected def behavior(state: SIn, message: In): ZIO[Env, E, StepSuccess[SOut, A]] =
+    protected[flowz] def behavior(state: SIn, message: In): ZIO[Env, E, StepSuccess[SOut, A]] =
       zio.provideSome[Env](env => (state, message, env))
   }
 
   final case class FromZIO[-R, +E, +A](zio: ZIO[R, E, A]) extends Step[Any, Any, Any, R, E, A] {
-    protected def behavior(state: Any, message: Any): ZIO[R, E, StepSuccess[Any, A]] =
+    protected[flowz] def behavior(state: Any, message: Any): ZIO[R, E, StepSuccess[Any, A]] =
       zio.map(a => StepSuccess(state = state, result = a))
   }
 
   final case class MessageHandler[-In, +Err, +A](private val zio: ZIO[In, Err, A])
       extends AbstractStatelessStep[In, Any, Err, A] {
 
-    protected def behavior(state: Any, message: In): ZIO[Any, Err, StepSuccess[Any, A]] =
+    protected[flowz] def behavior(state: Any, message: In): ZIO[Any, Err, StepSuccess[Any, A]] =
       zio.map(result => StepSuccess(state = state, result = result)).provide(message)
 
   }
 
   final case class Modify[-S1, +S2, +A](func: S1 => (S2, A)) extends Step[S1, S2, Any, Any, Nothing, A] {
 
-    protected def behavior(state: S1, message: Any): ZIO[Any, Nothing, StepSuccess[S2, A]] =
+    protected[flowz] def behavior(state: S1, message: Any): ZIO[Any, Nothing, StepSuccess[S2, A]] =
       ZIO.effectTotal(func(state))
 
   }
 
   final case class SetOutputs[S, A](newState: S, value: A) extends IndieStep[S, Nothing, A] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[S, A]] =
+    protected[flowz] def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[S, A]] =
       ZIO.succeed((newState, value))
   }
 
   final case class Succeed[+A](value: A) extends Step[Any, Any, Any, Any, Nothing, A] {
-    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[Any, A]] =
+    protected[flowz] def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[Any, A]] =
       ZIO.succeed(StepSuccess(state, value))
   }
 
   /**
-   * Represents a stateful behavior that is constructed from an effect.
+   * Represents a stateful step that is constructed from an effect.
    */
   final case class Stateful[S, StateOut, In, R, E, A](
     private val effect: ZBehavior[S, StateOut, In, R, E, A]
   ) extends Step[S, StateOut, In, R, E, A] {
-    protected def behavior(state: S, message: In): ZIO[R, E, StepSuccess[StateOut, A]] =
+    protected[flowz] def behavior(state: S, message: In): ZIO[R, E, StepSuccess[StateOut, A]] =
       effect.provideSome[R](r => (state, message, r))
   }
 
@@ -542,7 +502,7 @@ object Step extends StepArities with ZBehaviorSyntax {
    */
   final case class Stateless[In, R, E, A](private val effect: ZIO[(In, R), E, A])
       extends AbstractStatelessStep[In, R, E, A] {
-    protected def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] =
+    protected[flowz] def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] =
       effect.map(value => StepSuccess(state, value)).provideSome[R](r => (message, r))
   }
 
@@ -575,7 +535,7 @@ object Step extends StepArities with ZBehaviorSyntax {
     /**
      * Defines the underlying behavior of this `Step`.
      */
-    protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
+    protected[flowz] def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
       underlyingStep.behavior(state, message)
   }
 }
@@ -585,14 +545,8 @@ object stepExample extends App {
   import zio.logging.LogLevel
   import morphir.flowz.instrumentation.InstrumentationLogging
 
-  def defineStep[SIn, SOut, Msg, R, E, A](label: String)(
-    theStep: Step[SIn, SOut, Msg, R, E, A]
-  ): Step[SIn, SOut, Msg, R with StepRuntimeEnv, E, A] =
-    theStep.withLabel(label)
-  //TODO: This is where you could do something like add an Aspect to the step
-
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
-    val step1 = defineStep("Say Hi")(Step.accessServiceM[Console.Service](_.putStrLn("Hi")))
+    val step1 = step("Say Hi")(Step.accessServiceM[Console.Service](_.putStrLn("Hi")))
 
     step1.run.exitCode.provideCustomLayer(
       StepUidGenerator.live ++ InstrumentationLogging.console(logLevel = LogLevel.Trace)

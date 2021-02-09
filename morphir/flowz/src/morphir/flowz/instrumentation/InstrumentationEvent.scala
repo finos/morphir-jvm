@@ -1,6 +1,7 @@
 package morphir.flowz.instrumentation
 
 import morphir.flowz.{ NodePath, StepUid }
+import zio.Cause
 import zio.logging.LogFormat.LineFormatter
 import zio.logging.{ LogContext, LogFormat }
 
@@ -13,6 +14,53 @@ object InstrumentationEvent {
   def logLine(line: String): LogLine = LogLine(line)
   def runningStep(message: String, uid: StepUid, label: String, path: Option[NodePath] = None): RunningStep =
     RunningStep(message, uid, label, path)
+
+  def stepExecutionFailed(
+    message: String,
+    uid: StepUid,
+    label: String,
+    cause: Cause[Any] = Cause.empty,
+    path: Option[NodePath] = None
+  ): StepExecutionFailed = StepExecutionFailed(message, uid, label, cause, path)
+
+  def stepExecutionFailed(
+    uid: StepUid,
+    label: String,
+    cause: Cause[Any]
+  ): StepExecutionFailed =
+    stepExecutionFailed(uid, label, cause, None)
+
+  def stepExecutionFailed(
+    uid: StepUid,
+    label: String,
+    cause: Cause[Any],
+    path: Option[NodePath]
+  ): StepExecutionFailed = {
+    val message = s"Step execution failed for Step[Label=$label; Uid=$uid], because of ${cause.prettyPrint}"
+    StepExecutionFailed(message, uid, label, cause, path)
+  }
+
+  def stepExecutionSucceeded(
+    message: String,
+    uid: StepUid,
+    label: String,
+    path: Option[NodePath] = None
+  ): StepExecutionSucceeded = StepExecutionSucceeded(message, uid, label, path)
+
+  def stepExecutionSucceeded(
+    uid: StepUid,
+    label: String
+  ): StepExecutionSucceeded =
+    stepExecutionSucceeded(uid, label, None)
+
+  def stepExecutionSucceeded(
+    uid: StepUid,
+    label: String,
+    path: Option[NodePath]
+  ): StepExecutionSucceeded = {
+    val message = s"Step execution succeeded for Step[Label=$label; Uid=$uid]"
+    StepExecutionSucceeded(message, uid, label, path)
+  }
 
   /**
    * Models an informational message. The informational message includes the message text, contextData,
@@ -40,6 +88,21 @@ object InstrumentationEvent {
 
   final case class RunningStep(message: String, uid: StepUid, label: String, path: Option[NodePath] = None)
       extends InstrumentationEvent
+
+  final case class StepExecutionFailed(
+    message: String,
+    uid: StepUid,
+    label: String,
+    cause: Cause[Any] = Cause.empty,
+    path: Option[NodePath] = None
+  ) extends InstrumentationEvent
+
+  final case class StepExecutionSucceeded(
+    message: String,
+    uid: StepUid,
+    label: String,
+    path: Option[NodePath] = None
+  ) extends InstrumentationEvent
 
   /**
    * A raw context free instrumentation event for logging a line of text.
