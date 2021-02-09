@@ -11,7 +11,7 @@ trait SparkModuleExports {
   val SparkModule: morphir.flowz.spark.sparkModule.SparkModule.type = morphir.flowz.spark.sparkModule.SparkModule
 
   final type SparkStep[-StateIn, +StateOut, -Env, -Params, +Err, +Value] =
-    morphir.flowz.spark.SparkStep[StateIn, StateOut, Env, Params, Err, Value]
+    morphir.flowz.spark.SparkBehavior[StateIn, StateOut, Env, Params, Err, Value]
   val SparkStep: morphir.flowz.spark.SparkStep.type = morphir.flowz.spark.SparkStep
 
   def sparkStep[Params, A](func: SparkSession => Params => A): SparkStep[Any, A, Any, Params, Throwable, A] =

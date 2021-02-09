@@ -1,475 +1,601 @@
 package morphir.flowz
 
+import morphir.flowz.instrumentation.InstrumentationEvent
 import zio._
-import zio.clock.Clock
 
-import scala.util.Try
-
-final case class Step[-StateIn, +StateOut, -Env, -Params, +Err, +Value](
-  private[flowz] val rawEffect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]],
-  name: Option[String] = None,
-  description: Option[String] = None
-) { self =>
+/**
+ * A step is a purely functional description of a computation that requires
+ * an environment `R`, an initial state of `SIn` and an input/update message `Msg`.
+ * It may fail with either an `E` or succeed with an updated state `SOut` and a result `A`.
+ */
+abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
+  import Step._
 
   /**
-   * Connect this Step to the given Step. By connecting the output state of this Step to the input state of the other Step
-   * and by connecting the output value of this Step to the input of the other.
+   * Returns a step that executes both this step and the specified step,
+   * in parallel, returning the result of the provided step. If either side fails,
+   * then the other side will be interrupted, interrupting the result.
    */
-  def >>>[SOut2, Env1 <: Env, Err1 >: Err, Output2](
-    that: Step[StateOut, SOut2, Env1, Value, Err1, Output2]
-  ): Step[StateIn, SOut2, Env1, Params, Err1, Output2] =
+  def &>[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  ): Step[SIn1, SOut1, In1, R1, E1, B] =
+    self.zipWithPar(that)((_, b) => b)
+
+  /**
+   * Connect this Step to the given Step by connecting the output state of this Step to the input state
+   * of the other Step and by connecting the result of this Step to the input of the other.
+   */
+  def >>>[SOut2, R1 <: R, E1 >: E, B](
+    that: Step[SOut, SOut2, A, R1, E1, B]
+  ): Step[SIn, SOut2, Msg, R1, E1, B] =
     self andThen that
 
-  def *>[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, Params1, Err1, Output2]
-  ): Step[StateIn1, StateOut2, Env1, Params1, Err1, Output2] =
-    Step(self.effect *> that.effect)
-
-  def <*>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-  ): Step[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] = self zip that
-
-  def |+|[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-  ): Step[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
-    Step((self.effect zipPar that.effect).map { case (left, right) => left zip right })
-
-  def <&>[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-  ): Step[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
-    Step((self.effect zipPar that.effect).map { case (left, right) => left zip right })
-
-  def <*[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, Params1, Err1, Output2]
-  ): Step[StateIn1, StateOut, Env1, Params1, Err1, Value] =
-    Step(self.effect <* that.effect)
+  /**
+   * A variant of flatMap that ignores the values (result and state)  produced by this step.
+   */
+  def *>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Step[SIn1, SOut1, Msg1, R1, E1, B] =
+    Step(self.asEffect *> that.asEffect)
 
   /**
-   * Adapts the input provided to the Step using the provided function.
+   * An operator alias for zip.
    */
-  def adaptParameters[Input0](func: Input0 => Params): Step[StateIn, StateOut, Env, Input0, Err, Value] =
-    new Step[StateIn, StateOut, Env, Input0, Err, Value](self.effect.provideSome { ctx =>
-      ctx.copy(inputs = ctx.inputs.copy(params = func(ctx.inputs.params)))
-    })
-
-  def andThen[SOut2, Env1 <: Env, Err1 >: Err, Output2](
-    that: Step[StateOut, SOut2, Env1, Value, Err1, Output2]
-  ): Step[StateIn, SOut2, Env1, Params, Err1, Output2] =
-    Step(ZIO.environment[StepContext[Env1, StateIn, Params]].flatMap { ctx =>
-      self.effect.flatMap(out => that.effect.provide(ctx.updateInputs(out)))
-    })
-
-  def andThenEffect[Err1 >: Err, StateOut2, Output2](
-    thatEffect: ZIO[Value, Err1, StepOutputs[StateOut2, Output2]]
-  ): Step[StateIn, StateOut2, Env, Params, Err1, Output2] =
-    Step(self.effect.map(out => out.value) andThen thatEffect)
+  def <*>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Step[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zip that
 
   /**
-   * Maps the success value of this flow to the specified constant value.
+   * Returns a step that executes both this step and the specified step,
+   * in parallel, this step's result is returned. If either side fails,
+   * then the other side will be interrupted, thus interrupting the result.
    */
-  def as[Out2](out: => Out2): Step[StateIn, StateOut, Env, Params, Err, Out2] = self.map(_ => out)
+  def <&[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  ): Step[SIn1, SOut, In1, R1, E1, A] =
+    self.zipWithPar(that)((a, _) => a)
 
-  def delay(duration: zio.duration.Duration): Step[StateIn, StateOut, Env with Clock, Params, Err, Value] =
-    Step(
-      for {
-        ctx    <- ZIO.environment[StepContext[Env with Clock, StateIn, Params]]
-        result <- self.effect.provide(ctx).delay(duration).provide(ctx.environment)
-      } yield result
+  /**
+   * An operator alias for zip.
+   */
+  def <&>[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Step[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zipPar that
+
+  /**
+   * An operator alias for zipPar.
+   */
+  def |+|[SIn1 <: SIn, Msg1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, Msg1, R1, E1, B]
+  ): Step[SIn1, (SOut, SOut1), Msg1, R1, E1, (A, B)] = self zipPar that
+
+  /**
+   * Sequences the specified step after this step, but ignores the
+   * values (result and state) produced by the step.
+   */
+  def <*[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  ): Step[SIn1, SOut, In1, R1, E1, A] = Step(self.asEffect <* that.asEffect)
+
+  /**
+   * Executes the given step upon the successful execution of this step.
+   */
+  def andThen[SOut2, R1 <: R, E1 >: E, B](
+    that: Step[SOut, SOut2, A, R1, E1, B]
+  ): Step[SIn, SOut2, Msg, R1, E1, B] =
+    Step(ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r) =>
+      self.asEffect.flatMap(success => that.asEffect.provide((success.state, success.result, r)))
+    })
+
+  /**
+   * Maps the success value of this step to a constant value.
+   */
+  final def as[B](b: => B): Step[SIn, SOut, Msg, R, E, B] = map(_ => b)
+
+  /**
+   * Get this Step as an effect.
+   */
+  protected final lazy val asEffect: ZBehavior[SIn, SOut, Msg, R, E, A] = toEffect
+
+  /**
+   * Defines the underlying behavior of this `Step`.
+   */
+  protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]]
+
+  /**
+   * Returns a step whose failure and success channels have been mapped by the specified pair of
+   * functions, f and g.
+   */
+  def bimap[E2, B](f: E => E2, g: A => B)(implicit ev: CanFail[E]): Step[SIn, SOut, Msg, R, E2, B] =
+    Step(ZIO.accessM[(SIn, Msg, R)] { env =>
+      self.asEffect.provide(env).bimap(f, _.map(g))
+    })
+
+  /**
+   * Returns a step whose failure and success have been lifted into an
+   * `Either`. The resulting computation cannot fail, because the failure case
+   * has been exposed as part of the `Either` success case.
+   */
+  def either[S >: SOut <: SIn](implicit ev: CanFail[E]): Step[S, S, Msg, R, Nothing, Either[E, A]] =
+    foldM(
+      failure = e => modify(s => (s, Left(e))),
+      success = a => modify(s => (s, Right(a)))
     )
 
-  val effect: ZIO[StepContext[Env, StateIn, Params], Err, StepOutputs[StateOut, Value]] = rawEffect
-
-  def flatMap[S, Env1 <: Env, P <: Params, Err1 >: Err, B](
-    func: Value => Step[StateOut, S, Env1, P, Err1, B]
-  ): Step[StateIn, S, Env1, P, Err1, B] =
-    Step(ZIO.environment[StepContext[Env1, StateIn, P]].flatMap { ctx =>
-      self.effect.flatMap(out => func(out.value).effect.provide(ctx.updateState(out.state)))
-    })
-
-  def flatten[S, Env1 <: Env, P <: Params, Err1 >: Err, B](implicit
-    ev: Value <:< Step[StateOut, S, Env1, P, Err1, B]
-  ): Step[StateIn, S, Env1, P, Err1, B] =
-    flatMap(ev)
-
-  def flipOutputs: Step[StateIn, Value, Env, Params, Err, StateOut] =
-    self.mapOutputs { case (state, value) => (value, state) }
-
-  def fork: ForkedStep[StateIn, StateOut, Env, Params, Err, Value] =
-    Step[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Value]]](
-      self.effect.fork.map { rt =>
-        StepOutputs(rt)
+  /**
+   * Returns a step that models the execution of this step, followed by
+   * the passing of its value to the specified continuation function `k`,
+   * followed by the step that it returns.
+   *
+   * {{{
+   * val parsed = readFile("foo.txt").flatMap(file => parseFile(file))
+   * }}}
+   */
+  def flatMap[SOut1, In1 <: Msg, R1 <: R, E1 >: E, B](
+    k: A => Step[SOut, SOut1, In1, R1, E1, B]
+  ): Step[SIn, SOut1, In1, R1, E1, B] =
+    Step[SIn, SOut1, In1, R1, E1, B](
+      ZIO.accessM[(SIn, In1, R1)] { case (_, msg, r) =>
+        asEffect.flatMap { res: StepSuccess[SOut, A] =>
+          k(res.result).asEffect.provide((res.state, msg, r))
+        }
       }
     )
 
-  def map[Out2](fn: Value => Out2): Step[StateIn, StateOut, Env, Params, Err, Out2] = Step(
-    self.effect.map(success => success.map(fn))
-  )
+  /**
+   * Folds over the failed or successful results of this step to yield
+   * a step that does not fail, but succeeds with the value of the left
+   * or right function passed to `fold`.
+   */
+  def fold[S >: SOut <: SIn, B](failure: E => B, success: A => B)(implicit
+    ev: CanFail[E]
+  ): Step[S, S, Msg, R, Nothing, B] =
+    self.foldM(e => modify(s => (s, failure(e): B)), a => modify(s => (s, success(a))))
 
-  def mapEffect[Out2](fn: Value => Out2)(implicit
-    ev: Err <:< Throwable
-  ): Step[StateIn, StateOut, Env, Params, Throwable, Out2] =
-    Step(self.effect.mapEffect(success => success.map(fn)))
+  /**
+   * A more powerful version of `foldM` that allows recovering from any kind of failure except interruptions.
+   */
+  def foldCauseM[SIn0 <: SIn, SOut1, Msg1 <: Msg, R1 <: R, E1, B](
+    failure: Cause[E] => Step[SIn0, SOut1, Msg1, R1, E1, B],
+    success: A => Step[SOut, SOut1, Msg1, R1, E1, B]
+  )(implicit ev: CanFail[E]): Step[SIn0, SOut1, Msg1, R1, E1, B] = {
+    val _ = ev
+    fromFunctionM { case (initialState, msg, r1) =>
+      self.asEffect
+        .foldCauseM(
+          failure = { cause => failure(cause).toEffect },
+          success = { a => success(a.result).toEffect.provide((a.state, msg, r1)) }
+        )
+        .provide((initialState, msg, r1))
+    }
+  }
 
-  def mapError[Err2](onError: Err => Err2): Step[StateIn, StateOut, Env, Params, Err2, Value] =
-    Step(self.effect.mapError(onError))
+  /**
+   * Recovers from errors by accepting one step to execute for the case of an
+   * error, and one step to execute for the case of success.
+   */
+  def foldM[SIn0 <: SIn, SOut1, Msg1 <: Msg, R1 <: R, E1, B](
+    failure: E => Step[SIn0, SOut1, Msg1, R1, E1, B],
+    success: A => Step[SOut, SOut1, Msg1, R1, E1, B]
+  )(implicit ev: CanFail[E]): Step[SIn0, SOut1, Msg1, R1, E1, B] =
+    fromFunctionM { case (initialState, msg, r1) =>
+      self.asEffect
+        .foldM(
+          failure = { cause => failure(cause).toEffect },
+          success = { a => success(a.result).toEffect.provide((a.state, msg, r1)) }
+        )
+        .provide((initialState, msg, r1))
+    }
 
-  def mapOutputs[StateOut2, Output2](
-    func: (StateOut, Value) => (StateOut2, Output2)
-  ): Step[StateIn, StateOut2, Env, Params, Err, Output2] =
-    Step(self.effect.map(out => StepOutputs.fromTuple(func(out.state, out.value))))
+  /**
+   * Exposes the output state into the value channel.
+   */
+  def getState: Step[SIn, SOut, Msg, R, E, (SOut, A)] =
+    flatMap(a => get.map(s => (s, a)))
 
-  def mapOutputChannels[StateOut2, Output2](
-    func: StepOutputs[StateOut, Value] => StepOutputs[StateOut2, Output2]
-  ): Step[StateIn, StateOut2, Env, Params, Err, Output2] =
-    Step(self.effect.map(func))
+  def label: Option[String] = None
 
-  def mapState[SOut2](fn: StateOut => SOut2): Step[StateIn, SOut2, Env, Params, Err, Value] = Step(
-    self.effect.map(success => success.mapState(fn))
+  /**
+   * Returns a step whose success is mapped by the specified function f.
+   */
+  final def map[B](f: A => B): Step[SIn, SOut, Msg, R, E, B] = fromEffect(asEffect.map(_.map(f)))
+
+  /**
+   * Returns a step with its error channel mapped using the specified
+   * function. This can be used to lift a "smaller" error into a "larger"
+   * error.
+   */
+  final def mapError[E2](f: E => E2)(implicit ev: CanFail[E]): Step[SIn, SOut, Msg, R, E2, A] =
+    Step(self.asEffect.mapError(f))
+
+  /**
+   * Returns a step with its full cause of failure mapped using the
+   * specified function. This can be used to transform errors while
+   * preserving the original structure of `Cause`.
+   */
+  final def mapErrorCause[E2](f: Cause[E] => Cause[E2])(implicit ev: CanFail[E]): Step[SIn, SOut, Msg, R, E2, A] = {
+    val _ = ev
+    Step(self.asEffect.mapErrorCause(f))
+  }
+
+  final def mapResults[SOut2, B](
+    f: StepSuccess[SOut, A] => StepSuccess[SOut2, B]
+  ): Step[SIn, SOut2, Msg, R, E, B] =
+    fromEffect(asEffect.map(res => res.transform(f)))
+
+  final def mapState[SOut2](f: SOut => SOut2): Step[SIn, SOut2, Msg, R, E, A] = fromEffect(
+    asEffect.map(_.mapState(f))
   )
 
   /**
-   * Executes this step and returns its value, if it succeeds, but otherwise executes the specified step.
+   * Provide the step all its required inputs and its environment
    */
-  def orElse[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err2, StateOut2 >: StateOut, Value2 >: Value](
-    that: => Step[StateIn1, StateOut2, Env1, Params1, Err2, Value2]
-  )(implicit ev: CanFail[Err]): Step[StateIn1, StateOut2, Env1, Params1, Err2, Value2] =
-    Step(self.effect orElse that.effect)
+  final def provide(initialState: SIn, message: Msg, environment: R): IndieStep[SOut, E, A] =
+    Step(asEffect.provide((initialState, message, environment)))
 
   /**
-   * Returns a step that will produce the value of this step, unless it
-   * fails, in which case, it will produce the value of the specified step.
+   * Provide the step all its required inputs and its environment
    */
-  def orElseEither[StateIn1 <: StateIn, Env1 <: Env, Params1 <: Params, Err2, ThatState >: StateOut, ThatValue](
-    that: => Step[StateIn1, ThatState, Env1, Params1, Err2, ThatValue]
-  )(implicit
-    ev: CanFail[Err]
-  ): Step[StateIn1, Either[StateOut, ThatState], Env1, Params1, Err2, Either[Value, ThatValue]] =
-    new Step((self.effect orElseEither that.effect).map {
-      case Left(outputs)  => StepOutputs(state = Left(outputs.state), value = Left(outputs.value))
-      case Right(outputs) => StepOutputs(state = Right(outputs.state), value = Right(outputs.value))
+  final def provide(message: Msg)(implicit ev1: Any <:< SIn, ev2: Any <:< R): IndieStep[SOut, E, A] =
+    Step(asEffect.provide(((), message, ())))
+
+  /**
+   * Provide the step all its required inputs and its environment
+   */
+  final def provide(initialState: SIn, message: Msg)(implicit ev1: Any <:< R): IndieStep[SOut, E, A] =
+    Step(asEffect.provide((initialState, message, ())))
+
+  /**
+   * Provide the step with its environment.
+   */
+  final def provideEnvironment(environment: R): Step[SIn, SOut, Msg, Any, E, A] =
+    Step(ZIO.accessM[(SIn, Msg, Any)] { case (initialState, message, _) =>
+      asEffect.provide((initialState, message, environment))
     })
 
   /**
-   * Executes this step and returns its value, if it succeeds, but otherwise fails with the specified error.
+   * Provide the step with its initial state and message.
    */
-  def orElseFail[State >: StateOut, Err1](error: Err1)(implicit
-    ev: CanFail[Err]
-  ): Step[StateIn, StateOut, Env, Params, Err1, Value] =
-    orElse(Step.fail(error))
+  final def provideInputs(initialState: SIn, message: Msg): Step[Any, SOut, Any, R, E, A] =
+    Step(ZIO.accessM[(Any, Any, R)] { case (_, _, r) => asEffect.provide((initialState, message, r)) })
 
   /**
-   * Executes this step and returns its value, if it succeeds, but otherwise succeeds with the specified state and value.
+   * Provide the step with its update message.
    */
-  def orElseSucceed[State >: StateOut, Value1 >: Value](state: => State, value: => Value1)(implicit
-    ev: CanFail[Err]
-  ): Step[StateIn, State, Env, Params, Nothing, Value1] =
-    orElse(Step.succeed(state = state, value = value))
-
-  def named(name: String): Step[StateIn, StateOut, Env, Params, Err, Value] = copy(name = Option(name))
-  def describe(description: String): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    copy(description = Option(description))
+  final def provideMessage(message: Msg): Step[SIn, SOut, Any, R, E, A] =
+    Step(ZIO.accessM[(SIn, Any, R)] { case (initialState, _, r) => asEffect.provide((initialState, message, r)) })
 
   /**
-   * Repeats the step the specified number of times.
+   * Provide the step with its initial state
    */
-  def repeatN(n: Int): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatN(n))
-
-  def repeatUntil(f: StepOutputs[StateOut, Value] => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatUntil(f))
-
-  def repeatUntil(statePredicate: StateOut => Boolean)(
-    valuePredicate: Value => Boolean
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatUntil(outputs => statePredicate(outputs.state) && valuePredicate(outputs.value)))
-
-  def repeatWhile(f: StepOutputs[StateOut, Value] => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatWhile(f))
-
-  def repeatWhileState(f: StateOut => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatWhile(outputs => f(outputs.state)))
-
-  def repeatWhileValue(f: Value => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatWhile(outputs => f(outputs.value)))
-
-  def retryN(n: Int)(implicit ev: CanFail[Err]): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.retryN(n))
-
-  def retryWhile(f: StepOutputs[StateOut, Value] => Boolean): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(effect.repeatWhile(f))
-
-  def run(implicit
-    evAnyInput: Any <:< Params,
-    evAnyState: Any <:< StateIn
-  ): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
-    self.effect.provideSome[Env](env => StepContext(environment = env, params = (), state = ()))
-
-  def run(input: Params)(implicit evAnyState: Unit <:< StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
-    self.effect.provideSome[Env](env => StepContext(environment = env, params = input, state = ()))
-
-  def run(input: Params, initialState: StateIn): ZIO[Env, Err, StepOutputs[StateOut, Value]] =
-    self.effect.provideSome[Env](env => StepContext(environment = env, params = input, state = initialState))
-
-  def run(context: StepContext[Env, StateIn, Params]): IO[Err, StepOutputs[StateOut, Value]] =
-    self.effect.provide(context)
-
-  def shiftStateToOutput: Step[StateIn, Unit, Env, Params, Err, (StateOut, Value)] =
-    Step(effect.map(success => StepOutputs(state = (), value = (success.state, success.value))))
+  final def provideState(initialState: SIn): Step[Any, SOut, Msg, R, E, A] =
+    Step(asEffect.provideState(initialState))
 
   /**
-   * Maps the output state value of this step to the specified constant value.
+   * Runs the step.
    */
-  def stateAs[StateOut2](stateOut: => StateOut2): Step[StateIn, StateOut2, Env, Params, Err, Value] =
-    self.mapState(_ => stateOut)
+  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
+    run((), ())
 
   /**
-   * Takes the output state and makes it also available as the result value of this flow.
+   * Runs the step.
    */
-  def stateAsValue: Step[StateIn, StateOut, Env, Params, Err, StateOut] =
-    self.mapOutputs((state, _) => (state, state))
+  final def run(state: SIn, message: Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
+    for {
+      uid           <- StepUid.nextUid
+      labelResolved <- ZIO.succeed(label getOrElse "N/A")
+      _ <- iLog.trace(
+             InstrumentationEvent.runningStep(s"Running Step[Label=$labelResolved; Uid=$uid;]", uid, labelResolved)
+           )
+      result <- behavior(state, message)
+    } yield result
 
-  def tap[Env1 <: Env, Err1 >: Err](
-    func: (StateOut, Value) => ZIO[Env1, Err1, Any]
-  ): Step[StateIn, StateOut, Env1, Params, Err1, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env1, StateIn, Params]]
-        .flatMap(ctx => self.effect.tap(out => func(out.state, out.value).provide(ctx.environment)))
+  /**
+   * Runs the step.
+   */
+  final def run(message: Msg)(implicit ev: Any <:< SIn): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
+    run((), message)
+
+  /**
+   * Runs the step.
+   */
+  final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R with StepRuntimeEnv, E, A] =
+    run((), ()).map(_.result)
+
+  /**
+   * Returns a step that effectfully "peeks" at the success of this behavior.
+   *
+   * {{{
+   * readFile("data.json").tap(putStrLn)
+   * }}}
+   */
+  def tap[R1 <: R, E1 >: E](
+    func: StepSuccess[SOut, A] => ZIO[R1, E1, Any]
+  ): Step[SIn, SOut, Msg, R1, E1, A] =
+    Step[SIn, SOut, Msg, R1, E1, A](
+      ZIO.accessM[(SIn, Msg, R1)] { case (_, _, r1) =>
+        self.asEffect.tap(success => func(success).provide(r1))
+      }
     )
 
-  def tapState[Env1 <: Env, Err1 >: Err](
-    func: StateOut => ZIO[Env1, Err1, Any]
-  ): Step[StateIn, StateOut, Env1, Params, Err1, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env1, StateIn, Params]]
-        .flatMap(ctx => self.effect.tap(out => func(out.state).provide(ctx.environment)))
-    )
+  def toEffect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
+    behavior(stateIn, msg).provide(r)
+  }
 
-  def tapValue[Env1 <: Env, Err1 >: Err](
-    func: Value => ZIO[Env1, Err1, Any]
-  ): Step[StateIn, StateOut, Env1, Params, Err1, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env1, StateIn, Params]]
-        .flatMap(ctx => self.effect.tap(out => func(out.value).provide(ctx.environment)))
-    )
-
-  def transformEff[StateOut2, Output2](
-    func: (StateOut, Value) => (StateOut2, Output2)
-  )(implicit ev: Err <:< Throwable): Step[StateIn, StateOut2, Env, Params, Throwable, Output2] =
-    Step(self.effect.mapEffect(out => StepOutputs.fromTuple(func(out.state, out.value))))
-
-  /**
-   * Make the state and the output value the same by making the state equal to the output.
-   */
-  def valueAsState: Step[StateIn, Value, Env, Params, Err, Value] =
-    self.mapOutputs { case (_, value) =>
-      (value, value)
+  def withAnnotation[R1 <: R with Properties]: Step[SIn, SOut, Msg, R1, Annotated[E], Annotated[A]] =
+    accessStep[R1] { r =>
+      Step.fromEffect(
+        r.get.withAnnotation(self.asEffect).map { case (success, map) =>
+          success.map(a => (a, map))
+        }
+      )
     }
 
-  def zip[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-  ): Step[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
-    Step((self.effect zip that.effect).map { case (left, right) => left zip right })
+  def withLabel(label: String): Step[SIn, SOut, Msg, R, E, A] =
+    StepWithMetadata(label = Option(label), underlyingStep = self)
 
-  def zipPar[StateIn1 <: StateIn, Env1 <: Env, In1 <: Params, Err1 >: Err, StateOut2, Output2](
-    that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2]
-  ): Step[StateIn1, (StateOut, StateOut2), Env1, In1, Err1, (Value, Output2)] =
-    Step((self.effect zipPar that.effect).map { case (left, right) => left zip right })
+  def zip[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  ): Step[SIn1, (SOut, SOut1), In1, R1, E1, (A, B)] =
+    Step((self.asEffect zip that.asEffect) map { case (left, right) => left zip right })
 
-  def zipWith[
-    StateIn1 <: StateIn,
-    Env1 <: Env,
-    In1 <: Params,
-    Err1 >: Err,
-    StateOut2,
-    Output2,
-    FinalState,
-    FinalOutput
-  ](that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2])(
-    f: (
-      StepOutputs[StateOut, Value],
-      StepOutputs[StateOut2, Output2]
-    ) => StepOutputs[FinalState, FinalOutput]
-  ): Step[StateIn1, FinalState, Env1, In1, Err1, FinalOutput] =
-    Step((self.effect zipWith that.effect)(f))
+  def zipPar[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  ): Step[SIn1, (SOut, SOut1), In1, R1, E1, (A, B)] =
+    Step((self.asEffect zipPar that.asEffect) map { case (left, right) => left zip right })
 
-  def zipWithPar[
-    StateIn1 <: StateIn,
-    Env1 <: Env,
-    In1 <: Params,
-    Err1 >: Err,
-    StateOut2,
-    Output2,
-    FinalState,
-    FinalOutput
-  ](that: Step[StateIn1, StateOut2, Env1, In1, Err1, Output2])(
-    f: (StepOutputs[StateOut, Value], StepOutputs[StateOut2, Output2]) => StepOutputs[FinalState, FinalOutput]
-  ): Step[StateIn1, FinalState, Env1, In1, Err1, FinalOutput] =
-    Step((self.effect zipWithPar that.effect)(f))
+  def zipWith[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  )(
+    f: (StepSuccess[SOut, A], StepSuccess[SOut1, B]) => StepSuccess[S, C]
+  ): Step[SIn1, S, In1, R1, E1, C] =
+    Step((self.asEffect zipWith that.asEffect)(f))
+
+  def zipWithPar[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B, S, C](
+    that: Step[SIn1, SOut1, In1, R1, E1, B]
+  )(
+    f: (StepSuccess[SOut, A], StepSuccess[SOut1, B]) => StepSuccess[S, C]
+  ): Step[SIn1, S, In1, R1, E1, C] =
+    Step((self.asEffect zipWithPar that.asEffect)(f))
+}
+object Step extends StepArities with ZBehaviorSyntax {
+
+  def accessStep[R]: AccessStepPartiallyApplied[R]  = new AccessStepPartiallyApplied[R]
+  def accessService[R]: AccessServicePartially[R]   = new AccessServicePartially[R]
+  def accessServiceM[R]: AccessServiceMPartially[R] = new AccessServiceMPartially[R]
+
+  def apply[InitialState, StateOut, In, R, E, A](
+    effect: ZBehavior[InitialState, StateOut, In, R, E, A]
+  ): Step[InitialState, StateOut, In, R, E, A] =
+    fromEffect[InitialState, StateOut, In, R, E, A](effect)
+
+  implicit def behaviorFromFunctionM[SIn, SOut, In, R, Err, A](
+    f: (SIn, In) => ZIO[R, Err, StepSuccess[SOut, A]]
+  ): Step[SIn, SOut, In, R, Err, A] =
+    fromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
+      f(state, msg).provide(r)
+    })
+
+  def environment[R]: StatelessStep[Any, R, Nothing, R] = Stateless[Any, R, Nothing, R](
+    ZIO.access[(Any, R)] { case (_, r) => r }
+  )
+
+  /**
+   * Constructs a behavior that always fails with the given error.
+   */
+  def fail[E](error: E): IndieStep[Nothing, E, Nothing] = Fail(error)
+
+//  def fromEffect[SIn, SOut, In, R, E, A](
+//    effect: ZIO[(SIn, In, R), E, StepSuccess[SOut, A]]
+//  )(evState: NeedsInputState[SIn], evMsg: NeedsMsg[In]): Step[SIn, SOut, In, R, E, A] = {
+//    val _ = (evState, evMsg) //NOTE: Suppresses the warning about these not being used
+//    new Step[SIn, SOut, In, R, E, A] {
+//      protected def behavior(state: SIn, message: In): ZIO[R, E, StepSuccess[SOut, A]] =
+//        effect.provideSome[R](r => (state, message, r))
+//    }
+//  }
+
+  def fromEffect[SIn, SOut, Msg, R, E, A](
+    effect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]]
+  ): Step[SIn, SOut, Msg, R, E, A] =
+    FromEffect(effect)
+
+  /**
+   * Create a behavior by providing a possibly impure function.
+   *
+   * For example:
+   *
+   * {{{
+   *   val intConverter = Step.fromFunction { numberStr:String =>
+   *      numberStr.toInt
+   *   }
+   * }}}
+   */
+  def fromFunction[In, Out](f: In => Out): FuncStep[In, Out] =
+    MessageHandler(ZIO.accessM[In](input => ZIO.effect(f(input))))
+
+  /**
+   * Lifts an effectful function whose effect requires no environment into
+   * a behavior that requires the input to the function.
+   */
+  def fromFunctionM[SIn, SOut, In, R, Err, A](
+    f: (SIn, In, R) => IO[Err, StepSuccess[SOut, A]]
+  ): Step[SIn, SOut, In, R, Err, A] =
+    fromEffect[SIn, SOut, In, R, Err, A](ZIO.accessM[(SIn, In, R)] { case (state, msg, r) =>
+      f(state, msg, r)
+    })
+
+  /**
+   * Creates a behavior from a typical `ZIO` effect which does not have input state and message components.
+   */
+  def fromZIO[R, E, A](effect: ZIO[R, E, A]): ZIOStep[R, E, A] = FromZIO[R, E, A](effect)
+
+  /**
+   * Constructs a Step that gets the initial state unchanged.
+   */
+  def get[S]: Step[S, S, Any, Any, Nothing, S] =
+    modify(s => (s, s))
+
+  def getMessage[In]: Step[Any, Any, In, Any, Nothing, In] =
+    MessageHandler(ZIO.access[In](identity))
+
+  /**
+   * Constructs a Step from a modify function.
+   */
+  def modify[S1, S2, A](f: S1 => (S2, A)): Step[S1, S2, Any, Any, Nothing, A] =
+    Modify(f)
+
+  def outputting[S, Value](state: S, value: Value): IndieStep[S, Nothing, Value] =
+    SetOutputs(newState = state, value = value)
+
+  /**
+   * Accesses the specified service in the environment of the behavior.
+   */
+  def service[R: Tag]: ZIOStep[Has[R], Nothing, R] =
+    fromZIO(ZIO.service[R])
+
+  /**
+   * Constructs a Step that sets the state to the specified value.å
+   */
+  def set[S](state: S): Step[Any, S, Any, Any, Nothing, Unit] = modify(_ => (state, ()))
+
+  /**
+   * Constructs a stateless behavior from a function that produces an effect.
+   */
+  def stateless[In, R, E, A](f: In => ZIO[R, E, A]): StatelessStep[In, R, E, A] =
+    new AbstractStatelessStep[In, R, E, A] {
+      protected def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] = f(message).map(state -> _)
+    }
+
+  /**
+   * Constructs a behavior that always succeeds with the given value.
+   */
+  def succeed[A](value: => A): Step[Any, Any, Any, Any, Nothing, A] = Succeed(value)
+
+  val unit: Step[Any, Any, Any, Any, Nothing, Unit] =
+    succeed(())
+
+  /**
+   * Constructs a behavior from a function that produces a new state and a result given an initial state and a message.
+   * This function is expected to be pure without side effects and should not throw any exceptions.
+   */
+  def update[S1, S2, In, A](f: (S1, In) => (S2, A)): Step[S1, S2, In, Any, Nothing, A] =
+    Stateful(ZIO.access[(S1, In, Any)] { case (s1, msg, _) =>
+      val (s2, a) = f(s1, msg)
+      StepSuccess(s2, a)
+    })
+
+  final case class Fail[E](error: E) extends IndieStep[Nothing, E, Nothing] {
+    protected def behavior(state: Any, message: Any): ZIO[Any, E, StepSuccess[Nothing, Nothing]] = ZIO.fail(error)
+  }
+
+  final case class FromEffect[SIn, SOut, In, Env, E, A](
+    zio: ZIO[(SIn, In, Env), E, StepSuccess[SOut, A]]
+  ) extends Step[SIn, SOut, In, Env, E, A] {
+    override lazy val toEffect: ZIO[(SIn, In, Env), E, StepSuccess[SOut, A]] = zio
+    protected def behavior(state: SIn, message: In): ZIO[Env, E, StepSuccess[SOut, A]] =
+      zio.provideSome[Env](env => (state, message, env))
+  }
+
+  final case class FromZIO[-R, +E, +A](zio: ZIO[R, E, A]) extends Step[Any, Any, Any, R, E, A] {
+    protected def behavior(state: Any, message: Any): ZIO[R, E, StepSuccess[Any, A]] =
+      zio.map(a => StepSuccess(state = state, result = a))
+  }
+
+  final case class MessageHandler[-In, +Err, +A](private val zio: ZIO[In, Err, A])
+      extends AbstractStatelessStep[In, Any, Err, A] {
+
+    protected def behavior(state: Any, message: In): ZIO[Any, Err, StepSuccess[Any, A]] =
+      zio.map(result => StepSuccess(state = state, result = result)).provide(message)
+
+  }
+
+  final case class Modify[-S1, +S2, +A](func: S1 => (S2, A)) extends Step[S1, S2, Any, Any, Nothing, A] {
+
+    protected def behavior(state: S1, message: Any): ZIO[Any, Nothing, StepSuccess[S2, A]] =
+      ZIO.effectTotal(func(state))
+
+  }
+
+  final case class SetOutputs[S, A](newState: S, value: A) extends IndieStep[S, Nothing, A] {
+    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[S, A]] =
+      ZIO.succeed((newState, value))
+  }
+
+  final case class Succeed[+A](value: A) extends Step[Any, Any, Any, Any, Nothing, A] {
+    protected def behavior(state: Any, message: Any): ZIO[Any, Nothing, StepSuccess[Any, A]] =
+      ZIO.succeed(StepSuccess(state, value))
+  }
+
+  /**
+   * Represents a stateful behavior that is constructed from an effect.
+   */
+  final case class Stateful[S, StateOut, In, R, E, A](
+    private val effect: ZBehavior[S, StateOut, In, R, E, A]
+  ) extends Step[S, StateOut, In, R, E, A] {
+    protected def behavior(state: S, message: In): ZIO[R, E, StepSuccess[StateOut, A]] =
+      effect.provideSome[R](r => (state, message, r))
+  }
+
+  /**
+   * Represents a stateless behavior that is constructed from an effect.
+   */
+  final case class Stateless[In, R, E, A](private val effect: ZIO[(In, R), E, A])
+      extends AbstractStatelessStep[In, R, E, A] {
+    protected def behavior(state: Any, message: In): ZIO[R, E, StepSuccess[Any, A]] =
+      effect.map(value => StepSuccess(state, value)).provideSome[R](r => (message, r))
+  }
+
+  final class AccessServicePartially[R](private val dummy: Boolean = true) extends AnyVal {
+    def apply[A](f: R => A)(implicit tag: Tag[R]): ZIOStep[Has[R], Nothing, A] =
+      Step.fromZIO(ZIO.service[R].flatMap(r => ZIO.effectTotal(f(r))))
+  }
+
+  final class AccessServiceMPartially[R](private val dummy: Boolean = true) extends AnyVal {
+    def apply[E, A](f: R => IO[E, A])(implicit tag: Tag[R]): ZIOStep[Has[R], E, A] =
+      Step.fromZIO(ZIO.service[R].flatMap(r => f(r)))
+  }
+
+  final class AccessStepPartiallyApplied[R](private val dummy: Boolean = true) extends AnyVal {
+    def apply[SIn, SOut, Msg, E, A](f: R => Step[SIn, SOut, Msg, R, E, A]): Step[SIn, SOut, Msg, R, E, A] =
+      Step(ZIO.accessM[(SIn, Msg, R)] { case (_, _, r) =>
+        f(r).toEffect
+      })
+  }
+
+  final class FromEffectFn[-SIn, +SOut, -Msg, -R, +E, +A] extends ((SIn, Msg) => ZIO[R, E, (SOut, A)]) {
+    def apply(initialState: SIn, message: Msg): ZIO[R, E, (SOut, A)] = ???
+  }
+
+  final case class StepWithMetadata[-SIn, +SOut, -Msg, -R, +E, +A](
+    override val label: Option[String],
+    private val underlyingStep: Step[SIn, SOut, Msg, R, E, A]
+  ) extends Step[SIn, SOut, Msg, R, E, A] {
+
+    /**
+     * Defines the underlying behavior of this `Step`.
+     */
+    protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
+      underlyingStep.behavior(state, message)
+  }
 }
 
-object Step extends StepCompanion[Any] {
+object stepExample extends App {
+  import zio.console.Console
+  import zio.logging.LogLevel
+  import morphir.flowz.instrumentation.InstrumentationLogging
 
-  def apply[StateIn, StateOut, Env, Params, Err, Value](
-    func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env, StateIn, Params]]
-        .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment))
+  def defineStep[SIn, SOut, Msg, R, E, A](label: String)(
+    theStep: Step[SIn, SOut, Msg, R, E, A]
+  ): Step[SIn, SOut, Msg, R with StepRuntimeEnv, E, A] =
+    theStep.withLabel(label)
+  //TODO: This is where you could do something like add an Aspect to the step
+
+  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
+    val step1 = defineStep("Say Hi")(Step.accessServiceM[Console.Service](_.putStrLn("Hi")))
+
+    step1.run.exitCode.provideCustomLayer(
+      StepUidGenerator.live ++ InstrumentationLogging.console(logLevel = LogLevel.Trace)
     )
-
-  def apply[StateIn, StateOut, Env, Params, Err, Value](name: String)(
-    func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env, StateIn, Params]]
-        .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment)),
-      name = Option(name)
-    )
-
-  def apply[StateIn, StateOut, Env, Params, Err, Value](name: String, description: String)(
-    func: (StateIn, Params) => ZIO[Env, Err, StepOutputs[StateOut, Value]]
-  ): Step[StateIn, StateOut, Env, Params, Err, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env, StateIn, Params]]
-        .flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params).provide(ctx.environment)),
-      name = Option(name),
-      description = Option(description)
-    )
-
-  def fromEither[Err, Value](value: Either[Err, Value]): Step[Any, Unit, Any, Any, Err, Value] =
-    Step(for {
-      _     <- ZIO.environment[StepContext.having.AnyInputs]
-      value <- ZIO.fromEither(value)
-    } yield StepOutputs.fromValue(value))
-
-  def fromFunction[In, Out](func: In => Out): Step[Any, Out, Any, In, Nothing, Out] =
-    Step(ZIO.environment[StepContext.having.Parameters[In]].map { ctx =>
-      val value = func(ctx.inputs.params)
-      StepOutputs(value = value, state = value)
-    })
-
-  def fromOption[Value](value: => Option[Value]): Step[Any, Unit, Any, Any, Option[Nothing], Value] =
-    Step(for {
-      _     <- ZIO.environment[StepContext.having.AnyInputs]
-      value <- ZIO.fromOption(value)
-    } yield StepOutputs.fromValue(value))
-
-  def fromOutputs[State, Output](channels: StepOutputs[State, Output]): Step[Any, State, Any, Any, Nothing, Output] =
-    Step(ZIO.succeed(channels))
-
-  def fromTry[Value](value: => Try[Value]): Step[Any, Unit, Any, Any, Throwable, Value] =
-    Step(for {
-      _     <- ZIO.environment[StepContext.having.AnyInputs]
-      value <- ZIO.fromTry(value)
-    } yield StepOutputs.fromValue(value))
-
-  def inputs[StateIn, Params]: Step[StateIn, (StateIn, Params), Any, Params, Nothing, (StateIn, Params)] =
-    Step(
-      ZIO
-        .environment[StepContext[Any, StateIn, Params]]
-        .map(ctx =>
-          StepOutputs(state = (ctx.inputs.state, ctx.inputs.params), value = (ctx.inputs.state, ctx.inputs.params))
-        )
-    )
-
-  def join[State, Err, Output](fiber: Fiber[Err, StepOutputs[State, Output]]): Step[Any, State, Any, Any, Err, Output] =
-    Step(fiber.join)
-
-  def stage[StateIn, StateOut, Env, Params, Err, Out](
-    func: (StateIn, Params) => Step[StateIn, StateOut, Env, Params, Err, Out]
-  ): Step[StateIn, StateOut, Env, Params, Err, Out] =
-    Step.context[Env, StateIn, Params].flatMap(ctx => func(ctx.inputs.state, ctx.inputs.params))
-
-  def state[State]: Step[State, State, Any, Any, Nothing, State] = Step(
-    ZIO.environment[StepContext[Any, State, Any]].map(ctx => StepOutputs.setBoth(ctx.inputs.state))
-  )
-
-  def stateful[StateIn, Params, StateOut, Out](
-    func: (StateIn, Params) => (StateOut, Out)
-  ): Step[StateIn, StateOut, Any, Params, Nothing, Out] =
-    Step(ZIO.environment[StepContext.having.AnyEnv[StateIn, Params]].map { ctx =>
-      val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-      StepOutputs(state = state, value = value)
-    })
-
-  def statefulEffect[StateIn, Params, StateOut, Out](
-    func: (StateIn, Params) => (StateOut, Out)
-  ): Step[StateIn, StateOut, Any, Params, Throwable, Out] =
-    Step(ZIO.environment[StepContext.having.AnyEnv[StateIn, Params]].mapEffect { ctx =>
-      val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-      StepOutputs(state = state, value = value)
-    })
-
-  /**
-   * Create a `Step` by providing a function that takes in some state and parameters and returns a tuple of
-   * the output state and the result.
-   */
-  def step[StateIn, StateOut, Params, Out](
-    func: (StateIn, Params) => (StateOut, Out)
-  ): Step[StateIn, StateOut, Any, Params, Throwable, Out] =
-    Step(ZIO.environment[StepContext[Any, StateIn, Params]].mapEffect { ctx =>
-      val (state, value) = func(ctx.inputs.state, ctx.inputs.params)
-      StepOutputs(state = state, value = value)
-    })
-
-  /**
-   * Returns a step with the empty value.
-   */
-  val none: Step[Any, Option[Nothing], Any, Any, Nothing, Option[Nothing]] =
-    Step(ZIO.environment[StepContext.having.AnyInputs].as(StepOutputs.none))
-
-  /**
-   * A step that succeeds with a unit value.
-   */
-  val unit: Step[Any, Unit, Any, Any, Nothing, Unit] =
-    Step(ZIO.environment[StepContext.having.AnyInputs].as(StepOutputs.unit))
-
-  def withStateAs[State](state: => State): Step[Any, State, Any, Any, Nothing, Unit] =
-    Step(ZIO.succeed(StepOutputs.fromState(state)))
-
-  def withValue[Value](value: => Value): Step[Any, Unit, Any, Any, Nothing, Value] =
-    Step(ZIO.succeed(StepOutputs.fromValue(value)))
-
-  def withStateAndValue[A](valueAndSate: => A): Step[Any, A, Any, Any, Nothing, A] =
-    Step(ZIO.succeed(valueAndSate).map(StepOutputs.setBoth(_)))
-
-  def withEnvironment[Env, Err, State, Value](
-    func: Env => ZIO[Env, Err, (State, Value)]
-  ): Step[Any, State, Env, Any, Err, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env, Any, Any]]
-        .flatMap(ctx =>
-          func(ctx.environment).map { case (state, value) =>
-            StepOutputs(state = state, value = value)
-          }.provide(ctx.environment)
-        )
-    )
-
-  def withEnvironment[Env, Err, State, Value](
-    effect: ZIO[Env, Err, (State, Value)]
-  ): Step[Any, State, Env, Any, Err, Value] =
-    Step(
-      ZIO
-        .environment[StepContext[Env, Any, Any]]
-        .flatMap(ctx =>
-          effect.map { case (state, value) =>
-            StepOutputs(state = state, value = value)
-          }.provide(ctx.environment)
-        )
-    )
-
-  def withOutputs[A](valueAndSate: A): Step[Any, A, Any, Any, Nothing, A] =
-    succeed(state = valueAndSate, value = valueAndSate)
-
-  def withParams[Env, Params, Err, Out](func: Params => ZIO[Env, Err, Out]): Step[Any, Unit, Env, Params, Err, Out] =
-    Step.parameters[Params].flatMap { params =>
-      Step.fromEffect(func(params))
-    }
+  }
 }

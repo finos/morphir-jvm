@@ -1,111 +1,69 @@
 package morphir.flowz
 
+import morphir.flowz.instrumentation.InstrumentationLogging
 import zio.test._
 import zio.test.Assertion._
-import zio.test.environment.TestSystem
 
 object StepSpec extends DefaultRunnableSpec {
   def spec = suite("Step Spec")(
-    suite("Constructing")(
-      testM("It should be possible to create a flow that always succeeds with the unit value")(
+    suite("When constructing a Step")(
+      testM("It should be possible to construct a Step that always succeeds with a given value.")(
         for {
-          output <- Step.unit.run
-        } yield assert(output)(equalTo(StepOutputs.unit))
+          result <- Step.succeed(42).runResult
+        } yield assert(result)(equalTo(42))
       ),
-      testM("It should be possible to create a flow that always succeeds with None")(
+      testM(
+        "It should be possible to construct a Step that always succeeds with a given value and honors the passed in state."
+      )(
         for {
-          output <- Step.none.run
-        } yield assert(output)(equalTo(StepOutputs.none))
+          result <- Step.succeed(42).run(21, ())
+        } yield assert(result)(equalTo(StepSuccess(21, 42)))
       ),
-      testM("It should be possible to create a flow that always succeeds with a value")(
+      testM("It should be possible to construct a Step that always fails with a given value")(
         for {
-          output <- Step.succeed(42).run
-        } yield assert(output)(equalTo(StepOutputs.fromValue(42)))
+          result <- Step.fail("Oops!").run.run
+        } yield assert(result)(fails(equalTo("Oops!")))
       ),
-      testM("It should be possible to create a flow that always succeeds with the given output and state")(
+      testM("It should be possible to construct a Step that modifies its output given an initial state")(
         for {
-          actual <- Step.succeed(value = 42, state = "What is the answer?").run
-        } yield assert(actual)(equalTo(StepOutputs(state = "What is the answer?", value = 42)))
+          result <- Step.modify { text: String => s"$text:${text.size}" -> text.size }.run("Hello", ())
+        } yield assert(result)(equalTo(StepSuccess("Hello:5", 5)))
       ),
-      testM("It should be possible to create a flow that always fails with a value")(
+      testM("It should be possible to construct a Step from a simple update function")(
         for {
-          result <- Step.fail("NO!!!").run.run
-        } yield assert(result)(fails(equalTo("NO!!!")))
+          result <-
+            Step
+              .update[List[String], List[String], String, String] { case (initialState: List[String], msg: String) =>
+                (msg :: initialState, msg.reverse)
+              }
+              .run(List("John", "Joe"), "Jack")
+        } yield assert(result)(equalTo(StepSuccess(state = List("Jack", "John", "Joe"), result = "kcaJ")))
       ),
-      testM("It should be possible to create a flow that produces the value of executing a function")(
-        checkM(Gen.int(1, 5000)) { input =>
+      testM("It should be possible to construct a behavior that gets the initial state unchanged.")(
+        for {
+          result <- Step.get[Set[Int]].run(Set(1, 2, 3, 4), Set(5, 6, 7, 8))
+        } yield assert(result)(equalTo(StepSuccess(Set(1, 2, 3, 4), Set(1, 2, 3, 4))))
+      ),
+      testM("It should be possible to construct a behavior that sets the state to a value.")(
+        checkM(Gen.alphaNumericString, Gen.alphaNumericString) { (input, s1) =>
           for {
-            actual  <- Step.fromFunction { n: Int => n * 2 }.run(input)
-            expected = StepOutputs.assignBoth(input * 2)
-          } yield assert(actual)(equalTo(expected))
+            result <- Step.set(input).run(s1, "Something")
+          } yield assert(result)(equalTo(StepSuccess(state = input, result = ())))
         }
-      ),
-      testM("It should be possible to create a flow from an Option when the value is a Some")(
+      )
+    ),
+    suite("Operations")(
+      testM("It should be possible to return a different constant value using as")(
         for {
-          actual <- Step.fromOption(Some(Widget("sprocket"))).run.map(_.value)
-        } yield assert(actual)(equalTo(Widget("sprocket")))
-      ),
-      testM("It should be possible to create a flow from an Option when the value is a None")(
-        for {
-          actual <- Step.fromOption(None).run.map(_.value).run
-        } yield assert(actual)(fails(isNone))
+          result <- Step.unit.as("Foo").run("S1", ())
+        } yield assert(result)(equalTo(StepSuccess("S1", "Foo")))
       )
     ),
     suite("Combining")(
-      testM("It should be possible to combine steps using the >>> operator.") {
-        val start  = Step.parameters[List[String]]
-        val next   = Step.stateful((_: Any, args: List[String]) => (args, args.headOption))
-        val myStep = start >>> next
-        assertM(myStep.run(List("Hello", "World")))(
-          equalTo(StepOutputs(state = List("Hello", "World"), value = Option("Hello")))
-        )
-      },
-      testM("It should be possible to combine flows using zip") {
-        val flowA                                                            = Step.withStateAndValue("A")
-        val flowB                                                            = Step.withStateAndValue(1)
-        val flow: Step[Any, (String, Int), Any, Any, Nothing, (String, Int)] = flowA zip flowB
-        assertM(flow.run)(equalTo(StepOutputs(state = ("A", 1), value = ("A", 1))))
-      },
-      testM("It should be possible to combine flows using the zip operator <*>") {
-        val flowA                                                            = Step.withStateAndValue("A")
-        val flowB                                                            = Step.withStateAndValue(1)
-        val flow: Step[Any, (String, Int), Any, Any, Nothing, (String, Int)] = flowA <*> flowB
-        assertM(flow.run)(equalTo(StepOutputs(state = ("A", 1), value = ("A", 1))))
-      },
       testM("It should be possible to sequence flows using flatMap") {
-        val flow = Step.succeed("true").flatMap(value => Step.succeed(s"The answer is: $value"))
-        assertM(flow.run)(equalTo(StepOutputs.fromValue("The answer is: true")))
-      },
-      testM("It should be possible to sequence flows using a for comprehension") {
-        for {
-          _ <- TestSystem.putEnv("PROFILE", "local")
-          out <- (for {
-                   cfg             <- Step.succeed(Map("profile.local.host" -> "127.0.0.1", "profile.default.host" -> "finos.org"))
-                   selectedProfile <- Step.fromEffect(zio.system.envOrElse("PROFILE", "default"))
-                   host            <- Step.succeed(cfg.getOrElse(s"profile.$selectedProfile.host", "morhir.org"))
-                 } yield host).run.map(_.value)
-        } yield assert(out)(equalTo("127.0.0.1"))
+        val behavior = Step.succeed("true").flatMap(value => Step.succeed(s"The answer is: $value")).run(21, 21)
+        assertM(behavior)(equalTo(StepSuccess(21, "The answer is: true")))
       }
-    ),
-    testM("It should be possible to rename a step without affecting its value") {
-      val theStep                                           = Step.succeed("Good Boy!")
-      val named: Step[Any, Unit, Any, Any, Nothing, String] = Step.name("Praise")(theStep)
-
-      for {
-        original <- theStep.run
-        actual   <- named.run
-      } yield assert(actual)(equalTo(original))
-    },
-    testM("It should be possible to rename a step without affecting its value") {
-      val theStep                                           = Step.succeed("Good Boy!")
-      val named: Step[Any, Unit, Any, Any, Nothing, String] = Step.name("Praise")(theStep)
-
-      for {
-        original <- theStep.run
-        actual   <- named.run
-      } yield assert(actual)(equalTo(original))
-    }
-  )
-
-  final case class Widget(name: String)
+    )
+  ).provideCustomLayer(StepUidGenerator.live ++ InstrumentationLogging.ignore)
 }

@@ -1,5 +1,7 @@
 # Flowz
 
+## Under Construction - API is changing
+
 The Flowz module in morphir, provides a library for functionally composing small units of executable content.
 
 At its core flowz is about composing individual `Step`s into a workflow. A `Step` allows you to model a potentially stateful operation in a pure functional way.
