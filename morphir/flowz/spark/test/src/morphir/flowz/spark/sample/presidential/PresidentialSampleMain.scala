@@ -50,7 +50,7 @@ object PresidentialSampleMain extends App {
 
     val initialize = stage { (_: Any, options: Options) =>
       Step.fromEffect(console.putStrLn(s"Options: $options")) *>
-        (loadExecutiveBranchInfo |+| loadLegislators).map { case (executiveData, legislatureData) =>
+        (loadExecutiveBranchInfo |+| loadLegislators).mapValue { case (executiveData, legislatureData) =>
           RawDataSources(executiveData = executiveData, legislatureData = legislatureData)
         }.mapOutputs((_, out) => (out, out))
     }

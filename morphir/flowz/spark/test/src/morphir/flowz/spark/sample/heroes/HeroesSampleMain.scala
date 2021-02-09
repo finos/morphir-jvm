@@ -87,12 +87,13 @@ object HeroesSampleMain extends App {
       heroAbilities <- loadHeroAbilities
       people        <- loadPeople
       alterEgos     <- loadAlterEgos
-    } yield DataSources(
-      abilities = abilities,
-      heroAbilities = heroAbilities,
-      people = people,
-      alterEgos = alterEgos
-    )).valueAsState
+      data = DataSources(
+               abilities = abilities,
+               heroAbilities = heroAbilities,
+               people = people,
+               alterEgos = alterEgos.value
+             )
+    } yield StepOutputs(data, data))
 
   val loadDataSources =
     SparkStep.parameters[Options].flatMap { options: Options =>
@@ -197,7 +198,7 @@ object HeroesSampleMain extends App {
         data  <- sparkModule.createDataset(data).delay(delay)
         _     <- console.putStrLn(s"Created/loaded Dataset of type ${tag.tag.longName}")
         _     <- sparkModule.withSpark(_ => data.show(false))
-      } yield data
+      } yield StepOutputs(data, data)
     }
 
   final case class DataSources(
