@@ -1,7 +1,7 @@
-package morphir.flowz
-import morphir.flowz.ExecutedFlow._
+package morphir.flowz.experimental
 
-final case class ExecutedFlow[+E](caseValue: FlowCase[E, ExecutedFlow[E]]) { self =>
+final case class ExecutedFlow[+E](caseValue: ExecutedFlow.FlowCase[E, ExecutedFlow[E]]) { self =>
+  import morphir.flowz.experimental.ExecutedFlow._
 
   /**
    * Folds over all nodes to produce a final result.

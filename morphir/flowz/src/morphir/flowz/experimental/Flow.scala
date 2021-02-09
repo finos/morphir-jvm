@@ -1,5 +1,6 @@
-package morphir.flowz
+package morphir.flowz.experimental
 
+import morphir.flowz._
 import zio._
 
 final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
@@ -13,7 +14,7 @@ final case class Flow[-InitialState, +StateOut, -InputMsg, -Env, +Err, +Result](
     Flow[InitialState, StateOut, InputMsg, Env, Err, Result]
   ]
 ) { self =>
-  import morphir.flowz.Flow._
+  import Flow._
 
   /**
    * Annotates each step in this flow with the specified property.

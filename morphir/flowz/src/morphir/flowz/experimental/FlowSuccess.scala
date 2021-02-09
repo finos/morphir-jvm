@@ -1,4 +1,6 @@
-package morphir.flowz
+package morphir.flowz.experimental
+
+import morphir.flowz.StepSuccess
 
 final case class FlowSuccess[+S, +A](state: S, result: A)
 object FlowSuccess {
