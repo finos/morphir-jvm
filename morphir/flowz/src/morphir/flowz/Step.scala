@@ -1,5 +1,6 @@
 package morphir.flowz
 
+import morphir.flowz.instrumentation.InstrumentationEvent
 import zio._
 
 /**
@@ -192,6 +193,8 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   def getState: Step[SIn, SOut, Msg, R, E, (SOut, A)] =
     flatMap(a => get.map(s => (s, a)))
 
+  def label: Option[String] = None
+
   /**
    * Returns a step whose success is mapped by the specified function f.
    */
@@ -271,24 +274,32 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Runs the step.
    */
-  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, StepSuccess[SOut, A]] =
+  final def run(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
     run((), ())
 
   /**
    * Runs the step.
    */
-  final def run(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
-    behavior(state, message)
+  final def run(state: SIn, message: Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
+    for {
+      uid           <- StepUid.nextUid
+      labelResolved <- ZIO.succeed(label getOrElse "N/A")
+      _ <- iLog.trace(
+             InstrumentationEvent.runningStep(s"Running Step[Label=$labelResolved; Uid=$uid;]", uid, labelResolved)
+           )
+      result <- behavior(state, message)
+    } yield result
 
   /**
    * Runs the step.
    */
-  final def run(message: Msg)(implicit ev: Any <:< SIn): ZIO[R, E, StepSuccess[SOut, A]] = run((), message)
+  final def run(message: Msg)(implicit ev: Any <:< SIn): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
+    run((), message)
 
   /**
    * Runs the step.
    */
-  final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R, E, A] =
+  final def runResult(implicit ev1: Any <:< SIn, ev2: Any <:< Msg): ZIO[R with StepRuntimeEnv, E, A] =
     run((), ()).map(_.result)
 
   /**
@@ -319,6 +330,9 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
         }
       )
     }
+
+  def withLabel(label: String): Step[SIn, SOut, Msg, R, E, A] =
+    StepWithMetadata(label = Option(label), underlyingStep = self)
 
   def zip[SIn1 <: SIn, In1 <: Msg, R1 <: R, E1 >: E, SOut1, B](
     that: Step[SIn1, SOut1, In1, R1, E1, B]
@@ -552,14 +566,36 @@ object Step extends StepArities with ZBehaviorSyntax {
   final class FromEffectFn[-SIn, +SOut, -Msg, -R, +E, +A] extends ((SIn, Msg) => ZIO[R, E, (SOut, A)]) {
     def apply(initialState: SIn, message: Msg): ZIO[R, E, (SOut, A)] = ???
   }
+
+  final case class StepWithMetadata[-SIn, +SOut, -Msg, -R, +E, +A](
+    override val label: Option[String],
+    private val underlyingStep: Step[SIn, SOut, Msg, R, E, A]
+  ) extends Step[SIn, SOut, Msg, R, E, A] {
+
+    /**
+     * Defines the underlying behavior of this `Step`.
+     */
+    protected def behavior(state: SIn, message: Msg): ZIO[R, E, StepSuccess[SOut, A]] =
+      underlyingStep.behavior(state, message)
+  }
 }
 
 object stepExample extends App {
   import zio.console.Console
+  import zio.logging.LogLevel
+  import morphir.flowz.instrumentation.InstrumentationLogging
+
+  def defineStep[SIn, SOut, Msg, R, E, A](label: String)(
+    theStep: Step[SIn, SOut, Msg, R, E, A]
+  ): Step[SIn, SOut, Msg, R with StepRuntimeEnv, E, A] =
+    theStep.withLabel(label)
+  //TODO: This is where you could do something like add an Aspect to the step
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
-    val behavior1 = Step.accessServiceM[Console.Service](_.putStrLn("Hi"))
-    //val behavior1 = Step.fromZIO(console.putStrLn("Hi"))
-    behavior1.run.exitCode
+    val step1 = defineStep("Say Hi")(Step.accessServiceM[Console.Service](_.putStrLn("Hi")))
+
+    step1.run.exitCode.provideCustomLayer(
+      StepUidGenerator.live ++ InstrumentationLogging.console(logLevel = LogLevel.Trace)
+    )
   }
 }

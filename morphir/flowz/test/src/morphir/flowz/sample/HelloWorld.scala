@@ -1,6 +1,8 @@
 package morphir.flowz.sample
 
 import morphir.flowz.Step
+import morphir.flowz.StepUidGenerator
+import morphir.flowz.instrumentation.InstrumentationLogging
 import zio._
 
 object HelloWorld extends App {
@@ -9,7 +11,10 @@ object HelloWorld extends App {
       console.putStrLn(s"Hello, ${greeting.getOrElse("world")}")
     }
 
-    helloBehavior.run(args.headOption).exitCode
+    helloBehavior
+      .run(args.headOption)
+      .provideCustomLayer(StepUidGenerator.live ++ InstrumentationLogging.console())
+      .exitCode
 
   }
 }

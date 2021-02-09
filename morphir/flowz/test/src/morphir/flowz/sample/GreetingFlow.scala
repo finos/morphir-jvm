@@ -1,6 +1,7 @@
 package morphir.flowz.sample
 
-import morphir.flowz.{ Step, FuncStep, StatelessStep }
+import morphir.flowz.instrumentation.InstrumentationLogging
+import morphir.flowz.{ FuncStep, StatelessStep, Step, StepUidGenerator }
 import zio._
 import zio.console.Console
 
@@ -21,6 +22,6 @@ object GreetingFlow extends App {
 
     val myStep = getTarget >>> greeter
 
-    myStep.run(args).exitCode
+    myStep.run(args).provideCustomLayer(StepUidGenerator.live ++ InstrumentationLogging.console()).exitCode
   }
 }

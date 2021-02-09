@@ -21,7 +21,7 @@ object instrumentor {
       def logLine(line: String): UIO[Unit] = logger.log(InstrumentationEvent.logLine(line))
     }
 
-    val fromLogger: ZLayer[Has[Logger[InstrumentationEvent]], Nothing, Instrumentor] = ZLayer.fromService {
+    val fromLogger: ZLayer[InstrumentationLogging, Nothing, Instrumentor] = ZLayer.fromService {
       logger: Logger[InstrumentationEvent] => LoggingInstrumentor(logger)
     }
 

@@ -1,5 +1,6 @@
 package morphir
 
+import morphir.flowz.instrumentation.InstrumentationLogging
 import morphir.flowz.instrumentor.Instrumentor
 import zio._
 import zio.clock.Clock
@@ -21,6 +22,8 @@ package object flowz {
   type ExecutableFlow[-InitialState, -InputMsg, -R, +E] = Flow[InitialState, Any, InputMsg, R, E, ExitCode]
   type FlowArgs                                         = Has[FlowArguments]
   type FlowBaseEnv                                      = Instrumentor with Clock
+  type StepUidGenerator                                 = uidGenerator.UidGenerator
+  type StepRuntimeEnv                                   = InstrumentationLogging with StepUidGenerator with Clock
 
 //  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
@@ -52,6 +55,8 @@ package object flowz {
    * rely on any inputs to produce its outputs.
    */
   type IndieStep[+S, +E, +A] = Step[Any, S, Any, Any, E, A]
+
+  type StepUid = uidGenerator.Uid
 
 //  def behavior[InputState, OutputState, Msg, R, Err, A](
 //    f: (InputState, Msg) => ZIO[R, Err, (OutputState, A)]

@@ -1,5 +1,7 @@
 package morphir.flowz
 
+import zio.logging.LogLevel
+
 trait StepArities {
 
   final def mapN[SIn, SA, SB, Msg, R, E, A, B, SOut, Result, MA, MB](
@@ -420,18 +422,22 @@ trait StepArities {
 
 object mapNExamples extends zio.App {
   import zio._
+  import morphir.flowz.instrumentation.InstrumentationLogging
+
   def run(args: List[String]): URIO[ZEnv, ExitCode] = {
-    val behaviorA = Step.set("SA").as('A')
-    val behaviorB = Step.set(List("SA")).as("B")
-    val finalBehavior = Step.mapN(behaviorA, behaviorB) { case (a, b) =>
+    val stepA = Step.set("SA").as('A')
+    val stepB = Step.set(List("SA")).as("B")
+    val finalStep = Step.mapN(stepA, stepB) { case (a, b) =>
       StepSuccess(state = (a.state, b.state), result = (a.result, b.result))
     }
 
-    val finalBehaviorAlt = Step.mapN(behaviorA, behaviorB) { case (a, b) =>
+    val finalStepAlt = Step.mapN(stepA, stepB) { case (a, b) =>
       ((a.state, b.state), (a.result, b.result))
     }
 
-    (finalBehavior.run.tap(res => console.putStrLn(s"Result Orig: $res")) *>
-      finalBehaviorAlt.run.tap(res => console.putStrLn(s"Result  Alt: $res"))).exitCode
+    (
+      (finalStep.run.tap(res => console.putStrLn(s"Result Orig: $res")) *>
+        finalStepAlt.run.tap(res => console.putStrLn(s"Result  Alt: $res"))).exitCode
+    ).provideCustomLayer(StepUidGenerator.live ++ InstrumentationLogging.console(logLevel = LogLevel.Trace))
   }
 }

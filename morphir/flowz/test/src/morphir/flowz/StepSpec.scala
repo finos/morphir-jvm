@@ -1,5 +1,6 @@
 package morphir.flowz
 
+import morphir.flowz.instrumentation.InstrumentationLogging
 import zio.test._
 import zio.test.Assertion._
 
@@ -64,5 +65,5 @@ object StepSpec extends DefaultRunnableSpec {
         assertM(behavior)(equalTo(StepSuccess(21, "The answer is: true")))
       }
     )
-  )
+  ).provideCustomLayer(StepUidGenerator.live ++ InstrumentationLogging.ignore)
 }
