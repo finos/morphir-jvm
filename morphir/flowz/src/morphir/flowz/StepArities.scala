@@ -5,12 +5,12 @@ import zio.logging.LogLevel
 trait StepArities {
 
   final def mapN[SIn, SA, SB, Msg, R, E, A, B, SOut, Result, MA, MB](
-    behaviorA: Step[SIn, SA, Msg, R, E, A],
-    behaviorB: Step[SIn, SB, Msg, R, E, B]
+    stepA: Step[SIn, SA, Msg, R, E, A],
+    stepB: Step[SIn, SB, Msg, R, E, B]
   )(
     f: (StepSuccess[SA, A], StepSuccess[SB, B]) => StepSuccess[SOut, Result]
   ): Step[SIn, SOut, Msg, R, E, Result] =
-    behaviorA.zipWith(behaviorB)(f)
+    stepA.zipWith(stepB)(f)
 
   final def mapParN[SIn, SA, SB, Msg, R, E, A, B, SOut, Result](
     behaviorA: Step[SIn, SA, Msg, R, E, A],

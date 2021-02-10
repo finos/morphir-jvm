@@ -286,7 +286,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
       }
     )
 
-  def toEffect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
+  def toEffect: ZBehavior[SIn, SOut, Msg, R, E, A] = ZIO.accessM[(SIn, Msg, R)] { case (stateIn, msg, r) =>
     behavior(stateIn, msg).provide(r)
   }
 
@@ -354,7 +354,7 @@ object Step extends StepArities with ZBehaviorSyntax {
   def fail[E](error: E): IndieStep[Nothing, E, Nothing] = Fail(error)
 
   def fromEffect[SIn, SOut, Msg, R, E, A](
-    effect: ZIO[(SIn, Msg, R), E, StepSuccess[SOut, A]]
+    effect: ZBehavior[SIn, SOut, Msg, R, E, A]
   ): Step[SIn, SOut, Msg, R, E, A] =
     FromEffect(effect)
 

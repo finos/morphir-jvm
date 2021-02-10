@@ -55,11 +55,11 @@ package object flowz {
    */
   type IndieStep[+S, +E, +A] = Step[Any, S, Any, Any, E, A]
 
-  type StepUid = uidGenerator.Uid
+  type StepExecutionId = uidGenerator.Uid
 
   def step[SIn, SOut, Msg, R, Err, A](
     label: String
-  )(theStep: Step[SIn, SOut, Msg, R, Err, A]): RunnableStep[SIn, SOut, Msg, R, Err, A] =
+  )(theStep: Step[SIn, SOut, Msg, R, Err, A]): RunnableStep[SIn, SOut, Msg, R with StepRuntimeEnv, Err, A] =
     RunnableStep.step(label)(theStep)
 
   /**

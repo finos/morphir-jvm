@@ -2,7 +2,7 @@ package morphir.flowz
 
 import zio.URIO
 
-object StepUid {
-  def nextUid: URIO[StepUidGenerator, StepUid] =
+object StepExecutionId {
+  def nextExecutionId: URIO[StepUidGenerator, StepExecutionId] =
     uidGenerator.nextUid[Step.type]
 }

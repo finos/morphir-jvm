@@ -10,7 +10,7 @@ object GreetingFlow extends App {
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
     // Let's start with a behavior that gets the optional target
-    val getTarget: RunnableStep[Any, Any, List[String], Any, Throwable, Option[Target]] =
+    val getTarget: RunnableStep[Any, Any, List[String], Any with StepRuntimeEnv, Throwable, Option[Target]] =
       step("get-target")(Step.fromFunction { args: List[String] =>
         args.headOption.map(Target)
       })

@@ -12,7 +12,7 @@ final case class RunnableStep[-SIn, +SOut, -Msg, -R, +E, +A](
    */
   protected[flowz] def behavior(state: SIn, message: Msg): ZIO[R with StepRuntimeEnv, E, StepSuccess[SOut, A]] =
     for {
-      uid           <- StepUid.nextUid
+      uid           <- StepExecutionId.nextExecutionId
       labelResolved <- ZIO.succeed(label getOrElse "N/A")
       _             <- iLog.trace(InstrumentationEvent.stepExecutionStarted(uid, labelResolved))
       result <-
