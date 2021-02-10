@@ -1,6 +1,6 @@
 package morphir.flowz.instrumentation
 
-import morphir.flowz.{ NodePath, StepUid }
+import morphir.flowz.{ NodePath, StepExecutionId }
 import zio.Cause
 import zio.logging.LogFormat.LineFormatter
 import zio.logging.{ LogContext, LogFormat }
@@ -14,62 +14,67 @@ object InstrumentationEvent {
   def logLine(line: String): LogLine = LogLine(line)
   def stepExecutionStarted(
     message: String,
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     path: Option[NodePath] = None
   ): StepExecutionStarted =
-    StepExecutionStarted(message, uid, label, path)
+    StepExecutionStarted(message, executionId, label, path)
 
-  def stepExecutionStarted(uid: StepUid, label: String, path: Option[NodePath] = None): StepExecutionStarted = {
+  def stepExecutionStarted(uid: StepExecutionId, label: String, path: Option[NodePath]): StepExecutionStarted = {
     val message = s"Step execution started for Step[Label=$label; Uid=$uid;]"
     StepExecutionStarted(message, uid, label, path)
   }
 
+  def stepExecutionStarted(uid: StepExecutionId, label: String): StepExecutionStarted = {
+    val message = s"Step execution started for Step[Label=$label; Uid=$uid;]"
+    StepExecutionStarted(message, uid, label, None)
+  }
+
   def stepExecutionFailed(
     message: String,
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     cause: Cause[Any] = Cause.empty,
     path: Option[NodePath] = None
-  ): StepExecutionFailed = StepExecutionFailed(message, uid, label, cause, path)
+  ): StepExecutionFailed = StepExecutionFailed(message, executionId, label, cause, path)
 
   def stepExecutionFailed(
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     cause: Cause[Any]
   ): StepExecutionFailed =
-    stepExecutionFailed(uid, label, cause, None)
+    stepExecutionFailed(executionId, label, cause, None)
 
   def stepExecutionFailed(
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     cause: Cause[Any],
     path: Option[NodePath]
   ): StepExecutionFailed = {
-    val message = s"Step execution failed for Step[Label=$label; Uid=$uid], because of ${cause.prettyPrint}"
-    StepExecutionFailed(message, uid, label, cause, path)
+    val message = s"Step execution failed for Step[Label=$label; Uid=$executionId], because of ${cause.prettyPrint}"
+    StepExecutionFailed(message, executionId, label, cause, path)
   }
 
   def stepExecutionSucceeded(
     message: String,
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     path: Option[NodePath] = None
-  ): StepExecutionSucceeded = StepExecutionSucceeded(message, uid, label, path)
+  ): StepExecutionSucceeded = StepExecutionSucceeded(message, executionId, label, path)
 
   def stepExecutionSucceeded(
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String
   ): StepExecutionSucceeded =
-    stepExecutionSucceeded(uid, label, None)
+    stepExecutionSucceeded(executionId, label, None)
 
   def stepExecutionSucceeded(
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     path: Option[NodePath]
   ): StepExecutionSucceeded = {
-    val message = s"Step execution succeeded for Step[Label=$label; Uid=$uid]"
-    StepExecutionSucceeded(message, uid, label, path)
+    val message = s"Step execution succeeded for Step[Label=$label; Uid=$executionId]"
+    StepExecutionSucceeded(message, executionId, label, path)
   }
 
   /**
@@ -96,12 +101,16 @@ object InstrumentationEvent {
   final case class Trace[+Data](message: String, contextData: Data, source: String, path: Option[NodePath] = None)
       extends InstrumentationEvent
 
-  final case class StepExecutionStarted(message: String, uid: StepUid, label: String, path: Option[NodePath] = None)
-      extends InstrumentationEvent
+  final case class StepExecutionStarted(
+    message: String,
+    executionId: StepExecutionId,
+    label: String,
+    path: Option[NodePath] = None
+  ) extends InstrumentationEvent
 
   final case class StepExecutionFailed(
     message: String,
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     cause: Cause[Any] = Cause.empty,
     path: Option[NodePath] = None
@@ -109,7 +118,7 @@ object InstrumentationEvent {
 
   final case class StepExecutionSucceeded(
     message: String,
-    uid: StepUid,
+    executionId: StepExecutionId,
     label: String,
     path: Option[NodePath] = None
   ) extends InstrumentationEvent
