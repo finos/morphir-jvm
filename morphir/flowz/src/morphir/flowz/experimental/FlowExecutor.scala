@@ -1,6 +1,6 @@
 package morphir.flowz.experimental
 
-import morphir.flowz.{ ExecutableFlow, Properties }
+import morphir.flowz.Properties
 import zio.{ ExecutionStrategy, Has, Layer, RIO, UIO }
 
 abstract class FlowExecutor[+InitialState, +Msg, +R <: Has[_], E] {

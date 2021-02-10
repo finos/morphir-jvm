@@ -4,7 +4,7 @@ import zio.console
 import zio.test._
 import zio.test.Assertion._
 
-object WorkerSpec extends DefaultRunnableSpec {
+object WorkerSpec extends DefaultRunnableSpec { self =>
   def spec = suite("Worker Specs")(
     testM("It should be possible to run a simple worker")(
       for {

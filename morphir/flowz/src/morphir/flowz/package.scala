@@ -1,11 +1,9 @@
 package morphir
 
-import morphir.flowz.experimental.{ ExecutedFlow, Flow }
 import morphir.flowz.instrumentation.InstrumentationLogging
-import morphir.flowz.experimental.instrumentor.Instrumentor
 import zio._
 import zio.clock.Clock
-import zio.duration.Duration
+import zio.console.Console
 import zio.prelude._
 
 import scala.collection.immutable.SortedSet
@@ -20,11 +18,11 @@ package object flowz {
   object Variables extends Subtype[Map[String, String]]
   type Variables = Variables.Type
 
-  type ExecutableFlow[-InitialState, -InputMsg, -R, +E] = Flow[InitialState, Any, InputMsg, R, E, ExitCode]
-  type FlowArgs                                         = Has[FlowArguments]
+  type FlowArgs = Has[FlowArguments]
 
   type StepUidGenerator = uidGenerator.UidGenerator
   type StepRuntimeEnv   = InstrumentationLogging with StepUidGenerator with Clock
+  type FlowInitEnv      = FlowArgs with InstrumentationLogging with Clock with Console
 
 //  type ForkedStep[-StateIn, +StateOut, -Env, -Params, +Err, +Output] =
 //    Act[StateIn, Unit, Env, Params, Nothing, Fiber.Runtime[Err, StepOutputs[StateOut, Output]]]
@@ -57,26 +55,12 @@ package object flowz {
    */
   type IndieStep[+S, +E, +A] = Step[Any, S, Any, Any, E, A]
 
-  type StepUid = uidGenerator.Uid
+  type StepExecutionId = uidGenerator.Uid
 
-//  def behavior[InputState, OutputState, Msg, R, Err, A](
-//    f: (InputState, Msg) => ZIO[R, Err, (OutputState, A)]
-//  )(implicit ev: CanFail[Err]): Step[InputState, OutputState, Msg, R, Err, A] =
-//    Step[InputState, OutputState, Msg, R, Err, A](f)
-
-//  def behavior[SIn, OutputState, Msg, R, E, A](
-//    effect: ZIO[R with InputState[SIn], E, A]
-//  ): Step[SIn, OutputState, Msg, R, Nothing, A] =
-//    Step[SIn, OutputState, Msg, R, E, A](effect)
-
-  def process[SIn, SOut, In, R, Err, Out](label: String)(
-    children: Flow[SIn, SOut, In, R, Err, Out]*
-  ): Flow[SIn, SOut, In, R, Err, Out] =
-    Flow.process(label, children = ZManaged.succeed(children.toVector))
-
-  def step[SIn, SOut, In, R, Err, Out](label: String)(
-    behavior: Step[SIn, SOut, In, R, Err, Out]
-  ): Flow[SIn, SOut, In, R, Err, Out] = Flow.step(label, behavior, PropertyMap.empty)
+  def step[SIn, SOut, Msg, R, Err, A](
+    label: String
+  )(theStep: Step[SIn, SOut, Msg, R, Err, A]): RunnableStep[SIn, SOut, Msg, R with StepRuntimeEnv, Err, A] =
+    RunnableStep.step(label)(theStep)
 
   /**
    * The `Properties` trait provides access to a property map that flows and behaviors
@@ -155,14 +139,15 @@ package object flowz {
   }
 
   /**
-   * A `FlowReporter[E]` is capable of reporting flow execution results with error type `E`.
+   * Aspect syntax allows you to apply an aspect to your `Step`.
    */
-  type FlowReporter[-E] = (Duration, ExecutedFlow[E]) => URIO[Instrumentor, Unit]
-  object FlowReporter {
+  implicit final class AspectSyntax[-SIn, +SOut, -P, -R, +E, +A](private val step: Step[SIn, SOut, P, R, E, A]) {
 
     /**
-     * A `FlowReporter` that does nothing.
+     * Syntax for adding aspects.
      */
-    val silent: FlowReporter[Any] = (_, _) => ZIO.unit
+    def @@[SIn1 <: SIn, SOut1 >: SOut, P1 <: P, R1 <: R, E1 >: E, A1 >: A](
+      aspect: StepAspect[SIn1, SOut1, P1, R1, E1, A1]
+    ): Step[SIn1, SOut1, P1, R1, E1, A1] = aspect(step)
   }
 }
