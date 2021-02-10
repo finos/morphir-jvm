@@ -12,8 +12,18 @@ sealed abstract class InstrumentationEvent
 object InstrumentationEvent {
 
   def logLine(line: String): LogLine = LogLine(line)
-  def runningStep(message: String, uid: StepUid, label: String, path: Option[NodePath] = None): RunningStep =
-    RunningStep(message, uid, label, path)
+  def stepExecutionStarted(
+    message: String,
+    uid: StepUid,
+    label: String,
+    path: Option[NodePath] = None
+  ): StepExecutionStarted =
+    StepExecutionStarted(message, uid, label, path)
+
+  def stepExecutionStarted(uid: StepUid, label: String, path: Option[NodePath] = None): StepExecutionStarted = {
+    val message = s"Step execution started for Step[Label=$label; Uid=$uid;]"
+    StepExecutionStarted(message, uid, label, path)
+  }
 
   def stepExecutionFailed(
     message: String,
@@ -86,7 +96,7 @@ object InstrumentationEvent {
   final case class Trace[+Data](message: String, contextData: Data, source: String, path: Option[NodePath] = None)
       extends InstrumentationEvent
 
-  final case class RunningStep(message: String, uid: StepUid, label: String, path: Option[NodePath] = None)
+  final case class StepExecutionStarted(message: String, uid: StepUid, label: String, path: Option[NodePath] = None)
       extends InstrumentationEvent
 
   final case class StepExecutionFailed(

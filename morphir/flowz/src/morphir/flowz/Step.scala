@@ -94,7 +94,7 @@ abstract class Step[-SIn, +SOut, -Msg, -R, +E, +A] { self =>
   /**
    * Get this Step as an effect.
    */
-  protected final lazy val asEffect: ZBehavior[SIn, SOut, Msg, R, E, A] = toEffect
+  protected[flowz] final lazy val asEffect: ZBehavior[SIn, SOut, Msg, R, E, A] = toEffect
 
   /**
    * Defines the underlying behavior of this `Step`.

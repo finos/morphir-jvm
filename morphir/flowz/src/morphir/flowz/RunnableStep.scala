@@ -14,9 +14,7 @@ final case class RunnableStep[-SIn, +SOut, -Msg, -R, +E, +A](
     for {
       uid           <- StepUid.nextUid
       labelResolved <- ZIO.succeed(label getOrElse "N/A")
-      _ <- iLog.trace(
-             InstrumentationEvent.runningStep(s"Running Step[Label=$labelResolved; Uid=$uid;]", uid, labelResolved)
-           )
+      _             <- iLog.trace(InstrumentationEvent.stepExecutionStarted(uid, labelResolved))
       result <-
         underlyingStep
           .behavior(state, message)
