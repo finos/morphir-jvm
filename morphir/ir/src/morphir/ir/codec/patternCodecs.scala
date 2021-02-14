@@ -94,8 +94,8 @@ object patternCodecs {
     implicit def readWriter[A: ReadWriter]: ReadWriter[Pattern.TuplePattern[A]] =
       readwriter[ujson.Value].bimap(pat => ujson.Arr(ujson.Str(Tag), writeJs(pat.attributes)), _ => ???)
     //      readwriter[(String, A, List[Pattern[A]])].bimap(
-//        pat => (Tag, pat.attributes, pat.elementPatterns), {
-//          case (tag, attributes, elementPatterns) if tag == Tag => Pattern.TuplePattern(attributes, elementPatterns)
+//        pat => (Tag, pat.annotate, pat.elementPatterns), {
+//          case (tag, annotate, elementPatterns) if tag == Tag => Pattern.TuplePattern(annotate, elementPatterns)
 //          case (tag, _, _)                                      => throw DecodeError.unexpectedTag(tag, Tag)
 //        }
 //      )
