@@ -41,7 +41,7 @@ object LiteralSpec extends DefaultRunnableSpec with JsonSpec {
       }
     ),
     suite("JSON decoding")(
-      test("Decoding a literal with no annotate") {
+      test("Decoding a literal with no attributes") {
         val json   = """["literal", {}, ["bool_literal", true]]""".stripMargin
         val result = decodeString[Literal[scala.Unit]](json)
 
