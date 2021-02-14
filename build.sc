@@ -36,7 +36,7 @@ object Deps {
     val zioLogging             = "0.5.6"
     val zioMagic               = "0.1.8"
     val zioNio                 = "1.0.0-RC10"
-    val zioPrelude             = "1.0.0-RC1"
+    val zioPrelude             = "1.0.0-RC2"
     val zioProcess             = "0.2.0"
     val newtype                = "0.4.4"
     def decline(scalaVersion: String) = scalaVersion match {
@@ -52,6 +52,7 @@ object Deps {
     val slf4zio       = "1.0.0"
     val scalactic     = "3.1.2"
     val scalaUri      = "2.2.2"
+    val spark         = "2.4.7"
     val oslib         = "0.6.2"
     val quill         = "3.6.0-RC3"
   }
@@ -220,28 +221,28 @@ object morphir extends Module {
       }
     }
   }
-
-  object scala extends Module {
-
-    object jvm extends Cross[JvmMorphirScalaModule](Versions.scala213)
-    class JvmMorphirScalaModule(val crossScalaVersion: String)
-        extends CrossScalaModule
-        with CommonJvmModule
-        with ScalaMacroModule
-        with MorphirPublishModule { self =>
-      def artifactName = "morphir-scala"
-      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
-
-      def ivyDeps = Agg(
-        ivy"org.scalameta::scalameta:${Versions.scalameta}"
-      )
-
-      object test extends Tests {
-        def platformSegment: String = self.platformSegment
-        def crossScalaVersion       = JvmMorphirScalaModule.this.crossScalaVersion
-      }
-    }
-  }
+//
+//  object scala extends Module {
+//
+//    object jvm extends Cross[JvmMorphirScalaModule](Versions.scala213)
+//    class JvmMorphirScalaModule(val crossScalaVersion: String)
+//        extends CrossScalaModule
+//        with CommonJvmModule
+//        with ScalaMacroModule
+//        with MorphirPublishModule { self =>
+//      def artifactName = "morphir-scala"
+//      def moduleDeps   = Seq(morphir.ir.jvm(crossScalaVersion))
+//
+//      def ivyDeps = Agg(
+//        ivy"org.scalameta::scalameta:${Versions.scalameta}"
+//      )
+//
+//      object test extends Tests {
+//        def platformSegment: String = self.platformSegment
+//        def crossScalaVersion       = JvmMorphirScalaModule.this.crossScalaVersion
+//      }
+//    }
+//  }
   object sdk extends Module {
 
     object core extends Module {
@@ -260,6 +261,42 @@ object morphir extends Module {
         object test extends Tests {
           def platformSegment: String = self.platformSegment
           def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
+        }
+      }
+    }
+
+    object spark extends Module {
+      object jvm
+          extends Cross[JvmMorphirSdkSpark](
+            Versions.scala212,
+            Versions.scala211
+          )
+      class JvmMorphirSdkSpark(val crossScalaVersion: String)
+          extends CrossScalaModule
+          with CommonJvmModule
+          with MorphirPublishModule { self =>
+
+        def artifactName = "morphir-sdk-spark"
+        def compileIvyDeps = Agg(
+          ivy"org.apache.spark::spark-sql:2.4.7",
+          ivy"com.github.ghik:::silencer-lib:${Versions.silencer}"
+        )
+        def ivyDeps = Agg(
+          ivy"dev.zio::zio-prelude:${Versions.zioPrelude}"
+        )
+        def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+        def moduleDeps          = Seq(morphir.sdk.core.jvm(crossScalaVersion))
+
+        object test extends Tests {
+          def platformSegment: String = self.platformSegment
+          def crossScalaVersion       = JvmMorphirSdkSpark.this.crossScalaVersion
+
+          override def ivyDeps = super.ivyDeps() ++
+            Agg(
+              ivy"dev.zio::zio-logging:${Versions.zioLogging}",
+              ivy"dev.zio::zio-logging-slf4j:${Versions.zioLogging}",
+              ivy"org.apache.spark::spark-sql:2.4.7"
+            )
         }
       }
     }

@@ -2,16 +2,16 @@ package morphir.sdk
 import morphir.sdk.Maybe.Maybe
 import morphir.sdk.Basics.Order
 
-import java.math.{ BigDecimal => BigDec, RoundingMode }
+import java.math.{ BigDecimal => BigDec }
 import scala.util.control.NonFatal
 
-object Decimal {
+object Decimal extends DecimalModuleCompat {
 
-  type Decimal = BigDec
+  type Decimal = BigDecimal
 
   object Decimal {
-    def apply(value: BigDec): Decimal                  = value
-    def apply(value: scala.BigDecimal): Decimal        = value.bigDecimal
+    def apply(value: BigDec): Decimal                  = BigDecimal(value)
+    def apply(value: scala.BigDecimal): Decimal        = value
     def apply(value: morphir.sdk.Float.Float): Decimal = BigDecimal.exact(value).bigDecimal
     def apply(value: morphir.sdk.Int.Int): Decimal     = BigDecimal(value).bigDecimal
 
@@ -20,9 +20,9 @@ object Decimal {
   /**
    * Absolute value (sets the sign as positive)
    */
-  def abs(value: Decimal): Decimal = value.abs()
+  def abs(value: Decimal): Decimal = value.abs
 
-  def add(a: Decimal)(b: Decimal): Decimal = a.add(b)
+  def add(a: Decimal)(b: Decimal): Decimal = a + b
 
   def bps(n: morphir.sdk.Int.Int): Decimal = Decimal(n * 0.0001)
 
@@ -37,7 +37,7 @@ object Decimal {
     if (b.compareTo(zero) == 0) Maybe.nothing
     else
       try {
-        Maybe.just(a.divide(b))
+        Maybe.just(a / b)
       } catch {
         case NonFatal(_) => Maybe.nothing
       }
@@ -83,39 +83,39 @@ object Decimal {
   def millionth(n: morphir.sdk.Int.Int): Decimal =
     Decimal(n * 0.000001)
 
-  def mul(a: Decimal)(b: Decimal): Decimal = a.multiply(b)
+  def mul(a: Decimal)(b: Decimal): Decimal = a * b
 
   @inline def ne(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = neq(a)(b)
   def neq(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool        = a.compareTo(b) != 0
 
-  def negate(value: Decimal): Decimal = value.negate()
+  def negate(value: Decimal): Decimal = -value
 
   def round(decimal: Decimal): Decimal = {
-    val scale = decimal.scale()
-    decimal.setScale(scale, RoundingMode.HALF_EVEN)
+    val scale = decimal.scale
+    decimal.setScale(scale, BigDecimal.RoundingMode.HALF_EVEN)
   }
 
   def shiftDecimalLeft(n: morphir.sdk.Int.Int)(value: Decimal): Decimal =
-    value.scaleByPowerOfTen(-n.intValue()) //TODO: When we align Int to Int this should settle in correctly
+    value.bigDecimal.scaleByPowerOfTen(-n.intValue()) //TODO: When we align Int to Int this should settle in correctly
 
   def shiftDecimalRight(n: morphir.sdk.Int.Int)(value: Decimal): Decimal =
-    value.scaleByPowerOfTen(n.intValue()) //TODO: When we align Int to Int this should settle in correctly
+    value.bigDecimal.scaleByPowerOfTen(n.intValue()) //TODO: When we align Int to Int this should settle in correctly
 
-  def sub(a: Decimal)(b: Decimal): Decimal = a.subtract(b)
+  def sub(a: Decimal)(b: Decimal): Decimal = a - b
 
   def thousand(n: morphir.sdk.Int.Int): Decimal =
     Decimal(n * 1000)
 
   def toFloat(value: Decimal): morphir.sdk.Float.Float =
-    morphir.sdk.Float.Float(value.doubleValue())
+    morphir.sdk.Float.Float(value.toDouble)
 
   //TODO: Make sure the Elm call and this call return the same value
   def toString(value: Decimal): morphir.sdk.String.String = value.toString
 
   def truncate(decimal: Decimal): Decimal = {
     // Since morphir's Int is actually a Long this isn't really safe
-    val scale = decimal.scale()
-    decimal.setScale(scale, RoundingMode.DOWN)
+    val scale = decimal.scale
+    decimal.setScale(scale, BigDecimal.RoundingMode.DOWN)
   }
 
   /**
