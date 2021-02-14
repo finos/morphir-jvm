@@ -17,6 +17,11 @@ object Decimal extends DecimalModuleCompat {
 
   }
 
+  @inline def apply(value: BigDec): Decimal                  = Decimal.apply(value)
+  @inline def apply(value: scala.BigDecimal): Decimal        = Decimal.apply(value)
+  @inline def apply(value: morphir.sdk.Float.Float): Decimal = Decimal.apply(value)
+  @inline def apply(value: morphir.sdk.Int.Int): Decimal     = Decimal.apply(value)
+
   /**
    * Absolute value (sets the sign as positive)
    */
