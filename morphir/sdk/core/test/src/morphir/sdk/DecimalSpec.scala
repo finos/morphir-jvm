@@ -1,7 +1,7 @@
 package morphir.sdk
 
 import zio.test.Assertion._
-import zio.test.{ assert, DefaultRunnableSpec }
+import zio.test._
 
 object DecimalSpec extends DefaultRunnableSpec {
   def spec = suite("Decimal Spec")(
