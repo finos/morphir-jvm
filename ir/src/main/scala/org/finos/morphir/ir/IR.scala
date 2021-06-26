@@ -6,18 +6,6 @@ case class Path(path:List[Name])
 
 case class FQName(packagePath:Path, modulePath:Path, localName:Name)
 
-case class Type[+A](ann:A, typeDetails:TypeDetails[A])
-
-case class Field[+A](name:String, fieldType:Type[A])
-enum TypeDetails[+A]:
-    case Variable(name:Name)
-    case Reference(fqName:FQName, types:List[Type[A]])
-    case Tuple(components:List[Type[A]])
-    case Record(fields:List[Field[A]])
-    case ExtensibleRecord(name:Name, fields:List[Field[A]])
-    case Function(parameters:Type[A], returnType:Type[A])
-    case Unit
-
 
 case class Value[+VA,+TA](ann:VA, valueDetails:ValueDetails[VA,TA])
 
@@ -33,6 +21,8 @@ enum ValueDetails[+VA,+TA]:
     case FieldFunction(name:Name)
     case Apply(function:Value[VA,TA], parameters:Value[VA,TA])
     case Lambda(parameters:Pattern[VA], body:Value[VA,TA])
+    case LetDefinition(binding:Name) //TODO: Finish up
+
 
 enum Lit:
     case Bool(value:Boolean)
@@ -52,3 +42,4 @@ enum PatternDetails[+A]:
     case HeadTail(head:Pattern[A], tail:Pattern[A])
     case Literal(literal:Lit)
     case Unit
+
