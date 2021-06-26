@@ -13,9 +13,9 @@ object TypeSpec extends DefaultRunnableSpec:
             val actual = Type.unit
             assert(actual)(equalTo(expected))
         },
-        test("mapAttributes should map the attributes directly on the Type"){
+        test("annotateWith should map the attributes directly on the Type"){
             val expected = Type.unit("Test!")
-            val actual = Type.unit.mapAttributes(_ => "Test!")
+            val actual = Type.unit.transform(_ => "Test!")
             assert(actual)(equalTo(expected))
         }
     )
