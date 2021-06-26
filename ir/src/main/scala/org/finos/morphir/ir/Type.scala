@@ -2,9 +2,16 @@ package org.finos.morphir.ir
 import org.finos.morphir.ir.*
 
 final case class Type[+A](attributes:A, typeDetails:TypeDetails[A]):
-    def map[B](f: A => B):Type[B] = 
-        Type(attributes = f(attributes), typeDetails = typeDetails.mapAttributes(f))
+    self =>
+    def mapAttributes[B](f: A => B):Type[B] = 
+        Type(
+            attributes = f(self.attributes), 
+            typeDetails = typeDetails.mapAttributes(f))
 
+object Type {
+    val unit:Type[scala.Unit] = Type((), TypeDetails.Unit)
+    def unit[A](attributes: A):Type[A] = Type(attributes, TypeDetails.Unit)
+}
 
 enum TypeDetails[+A]: 
     self =>
@@ -29,11 +36,11 @@ enum TypeDetails[+A]:
             ExtensibleRecord(name, FieldList.mapAttributes(fields)(f))
         case Function(parameters, returnType) =>
             Function(
-                parameters = parameters.map(f), 
-                returnType = returnType.map(f))
+                parameters = parameters.mapAttributes(f), 
+                returnType = returnType.mapAttributes(f))
         case Unit => Unit
 
 extension [A] (self:List[Type[A]])
     def mapAttributes[B](f:A=>B):List[Type[B]] =
-        self.map(t => t.map(f))
+        self.map(t => t.mapAttributes(f))
 
