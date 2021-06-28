@@ -5,3 +5,4 @@ final case class TypeDefinition[+A](typeParams:List[Name], details:TypeDefinitio
 enum TypeDefinitionDetails[+A]:
     case TypeAlias(typeParams:List[Name], ref:Type[A])
     case CustomType(typeParams:List[Name], ctors:AccessControlled[TypeConstructors[A]])
+
