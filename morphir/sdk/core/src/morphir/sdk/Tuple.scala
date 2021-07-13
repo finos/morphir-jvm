@@ -17,17 +17,15 @@ limitations under the License.
 package morphir.sdk
 
 object Tuple {
-  type Tuple[K,V] = (K, V)
+  type Tuple[K, V] = (K, V)
 
+  def pair[K, V](k: K)(v: V): Tuple[K, V] = (k, v)
 
-  def pair[K,V](k: K)(v: V): Tuple[K,V] = (k,v)
+  def first[K, V](t: Tuple[K, V]): K  = t._1
+  def second[K, V](t: Tuple[K, V]): V = t._2
 
-  def first[K,V](t: Tuple[K,V]): K = t._1
-  def second[K,V](t: Tuple[K,V]): V = t._2
-
-  def mapFirst[K,V,O](f: K => O)(t: Tuple[K,V]): Tuple[O,V] = pair(f(t._1))(t._2)
-  def mapSecond[K,V,O](f: V => O)(t: Tuple[K,V]): Tuple[K,O] = pair(t._1)(f(t._2))
-  def mapBoth[K,V,KO,VO](kf: K => KO)(vf: V => VO)(t: Tuple[K,V]): Tuple[KO,VO] = pair(kf(t._1))(vf(t._2))
-
+  def mapFirst[K, V, O](f: K => O)(t: Tuple[K, V]): Tuple[O, V]                      = pair(f(t._1))(t._2)
+  def mapSecond[K, V, O](f: V => O)(t: Tuple[K, V]): Tuple[K, O]                     = pair(t._1)(f(t._2))
+  def mapBoth[K, V, KO, VO](kf: K => KO)(vf: V => VO)(t: Tuple[K, V]): Tuple[KO, VO] = pair(kf(t._1))(vf(t._2))
 
 }
