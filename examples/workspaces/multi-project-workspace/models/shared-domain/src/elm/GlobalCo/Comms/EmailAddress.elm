@@ -48,3 +48,6 @@ create text =
 
             _ ->
                 "Invalid email address" |> Result.Err
+
+            _ ->
+                "Invalid email address" |> Result.Err

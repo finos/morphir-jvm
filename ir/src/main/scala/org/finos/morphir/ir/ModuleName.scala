@@ -1,3 +1,3 @@
 package org.finos.morphir.ir
 
-final case class ModuleName(path:List[Name])
+final case class ModuleName(path: List[Name])
