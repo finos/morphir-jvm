@@ -1,8 +1,9 @@
 package morphir.sdk
-import morphir.sdk.Maybe.Maybe
-import morphir.sdk.Basics.Order
-
 import java.math.{ BigDecimal => BigDec }
+
+import morphir.sdk.Basics.Order
+import morphir.sdk.Maybe.Maybe
+
 import scala.util.control.NonFatal
 
 object Decimal extends DecimalModuleCompat {
@@ -78,7 +79,7 @@ object Decimal extends DecimalModuleCompat {
     Decimal(n * 0.01)
 
   def gt(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool  = a.compareTo(b) > 0
-  def gte(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = a.compareTo(b) >= 1
+  def gte(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = a.compareTo(b) >= 0
 
   def lt(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = a.compareTo(b) < 0
 
