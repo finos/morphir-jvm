@@ -1,4 +1,5 @@
 import explicitdeps.ExplicitDepsPlugin.autoImport._
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 import sbtbuildinfo.BuildInfoKeys._
@@ -43,6 +44,7 @@ object BuildHelper {
   }
 
   private val std2xOptions = Seq(
+    "-language:implicitConversions",
     "-language:higherKinds",
     "-language:existentials",
     "-explaintypes",
@@ -108,6 +110,10 @@ object BuildHelper {
     }
   )
 
+  val scalaReflectSettings = Seq(
+    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "1.0.0-M10")
+  )
+
   // Keep this consistent with the version in .core-tests/shared/src/test/scala/REPLSpec.scala
   val replSettings = makeReplSettings {
     """|import zio._
@@ -156,7 +162,8 @@ object BuildHelper {
         )
       case Some((2, 13)) =>
         Seq(
-          "-Ywarn-unused:params,-implicits"
+          "-Ywarn-unused:params,-implicits",
+          "-Xsource:3.0"
         ) ++ std2xOptions ++ optimizerOptions(optimize)
       case Some((2, 12)) =>
         Seq(
@@ -311,6 +318,15 @@ object BuildHelper {
     Test / skip := true,
     doc / skip := true,
     Compile / doc / sources := Seq.empty
+  )
+
+  val scalaReflectTestSettings: List[Setting[_]] = List(
+    libraryDependencies ++= {
+      if (scalaVersion.value == ScalaDotty)
+        Seq("org.scala-lang" % "scala-reflect" % Scala213 % Test)
+      else
+        Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % Test)
+    }
   )
 
   def welcomeMessage = onLoadMessage := {

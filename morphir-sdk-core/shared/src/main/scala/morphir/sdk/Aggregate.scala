@@ -7,7 +7,7 @@ object Aggregate {
   sealed trait Operator[+A]
   object Operator {
 
-    final case object Count extends Operator[Nothing]
+    case object Count extends Operator[Nothing]
 
     final case class Sum[A](getValue: A => Double) extends Operator[A]
 
@@ -39,7 +39,11 @@ object Aggregate {
   def weightedAverageOf[A](getWeight: A => Double, getValue: A => Double): Aggregation[A, Unit] =
     operatorToAggregation(Operator.WAvg(getWeight, getValue))
 
-  case class Aggregation[A, Key](key: A => Key, filter: A => Boolean, operator: Operator[A])
+  case class Aggregation[A, Key](
+      key: A => Key,
+      filter: A => Boolean,
+      operator: Operator[A]
+    )
 
   def operatorToAggregation[A](op: Operator[A]): Aggregation[A, Unit] =
     Aggregation(_ => (), _ => true, op)
@@ -51,8 +55,12 @@ object Aggregate {
     agg.copy(filter = f)
 
   def aggregateMap[A, B, Key1](
-    agg1: Aggregation[A, Key1]
-  )(f: Double => A => B)(list: List[A]): List[B] = {
+      agg1: Aggregation[A, Key1]
+    )(
+      f: Double => A => B
+    )(
+      list: List[A]
+    ): List[B] = {
     val aggregated1: Map[Key1, Double] =
       aggregateHelp(agg1.key, agg1.operator, list.filter(agg1.filter))
     for (a <- list)
@@ -60,8 +68,14 @@ object Aggregate {
   }
 
   def aggregateMap2[A, B, Key1, Key2](
-    agg1: Aggregation[A, Key1]
-  )(agg2: Aggregation[A, Key2])(f: Double => Double => A => B)(list: List[A]): List[B] = {
+      agg1: Aggregation[A, Key1]
+    )(
+      agg2: Aggregation[A, Key2]
+    )(
+      f: Double => Double => A => B
+    )(
+      list: List[A]
+    ): List[B] = {
     val aggregated1: Map[Key1, Double] =
       aggregateHelp(agg1.key, agg1.operator, list.filter(agg1.filter))
     val aggregated2: Map[Key2, Double] =
@@ -71,10 +85,16 @@ object Aggregate {
   }
 
   def aggregateMap3[A, B, Key1, Key2, Key3](
-    agg1: Aggregation[A, Key1]
-  )(
-    agg2: Aggregation[A, Key2]
-  )(agg3: Aggregation[A, Key3])(f: Double => Double => Double => A => B)(list: List[A]): List[B] = {
+      agg1: Aggregation[A, Key1]
+    )(
+      agg2: Aggregation[A, Key2]
+    )(
+      agg3: Aggregation[A, Key3]
+    )(
+      f: Double => Double => Double => A => B
+    )(
+      list: List[A]
+    ): List[B] = {
     val aggregated1: Map[Key1, Double] =
       aggregateHelp(agg1.key, agg1.operator, list.filter(agg1.filter))
     val aggregated2: Map[Key2, Double] =
@@ -87,8 +107,16 @@ object Aggregate {
       )(a)
   }
 
-  def aggregateHelp[A, Key](getKey: A => Key, op: Operator[A], list: List[A]): Map[Key, Double] = {
-    def aggregate(getValue: A => Double, o: (Double, Double) => Double, sourceList: List[A]): Map[Key, Double] =
+  def aggregateHelp[A, Key](
+      getKey: A => Key,
+      op: Operator[A],
+      list: List[A]
+    ): Map[Key, Double] = {
+    def aggregate(
+        getValue: A => Double,
+        o: (Double, Double) => Double,
+        sourceList: List[A]
+      ): Map[Key, Double] =
       sourceList.foldLeft(HashMap[Key, Double]()) { (soFar: HashMap[Key, Double], nextA: A) =>
         val key = getKey(nextA)
         soFar.get(key) match {
@@ -99,9 +127,14 @@ object Aggregate {
         }
       }
 
-    def combine(f: (Double, Double) => Double, dictA: Map[Key, Double], dictB: Map[Key, Double]): Map[Key, Double] =
-      dictA.map { case (key, a) =>
-        (key, f(a, dictB.getOrElse(key, 0)))
+    def combine(
+        f: (Double, Double) => Double,
+        dictA: Map[Key, Double],
+        dictB: Map[Key, Double]
+      ): Map[Key, Double] =
+      dictA.map {
+        case (key, a) =>
+          (key, f(a, dictB.getOrElse(key, 0)))
       }
 
     def sum(getValue: A => Double, sourceList: List[A]): Map[Key, Double] =
@@ -121,7 +154,10 @@ object Aggregate {
       case Operator.WAvg(getWeight, getValue) =>
         combine(
           _ / _,
-          sum(a => getWeight.asInstanceOf[A => Double](a) * getValue.asInstanceOf[A => Double](a), list),
+          sum(
+            a => getWeight.asInstanceOf[A => Double](a) * getValue.asInstanceOf[A => Double](a),
+            list
+          ),
           sum(getWeight.asInstanceOf[A => Double], list)
         )
     }

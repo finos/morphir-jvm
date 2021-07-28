@@ -3,6 +3,8 @@ import MimaSettings.mimaSettings
 import explicitdeps.ExplicitDepsPlugin.autoImport.moduleFilterRemoveValue
 import sbt.Keys
 
+val zioVersion = "1.0.10"
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild(
@@ -32,6 +34,10 @@ resolvers ++= Seq(
 
 addCommandAlias("prepare", "; fix; fmt")
 addCommandAlias("fmt", "all root/scalafmtSbt root/scalafmtAll")
+addCommandAlias(
+  "testJVM",
+  ";morphir-sdk-coreJVM/test;morphir-ir/test"
+)
 
 lazy val root = project
   .in(file("."))
@@ -83,3 +89,24 @@ lazy val `morphir-ir` = project
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     scalaVersion := "3.0.0"
   )
+
+lazy val `morphir-sdk-core` = crossProject(JVMPlatform)
+  .in(file("morphir-sdk-core"))
+  .settings(stdSettings("morphir-sdk-core"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("morphir.sdk.core"))
+  .settings(Compile / console / scalacOptions ~= { _.filterNot(Set("-Xfatal-warnings")) })
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio"      % zioVersion,
+      "dev.zio" %%% "zio-test" % zioVersion
+    )
+  )
+  .settings(testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")))
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val `morphir-sdk-core-jvm` = `morphir-sdk-core`
+  .jvm
+  .settings(dottySettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+//.settings(scalaReflectTestSettings)

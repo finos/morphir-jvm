@@ -36,22 +36,22 @@ object LocalDate {
     date plusYears count
 
   def diffInDays(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    DAYS between (fromDate, toDate)
+    DAYS.between(fromDate, toDate)
 
   def diffInWeeks(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    WEEKS between (fromDate, toDate)
+    WEEKS.between(fromDate, toDate)
 
   def diffInMonths(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    MONTHS between (fromDate, toDate)
+    MONTHS.between(fromDate, toDate)
 
   def diffInYears(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    YEARS between (fromDate, toDate)
+    YEARS.between(fromDate, toDate)
 
   /**
    * Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
    */
   implicit def fromJavaTimeLocalDate(
-    localDate: java.time.LocalDate
-  ): LocalDate =
+      localDate: java.time.LocalDate
+    ): LocalDate =
     localDate
 }

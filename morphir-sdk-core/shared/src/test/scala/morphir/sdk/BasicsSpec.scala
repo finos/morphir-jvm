@@ -67,9 +67,10 @@ object BasicsSpec extends DefaultRunnableSpec {
     ),
     suite("Basics.divide spec")(
       testM("Divide a Float value by another Float value") {
-        check(Gen.anyDouble, Gen.anyDouble.filter(n => n != 0)) { (d1: Basics.Float, d2: Basics.Float) =>
-          val expected = d1 / d2
-          assert(Basics.divide(d1)(d2))(equalTo(expected))
+        check(Gen.anyDouble, Gen.anyDouble.filter(n => n != 0)) {
+          (d1: Basics.Float, d2: Basics.Float) =>
+            val expected = d1 / d2
+            assert(Basics.divide(d1)(d2))(equalTo(expected))
         }
       }
     ),
@@ -139,7 +140,7 @@ object BasicsSpec extends DefaultRunnableSpec {
         }
       },
       testM("Performing lessThanOrEqual check on same Float") {
-        check(Gen.anyDouble) { dn: Double =>
+        check(Gen.anyDouble) { (dn: Double) =>
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn)
           val expected = (d1 <= d2)
@@ -155,7 +156,7 @@ object BasicsSpec extends DefaultRunnableSpec {
         }
       },
       testM("Performing greaterThanOrEqual check on same Float") {
-        check(Gen.anyDouble) { dn: Double =>
+        check(Gen.anyDouble) { (dn: Double) =>
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn)
           val expected = (d1 >= d2)
