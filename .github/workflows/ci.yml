@@ -1,5 +1,10 @@
 name: Scala CI
 
+env:
+  JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xmx3G # JDK_JAVA_OPTIONS is _the_ env. variable to use for modern Java
+  JVM_OPTS: -XX:+PrintCommandLineFlags -Xmx3G # for Java 8 only (sadly, it is not modern enough for JDK_JAVA_OPTIONS)
+
+
 on:
   push:
     branches: [ master ]
@@ -9,6 +14,23 @@ on:
     types: [published]
     
 jobs:
+  test:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['adopt@1.8', 'adopt@1.11']
+        scala: ['2.11.12', '2.12.13', '2.13.6', '3.0.1']
+        platform: ['JVM', 'JS']
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v2.3.4
+      - name: Setup Scala and Java
+        uses: olafurpg/setup-scala@v12
+        with:
+          java-version: ${{ matrix.java }}
+
   build:
 
     runs-on: ubuntu-latest

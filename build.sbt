@@ -1,5 +1,27 @@
-import sbt.Keys._
-import sbt._
+import BuildHelper._
+import MimaSettings.mimaSettings
+import explicitdeps.ExplicitDepsPlugin.autoImport.moduleFilterRemoveValue
+import sbt.Keys
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+inThisBuild(
+  List(
+    organization := "org.morphir",
+    homepage := Some(url("https://morphir.finos.org")),
+    licenses := List(
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
+    ),
+    developers := List(
+      Developer(
+        "DamianReeves",
+        "Damian Reeves",
+        null,
+        url("https://github.com/DamianReeves")
+      )
+    )
+  )
+)
 
 resolvers ++= Seq(
   Resolver.mavenLocal,
@@ -8,18 +30,29 @@ resolvers ++= Seq(
   Resolver.jcenterRepo
 )
 
-lazy val root = (project in file("."))
+addCommandAlias("prepare", "; fix; fmt")
+addCommandAlias("fmt", "all root/scalafmtSbt root/scalafmtAll")
+
+lazy val root = project
+  .in(file("."))
   .settings(
+    name := "morphir",
+    publish / skip := true,
+    unusedCompileDependenciesFilter -= moduleFilter(
+      "org.scala-js",
+      "scalajs-library"
+    ),
     commonSettings,
     libraryDependencies ++= Dependencies.zioCommonDeps,
-    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+    welcomeMessage
   )
   .aggregate(
-    morphirIR
+    `morphir-ir`
   )
 
 lazy val commonSettings = Seq(
-  name := "morphir-ir",
+  name := "morphir",
   version := "0.1.0",
   scalacOptions ++= Seq(
     "-deprecation",
@@ -33,7 +66,7 @@ lazy val commonSettings = Seq(
   scalaVersion := "3.0.0"
 )
 
-lazy val morphirIR = project
+lazy val `morphir-ir` = project
   .in(file("./morphir-ir"))
   .settings(
     name := "morphir-ir",
