@@ -32,10 +32,10 @@ object String {
     Array.fill[String](times.toInt)(str).mkString
 
   @inline def replace(
-    literal: String,
-    replacement: String,
-    target: String
-  ): String =
+      literal: String,
+      replacement: String,
+      target: String
+    ): String =
     target.replace(literal, replacement)
 
   @inline def fromInt(int: Basics.Int): String =

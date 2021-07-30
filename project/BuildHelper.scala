@@ -329,6 +329,45 @@ object BuildHelper {
     }
   )
 
+  def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
+    val dirtySuffix = out.dirtySuffix.dropPlus.mkString("-", "")
+    val branchName =
+      scala
+        .sys
+        .process
+        .Process("git rev-parse --symbolic-full-name --abbrev-ref HEAD")
+        .!!
+        .dropRight(1)
+    val vers0 =
+      if (out.isCleanAfterTag) out.ref.dropPrefix + dirtySuffix // no commit info if clean after tag
+      else out.ref.dropPrefix + out.commitSuffix.mkString("-", "-", "") + dirtySuffix
+    val vers = branchName match {
+      case "master" => vers0
+      case _        => s"$vers0-$branchName"
+    }
+    if (out.isSnapshot()) s"$vers-SNAPSHOT" else vers
+  }
+
+  def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer timestamp d}"
+
+  def myVersion(out: Option[sbtdynver.GitDescribeOutput]): String = {
+    val branchName =
+      scala
+        .sys
+        .process
+        .Process("git rev-parse --symbolic-full-name --abbrev-ref HEAD")
+        .!!
+        .dropRight(1)
+    out match {
+      case Some(v) if branchName == "master" =>
+        s"${v.commitSuffix.distance}-${v.ref.value}"
+      case Some(v) =>
+        s"${v.commitSuffix.distance}-${v.ref.value}-$branchName"
+      case None =>
+        "0-undefined"
+    }
+  }
+
   def welcomeMessage = onLoadMessage := {
     import scala.Console
 

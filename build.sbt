@@ -9,6 +9,14 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild(
   List(
+    dynverSonatypeSnapshots := true,
+    version := dynverGitDescribeOutput
+      .value
+      .mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value)),
+    dynver := {
+      val d = new java.util.Date
+      sbtdynver.DynVer.getGitDescribeOutput(d).mkVersion(versionFmt, fallbackVersion(d))
+    },
     organization := "org.morphir",
     homepage := Some(url("https://morphir.finos.org")),
     licenses := List(
@@ -59,7 +67,6 @@ lazy val root = project
 
 lazy val commonSettings = Seq(
   name := "morphir",
-  version := "0.1.0",
   scalacOptions ++= Seq(
     "-deprecation",
     "-language:postfixOps",
@@ -76,7 +83,6 @@ lazy val `morphir-ir` = project
   .in(file("./morphir-ir"))
   .settings(
     name := "morphir-ir",
-    version := "0.1.0",
     scalacOptions ++= Seq(
       "-language:postfixOps",
       "-Ykind-projector",
