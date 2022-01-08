@@ -3,7 +3,7 @@ import BuildHelper._
 inThisBuild(
   List(
     organization := "dev.zio",
-    homepage := Some(url("https://zio.github.io/zio-sexpr/")),
+    homepage := Some(url("https://zio.github.io/zio-morphir-sexpr/")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers := List(
       Developer(
@@ -25,18 +25,18 @@ addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix
 
 addCommandAlias(
   "testJVM",
-  ";zioSexprJVM/test"
+  ";sexprJVM/test"
 )
 addCommandAlias(
   "testJS",
-  ";zioSexprJS/test"
+  ";sexprJS/test"
 )
 addCommandAlias(
   "testNative",
-  ";zioSexprNative/test:compile"
+  ";sexprNative/test:compile"
 )
 
-val zioVersion = "1.0.9"
+val zioVersion = "1.0.12"
 
 lazy val root = project
   .in(file("."))
@@ -45,17 +45,17 @@ lazy val root = project
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
   .aggregate(
-    zioSexprJVM,
-    zioSexprJS,
-    zioSexprNative,
+    sexprJVM,
+    sexprJS,
+    sexprNative,
     docs
   )
 
-lazy val zioSexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .in(file("zio-sexpr"))
-  .settings(stdSettings("zio-sexpr"))
+lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("zio-morphir-sexpr"))
+  .settings(stdScala3Settings("zio-morphir-sexpr"))
   .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.sexpr"))
+  .settings(buildInfoSettings("zio.morphir.sexpr"))
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio"          % zioVersion,
@@ -66,32 +66,32 @@ lazy val zioSexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .enablePlugins(BuildInfoPlugin)
 
-lazy val zioSexprJS = zioSexpr.js
+lazy val sexprJS = sexpr.js
   .settings(jsSettings)
   .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaJSUseMainModuleInitializer := true)
 
-lazy val zioSexprJVM = zioSexpr.jvm
+lazy val sexprJVM = sexpr.jvm
   .settings(dottySettings)
   .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaReflectTestSettings)
 
-lazy val zioSexprNative = zioSexpr.native
+lazy val sexprNative = sexpr.native
   .settings(nativeSettings)
 
 lazy val docs = project
-  .in(file("zio-sexpr-docs"))
-  .settings(stdSettings("zio-sexpr"))
+  .in(file("zio-morphir-docs"))
+  .settings(stdSettings("zio-morphir"))
   .settings(
     publish / skip := true,
-    moduleName := "zio-sexpr-docs",
+    moduleName := "zio-morphir-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioSexprJVM),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(sexprJVM),
     ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
     docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(zioSexprJVM)
+  .dependsOn(sexprJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
