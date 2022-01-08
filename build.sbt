@@ -15,7 +15,8 @@ inThisBuild(
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc")
+    pgpSecretRing := file("/tmp/secret.asc"),
+    scalaVersion := Scala3
   )
 )
 
@@ -36,7 +37,72 @@ addCommandAlias(
   ";sexprNative/test:compile"
 )
 
-val zioVersion = "1.0.12"
+val zioVersion = "1.0.13"
+
+def stdProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
+  crossScalaVersions := {
+    crossProjectPlatform.value match {
+      case NativePlatform => crossScalaVersions.value.distinct
+      case _              => (Seq(Scala3) ++ crossScalaVersions.value).distinct
+    }
+  },
+  ThisBuild / scalaVersion := {
+    crossProjectPlatform.value match {
+      case NativePlatform => scalaVersion.value
+      case _              => Scala3
+    }
+  },
+  scalacOptions ++= {
+    if (scalaVersion.value == Scala3)
+      Seq("-noindent")
+    else
+      Seq()
+  },
+  scalacOptions --= {
+    if (scalaVersion.value == Scala3)
+      Seq("-Xfatal-warnings")
+    else
+      Seq()
+  },
+  Compile / doc / sources := {
+    val old = (Compile / doc / sources).value
+    if (scalaVersion.value == Scala3) {
+      Nil
+    } else {
+      old
+    }
+  },
+  Test / parallelExecution := {
+    val old = (Test / parallelExecution).value
+    if (scalaVersion.value == Scala3) {
+      false
+    } else {
+      old
+    }
+  },
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+  libraryDependencies ++= {
+    crossProjectPlatform.value match {
+      case JSPlatform  =>
+        Seq(
+          //"org.scala-js" % "scalajs-test-bridge_2.13" % "1.8.0"    % Test,
+          "dev.zio" %%% "zio-test-sbt" % zioVersion % Test
+        )
+      case JVMPlatform =>
+        {
+          if (scalaVersion.value == Scala3)
+            Seq(
+              "org.scala-lang" % "scala-reflect" % Scala213           % Test
+            )
+          else
+            Seq(
+              "org.scala-lang" % "scala-reflect" % scalaVersion.value % Test
+            )
+        } ++ Seq("dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+      case _           => Seq()
+    }
+  }
+)
 
 lazy val root = project
   .in(file("."))
@@ -53,14 +119,13 @@ lazy val root = project
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("zio-morphir-sexpr"))
-  .settings(stdScala3Settings("zio-morphir-sexpr"))
+  .settings(stdProjectSettings("zio-morphir-sexpr"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.sexpr"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % Test,
-      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
+      "dev.zio" %%% "zio"      % zioVersion,
+      "dev.zio" %%% "zio-test" % zioVersion % Test
     )
   )
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
@@ -68,13 +133,9 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
 lazy val sexprJS = sexpr.js
   .settings(jsSettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val sexprJVM = sexpr.jvm
-  .settings(dottySettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
-  .settings(scalaReflectTestSettings)
 
 lazy val sexprNative = sexpr.native
   .settings(nativeSettings)

@@ -7,6 +7,7 @@ import sbtbuildinfo._
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalafix.sbt.ScalafixPlugin.autoImport._
 import scalanativecrossproject.NativePlatform
+import scalajscrossproject.JSPlatform
 
 object BuildHelper {
   private val versions: Map[String, String] = {
@@ -66,45 +67,8 @@ object BuildHelper {
       buildInfoPackage := packageName
     )
 
-  val dottySettings = Seq(
-    crossScalaVersions ++= {
-      crossProjectPlatform.value match {
-        case NativePlatform => Seq()
-        case _              => Seq(Scala3)
-      }
-    },
-    scalacOptions ++= {
-      if (scalaVersion.value == Scala3)
-        Seq("-noindent")
-      else
-        Seq()
-    },
-    scalacOptions --= {
-      if (scalaVersion.value == Scala3)
-        Seq("-Xfatal-warnings")
-      else
-        Seq()
-    },
-    Compile / doc / sources := {
-      val old = (Compile / doc / sources).value
-      if (scalaVersion.value == Scala3) {
-        Nil
-      } else {
-        old
-      }
-    },
-    Test / parallelExecution := {
-      val old = (Test / parallelExecution).value
-      if (scalaVersion.value == Scala3) {
-        false
-      } else {
-        old
-      }
-    }
-  )
-
   val scalaReflectSettings = Seq(
-    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "1.0.0-M10")
+    libraryDependencies ++= Seq("dev.zio" %%% "izumi-reflect" % "1.1.3")
   )
 
   // Keep this consistent with the version in .core-tests/shared/src/test/scala/REPLSpec.scala
@@ -265,22 +229,6 @@ object BuildHelper {
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
 
-  def stdScala3Settings(prjName: String) = stdSettings(prjName) ++ dottySettings ++ Seq(
-    crossScalaVersions := {
-      crossProjectPlatform.value match {
-        case NativePlatform => crossScalaVersions.value.distinct
-        case _              => (Seq(Scala3) ++ crossScalaVersions.value).distinct
-      }
-    },
-    ThisBuild / scalaVersion := {
-      crossProjectPlatform.value match {
-        case NativePlatform => scalaVersion.value
-        case _              => Scala3
-      }
-    },
-    scalacOptions := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value)
-  )
-
   def macroExpansionSettings = Seq(
     scalacOptions ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -315,6 +263,8 @@ object BuildHelper {
   )
 
   def nativeSettings = Seq(
+    scalaVersion := Scala213,
+    crossScalaVersions -= Scala3,
     Test / skip := true,
     doc / skip := true,
     Compile / doc / sources := Seq.empty
