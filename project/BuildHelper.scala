@@ -119,6 +119,7 @@ object BuildHelper {
         )
       case Some((2, 13)) =>
         Seq(
+          "-Xsource:3.0",
           "-Ywarn-unused:params,-implicits"
         ) ++ std2xOptions ++ optimizerOptions(optimize)
       case Some((2, 12)) =>
@@ -135,7 +136,7 @@ object BuildHelper {
           "-Ywarn-nullary-unit",
           "-Ywarn-unused:params,-implicits",
           "-Xfuture",
-          "-Xsource:2.13",
+          "-Xsource:3.0",
           "-Xmax-classfile-name",
           "242"
         ) ++ std2xOptions ++ optimizerOptions(optimize)
@@ -150,7 +151,7 @@ object BuildHelper {
           "-Xexperimental",
           "-Ywarn-unused-import",
           "-Xfuture",
-          "-Xsource:2.13",
+          "-Xsource:3.0",
           "-Xmax-classfile-name",
           "242"
         ) ++ std2xOptions
