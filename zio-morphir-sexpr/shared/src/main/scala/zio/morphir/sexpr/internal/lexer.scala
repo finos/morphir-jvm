@@ -96,6 +96,109 @@ object Lexer {
         )
     }
 
+  def byte(trace: List[SExprError], in: RetractReader): Byte = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.byte_(in, false)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message("expected a Byte") :: trace)
+    }
+  }
+  
+  def short(trace: List[SExprError], in: RetractReader): Short = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.short_(in, false)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message("expected a Short") :: trace)
+    }
+  }
+
+  def int(trace: List[SExprError], in: RetractReader): Int = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.int_(in, false)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message("expected an Int") :: trace)
+    }
+  }
+
+  def long(trace: List[SExprError], in: RetractReader): Long = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.long_(in, false)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message("expected a Long") :: trace)
+    }
+  }
+
+    def bigInteger(
+    trace: List[SExprError],
+    in: RetractReader
+  ): java.math.BigInteger = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.bigInteger_(in, false, NumberMaxBits)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message(s"expected a $NumberMaxBits bit BigInteger") :: trace)
+    }
+  }
+
+  def float(trace: List[SExprError], in: RetractReader): Float = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.float_(in, false, NumberMaxBits)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message("expected a Float") :: trace)
+    }
+  }
+
+  def double(trace: List[SExprError], in: RetractReader): Double = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.double_(in, false, NumberMaxBits)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message("expected a Double") :: trace)
+    }
+  }
+
+  def bigDecimal(
+    trace: List[SExprError],
+    in: RetractReader
+  ): java.math.BigDecimal = {
+    checkNumber(trace, in)
+    try {
+      val i = UnsafeNumbers.bigDecimal_(in, false, NumberMaxBits)
+      in.retract()
+      i
+    } catch {
+      case UnsafeNumbers.UnsafeNumber =>
+        throw UnsafeSExpr(SExprError.Message(s"expected a $NumberMaxBits BigDecimal") :: trace)
+    }
+  }
+
+
   // optional whitespace and then an expected character
   @inline def char(trace: List[SExprError], in: OneCharReader, c: Char): Unit = {
     val got = in.nextNonWhitespace()
@@ -120,6 +223,18 @@ object Lexer {
         true
       case _                                                                                       => false
     }
+
+  // really just a way to consume the whitespace
+  private def checkNumber(trace: List[SExprError], in: RetractReader): Unit = {
+    (in.nextNonWhitespace(): @switch) match {
+      case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => ()
+      case c                                                               =>
+        throw UnsafeSExpr(
+          SExprError.Message(s"expected a number, got $c") :: trace
+        )
+    }
+    in.retract()
+  }
 
   def readChars(
     trace: List[SExprError],
