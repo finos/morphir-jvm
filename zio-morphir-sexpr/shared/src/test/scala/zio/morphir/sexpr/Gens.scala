@@ -1,6 +1,6 @@
 package zio.morphir.sexpr
 
-import zio.random.Random
+import zio.Random
 import zio.test.{Gen, Sized}
 
 import java.math.BigInteger

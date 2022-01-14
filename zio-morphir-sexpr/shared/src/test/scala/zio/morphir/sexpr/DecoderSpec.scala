@@ -91,16 +91,34 @@ object DecoderSpec extends ZioBaseSpec {
             val bad6 = """"64d7c38d-2afd-X-9832-4e70afe4b0f8""""
             val bad7 = """"0-0-0-0-00000000000000000""""
 
-            assert(ok1.fromSExpr[UUID])(isRight(equalTo(UUID.fromString("64d7c38d-2afd-4514-9832-4e70afe4b0f8")))) &&
-            assert(ok2.fromSExpr[UUID])(isRight(equalTo(UUID.fromString("64D7C38D-00FD-0014-0032-0070AfE4B0f8")))) &&
-            assert(ok3.fromSExpr[UUID])(isRight(equalTo(UUID.fromString("00000000-0000-0000-0000-000000000000")))) &&
+            assert(ok1.fromSExpr[UUID])(
+              isRight(equalTo(UUID.fromString("64d7c38d-2afd-4514-9832-4e70afe4b0f8")))
+            ) &&
+            assert(ok2.fromSExpr[UUID])(
+              isRight(equalTo(UUID.fromString("64D7C38D-00FD-0014-0032-0070AfE4B0f8")))
+            ) &&
+            assert(ok3.fromSExpr[UUID])(
+              isRight(equalTo(UUID.fromString("00000000-0000-0000-0000-000000000000")))
+            ) &&
             assert(bad1.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: "))) &&
-            assert(bad2.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: UUID string too large"))) &&
-            assert(bad3.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd-4514-983-4e70afe4b0f80"))) &&
-            assert(bad4.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd--9832-4e70afe4b0f8"))) &&
-            assert(bad5.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"))) &&
-            assert(bad6.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd-X-9832-4e70afe4b0f8"))) &&
-            assert(bad7.fromSExpr[UUID])(isLeft(containsString("Invalid UUID: 0-0-0-0-00000000000000000")))
+            assert(bad2.fromSExpr[UUID])(
+              isLeft(containsString("Invalid UUID: UUID string too large"))
+            ) &&
+            assert(bad3.fromSExpr[UUID])(
+              isLeft(containsString("Invalid UUID: 64d7c38d-2afd-4514-983-4e70afe4b0f80"))
+            ) &&
+            assert(bad4.fromSExpr[UUID])(
+              isLeft(containsString("Invalid UUID: 64d7c38d-2afd--9832-4e70afe4b0f8"))
+            ) &&
+            assert(bad5.fromSExpr[UUID])(
+              isLeft(containsString("Invalid UUID: 64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"))
+            ) &&
+            assert(bad6.fromSExpr[UUID])(
+              isLeft(containsString("Invalid UUID: 64d7c38d-2afd-X-9832-4e70afe4b0f8"))
+            ) &&
+            assert(bad7.fromSExpr[UUID])(
+              isLeft(containsString("Invalid UUID: 0-0-0-0-00000000000000000"))
+            )
           }
         )
       ),
@@ -112,14 +130,21 @@ object DecoderSpec extends ZioBaseSpec {
             }
           },
           test("Manual") {
-            val ok1  = """"PT1H2M3S""""
-            val ok2  = """"PT-0.5S"""" // see https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8054978
+            val ok1 = """"PT1H2M3S""""
+            val ok2 =
+              """"PT-0.5S"""" // see https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8054978
             val bad1 = """"PT-H""""
 
-            assert(ok1.fromSExpr[Duration])(isRight(equalTo(Duration.parse("PT1H2M3S")))) &&
-            assert(ok2.fromSExpr[Duration])(isRight(equalTo(Duration.ofNanos(-500000000)))) &&
+            assert(ok1.fromSExpr[Duration])(
+              isRight(equalTo(java.time.Duration.parse("PT1H2M3S")))
+            ) &&
+            assert(ok2.fromSExpr[Duration])(
+              isRight(equalTo(java.time.Duration.ofNanos(-500000000)))
+            ) &&
             assert(bad1.fromSExpr[Duration])(
-              isLeft(containsString("PT-H is not a valid ISO-8601 format, expected digit at index 3"))
+              isLeft(
+                containsString("PT-H is not a valid ISO-8601 format, expected digit at index 3")
+              )
             )
           }
         ),
@@ -202,7 +227,9 @@ object DecoderSpec extends ZioBaseSpec {
             val bad1 = """"2018-10-28T02:30""""
 
             assert(ok1.fromSExpr[ZonedDateTime])(
-              isRight(equalTo(ZonedDateTime.parse("2021-06-20T20:03:51.533418+02:00[Europe/Warsaw]")))
+              isRight(
+                equalTo(ZonedDateTime.parse("2021-06-20T20:03:51.533418+02:00[Europe/Warsaw]"))
+              )
             ) &&
             assert(ok2.fromSExpr[ZonedDateTime].map(_.toOffsetDateTime))(
               isRight(equalTo(OffsetDateTime.parse("2018-10-28T03:30+01:00")))
@@ -219,43 +246,43 @@ object DecoderSpec extends ZioBaseSpec {
       ),
       suite("Collections")(
         test("Seq") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = Seq("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[Seq[String]])(isRight(equalTo(expected)))
         },
         test("Vector") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = Vector("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[Vector[String]])(isRight(equalTo(expected)))
         },
         test("SortedSet") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = immutable.SortedSet("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[immutable.SortedSet[String]])(isRight(equalTo(expected)))
         },
         test("HashSet") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = immutable.HashSet("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[immutable.HashSet[String]])(isRight(equalTo(expected)))
         },
         test("Set") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = Set("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[Set[String]])(isRight(equalTo(expected)))
         },
         test("zio.Chunk") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = Chunk("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[Chunk[String]])(isRight(equalTo(expected)))
         },
         test("zio.NonEmptyChunk") {
-          val sexprStr  = """["5XL","2XL","XL"]"""
+          val sexprStr = """["5XL","2XL","XL"]"""
           val expected = NonEmptyChunk("5XL", "2XL", "XL")
 
           assert(sexprStr.fromSExpr[NonEmptyChunk[String]])(isRight(equalTo(expected)))
@@ -270,9 +297,15 @@ object DecoderSpec extends ZioBaseSpec {
 
           assert(arr.fromSExpr[Array[Int]])(isRight(equalTo(Array(1, 2, 3)))) &&
           assert(arr.fromSExpr[IndexedSeq[Int]])(isRight(equalTo(IndexedSeq(1, 2, 3)))) &&
-          assert(arr.fromSExpr[immutable.LinearSeq[Int]])(isRight(equalTo(immutable.LinearSeq(1, 2, 3)))) &&
-          assert(arr.fromSExpr[immutable.ListSet[Int]])(isRight(equalTo(immutable.ListSet(1, 2, 3)))) &&
-          assert(arr.fromSExpr[immutable.TreeSet[Int]])(isRight(equalTo(immutable.TreeSet(1, 2, 3))))
+          assert(arr.fromSExpr[immutable.LinearSeq[Int]])(
+            isRight(equalTo(immutable.LinearSeq(1, 2, 3)))
+          ) &&
+          assert(arr.fromSExpr[immutable.ListSet[Int]])(
+            isRight(equalTo(immutable.ListSet(1, 2, 3)))
+          ) &&
+          assert(arr.fromSExpr[immutable.TreeSet[Int]])(
+            isRight(equalTo(immutable.TreeSet(1, 2, 3)))
+          )
         }
       ),
       suite("fromAST")(
@@ -360,15 +393,29 @@ object DecoderSpec extends ZioBaseSpec {
           val bad6 = SExpr.Str("64d7c38d-2afd-X-9832-4e70afe4b0f8")
           val bad7 = SExpr.Str("0-0-0-0-00000000000000000")
 
-          assert(ok1.as[UUID])(isRight(equalTo(UUID.fromString("64d7c38d-2afd-4514-9832-4e70afe4b0f8")))) &&
-          assert(ok2.as[UUID])(isRight(equalTo(UUID.fromString("64D7C38D-00FD-0014-0032-0070AFE4B0f8")))) &&
-          assert(ok3.as[UUID])(isRight(equalTo(UUID.fromString("00000000-0000-0000-0000-000000000000")))) &&
+          assert(ok1.as[UUID])(
+            isRight(equalTo(UUID.fromString("64d7c38d-2afd-4514-9832-4e70afe4b0f8")))
+          ) &&
+          assert(ok2.as[UUID])(
+            isRight(equalTo(UUID.fromString("64D7C38D-00FD-0014-0032-0070AFE4B0f8")))
+          ) &&
+          assert(ok3.as[UUID])(
+            isRight(equalTo(UUID.fromString("00000000-0000-0000-0000-000000000000")))
+          ) &&
           assert(bad1.as[UUID])(isLeft(containsString("Invalid UUID: "))) &&
           assert(bad2.as[UUID])(isLeft(containsString("Invalid UUID: UUID string too large"))) &&
-          assert(bad3.as[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd-4514-983-4e70afe4b0f80"))) &&
-          assert(bad4.as[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd--9832-4e70afe4b0f8"))) &&
-          assert(bad5.as[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"))) &&
-          assert(bad6.as[UUID])(isLeft(containsString("Invalid UUID: 64d7c38d-2afd-X-9832-4e70afe4b0f8"))) &&
+          assert(bad3.as[UUID])(
+            isLeft(containsString("Invalid UUID: 64d7c38d-2afd-4514-983-4e70afe4b0f80"))
+          ) &&
+          assert(bad4.as[UUID])(
+            isLeft(containsString("Invalid UUID: 64d7c38d-2afd--9832-4e70afe4b0f8"))
+          ) &&
+          assert(bad5.as[UUID])(
+            isLeft(containsString("Invalid UUID: 64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"))
+          ) &&
+          assert(bad6.as[UUID])(
+            isLeft(containsString("Invalid UUID: 64d7c38d-2afd-X-9832-4e70afe4b0f8"))
+          ) &&
           assert(bad7.as[UUID])(isLeft(containsString("Invalid UUID: 0-0-0-0-00000000000000000")))
         }
       )

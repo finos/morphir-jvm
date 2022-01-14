@@ -95,7 +95,7 @@ object RoundTripSpec extends ZioBaseSpec {
     ),
     testM("UUID") {
       check(Gen.anyUUID)(assertRoundtrips)
-    } @@ samples(1000),
+    } @@ samples(1000)
   )
 
   private def assertRoundtrips[A: SExprEncoder: SExprDecoder](a: A) =

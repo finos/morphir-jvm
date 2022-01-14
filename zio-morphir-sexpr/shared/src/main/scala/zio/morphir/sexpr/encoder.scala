@@ -58,10 +58,11 @@ trait SExprEncoder[A] { self =>
 }
 
 object SExprEncoder extends EncoderLowPriority1 {
-  def apply[A](implicit encoder: SExprEncoder[A]): SExprEncoder[A]                = encoder
-  def fromFunction[A](encodeFn: (A, Option[Int], Write) => Unit): SExprEncoder[A] = new SExprEncoder[A] {
-    def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = encodeFn(a, indent, out)
-  }
+  def apply[A](implicit encoder: SExprEncoder[A]): SExprEncoder[A] = encoder
+  def fromFunction[A](encodeFn: (A, Option[Int], Write) => Unit): SExprEncoder[A] =
+    new SExprEncoder[A] {
+      def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = encodeFn(a, indent, out)
+    }
 
   implicit val string: SExprEncoder[String] = new SExprEncoder[String] {
 
@@ -78,7 +79,7 @@ object SExprEncoder extends EncoderLowPriority1 {
           case '\n' => out.write("\\n")
           case '\r' => out.write("\\r")
           case '\t' => out.write("\\t")
-          case c    =>
+          case c =>
             if (c < ' ') out.write("\\u%04x".format(c.toInt))
             else out.write(c)
         }
@@ -98,7 +99,7 @@ object SExprEncoder extends EncoderLowPriority1 {
       (a: @switch) match {
         case '"'  => out.write("\\\"")
         case '\\' => out.write("\\\\")
-        case c    =>
+        case c =>
           if (c < ' ') out.write("\\u%04x".format(c.toInt))
           else out.write(c)
       }
@@ -109,12 +110,13 @@ object SExprEncoder extends EncoderLowPriority1 {
       Right(SExpr.Str(a.toString))
   }
 
-  private[sexpr] def explicit[A](f: A => String, g: A => SExpr): SExprEncoder[A] = new SExprEncoder[A] {
-    def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = out.write(f(a))
+  private[sexpr] def explicit[A](f: A => String, g: A => SExpr): SExprEncoder[A] =
+    new SExprEncoder[A] {
+      def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = out.write(f(a))
 
-    override final def toAST(a: A): Either[String, SExpr] =
-      Right(g(a))
-  }
+      override final def toAST(a: A): Either[String, SExpr] =
+        Right(g(a))
+    }
 
   private[sexpr] def stringify[A](f: A => String): SExprEncoder[A] = new SExprEncoder[A] {
     def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = {
@@ -127,20 +129,26 @@ object SExprEncoder extends EncoderLowPriority1 {
       Right(SExpr.Str(f(a)))
   }
 
-  implicit val boolean: SExprEncoder[Boolean]                 = explicit(_.toString, SExpr.Bool.apply)
-  implicit val byte: SExprEncoder[Byte]                       = explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n.toInt)))
-  implicit val int: SExprEncoder[Int]                         = explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
-  implicit val short: SExprEncoder[Short]                     = explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n.toInt)))
-  implicit val long: SExprEncoder[Long]                       = explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
-  implicit val bigInteger: SExprEncoder[BigInteger]           = explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
-  implicit val scalaBigInt: SExprEncoder[ScalaBigInt]         =
+  implicit val boolean: SExprEncoder[Boolean] = explicit(_.toString, SExpr.Bool.apply)
+  implicit val byte: SExprEncoder[Byte] =
+    explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n.toInt)))
+  implicit val int: SExprEncoder[Int] =
+    explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
+  implicit val short: SExprEncoder[Short] =
+    explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n.toInt)))
+  implicit val long: SExprEncoder[Long] =
+    explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
+  implicit val bigInteger: SExprEncoder[BigInteger] =
+    explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
+  implicit val scalaBigInt: SExprEncoder[ScalaBigInt] =
     explicit(_.toString, n => SExpr.Num(new java.math.BigDecimal(n.bigInteger)))
-  implicit val double: SExprEncoder[Double]                   =
+  implicit val double: SExprEncoder[Double] =
     explicit(SafeNumbers.toString, n => SExpr.Num(new java.math.BigDecimal(n)))
-  implicit val float: SExprEncoder[Float]                     =
+  implicit val float: SExprEncoder[Float] =
     explicit(SafeNumbers.toString, n => SExpr.Num(new java.math.BigDecimal(n.toDouble)))
-  implicit val bigDecimal: SExprEncoder[BigDecimal]           = explicit(_.toString, SExpr.Num.apply)
-  implicit val scalaBigDecimal: SExprEncoder[ScalaBigDecimal] = explicit(_.toString, n => SExpr.Num(n.bigDecimal))
+  implicit val bigDecimal: SExprEncoder[BigDecimal] = explicit(_.toString, SExpr.Num.apply)
+  implicit val scalaBigDecimal: SExprEncoder[ScalaBigDecimal] =
+    explicit(_.toString, n => SExpr.Num(n.bigDecimal))
 
 }
 

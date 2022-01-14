@@ -40,8 +40,8 @@ trait SExprDecoder[A] { self =>
   final def <*[B](that: => SExprDecoder[B]): SExprDecoder[A] = self.zipLeft(that)
 
   /**
-   * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with
-   * a human-readable error message if the provided text does not encode a value of this type.
+   * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with a
+   * human-readable error message if the provided text does not encode a value of this type.
    *
    * Note: This method may not entirely consume the specified character sequence.
    */
@@ -78,10 +78,12 @@ trait SExprDecoder[A] { self =>
    * itself decide to fail with some type of error.
    */
   final def mapOrFail[B](f: A => Either[String, B]): SExprDecoder[B] = new SExprDecoder[B] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): B = f(self.unsafeDecode(trace, in)) match {
+    def unsafeDecode(trace: List[SExprError], in: RetractReader): B = f(
+      self.unsafeDecode(trace, in)
+    ) match {
       case Left(err) =>
         throw SExprDecoder.UnsafeSExpr(SExprError.Message(err) :: trace)
-      case Right(b)  => b
+      case Right(b) => b
     }
 
     override final def fromAST(sexpr: SExpr): Either[String, B] = self.fromAST(sexpr).flatMap(f)
@@ -89,9 +91,9 @@ trait SExprDecoder[A] { self =>
 
   /**
    * Returns a new codec that combines this codec and the specified codec using fallback semantics:
-   * such that if this codec fails, the specified codec will be tried instead.
-   * This method may be unsafe from a security perspective: it can use more memory than hand coded
-   * alternative and so lead to DOS.
+   * such that if this codec fails, the specified codec will be tried instead. This method may be
+   * unsafe from a security perspective: it can use more memory than hand coded alternative and so
+   * lead to DOS.
    *
    * For example, in the case of an alternative between `Int` and `Boolean`, a hand coded
    * alternative would look like:
@@ -166,7 +168,8 @@ trait SExprDecoder[A] { self =>
   /**
    * Zips two codecs into one, transforming the outputs of both codecs by the specified function.
    */
-  final def zipWith[B, C](that: => SExprDecoder[B])(f: (A, B) => C): SExprDecoder[C] = self.zip(that).map(f.tupled)
+  final def zipWith[B, C](that: => SExprDecoder[B])(f: (A, B) => C): SExprDecoder[C] =
+    self.zip(that).map(f.tupled)
 }
 
 object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
@@ -179,20 +182,22 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
       extends Exception("If you see this, a developer made a mistake using SExprDecoder")
       with NoStackTrace
 
-  def peekChar[A](partialFunction: PartialFunction[Char, SExprDecoder[A]]): SExprDecoder[A] = new SExprDecoder[A] {
-    override def unsafeDecode(trace: List[SExprError], in: RetractReader): A = {
-      val c = in.nextNonWhitespace()
-      if (partialFunction.isDefinedAt(c)) {
-        in.retract()
-        partialFunction(c).unsafeDecode(trace, in)
-      } else {
-        throw UnsafeSExpr(SExprError.Message(s"missing case in `peekChar` for '${c}''") :: trace)
+  def peekChar[A](partialFunction: PartialFunction[Char, SExprDecoder[A]]): SExprDecoder[A] =
+    new SExprDecoder[A] {
+      override def unsafeDecode(trace: List[SExprError], in: RetractReader): A = {
+        val c = in.nextNonWhitespace()
+        if (partialFunction.isDefinedAt(c)) {
+          in.retract()
+          partialFunction(c).unsafeDecode(trace, in)
+        } else {
+          throw UnsafeSExpr(SExprError.Message(s"missing case in `peekChar` for '${c}''") :: trace)
+        }
       }
     }
-  }
 
   implicit val string: SExprDecoder[String] = new SExprDecoder[String] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): String = Lexer.string(trace, in).toString
+    def unsafeDecode(trace: List[SExprError], in: RetractReader): String =
+      Lexer.string(trace, in).toString
 
     override final def fromAST(sexpr: SExpr): Either[String, String] = sexpr match {
       case SExpr.Str(value) => Right(value)
@@ -209,38 +214,40 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
     }
   }
 
-  //TODO: We may want to support Clojure style Character literals instead
-  implicit val char: SExprDecoder[Char]                       = string.mapOrFail {
+  // TODO: We may want to support Clojure style Character literals instead
+  implicit val char: SExprDecoder[Char] = string.mapOrFail {
     case str if str.length == 1 => Right(str(0))
     case _                      => Left("expected one character")
   }
-  implicit val symbol: SExprDecoder[Symbol]                   = string.map(Symbol(_))
-  implicit val byte: SExprDecoder[Byte]                       = number(Lexer.byte, _.byteValueExact())
-  implicit val short: SExprDecoder[Short]                     = number(Lexer.short, _.shortValueExact())
-  implicit val int: SExprDecoder[Int]                         = number(Lexer.int, _.intValueExact())
-  implicit val long: SExprDecoder[Long]                       = number(Lexer.long, _.longValueExact())
-  implicit val bigInteger: SExprDecoder[java.math.BigInteger] = number(Lexer.bigInteger, _.toBigIntegerExact)
-  implicit val scalaBigInt: SExprDecoder[BigInt]              = bigInteger.map(x => x)
-  implicit val float: SExprDecoder[Float]                     = number(Lexer.float, _.floatValue())
-  implicit val double: SExprDecoder[Double]                   = number(Lexer.double, _.doubleValue())
+  implicit val symbol: SExprDecoder[Symbol] = string.map(Symbol(_))
+  implicit val byte: SExprDecoder[Byte]     = number(Lexer.byte, _.byteValueExact())
+  implicit val short: SExprDecoder[Short]   = number(Lexer.short, _.shortValueExact())
+  implicit val int: SExprDecoder[Int]       = number(Lexer.int, _.intValueExact())
+  implicit val long: SExprDecoder[Long]     = number(Lexer.long, _.longValueExact())
+  implicit val bigInteger: SExprDecoder[java.math.BigInteger] =
+    number(Lexer.bigInteger, _.toBigIntegerExact)
+  implicit val scalaBigInt: SExprDecoder[BigInt] = bigInteger.map(x => x)
+  implicit val float: SExprDecoder[Float]        = number(Lexer.float, _.floatValue())
+  implicit val double: SExprDecoder[Double]      = number(Lexer.double, _.doubleValue())
   implicit val bigDecimal: SExprDecoder[java.math.BigDecimal] = number(Lexer.bigDecimal, identity)
   implicit val scalaBigDecimal: SExprDecoder[BigDecimal]      = bigDecimal.map(x => x)
 
   // numbers decode from numbers or strings for maximum compatibility
   private[this] def number[A](
-    f: (List[SExprError], RetractReader) => A,
-    fromBigDecimal: java.math.BigDecimal => A
-  ): SExprDecoder[A]                                                           =
+      f: (List[SExprError], RetractReader) => A,
+      fromBigDecimal: java.math.BigDecimal => A
+  ): SExprDecoder[A] =
     new SExprDecoder[A] {
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): A = (in.nextNonWhitespace(): @switch) match {
-        case '"' =>
-          val i = f(trace, in)
-          Lexer.charOnly(trace, in, '"')
-          i
-        case _   =>
-          in.retract()
-          f(trace, in)
-      }
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): A =
+        (in.nextNonWhitespace(): @switch) match {
+          case '"' =>
+            val i = f(trace, in)
+            Lexer.charOnly(trace, in, '"')
+            i
+          case _ =>
+            in.retract()
+            f(trace, in)
+        }
 
       override final def fromAST(sexpr: SExpr): Either[String, A] = sexpr match {
         case SExpr.Num(value) =>
@@ -258,46 +265,47 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
               case _: StackOverflowError           => Left("Unexpected structure")
             } finally reader.close()
           result
-        case _                => Left("Not a number or a string")
+        case _ => Left("Not a number or a string")
       }
     }
   // Option treats empty and null values as Nothing and passes values to the decoder.
   //
   // If alternative behaviour is desired, e.g. pass null to the underlying, then
   // use a newtype wrapper.
-  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] { self =>
-    private[this] val ull: Array[Char] = "ull".toCharArray
+  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] =
+    new SExprDecoder[Option[A]] { self =>
+      private[this] val ull: Array[Char] = "ull".toCharArray
 
-    override def unsafeDecodeMissing(trace: List[SExprError]): Option[A] = Option.empty
+      override def unsafeDecodeMissing(trace: List[SExprError]): Option[A] = Option.empty
 
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): Option[A] =
-      (in.nextNonWhitespace(): @switch) match {
-        case 'n' =>
-          Lexer.readChars(trace, in, ull, "null")
-          None
-        case _   =>
-          in.retract()
-          Some(A.unsafeDecode(trace, in))
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Option[A] =
+        (in.nextNonWhitespace(): @switch) match {
+          case 'n' =>
+            Lexer.readChars(trace, in, ull, "null")
+            None
+          case _ =>
+            in.retract()
+            Some(A.unsafeDecode(trace, in))
+        }
+
+      // overridden here to pass `None` to the new Decoder instead of throwing
+      // when called from a derived decoder
+      override def map[B](f: Option[A] => B): SExprDecoder[B] = new SExprDecoder[B] {
+        override def unsafeDecodeMissing(trace: List[SExprError]): B =
+          f(None)
+
+        def unsafeDecode(trace: List[SExprError], in: RetractReader): B =
+          f(self.unsafeDecode(trace, in))
+
+        override final def fromAST(sexpr: SExpr): Either[String, B] =
+          self.fromAST(sexpr).map(f)
       }
 
-    // overridden here to pass `None` to the new Decoder instead of throwing
-    // when called from a derived decoder
-    override def map[B](f: Option[A] => B): SExprDecoder[B] = new SExprDecoder[B] {
-      override def unsafeDecodeMissing(trace: List[SExprError]): B =
-        f(None)
-
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): B =
-        f(self.unsafeDecode(trace, in))
-
-      override final def fromAST(sexpr: SExpr): Either[String, B] =
-        self.fromAST(sexpr).map(f)
+      override final def fromAST(sexpr: SExpr): Either[String, Option[A]] = sexpr match {
+        // case SExpr.Null => Right(None)    // TODO need to decide what to do for null
+        case _ => A.fromAST(sexpr).map(Some.apply)
+      }
     }
-
-    override final def fromAST(sexpr: SExpr): Either[String, Option[A]] = sexpr match {
-      //case SExpr.Null => Right(None)    // TODO need to decide what to do for null
-      case _ => A.fromAST(sexpr).map(Some.apply)
-    }
-  }
   /*  TO DO need to figure out how to do Either
   // supports multiple representations for compatibility with other libraries,
   // but does not support the "discriminator field" encoding with a field named
@@ -353,8 +361,12 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
       }
     }
    */
-  private[sexpr] def builder[A, T[_]](trace: List[SExprError], in: RetractReader, builder: mutable.Builder[A, T[A]])(
-    implicit A: SExprDecoder[A]
+  private[sexpr] def builder[A, T[_]](
+      trace: List[SExprError],
+      in: RetractReader,
+      builder: mutable.Builder[A, T[A]]
+  )(implicit
+      A: SExprDecoder[A]
   ): T[A] = {
     Lexer.char(trace, in, '[')
     var i: Int = 0
@@ -369,23 +381,25 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
   }
 
   // use this instead of `string.mapOrFail` in supertypes (to prevent class initialization error at runtime)
-  private[sexpr] def mapStringOrFail[A](f: String => Either[String, A]): SExprDecoder[A] = new SExprDecoder[A] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): A =
-      f(string.unsafeDecode(trace, in)) match {
-        case Left(err)    => throw UnsafeSExpr(SExprError.Message(err) :: trace)
-        case Right(value) => value
-      }
+  private[sexpr] def mapStringOrFail[A](f: String => Either[String, A]): SExprDecoder[A] =
+    new SExprDecoder[A] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): A =
+        f(string.unsafeDecode(trace, in)) match {
+          case Left(err)    => throw UnsafeSExpr(SExprError.Message(err) :: trace)
+          case Right(value) => value
+        }
 
-    override def fromAST(sexpr: SExpr): Either[String, A] =
-      string.fromAST(sexpr).flatMap(f)
-  }
+      override def fromAST(sexpr: SExpr): Either[String, A] =
+        string.fromAST(sexpr).flatMap(f)
+    }
 }
 
 private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SExprDecoder.type =>
-  implicit def array[A: SExprDecoder: reflect.ClassTag]: SExprDecoder[Array[A]] = new SExprDecoder[Array[A]] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): Array[A] =
-      builder(trace, in, Array.newBuilder[A])
-  }
+  implicit def array[A: SExprDecoder: reflect.ClassTag]: SExprDecoder[Array[A]] =
+    new SExprDecoder[Array[A]] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Array[A] =
+        builder(trace, in, Array.newBuilder[A])
+    }
 
   implicit def seq[A: SExprDecoder]: SExprDecoder[Seq[A]] = new SExprDecoder[Seq[A]] {
     def unsafeDecode(trace: List[SExprError], in: RetractReader): Seq[A] =
@@ -406,17 +420,18 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SEx
               }
             )
           }
-        case _                       => Left("Not an array")
+        case _ => Left("Not an array")
       }
   }
 
   implicit def nonEmptyChunk[A: SExprDecoder]: SExprDecoder[NonEmptyChunk[A]] =
     chunk[A].mapOrFail(NonEmptyChunk.fromChunk(_).toRight("Chunk was empty"))
 
-  implicit def indexedSeq[A: SExprDecoder]: SExprDecoder[IndexedSeq[A]] = new SExprDecoder[IndexedSeq[A]] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): IndexedSeq[A] =
-      builder(trace, in, IndexedSeq.newBuilder[A])
-  }
+  implicit def indexedSeq[A: SExprDecoder]: SExprDecoder[IndexedSeq[A]] =
+    new SExprDecoder[IndexedSeq[A]] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): IndexedSeq[A] =
+        builder(trace, in, IndexedSeq.newBuilder[A])
+    }
 
   implicit def linearSeq[A: SExprDecoder]: SExprDecoder[immutable.LinearSeq[A]] =
     new SExprDecoder[immutable.LinearSeq[A]] {
@@ -424,10 +439,11 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SEx
         builder(trace, in, immutable.LinearSeq.newBuilder[A])
     }
 
-  implicit def listSet[A: SExprDecoder]: SExprDecoder[immutable.ListSet[A]] = new SExprDecoder[immutable.ListSet[A]] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): ListSet[A] =
-      builder(trace, in, immutable.ListSet.newBuilder[A])
-  }
+  implicit def listSet[A: SExprDecoder]: SExprDecoder[immutable.ListSet[A]] =
+    new SExprDecoder[immutable.ListSet[A]] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): ListSet[A] =
+        builder(trace, in, immutable.ListSet.newBuilder[A])
+    }
 
   implicit def treeSet[A: SExprDecoder: Ordering]: SExprDecoder[immutable.TreeSet[A]] =
     new SExprDecoder[immutable.TreeSet[A]] {
@@ -450,10 +466,11 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SEx
       builder(trace, in, Set.newBuilder[A])
   }
 
-  implicit def hashSet[A: SExprDecoder]: SExprDecoder[immutable.HashSet[A]] = new SExprDecoder[immutable.HashSet[A]] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): immutable.HashSet[A] =
-      builder(trace, in, immutable.HashSet.newBuilder[A])
-  }
+  implicit def hashSet[A: SExprDecoder]: SExprDecoder[immutable.HashSet[A]] =
+    new SExprDecoder[immutable.HashSet[A]] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): immutable.HashSet[A] =
+        builder(trace, in, immutable.HashSet.newBuilder[A])
+    }
 
   implicit def sortedSet[A: Ordering: SExprDecoder]: SExprDecoder[immutable.SortedSet[A]] =
     new SExprDecoder[immutable.SortedSet[A]] {
@@ -474,10 +491,11 @@ private[sexpr] trait DecoderLowPriority1 extends DecoderLowPriority2 { this: SEx
 //    otherwise conflict in a lower priority scope. A good example of this is to
 //    have specialised decoders for collection types, falling back to BuildFrom.
 private[sexpr] trait DecoderLowPriority2 extends DecoderLowPriority3 { this: SExprDecoder.type =>
-  implicit def iterable[A: SExprDecoder]: SExprDecoder[Iterable[A]] = new SExprDecoder[Iterable[A]] {
-    def unsafeDecode(trace: List[SExprError], in: RetractReader): Iterable[A] =
-      builder(trace, in, immutable.Iterable.newBuilder[A])
-  }
+  implicit def iterable[A: SExprDecoder]: SExprDecoder[Iterable[A]] =
+    new SExprDecoder[Iterable[A]] {
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): Iterable[A] =
+        builder(trace, in, immutable.Iterable.newBuilder[A])
+    }
 }
 
 private[sexpr] trait DecoderLowPriority3 { this: SExprDecoder.type =>
@@ -487,40 +505,62 @@ private[sexpr] trait DecoderLowPriority3 { this: SExprDecoder.type =>
 
   implicit val dayOfWeek: SExprDecoder[DayOfWeek] =
     mapStringOrFail(s => parseJavaTime(DayOfWeek.valueOf, s.toUpperCase))
-  implicit val duration: SExprDecoder[Duration]   = mapStringOrFail(parseJavaTime(parsers.unsafeParseDuration, _))
-  implicit val instant: SExprDecoder[Instant]     = mapStringOrFail(parseJavaTime(parsers.unsafeParseInstant, _))
-  implicit val localDate: SExprDecoder[LocalDate] = mapStringOrFail(parseJavaTime(parsers.unsafeParseLocalDate, _))
+  implicit val duration: SExprDecoder[Duration] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseDuration, _)
+  )
+  implicit val instant: SExprDecoder[Instant] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseInstant, _)
+  )
+  implicit val localDate: SExprDecoder[LocalDate] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseLocalDate, _)
+  )
 
   implicit val localDateTime: SExprDecoder[LocalDateTime] =
     mapStringOrFail(parseJavaTime(parsers.unsafeParseLocalDateTime, _))
 
-  implicit val localTime: SExprDecoder[LocalTime] = mapStringOrFail(parseJavaTime(parsers.unsafeParseLocalTime, _))
-  implicit val month: SExprDecoder[Month]         = mapStringOrFail(s => parseJavaTime(Month.valueOf, s.toUpperCase))
-  implicit val monthDay: SExprDecoder[MonthDay]   = mapStringOrFail(parseJavaTime(parsers.unsafeParseMonthDay, _))
+  implicit val localTime: SExprDecoder[LocalTime] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseLocalTime, _)
+  )
+  implicit val month: SExprDecoder[Month] =
+    mapStringOrFail(s => parseJavaTime(Month.valueOf, s.toUpperCase))
+  implicit val monthDay: SExprDecoder[MonthDay] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseMonthDay, _)
+  )
 
   implicit val offsetDateTime: SExprDecoder[OffsetDateTime] =
     mapStringOrFail(parseJavaTime(parsers.unsafeParseOffsetDateTime, _))
 
-  implicit val offsetTime: SExprDecoder[OffsetTime] = mapStringOrFail(parseJavaTime(parsers.unsafeParseOffsetTime, _))
-  implicit val period: SExprDecoder[Period]         = mapStringOrFail(parseJavaTime(parsers.unsafeParsePeriod, _))
-  implicit val year: SExprDecoder[Year]             = mapStringOrFail(parseJavaTime(parsers.unsafeParseYear, _))
-  implicit val yearMonth: SExprDecoder[YearMonth]   = mapStringOrFail(parseJavaTime(parsers.unsafeParseYearMonth, _))
+  implicit val offsetTime: SExprDecoder[OffsetTime] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseOffsetTime, _)
+  )
+  implicit val period: SExprDecoder[Period] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParsePeriod, _)
+  )
+  implicit val year: SExprDecoder[Year] = mapStringOrFail(parseJavaTime(parsers.unsafeParseYear, _))
+  implicit val yearMonth: SExprDecoder[YearMonth] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseYearMonth, _)
+  )
 
   implicit val zonedDateTime: SExprDecoder[ZonedDateTime] = mapStringOrFail(
     parseJavaTime(parsers.unsafeParseZonedDateTime, _)
   )
 
-  implicit val zoneId: SExprDecoder[ZoneId]         = mapStringOrFail(parseJavaTime(parsers.unsafeParseZoneId, _))
-  implicit val zoneOffset: SExprDecoder[ZoneOffset] = mapStringOrFail(parseJavaTime(parsers.unsafeParseZoneOffset, _))
+  implicit val zoneId: SExprDecoder[ZoneId] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseZoneId, _)
+  )
+  implicit val zoneOffset: SExprDecoder[ZoneOffset] = mapStringOrFail(
+    parseJavaTime(parsers.unsafeParseZoneOffset, _)
+  )
 
   // Commonized handling for decoding from string to java.time Class
   private[sexpr] def parseJavaTime[A](f: String => A, s: String): Either[String, A] =
     try Right(f(s))
     catch {
-      case zre: ZoneRulesException      => Left(s"$s is not a valid ISO-8601 format, ${zre.getMessage}")
-      case dtpe: DateTimeParseException => Left(s"$s is not a valid ISO-8601 format, ${dtpe.getMessage}")
-      case dte: DateTimeException       => Left(s"$s is not a valid ISO-8601 format, ${dte.getMessage}")
-      case ex: Exception                => Left(ex.getMessage)
+      case zre: ZoneRulesException => Left(s"$s is not a valid ISO-8601 format, ${zre.getMessage}")
+      case dtpe: DateTimeParseException =>
+        Left(s"$s is not a valid ISO-8601 format, ${dtpe.getMessage}")
+      case dte: DateTimeException => Left(s"$s is not a valid ISO-8601 format, ${dte.getMessage}")
+      case ex: Exception          => Left(ex.getMessage)
     }
 
   implicit val uuid: SExprDecoder[UUID] =

@@ -16,12 +16,12 @@ object naming {
 
       @tailrec
       def loop(
-        prefix: List[String],
-        abbrev: List[String],
-        suffix: List[String]
+          prefix: List[String],
+          abbrev: List[String],
+          suffix: List[String]
       ): List[String] =
         suffix match {
-          case Nil           =>
+          case Nil =>
             abbrev match {
               case Nil => prefix
               case _   => prefix ++ List(join(abbrev))
@@ -32,7 +32,7 @@ object naming {
             else
               abbrev match {
                 case Nil => loop(prefix ++ List(first), List.empty, rest)
-                case _   =>
+                case _ =>
                   loop(prefix ++ List(join(abbrev), first), List.empty, rest)
               }
         }
@@ -53,7 +53,7 @@ object naming {
 
     def toCamelCase: String =
       toList match {
-        case Nil          => ""
+        case Nil => ""
         case head :: tail =>
           (head :: tail.map(_.capitalize)).mkString("")
       }
@@ -77,7 +77,7 @@ object naming {
     def apply(first: String, rest: String*): Name =
       fromIterable(first +: rest)
 
-    @inline def fromList(list: List[String]): Name     = wrap(list)
+    @inline def fromList(list: List[String]): Name = wrap(list)
     def fromIterable(iterable: Iterable[String]): Name =
       wrap(iterable.toList)
 
@@ -101,13 +101,14 @@ object naming {
   }
 
   final case class Path(segments: Chunk[Name]) extends AnyVal { self =>
-    def /:(name: Name): Path                 = Path(segments ++ Chunk(name))
-    def /(name: Path): Path                  = Path(segments ++ name.segments)
-    def %(other: Path): PackageAndModulePath = PackageAndModulePath(PackagePath(self), ModulePath(other))
-    def zip(other: Path): (Path, Path)       = (self, other)
+    def /:(name: Name): Path = Path(segments ++ Chunk(name))
+    def /(name: Path): Path  = Path(segments ++ name.segments)
+    def %(other: Path): PackageAndModulePath =
+      PackageAndModulePath(PackagePath(self), ModulePath(other))
+    def zip(other: Path): (Path, Path) = (self, other)
   }
 
-  final case class PackagePath(toPath: Path)                                              { self =>
+  final case class PackagePath(toPath: Path) { self =>
     def %(modulePath: ModulePath): PackageAndModulePath = PackageAndModulePath(self, modulePath)
   }
   final case class ModulePath(toPath: Path)

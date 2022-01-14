@@ -4,7 +4,7 @@ import java.time._
 
 private[sexpr] object serializers {
   def toString(x: Duration): String = {
-    val s         = new java.lang.StringBuilder(16)
+    val s = new java.lang.StringBuilder(16)
     s.append('P').append('T')
     val totalSecs = x.getSeconds
     var nano      = x.getNano
@@ -12,10 +12,10 @@ private[sexpr] object serializers {
     else {
       var effectiveTotalSecs = totalSecs
       if (totalSecs < 0 && nano > 0) effectiveTotalSecs += 1
-      val hours              = effectiveTotalSecs / 3600 // 3600 == seconds in a hour
-      val secsOfHour         = (effectiveTotalSecs - hours * 3600).toInt
-      val minutes            = secsOfHour / 60
-      val seconds            = secsOfHour - minutes * 60
+      val hours      = effectiveTotalSecs / 3600 // 3600 == seconds in a hour
+      val secsOfHour = (effectiveTotalSecs - hours * 3600).toInt
+      val minutes    = secsOfHour / 60
+      val seconds    = secsOfHour - minutes * 60
       if (hours != 0) s.append(hours).append('H')
       if (minutes != 0) s.append(minutes).append('M')
       if ((seconds | nano) != 0) {
@@ -25,7 +25,7 @@ private[sexpr] object serializers {
           if (totalSecs < 0) nano = 1000000000 - nano
           val dotPos = s.length
           s.append(nano + 1000000000)
-          var i      = s.length - 1
+          var i = s.length - 1
           while (s.charAt(i) == '0') i -= 1
           s.setLength(i + 1)
           s.setCharAt(dotPos, '.')
@@ -39,13 +39,13 @@ private[sexpr] object serializers {
   def toString(x: Instant): String = {
     val s           = new java.lang.StringBuilder(32)
     val epochSecond = x.getEpochSecond
-    val epochDay    =
+    val epochDay =
       (if (epochSecond >= 0) epochSecond
        else epochSecond - 86399) / 86400 // 86400 == seconds per day
-    val secsOfDay    = (epochSecond - epochDay * 86400).toInt
+    val secsOfDay = (epochSecond - epochDay * 86400).toInt
     var marchZeroDay =
       epochDay + 719468 // 719468 == 719528 - 60 == days 0000 to 1970 - days 1st Jan to 1st Mar
-    var adjustYear     = 0
+    var adjustYear = 0
     if (marchZeroDay < 0) { // adjust negative years to positive for calculation
       val adjust400YearCycles = to400YearCycle(marchZeroDay + 1) - 1
       adjustYear = adjust400YearCycles * 400
@@ -57,12 +57,12 @@ private[sexpr] object serializers {
       year -= 1
       marchDayOfYear = toMarchDayOfYear(marchZeroDay, year)
     }
-    val marchMonth     = (marchDayOfYear * 17135 + 6854) >> 19 // (marchDayOfYear * 5 + 2) / 153
+    val marchMonth = (marchDayOfYear * 17135 + 6854) >> 19 // (marchDayOfYear * 5 + 2) / 153
     year += (marchMonth * 3277 >> 15) + adjustYear // year += marchMonth / 10 + adjustYear (reset any negative year and convert march-based values back to january-based)
     val month = marchMonth +
       (if (marchMonth < 10) 3
        else -9)
-    val day   =
+    val day =
       marchDayOfYear - ((marchMonth * 1002762 - 16383) >> 15) // marchDayOfYear - (marchMonth * 306 + 5) / 10 + 1
     val hour       = secsOfDay * 37283 >>> 27 // divide a small positive int by 3600
     val secsOfHour = secsOfDay - hour * 3600
@@ -74,7 +74,7 @@ private[sexpr] object serializers {
     append2Digits(hour, s.append('T'))
     append2Digits(minute, s.append(':'))
     append2Digits(second, s.append(':'))
-    val nano       = x.getNano
+    val nano = x.getNano
     if (nano != 0) {
       s.append('.')
       val q1 = nano / 1000000
@@ -160,7 +160,7 @@ private[sexpr] object serializers {
   }
 
   def toString(x: ZonedDateTime): String = {
-    val s    = new java.lang.StringBuilder(48)
+    val s = new java.lang.StringBuilder(48)
     appendLocalDate(x.toLocalDate, s)
     appendLocalTime(x.toLocalTime, s.append('T'))
     appendZoneOffset(x.getOffset, s)
@@ -191,7 +191,7 @@ private[sexpr] object serializers {
     if (nano != 0) {
       val dotPos = s.length
       s.append(nano + 1000000000)
-      var i      = s.length - 1
+      var i = s.length - 1
       while (s.charAt(i) == '0') i -= 1
       s.setLength(i + 1)
       s.setCharAt(dotPos, '.')
@@ -214,7 +214,7 @@ private[sexpr] object serializers {
       val r1 = q0 - q1 * 3600
       append2Digits(q1, s)
       s.append(':')
-      val q2 = r1 * 17477 >> 20  // divide a small positive int by 60
+      val q2 = r1 * 17477 >> 20 // divide a small positive int by 60
       val r2 = r1 - q2 * 60
       append2Digits(q2, s)
       if (r2 != 0) append2Digits(r2, s.append(':'))

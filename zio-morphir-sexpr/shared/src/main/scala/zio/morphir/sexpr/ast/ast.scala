@@ -36,7 +36,7 @@ object SExpr {
 
   final case class Bool private[sexpr] ($case: BoolCase) extends SExpr
   object Bool {
-    def apply(value: Boolean): Bool          = Bool(BoolCase(value))
+    def apply(value: Boolean): Bool = Bool(BoolCase(value))
     def unapply(arg: SExpr): Option[Boolean] = arg.$case match {
       case BoolCase(value) => Some(value)
       case _               => None
@@ -45,7 +45,7 @@ object SExpr {
 
   final case class Num private[ast] ($case: NumCase) extends SExpr
   object Num {
-    def apply(value: java.math.BigDecimal): Num           = Num(NumCase(value))
+    def apply(value: java.math.BigDecimal): Num = Num(NumCase(value))
     def unapply(exp: SExpr): Option[java.math.BigDecimal] = exp.$case match {
       case NumCase(value) => Some(value)
       case _              => None
@@ -54,7 +54,7 @@ object SExpr {
 
   final case class Str private[ast] ($case: StrCase) extends SExpr
   object Str {
-    def apply(value: String): Str           = Str(StrCase(value))
+    def apply(value: String): Str = Str(StrCase(value))
     def unapply(exp: SExpr): Option[String] = exp.$case match {
       case StrCase(value) => Some(value)
       case _              => None
@@ -63,7 +63,7 @@ object SExpr {
 
   final case class SVector private[sexpr] ($case: VectorCase[SExpr]) extends SExpr
   object SVector {
-    def apply(items: Chunk[SExpr]): SVector       = SVector(VectorCase(items))
+    def apply(items: Chunk[SExpr]): SVector = SVector(VectorCase(items))
     def unapply(arg: SExpr): Option[Chunk[SExpr]] = arg.$case match {
       case VectorCase(items) => Some(items)
       case _                 => None

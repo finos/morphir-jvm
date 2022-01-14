@@ -416,3 +416,4 @@ website/build
 website/i18n/en.json
 website/static/api
 .bsp/
+.vscode/settings.json

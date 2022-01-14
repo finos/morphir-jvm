@@ -8,7 +8,8 @@ package object sexpr {
     def toSExpr(implicit encoder: SExprEncoder[A]): String =
       encoder.encodeSExpr(a, None).toString
 
-    def toSExprPretty(implicit encoder: SExprEncoder[A]): String = encoder.encodeSExpr(a, Some(0)).toString
+    def toSExprPretty(implicit encoder: SExprEncoder[A]): String =
+      encoder.encodeSExpr(a, Some(0)).toString
 
     def toSExprPretty(indent: Int)(implicit encoder: SExprEncoder[A]): String =
       encoder.encodeSExpr(a, Some(indent)).toString
