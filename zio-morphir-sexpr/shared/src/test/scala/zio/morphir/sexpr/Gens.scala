@@ -101,9 +101,9 @@ object Gens {
   } yield OffsetTime.of(localTime, zoneOffset)
 
   val genPeriod: Gen[Random, Period] = for {
-    year  <- Gen.anyInt
-    month <- Gen.anyInt
-    day   <- Gen.anyInt
+    year  <- Gen.int
+    month <- Gen.int
+    day   <- Gen.int
   } yield Period.of(year, month, day)
 
   val genYearMonth: Gen[Random, YearMonth] = for {

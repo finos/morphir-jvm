@@ -24,12 +24,12 @@ object DecoderSpec extends ZioBaseSpec {
           )
           // "hello\u0000world".toSExpr == "\"hello\\u0000world\""
         },
-        testM("bigInt") {
+        test("bigInt") {
           check(Gens.genBigInteger) { x =>
             assertTrue(x.toString.fromSExpr[java.math.BigInteger] == Right(x))
           }
         },
-        testM("bigDecimal") {
+        test("bigDecimal") {
           check(Gens.genBigDecimal) { x =>
             assertTrue(x.toString.fromSExpr[java.math.BigDecimal] == Right(x))
           }
@@ -38,44 +38,44 @@ object DecoderSpec extends ZioBaseSpec {
           assertTrue("true".fromSExpr[Boolean] == Right(true)) &&
           assertTrue("false".fromSExpr[Boolean] == Right(false))
         }, // @@ ignore @@ tag("Something isn't working right!"),
-        testM("byte") {
-          check(Gen.anyByte) { x =>
+        test("byte") {
+          check(Gen.byte) { x =>
             assertTrue(x.toString.fromSExpr[Byte] == Right(x))
           }
         },
-        testM("char2") {
-          check(Gen.anyChar) { x =>
+        test("char2") {
+          check(Gen.char) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Char] == Right(x))
           }
         },
-        testM("double") {
-          check(Gen.anyDouble) { x =>
+        test("double") {
+          check(Gen.double) { x =>
             assertTrue(x.toString.fromSExpr[Double] == Right(x))
           }
         },
-        testM("float") {
-          check(Gen.anyFloat) { x =>
+        test("float") {
+          check(Gen.float) { x =>
             assertTrue(x.toString.fromSExpr[Float] == Right(x))
           }
         },
-        testM("int") {
-          check(Gen.anyInt) { x =>
+        test("int") {
+          check(Gen.int) { x =>
             assertTrue(x.toString.fromSExpr[Int] == Right(x))
           }
         },
-        testM("long") {
-          check(Gen.anyLong) { x =>
+        test("long") {
+          check(Gen.long) { x =>
             assertTrue(x.toString.fromSExpr[Long] == Right(x))
           }
         },
-        testM("short") {
-          check(Gen.anyShort) { x =>
+        test("short") {
+          check(Gen.short) { x =>
             assertTrue(x.toString.fromSExpr[Short] == Right(x))
           }
         },
         suite("java.util.UUID")(
-          testM("Auto-generated") {
-            check(Gen.anyUUID) { x =>
+          test("Auto-generated") {
+            check(Gen.uuid) { x =>
               assertTrue(s"\"${x.toString}\"".fromSExpr[UUID] == Right(x))
             }
           },
@@ -124,7 +124,7 @@ object DecoderSpec extends ZioBaseSpec {
       ),
       suite("java.time")(
         suite("Duration")(
-          testM("Auto-generated") {
+          test("Auto-generated") {
             check(Gens.genDuration) { x =>
               assertTrue(s"\"${x.toString}\"".fromSExpr[Duration] == Right(x))
             }
@@ -148,74 +148,74 @@ object DecoderSpec extends ZioBaseSpec {
             )
           }
         ),
-        testM("Instant") {
+        test("Instant") {
           check(Gens.genInstant) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Instant] == Right(x))
           }
         },
-        testM("LocalDate") {
+        test("LocalDate") {
           check(Gens.genLocalDate) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[LocalDate] == Right(x))
           }
         },
-        testM("LocalDateTime") {
+        test("LocalDateTime") {
           check(Gens.genLocalDateTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[LocalDateTime] == Right(x))
           }
         },
-        testM("LocalTime") {
+        test("LocalTime") {
           check(Gens.genLocalTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[LocalTime] == Right(x))
           }
         },
-        testM("Month") {
+        test("Month") {
           check(Gens.genMonth) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Month] == Right(x))
           }
         },
-        testM("MonthDay") {
+        test("MonthDay") {
           check(Gens.genMonthDay) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[MonthDay] == Right(x))
           }
         },
-        testM("OffsetDateTime") {
+        test("OffsetDateTime") {
           check(Gens.genOffsetDateTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[OffsetDateTime] == Right(x))
           }
         },
-        testM("OffsetTime") {
+        test("OffsetTime") {
           check(Gens.genOffsetTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[OffsetTime] == Right(x))
           }
         },
-        testM("Period") {
+        test("Period") {
           check(Gens.genPeriod) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Period] == Right(x))
           }
         },
-        testM("Year") {
+        test("Year") {
           check(Gens.genYear) { x =>
             val year = "%04d".format(x.getValue)
             assertTrue(s"\"$year\"".fromSExpr[Year] == Right(x))
           }
         },
-        testM("YearMonth") {
+        test("YearMonth") {
           check(Gens.genYearMonth) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[YearMonth] == Right(x))
           }
         },
-        testM("ZoneId") {
+        test("ZoneId") {
           check(Gens.genZoneId) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[ZoneId] == Right(x))
           }
         },
-        testM("ZoneOffset") {
+        test("ZoneOffset") {
           check(Gens.genZoneOffset) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[ZoneOffset] == Right(x))
           }
         },
         suite("ZonedDateTime")(
-          testM("Auto-generated") {
+          test("Auto-generated") {
             check(Gens.genZonedDateTime) { x =>
               assertTrue(s"\"${x.toString}\"".fromSExpr[ZonedDateTime] == Right(x))
             }
@@ -309,7 +309,7 @@ object DecoderSpec extends ZioBaseSpec {
         }
       ),
       suite("fromAST")(
-        testM("BigDecimal") {
+        test("BigDecimal") {
           check(Gens.genBigDecimal) { x =>
             assert(SExpr.Num(x).as[java.math.BigDecimal])(isRight(equalTo(x)))
           }

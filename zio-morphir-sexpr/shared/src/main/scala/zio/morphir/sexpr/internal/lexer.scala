@@ -107,7 +107,7 @@ object Lexer {
         throw UnsafeSExpr(SExprError.Message("expected a Byte") :: trace)
     }
   }
-  
+
   def short(trace: List[SExprError], in: RetractReader): Short = {
     checkNumber(trace, in)
     try {
@@ -144,9 +144,9 @@ object Lexer {
     }
   }
 
-    def bigInteger(
-    trace: List[SExprError],
-    in: RetractReader
+  def bigInteger(
+      trace: List[SExprError],
+      in: RetractReader
   ): java.math.BigInteger = {
     checkNumber(trace, in)
     try {
@@ -184,8 +184,8 @@ object Lexer {
   }
 
   def bigDecimal(
-    trace: List[SExprError],
-    in: RetractReader
+      trace: List[SExprError],
+      in: RetractReader
   ): java.math.BigDecimal = {
     checkNumber(trace, in)
     try {
@@ -197,7 +197,6 @@ object Lexer {
         throw UnsafeSExpr(SExprError.Message(s"expected a $NumberMaxBits BigDecimal") :: trace)
     }
   }
-
 
   // optional whitespace and then an expected character
   @inline def char(trace: List[SExprError], in: OneCharReader, c: Char): Unit = {
@@ -219,8 +218,7 @@ object Lexer {
   // non-positional for performance
   @inline private[this] def isNumber(c: Char): Boolean =
     (c: @switch) match {
-      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' |
-          'E' =>
+      case '+' | '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'e' | 'E' =>
         true
       case _ => false
     }
@@ -229,7 +227,7 @@ object Lexer {
   private def checkNumber(trace: List[SExprError], in: RetractReader): Unit = {
     (in.nextNonWhitespace(): @switch) match {
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => ()
-      case c                                                               =>
+      case c =>
         throw UnsafeSExpr(
           SExprError.Message(s"expected a number, got $c") :: trace
         )

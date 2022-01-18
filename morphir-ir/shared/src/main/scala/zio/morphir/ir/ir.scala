@@ -23,9 +23,8 @@ sealed trait Type extends IR { self =>
   }
 
   /**
-   * Folds over the recursive data structure to reduce it to a summary value, providing access to
-   * the recursive structure annotated with the current previous summary values in each step of the
-   * fold.
+   * Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
+   * structure annotated with the current previous summary values in each step of the fold.
    */
   def foldAttributed[Z](f: TypeCase[Attributed[TypeCase, Z]] => Z): Z = {
     def annotate(recursive: Type): Attributed[TypeCase, Z] =
@@ -105,9 +104,9 @@ object TypeCase {
   final case class RecordCase[+A](fields: Chunk[A])                          extends TypeCase[A]
   final case class ReferenceCase[+A](typeName: FQName, typeParams: Chunk[A]) extends TypeCase[A]
   final case class TupleCase[+A](elementTypes: List[A])                      extends TypeCase[A]
-  case object UnitCase                                     extends TypeCase[Nothing]
-  final case class VariableCase(name: Name)                extends TypeCase[Nothing]
-  final case class FieldCase[+A](name: Name, fieldType: A) extends TypeCase[A]
+  case object UnitCase                                                       extends TypeCase[Nothing]
+  final case class VariableCase(name: Name)                                  extends TypeCase[Nothing]
+  final case class FieldCase[+A](name: Name, fieldType: A)                   extends TypeCase[A]
 }
 
 sealed trait Value extends IR { self =>
@@ -132,9 +131,8 @@ sealed trait Value extends IR { self =>
   }
 
   /**
-   * Folds over the recursive data structure to reduce it to a summary value, providing access to
-   * the recursive structure annotated with the current previous summary values in each step of the
-   * fold.
+   * Folds over the recursive data structure to reduce it to a summary value, providing access to the recursive
+   * structure annotated with the current previous summary values in each step of the fold.
    */
   def foldAttributed[Z](f: ValueCase[Attributed[ValueCase, Z]] => Z): Z = {
     def annotate(recursive: Value): Attributed[ValueCase, Z] =
@@ -195,17 +193,17 @@ object Literal {
 }
 
 object PatternModule {
-  //TODO: Add Pattern
+  // TODO: Add Pattern
 }
 
 sealed trait IR { self =>
-  //import IRCase.*
+  // import IRCase.*
   def $case: IRCase[IR]
 }
-object IR       {}
+object IR {}
 
 sealed trait IRCase[+A] { self => }
-object IRCase           {
+object IRCase {
   type TypeCase[+A] = zio.morphir.ir.TypeCase[A]
   val TypeCase = zio.morphir.ir.TypeCase
 }

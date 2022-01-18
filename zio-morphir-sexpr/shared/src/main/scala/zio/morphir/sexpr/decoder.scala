@@ -40,8 +40,8 @@ trait SExprDecoder[A] { self =>
   final def <*[B](that: => SExprDecoder[B]): SExprDecoder[A] = self.zipLeft(that)
 
   /**
-   * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with a
-   * human-readable error message if the provided text does not encode a value of this type.
+   * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with a human-readable error
+   * message if the provided text does not encode a value of this type.
    *
    * Note: This method may not entirely consume the specified character sequence.
    */
@@ -57,8 +57,8 @@ trait SExprDecoder[A] { self =>
   /**
    * Decode a value from an already parsed SExpr AST.
    *
-   * The default implementation encodes the SExpr to a byte stream and uses decode to parse that.
-   * Override to provide a more performant implementation.
+   * The default implementation encodes the SExpr to a byte stream and uses decode to parse that. Override to provide a
+   * more performant implementation.
    */
   def fromAST(sexpr: SExpr): Either[String, A] = decodeSExpr(SExpr.encoder.encodeSExpr(sexpr, None))
 
@@ -74,8 +74,8 @@ trait SExprDecoder[A] { self =>
   }
 
   /**
-   * Returns a new codec whose decoded values will be mapped by the specified function, which may
-   * itself decide to fail with some type of error.
+   * Returns a new codec whose decoded values will be mapped by the specified function, which may itself decide to fail
+   * with some type of error.
    */
   final def mapOrFail[B](f: A => Either[String, B]): SExprDecoder[B] = new SExprDecoder[B] {
     def unsafeDecode(trace: List[SExprError], in: RetractReader): B = f(
@@ -90,13 +90,11 @@ trait SExprDecoder[A] { self =>
   }
 
   /**
-   * Returns a new codec that combines this codec and the specified codec using fallback semantics:
-   * such that if this codec fails, the specified codec will be tried instead. This method may be
-   * unsafe from a security perspective: it can use more memory than hand coded alternative and so
-   * lead to DOS.
+   * Returns a new codec that combines this codec and the specified codec using fallback semantics: such that if this
+   * codec fails, the specified codec will be tried instead. This method may be unsafe from a security perspective: it
+   * can use more memory than hand coded alternative and so lead to DOS.
    *
-   * For example, in the case of an alternative between `Int` and `Boolean`, a hand coded
-   * alternative would look like:
+   * For example, in the case of an alternative between `Int` and `Boolean`, a hand coded alternative would look like:
    *
    * ```
    * val decoder: SExprDecoder[AnyVal] = SExprDecoder.peekChar[AnyVal] {
@@ -129,15 +127,15 @@ trait SExprDecoder[A] { self =>
   }
 
   /**
-   * Returns a new codec that combines this codec and the specified codec using fallback semantics:
-   * such that if this codec fails, the specified codec will be tried instead.
+   * Returns a new codec that combines this codec and the specified codec using fallback semantics: such that if this
+   * codec fails, the specified codec will be tried instead.
    */
   final def orElseEither[B](that: => SExprDecoder[B]): SExprDecoder[Either[A, B]] =
     self.map(Left(_)).orElse(that.map(Right(_)))
 
   /**
-   * Low-level, unsafe method to decode a value or throw an exception. This method should not be
-   * called in application code, although it can be implemented for user-defined data structures.
+   * Low-level, unsafe method to decode a value or throw an exception. This method should not be called in application
+   * code, although it can be implemented for user-defined data structures.
    */
   def unsafeDecode(trace: List[SExprError], in: RetractReader): A
 
@@ -150,8 +148,8 @@ trait SExprDecoder[A] { self =>
   final def widen[B >: A]: SExprDecoder[B] = self.asInstanceOf[SExprDecoder[B]]
 
   /**
-   * Returns a new codec that combines this codec and the specified codec into a single codec that
-   * decodes a tuple of the values decoded by the respective codecs.
+   * Returns a new codec that combines this codec and the specified codec into a single codec that decodes a tuple of
+   * the values decoded by the respective codecs.
    */
   final def zip[B](that: => SExprDecoder[B]): SExprDecoder[(A, B)] = SExprDecoder.tuple2(this, that)
 
@@ -226,9 +224,9 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
   implicit val long: SExprDecoder[Long]     = number(Lexer.long, _.longValueExact())
   implicit val bigInteger: SExprDecoder[java.math.BigInteger] =
     number(Lexer.bigInteger, _.toBigIntegerExact)
-  implicit val scalaBigInt: SExprDecoder[BigInt] = bigInteger.map(x => x)
-  implicit val float: SExprDecoder[Float]        = number(Lexer.float, _.floatValue())
-  implicit val double: SExprDecoder[Double]      = number(Lexer.double, _.doubleValue())
+  implicit val scalaBigInt: SExprDecoder[BigInt]              = bigInteger.map(x => x)
+  implicit val float: SExprDecoder[Float]                     = number(Lexer.float, _.floatValue())
+  implicit val double: SExprDecoder[Double]                   = number(Lexer.double, _.doubleValue())
   implicit val bigDecimal: SExprDecoder[java.math.BigDecimal] = number(Lexer.bigDecimal, identity)
   implicit val scalaBigDecimal: SExprDecoder[BigDecimal]      = bigDecimal.map(x => x)
 

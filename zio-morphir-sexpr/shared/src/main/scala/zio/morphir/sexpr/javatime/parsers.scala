@@ -31,9 +31,9 @@ private[sexpr] object parsers {
     var seconds      = 0L
     var nanos, state = 0
     if (pos >= len) durationError(pos)
-    var ch           = input.charAt(pos)
+    var ch = input.charAt(pos)
     pos += 1
-    val isNeg        = ch == '-'
+    val isNeg = ch == '-'
     if (isNeg) {
       if (pos >= len) durationError(pos)
       ch = input.charAt(pos)
@@ -57,7 +57,7 @@ private[sexpr] object parsers {
         ch = input.charAt(pos)
         pos += 1
       } else if (state == 4 && pos >= len) durationError(pos - 1)
-      val isNegX  = ch == '-'
+      val isNegX = ch == '-'
       if (isNegX) {
         if (pos >= len) durationError(pos)
         ch = input.charAt(pos)
@@ -130,8 +130,8 @@ private[sexpr] object parsers {
   }
 
   def unsafeParseInstant(input: String): Instant = {
-    val len             = input.length
-    var pos             = 0
+    val len = input.length
+    var pos = 0
     val year = {
       if (pos + 4 >= len) instantError(pos)
       val ch0 = input.charAt(pos)
@@ -147,7 +147,7 @@ private[sexpr] object parsers {
         pos += 5
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -264,12 +264,15 @@ private[sexpr] object parsers {
     }
     if (ch != 'Z') instantError(nanoDigitWeight, pos - 1)
     if (pos != len) instantError(pos)
-    val epochDay        =
-      epochDayForYear(year) + (dayOfYearForYearMonth(year, month) + day - 719529) // 719528 == days 0000 to 1970
+    val epochDay =
+      epochDayForYear(year) + (dayOfYearForYearMonth(
+        year,
+        month
+      ) + day - 719529) // 719528 == days 0000 to 1970
     Instant.ofEpochSecond(
       epochDay * 86400 + (hour * 3600 + minute * 60 + second),
       nano.toLong
-    )                                                                             // 86400 == seconds per day
+    ) // 86400 == seconds per day
   }
 
   def unsafeParseLocalDate(input: String): LocalDate = {
@@ -290,7 +293,7 @@ private[sexpr] object parsers {
         pos += 5
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -345,8 +348,8 @@ private[sexpr] object parsers {
   }
 
   def unsafeParseLocalDateTime(input: String): LocalDateTime = {
-    val len          = input.length
-    var pos          = 0
+    val len = input.length
+    var pos = 0
     val year = {
       if (pos + 4 >= len) localDateTimeError(pos)
       val ch0 = input.charAt(pos)
@@ -362,7 +365,7 @@ private[sexpr] object parsers {
         pos += 5
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -473,8 +476,8 @@ private[sexpr] object parsers {
   }
 
   def unsafeParseLocalTime(input: String): LocalTime = {
-    val len          = input.length
-    var pos          = 0
+    val len = input.length
+    var pos = 0
     val hour = {
       if (pos + 2 >= len) localTimeError(pos)
       val ch0  = input.charAt(pos)
@@ -557,8 +560,8 @@ private[sexpr] object parsers {
   }
 
   def unsafeParseOffsetDateTime(input: String): OffsetDateTime = {
-    val len             = input.length
-    var pos             = 0
+    val len = input.length
+    var pos = 0
     val year = {
       if (pos + 4 >= len) offsetDateTimeError(pos)
       val ch0 = input.charAt(pos)
@@ -574,7 +577,7 @@ private[sexpr] object parsers {
         pos += 5
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -652,7 +655,7 @@ private[sexpr] object parsers {
     var second, nano    = 0
     var nanoDigitWeight = -1
     if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
-    var ch              = input.charAt(pos)
+    var ch = input.charAt(pos)
     pos += 1
     if (ch == ':') {
       nanoDigitWeight = -2
@@ -682,10 +685,10 @@ private[sexpr] object parsers {
         }
       }
     }
-    val zoneOffset      =
+    val zoneOffset =
       if (ch == 'Z') ZoneOffset.UTC
       else {
-        val offsetNeg                  = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
+        val offsetNeg = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
         val offsetHour = {
           if (pos + 1 >= len) offsetDateTimeError(pos)
           val ch0        = input.charAt(pos)
@@ -741,8 +744,8 @@ private[sexpr] object parsers {
   }
 
   def unsafeParseOffsetTime(input: String): OffsetTime = {
-    val len             = input.length
-    var pos             = 0
+    val len = input.length
+    var pos = 0
     val hour = {
       if (pos + 2 >= len) offsetTimeError(pos)
       val ch0  = input.charAt(pos)
@@ -769,7 +772,7 @@ private[sexpr] object parsers {
     var second, nano    = 0
     var nanoDigitWeight = -1
     if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
-    var ch              = input.charAt(pos)
+    var ch = input.charAt(pos)
     pos += 1
     if (ch == ':') {
       nanoDigitWeight = -2
@@ -799,10 +802,10 @@ private[sexpr] object parsers {
         }
       }
     }
-    val zoneOffset      =
+    val zoneOffset =
       if (ch == 'Z') ZoneOffset.UTC
       else {
-        val offsetNeg                  = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
+        val offsetNeg = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
         nanoDigitWeight = -3
         val offsetHour = {
           if (pos + 1 >= len) offsetTimeError(pos)
@@ -863,9 +866,9 @@ private[sexpr] object parsers {
     val len                             = input.length
     var pos, state, years, months, days = 0
     if (pos >= len) periodError(pos)
-    var ch                              = input.charAt(pos)
+    var ch = input.charAt(pos)
     pos += 1
-    val isNeg                           = ch == '-'
+    val isNeg = ch == '-'
     if (isNeg) {
       if (pos >= len) periodError(pos)
       ch = input.charAt(pos)
@@ -946,7 +949,7 @@ private[sexpr] object parsers {
         pos += 4
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -996,7 +999,7 @@ private[sexpr] object parsers {
         pos += 5
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -1038,8 +1041,8 @@ private[sexpr] object parsers {
   }
 
   def unsafeParseZonedDateTime(input: String): ZonedDateTime = {
-    val len             = input.length
-    var pos             = 0
+    val len = input.length
+    var pos = 0
     val year = {
       if (pos + 4 >= len) zonedDateTimeError(pos)
       val ch0 = input.charAt(pos)
@@ -1055,7 +1058,7 @@ private[sexpr] object parsers {
         pos += 5
         ch0 * 1000 + ch1 * 100 + ch2 * 10 + ch3 - 53328 // 53328 == '0' * 1111
       } else {
-        val yearNeg    = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
+        val yearNeg = ch0 == '-' || (ch0 != '+' && charsOrDigitError('-', '+', pos))
         if (ch1 < '0' || ch1 > '9') digitError(pos + 1)
         if (ch2 < '0' || ch2 > '9') digitError(pos + 2)
         if (ch3 < '0' || ch3 > '9') digitError(pos + 3)
@@ -1133,7 +1136,7 @@ private[sexpr] object parsers {
     var second, nano    = 0
     var nanoDigitWeight = -1
     if (pos >= len) timezoneSignError(nanoDigitWeight, pos)
-    var ch              = input.charAt(pos)
+    var ch = input.charAt(pos)
     pos += 1
     if (ch == ':') {
       nanoDigitWeight = -2
@@ -1163,8 +1166,8 @@ private[sexpr] object parsers {
         }
       }
     }
-    val localDateTime   = LocalDateTime.of(year, month, day, hour, minute, second, nano)
-    val zoneOffset      =
+    val localDateTime = LocalDateTime.of(year, month, day, hour, minute, second, nano)
+    val zoneOffset =
       if (ch == 'Z') {
         if (pos < len) {
           ch = input.charAt(pos)
@@ -1173,7 +1176,7 @@ private[sexpr] object parsers {
         }
         ZoneOffset.UTC
       } else {
-        val offsetNeg                  = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
+        val offsetNeg = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
         nanoDigitWeight = -3
         val offsetHour = {
           if (pos + 1 >= len) zonedDateTimeError(pos)
@@ -1234,7 +1237,7 @@ private[sexpr] object parsers {
     if (ch == '[') {
       val zone =
         try {
-          val from   = pos
+          val from = pos
           while ({
             if (pos >= len) zonedDateTimeError(pos)
             ch = input.charAt(pos)
@@ -1245,7 +1248,9 @@ private[sexpr] object parsers {
           if (
             (zoneId eq null) && {
               zoneId = ZoneId.of(key)
-              !zoneId.isInstanceOf[ZoneOffset] || zoneId.asInstanceOf[ZoneOffset].getTotalSeconds % 900 == 0
+              !zoneId.isInstanceOf[ZoneOffset] || zoneId
+                .asInstanceOf[ZoneOffset]
+                .getTotalSeconds % 900 == 0
             }
           ) zoneIds.put(key, zoneId)
           zoneId
@@ -1264,7 +1269,8 @@ private[sexpr] object parsers {
       if (
         (zoneId eq null) && {
           zoneId = ZoneId.of(input)
-          !zoneId.isInstanceOf[ZoneOffset] || zoneId.asInstanceOf[ZoneOffset].getTotalSeconds % 900 == 0
+          !zoneId
+            .isInstanceOf[ZoneOffset] || zoneId.asInstanceOf[ZoneOffset].getTotalSeconds % 900 == 0
         }
       ) zoneIds.put(input, zoneId)
       zoneId
@@ -1276,11 +1282,11 @@ private[sexpr] object parsers {
     val len                  = input.length
     var pos, nanoDigitWeight = 0
     if (pos >= len) zoneOffsetError(pos)
-    var ch                   = input.charAt(pos)
+    var ch = input.charAt(pos)
     pos += 1
     if (ch == 'Z') ZoneOffset.UTC
     else {
-      val offsetNeg                  = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
+      val offsetNeg = ch == '-' || (ch != '+' && timezoneSignError(nanoDigitWeight, pos - 1))
       nanoDigitWeight = -3
       val offsetHour = {
         if (pos + 1 >= len) zoneOffsetError(pos)
@@ -1337,17 +1343,17 @@ private[sexpr] object parsers {
   }
 
   private[this] def toZoneOffset(
-    offsetNeg: Boolean,
-    offsetHour: Int,
-    offsetMinute: Int,
-    offsetSecond: Int,
-    pos: Int
+      offsetNeg: Boolean,
+      offsetHour: Int,
+      offsetMinute: Int,
+      offsetSecond: Int,
+      pos: Int
   ): ZoneOffset = {
     var offsetTotal = offsetHour * 3600 + offsetMinute * 60 + offsetSecond
     var qp          = offsetTotal * 37283
     if (offsetTotal > 64800) zoneOffsetError(pos) // 64800 == 18 * 60 * 60
-    if ((qp & 0x1ff8000) == 0) { // check if offsetTotal divisible by 900
-      qp >>>= 25                 // divide offsetTotal by 900
+    if ((qp & 0x1ff8000) == 0) {                  // check if offsetTotal divisible by 900
+      qp >>>= 25                                  // divide offsetTotal by 900
       if (offsetNeg) qp = -qp
       var zoneOffset = zoneOffsets(qp + 72)
       if (zoneOffset ne null) zoneOffset
@@ -1372,8 +1378,9 @@ private[sexpr] object parsers {
   private[this] def epochDayForYear(year: Int): Long =
     year * 365L + ((year + 3 >> 2) - {
       val cp = year * 1374389535L
-      if (year < 0) (cp >> 37) - (cp >> 39)                        // year / 100 - year / 400
-      else (cp + 136064563965L >> 37) - (cp + 548381424465L >> 39) // (year + 99) / 100 - (year + 399) / 400
+      if (year < 0) (cp >> 37) - (cp >> 39) // year / 100 - year / 400
+      else
+        (cp + 136064563965L >> 37) - (cp + 548381424465L >> 39) // (year + 99) / 100 - (year + 399) / 400
     }.toInt)
 
   private[this] def dayOfYearForYearMonth(year: Int, month: Int): Int =
@@ -1391,11 +1398,12 @@ private[sexpr] object parsers {
     else if (isLeap(year)) 29
     else 28
 
-  private[this] def isLeap(year: Int): Boolean = (year & 0x3) == 0 && { // (year % 100 != 0 || year % 400 == 0)
-    val cp = year * 1374389535L
-    val cc = year >> 31
-    ((cp ^ cc) & 0x1fc0000000L) != 0 || (((cp >> 37).toInt - cc) & 0x3) == 0
-  }
+  private[this] def isLeap(year: Int): Boolean =
+    (year & 0x3) == 0 && { // (year % 100 != 0 || year % 400 == 0)
+      val cp = year * 1374389535L
+      val cc = year >> 31
+      ((cp ^ cc) & 0x1fc0000000L) != 0 || (((cp >> 37).toInt - cc) & 0x3) == 0
+    }
 
   private[this] def nanoError(nanoDigitWeight: Int, ch: Char, pos: Int): Nothing = {
     if (nanoDigitWeight == 0) charError(ch, pos)
@@ -1409,7 +1417,11 @@ private[sexpr] object parsers {
       pos
     )
 
-  private[this] def durationOrPeriodDigitError(isNegX: Boolean, isNumReq: Boolean, pos: Int): Nothing =
+  private[this] def durationOrPeriodDigitError(
+      isNegX: Boolean,
+      isNumReq: Boolean,
+      pos: Int
+  ): Nothing =
     error(
       if (isNegX) "expected digit"
       else if (isNumReq) "expected '-' or digit"
@@ -1498,16 +1510,19 @@ private[sexpr] object parsers {
 
   private[this] def timezoneOffsetHourError(pos: Int) = error("illegal timezone offset hour", pos)
 
-  private[this] def timezoneOffsetMinuteError(pos: Int) = error("illegal timezone offset minute", pos)
+  private[this] def timezoneOffsetMinuteError(pos: Int) =
+    error("illegal timezone offset minute", pos)
 
-  private[this] def timezoneOffsetSecondError(pos: Int) = error("illegal timezone offset second", pos)
+  private[this] def timezoneOffsetSecondError(pos: Int) =
+    error("illegal timezone offset second", pos)
 
   private[this] def digitError(pos: Int) = error("expected digit", pos)
 
   private[this] def charsOrDigitError(ch1: Char, ch2: Char, pos: Int) =
     error(s"expected '$ch1' or '$ch2' or digit", pos)
 
-  private[this] def charsError(ch1: Char, ch2: Char, pos: Int) = error(s"expected '$ch1' or '$ch2'", pos)
+  private[this] def charsError(ch1: Char, ch2: Char, pos: Int) =
+    error(s"expected '$ch1' or '$ch2'", pos)
 
   private[this] def charOrDigitError(ch1: Char, pos: Int) = error(s"expected '$ch1' or digit", pos)
 

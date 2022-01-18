@@ -58,7 +58,10 @@ private[sexpr] object UUIDParser {
       val lsb3 = parseNibbles(ch2n, input, 28)
       val lsb4 = parseNibbles(ch2n, input, 32)
       if ((msb1 | msb2 | msb3 | msb4 | lsb1 | lsb2 | lsb3 | lsb4) < 0) invalidUUIDError(input)
-      new java.util.UUID(msb1 << 48 | msb2 << 32 | msb3 << 16 | msb4, lsb1 << 48 | lsb2 << 32 | lsb3 << 16 | lsb4)
+      new java.util.UUID(
+        msb1 << 48 | msb2 << 32 | msb3 << 16 | msb4,
+        lsb1 << 48 | lsb2 << 32 | lsb3 << 16 | lsb4
+      )
     }
 
   // A nibble is 4 bits
@@ -73,7 +76,7 @@ private[sexpr] object UUIDParser {
   }
 
   private[this] def unsafeParseExtended(input: String): java.util.UUID = {
-    val len   = input.length
+    val len = input.length
     if (len > 36) throw new IllegalArgumentException("UUID string too large")
     val dash1 = input.indexOf('-', 0)
     val dash2 = input.indexOf('-', dash1 + 1)
@@ -99,11 +102,11 @@ private[sexpr] object UUIDParser {
 
   @nowarn("msg=implicit numeric widening")
   private[this] def parseSection(
-    ch2n: Array[Byte],
-    input: String,
-    beginIndex: Int,
-    endIndex: Int,
-    zeroMask: Long
+      ch2n: Array[Byte],
+      input: String,
+      beginIndex: Int,
+      endIndex: Int,
+      zeroMask: Long
   ): Long = {
     if (beginIndex >= endIndex || beginIndex + 16 < endIndex) invalidUUIDError(input)
     var result = 0L

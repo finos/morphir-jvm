@@ -11,8 +11,8 @@ import scala.math.{BigDecimal => ScalaBigDecimal, BigInt => ScalaBigInt}
 trait SExprEncoder[A] { self =>
 
   /**
-   * Returns a new encoder, with a new input type, which can be transformed to the old input type by
-   * the specified user-defined function.
+   * Returns a new encoder, with a new input type, which can be transformed to the old input type by the specified
+   * user-defined function.
    */
   final def contramap[B](f: B => A): SExprEncoder[B] = new SExprEncoder[B] {
 
@@ -35,8 +35,7 @@ trait SExprEncoder[A] { self =>
   }
 
   /**
-   * This default may be overriden when this value may be missing within a JSON object and still be
-   * encoded.
+   * This default may be overriden when this value may be missing within a JSON object and still be encoded.
    */
   @nowarn("msg=is never used")
   def isNothing(a: A): Boolean = false

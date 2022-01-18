@@ -12,89 +12,89 @@ import java.time._
 object RoundTripSpec extends ZioBaseSpec {
   def spec = suite("RoundTrip")(
     suite("primitives")(
-      testM("bigInt") {
+      test("bigInt") {
         check(genBigInteger)(assertRoundtrips)
       } @@ samples(1000),
-      testM("bigDecimal") {
+      test("bigDecimal") {
         check(genBigDecimal)(assertRoundtrips)
       } @@ samples(1000),
-      testM("boolean") {
+      test("boolean") {
         check(Gen.boolean)(assertRoundtrips)
       } @@ samples(1000),
-      testM("byte") {
-        check(Gen.anyByte)(assertRoundtrips)
+      test("byte") {
+        check(Gen.byte)(assertRoundtrips)
       } @@ samples(1000),
-      testM("char") {
-        check(Gen.anyChar)(assertRoundtrips)
+      test("char") {
+        check(Gen.char)(assertRoundtrips)
       } @@ samples(1000),
-      testM("double") {
-        check(Gen.anyDouble)(assertRoundtrips)
+      test("double") {
+        check(Gen.double)(assertRoundtrips)
       } @@ samples(1000),
-      testM("float") {
-        check(Gen.anyFloat)(assertRoundtrips)
+      test("float") {
+        check(Gen.float)(assertRoundtrips)
       } @@ samples(1000),
-      testM("int") {
-        check(Gen.anyInt)(assertRoundtrips)
+      test("int") {
+        check(Gen.int)(assertRoundtrips)
       } @@ samples(1000),
-      testM("long") {
-        check(Gen.anyLong)(assertRoundtrips)
+      test("long") {
+        check(Gen.long)(assertRoundtrips)
       } @@ samples(1000),
-      testM("short") {
-        check(Gen.anyShort)(assertRoundtrips)
+      test("short") {
+        check(Gen.short)(assertRoundtrips)
       } @@ samples(1000),
-      testM("string") {
-        check(Gen.anyString)(assertRoundtrips)
+      test("string") {
+        check(Gen.string)(assertRoundtrips)
       } @@ samples(1000)
     ),
     suite("java.time")(
-      testM("Duration") {
+      test("Duration") {
         check(genDuration)(assertRoundtrips)
       } @@ samples(1000),
-      testM("Instant") {
+      test("Instant") {
         check(genInstant)(assertRoundtrips)
       } @@ samples(1000),
-      testM("LocalDate") {
+      test("LocalDate") {
         check(genLocalDate)(assertRoundtrips)
       } @@ samples(1000),
-      testM("LocalDateTime") {
+      test("LocalDateTime") {
         check(genLocalDateTime)(assertRoundtrips)
       } @@ samples(1000),
-      testM("LocalTime") {
+      test("LocalTime") {
         check(genLocalTime)(assertRoundtrips)
       } @@ samples(1000),
-      testM("Month") {
+      test("Month") {
         check(genMonth)(assertRoundtrips)
       } @@ samples(1000),
-      testM("MonthDay") {
+      test("MonthDay") {
         check(genMonthDay)(assertRoundtrips)
       } @@ samples(1000),
-      testM("OffsetDateTime") {
+      test("OffsetDateTime") {
         check(genOffsetDateTime)(assertRoundtrips)
       } @@ samples(1000),
-      testM("OffsetTime") {
+      test("OffsetTime") {
         check(genOffsetTime)(assertRoundtrips)
       } @@ samples(1000),
-      testM("Period") {
+      test("Period") {
         check(genPeriod)(assertRoundtrips)
       } @@ samples(1000),
-      testM("Year") {
+      test("Year") {
         check(genYear)(assertRoundtrips)
       } @@ samples(1000),
-      testM("YearMonth") {
+      test("YearMonth") {
         check(genYearMonth)(assertRoundtrips)
       } @@ samples(1000),
-      testM("ZoneId") {
+      test("ZoneId") {
         check(genZoneId)(assertRoundtrips[ZoneId])
       },
-      testM("ZoneOffset") {
+      test("ZoneOffset") {
         check(genZoneOffset)(assertRoundtrips[ZoneOffset])
       },
-      testM("ZonedDateTime") {
+      test("ZonedDateTime") {
         check(genZonedDateTime)(assertRoundtrips)
       } @@ samples(1000)
     ),
-    testM("UUID") {
-      check(Gen.anyUUID)(assertRoundtrips)
+    test("UUID") {
+      check(Gen.uuid)(assertRoundtrips)
     } @@ samples(1000)
   )
 
