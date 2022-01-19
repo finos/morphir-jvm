@@ -29,17 +29,17 @@ addCommandAlias(
 
 addCommandAlias(
   "testJVM",
-  Seq("coreJVM/test", "ioJVM/test", "sexprJVM/test").mkString(";", ";", ";")
+  Seq("cli/test", "coreJVM/test", "irJVM/test", "sexprJVM/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testJS",
-  Seq("coreJS/test", "ioJS/test", "sexprJS/test").mkString(";", ";", ";")
+  Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testNative",
-  Seq("coreNative/test:compile", "ioNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
+  Seq("coreNative/test:compile", "irNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
 )
 
 lazy val root = project
@@ -49,21 +49,56 @@ lazy val root = project
     unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
   )
   .aggregate(
+    coreJVM,
+    coreJS,
+    coreNative,
     irJVM,
     irJS,
     irNative,
-    ioJVM,
-    ioJS,
-    ioNative,
     sexprJVM,
     sexprJS,
     sexprNative,
     docs
   )
 
+lazy val cli = project
+  .in(file("morphir-cli"))
+  .settings(stdProjectSettings("zio-morphir-cli"))
+  .dependsOn(coreJVM, irJVM, sexprJVM)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.github.alexarchambault" % "case-app_2.13" % "2.1.0-M12",
+      "dev.zio"                   %% "zio-test"      % Version.zio,
+      "dev.zio"                   %% "zio-test"      % Version.zio % Test
+    )
+  )
+
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("morphir-core"))
+  .settings(stdProjectSettings("zio-morphir-core"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.core"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio"         % Version.zio,
+      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
+      "dev.zio" %%% "zio-test"    % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val coreJS = core.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val coreJVM = core.jvm
+
+lazy val coreNative = core.native
+  .settings(nativeSettings)
+
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-ir"))
-  .settings(stdProjectSettings("zio-morphir-ir"))
+  .settings(stdCrossProjectSettings("zio-morphir-ir"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.ir"))
   .settings(
@@ -84,32 +119,9 @@ lazy val irJVM = ir.jvm
 lazy val irNative = ir.native
   .settings(nativeSettings)
 
-lazy val io = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .in(file("morphir-io"))
-  .settings(stdProjectSettings("zio-morphir-io"))
-  .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.morphir.io"))
-  .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio"         % Version.zio,
-      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
-      "dev.zio" %%% "zio-test"    % Version.zio % Test
-    )
-  )
-  .enablePlugins(BuildInfoPlugin)
-
-lazy val ioJS = io.js
-  .settings(jsSettings)
-  .settings(scalaJSUseMainModuleInitializer := true)
-
-lazy val ioJVM = io.jvm
-
-lazy val ioNative = io.native
-  .settings(nativeSettings)
-
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("zio-morphir-sexpr"))
-  .settings(stdProjectSettings("zio-morphir-sexpr"))
+  .settings(stdCrossProjectSettings("zio-morphir-sexpr"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.sexpr"))
   .settings(
@@ -184,7 +196,7 @@ lazy val docs = project
 // Settings
 //------------------------------------------------------------------------------
 
-def stdProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
+def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   crossScalaVersions := {
     crossProjectPlatform.value match {
       case NativePlatform => crossScalaVersions.value.distinct
@@ -246,5 +258,52 @@ def stdProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
         } ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
       case _ => Seq()
     }
+  }
+)
+
+def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala3) = stdSettings(prjName) ++ Seq(
+  ThisBuild / scalaVersion := givenScalaVersion,
+  scalacOptions ++= {
+    if (scalaVersion.value == Scala3)
+      Seq("-noindent")
+    else
+      Seq()
+  },
+  scalacOptions --= {
+    if (scalaVersion.value == Scala3)
+      Seq("-Xfatal-warnings")
+    else
+      Seq()
+  },
+  Compile / doc / sources := {
+    val old = (Compile / doc / sources).value
+    if (scalaVersion.value == Scala3) {
+      Nil
+    } else {
+      old
+    }
+  },
+  Test / parallelExecution := {
+    val old = (Test / parallelExecution).value
+    if (scalaVersion.value == Scala3) {
+      false
+    } else {
+      old
+    }
+  },
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+  libraryDependencies ++= {
+
+    val versionSpecificDependencies =
+      if (scalaVersion.value == Scala3)
+        Seq(
+          "org.scala-lang" % "scala-reflect" % Scala213 % Test
+        )
+      else
+        Seq(
+          "org.scala-lang" % "scala-reflect" % scalaVersion.value % Test
+        )
+
+    versionSpecificDependencies ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
   }
 )
