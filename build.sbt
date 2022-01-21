@@ -162,6 +162,37 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
            |}""".stripMargin
       )
       Seq(file)
+    }.taskValue,
+    Compile / sourceGenerators += Def.task {
+      val dir  = (Compile / sourceManaged).value
+      val file = dir / "zio" / "morphir" / "sexpr" / "GeneratedTupleEncoders.scala"
+      val encoders = (1 to 22).map { i =>
+        val tparams   = (1 to i).map(p => s"A$p").mkString(", ")
+        val implicits = (1 to i).map(p => s"A$p: SExprEncoder[A$p]").mkString(", ")
+        val work = (1 to i)
+          .map(p => s"A$p.unsafeEncode(t._$p, indent, out)")
+          .mkString("\n        if (indent.isEmpty) out.write(',') else out.write(\", \")\n        ")
+
+        s"""implicit def tuple$i[$tparams](implicit $implicits): SExprEncoder[Tuple$i[$tparams]] =
+           |    new SExprEncoder[Tuple$i[$tparams]] {
+           |      def unsafeEncode(t: Tuple$i[$tparams], indent: Option[Int], out: internal.Write): Unit = {
+           |        out.write('[')
+           |        $work
+           |        out.write(']')
+           |      }
+           |    }""".stripMargin
+      }
+      IO.write(
+        file,
+        s"""package zio.morphir.sexpr
+           |
+           |import zio.morphir.sexpr.internal._
+           |
+           |private[sexpr] trait GeneratedTupleEncoders { this: SExprEncoder.type =>
+           |  ${encoders.mkString("\n\n  ")}
+           |}""".stripMargin
+      )
+      Seq(file)
     }.taskValue
   )
   .enablePlugins(BuildInfoPlugin)

@@ -1,29 +1,34 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.internal.*
-import zio.morphir.sexpr.SExprEncoder
+import zio.morphir.sexpr.{SExprDecoder, SExprEncoder}
 
 sealed trait SExpr { self =>
-  import SExpr.*
-  import SExprCase.*
+  import SExprCase._
   def $case: SExprCase[SExpr]
 
   def fold[Z](f: SExprCase[Z] => Z): Z = self.$case match {
-    case c @ BoolCase(_)    => f(c)
-    case c @ StrCase(_)     => f(c)
-    case c @ NumCase(_)     => f(c)
-    case NilCase            => f(NilCase)
-    case ConsCase(car, cdr) => f(ConsCase(car.fold(f), cdr.fold(f)))
-    case QuotedCase(value)  => f(QuotedCase(value.fold(f)))
-    case VectorCase(items)  => f(VectorCase(items.map(_.fold(f))))
+    case c @ BoolCase(_)      => f(c)
+    case c @ StrCase(_)       => f(c)
+    case c @ NumCase(_)       => f(c)
+    case c @ SymbolCase(_)    => f(c)
+    case MapCase(items)       =>
+      f(MapCase(items.map { case (k, v) =>
+        (k.fold(f), v.fold(f))
+      }))
+    case NilCase              => f(NilCase)
+    case ConsCase(head, tail) => f(ConsCase(head.fold(f), tail.fold(f)))
+    case QuotedCase(get)      => f(QuotedCase(get.fold(f)))
+    case VectorCase(items)    => f(VectorCase(items.map(_.fold(f))))
   }
 
   final def widen: SExpr = this
 }
 
 object SExpr {
-  import SExprCase.*
+  import SExprCase._
+
+  implicit val decoder: SExprDecoder[SExpr] = ???
 
   implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
     case (sexpr: Bool, indent, out) => ???
@@ -41,6 +46,19 @@ object SExpr {
       case BoolCase(value) => Some(value)
       case _               => None
     }
+  }
+
+  final case class SMap private[sexpr] ($case: VectorCase[SExpr]) extends SExpr
+  object SMap {
+    def apply(items: Map[SExpr, SExpr]): SMap          = SMap(items)
+    def unapply(arg: SExpr): Option[Map[SExpr, SExpr]] = arg.$case match {
+      case MapCase(items: Map[SExpr, SExpr]) => Some(items)
+      case _                                 => None
+    }
+  }
+
+  case object Nil extends SExpr {
+    val $case = NilCase
   }
 
   final case class Num private[ast] ($case: NumCase) extends SExpr
@@ -71,34 +89,42 @@ object SExpr {
   }
 }
 
-sealed trait SExprCase[+A] { self =>
-  import SExprCase.*
-  def map[B](f: A => B): SExprCase[B] = self match {
-    case BoolCase(value)    => BoolCase(value)
-    case ConsCase(car, cdr) => ConsCase(f(car), f(cdr))
-    case StrCase(value)     => StrCase(value)
-    case NilCase            => NilCase
-    case NumCase(value)     => NumCase(value)
-    case QuotedCase(value)  => QuotedCase(f(value))
-    case VectorCase(items)  => VectorCase(items.map(f))
+sealed trait SExprCase[+Self] { self =>
+  import SExprCase._
+
+  def map[B](f: Self => B): SExprCase[B] = self match {
+    case BoolCase(value)      => BoolCase(value)
+    case ConsCase(head, tail) => ConsCase(f(head), f(tail))
+    case StrCase(value)       => StrCase(value)
+    case SymbolCase(value)    => SymbolCase(value)
+    case MapCase(items)       =>
+      MapCase(items.map { case (k, v) =>
+        (f(k), f(v))
+      })
+    case NilCase              => NilCase
+    case NumCase(value)       => NumCase(value)
+    case QuotedCase(get)      => QuotedCase(f(get))
+    case VectorCase(items)    => VectorCase(items.map(f))
   }
 
 }
 object SExprCase {
-  sealed trait AtomCase[+A]       extends SExprCase[A]
-  sealed trait CollectionCase[+A] extends SExprCase[A]
-  sealed trait ListCase[+A]       extends CollectionCase[A]
-  sealed trait SymbolCase[+A]     extends AtomCase[A]
+  sealed trait AtomCase[+Self]       extends SExprCase[Self]
+  sealed trait CollectionCase[+Self] extends SExprCase[Self]
+  sealed trait ListCase[+Self]       extends CollectionCase[Self]
+  sealed trait SymbolBaseCase[+Self] extends AtomCase[Self]
 
   // Leaf Cases
-  final case class BoolCase(value: Boolean)             extends SymbolCase[Nothing]
+  final case class BoolCase(value: Boolean)             extends SymbolBaseCase[Nothing]
   final case class StrCase(value: String)               extends AtomCase[Nothing]
   final case class NumCase(value: java.math.BigDecimal) extends AtomCase[Nothing]
   case object NilCase                                   extends ListCase[Nothing]
+  final case class SymbolCase(value: String)            extends SymbolBaseCase[Nothing]
 
   // Recursive Cases
-  final case class ConsCase[+A](car: A, cdr: A)    extends ListCase[A]
-  final case class QuotedCase[+A](value: A)        extends SExprCase[A]
-  final case class VectorCase[+A](items: Chunk[A]) extends CollectionCase[A]
+  final case class ConsCase[+Self](head: Self, tail: Self) extends ListCase[Self]
+  final case class MapCase[Self](items: Map[Self, Self])   extends CollectionCase[Self]
+  final case class QuotedCase[+Self](get: Self)            extends SExprCase[Self]
+  final case class VectorCase[+Self](items: Chunk[Self])   extends CollectionCase[Self]
 
 }

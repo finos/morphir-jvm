@@ -270,40 +270,39 @@ object SExprDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 {
   //
   // If alternative behaviour is desired, e.g. pass null to the underlying, then
   // use a newtype wrapper.
-  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] =
-    new SExprDecoder[Option[A]] { self =>
-      private[this] val ull: Array[Char] = "ull".toCharArray
+  implicit def option[A](implicit A: SExprDecoder[A]): SExprDecoder[Option[A]] = new SExprDecoder[Option[A]] { self =>
+    private[this] val il: Array[Char] = "il".toCharArray
 
-      override def unsafeDecodeMissing(trace: List[SExprError]): Option[A] = Option.empty
+    override def unsafeDecodeMissing(trace: List[SExprError]): Option[A] = Option.empty
 
-      def unsafeDecode(trace: List[SExprError], in: RetractReader): Option[A] =
-        (in.nextNonWhitespace(): @switch) match {
-          case 'n' =>
-            Lexer.readChars(trace, in, ull, "null")
-            None
-          case _ =>
-            in.retract()
-            Some(A.unsafeDecode(trace, in))
-        }
-
-      // overridden here to pass `None` to the new Decoder instead of throwing
-      // when called from a derived decoder
-      override def map[B](f: Option[A] => B): SExprDecoder[B] = new SExprDecoder[B] {
-        override def unsafeDecodeMissing(trace: List[SExprError]): B =
-          f(None)
-
-        def unsafeDecode(trace: List[SExprError], in: RetractReader): B =
-          f(self.unsafeDecode(trace, in))
-
-        override final def fromAST(sexpr: SExpr): Either[String, B] =
-          self.fromAST(sexpr).map(f)
+    def unsafeDecode(trace: List[SExprError], in: RetractReader): Option[A] =
+      (in.nextNonWhitespace(): @switch) match {
+        case 'n' =>
+          Lexer.readChars(trace, in, il, "nil")
+          None
+        case _ =>
+          in.retract()
+          Some(A.unsafeDecode(trace, in))
       }
 
-      override final def fromAST(sexpr: SExpr): Either[String, Option[A]] = sexpr match {
-        // case SExpr.Null => Right(None)    // TODO need to decide what to do for null
-        case _ => A.fromAST(sexpr).map(Some.apply)
-      }
+    // overridden here to pass `None` to the new Decoder instead of throwing
+    // when called from a derived decoder
+    override def map[B](f: Option[A] => B): SExprDecoder[B] = new SExprDecoder[B] {
+      override def unsafeDecodeMissing(trace: List[SExprError]): B =
+        f(None)
+
+      def unsafeDecode(trace: List[SExprError], in: RetractReader): B =
+        f(self.unsafeDecode(trace, in))
+
+      override final def fromAST(sexpr: SExpr): Either[String, B] =
+        self.fromAST(sexpr).map(f)
     }
+
+    override final def fromAST(sexpr: SExpr): Either[String, Option[A]] = sexpr match {
+      case SExpr.Nil => Right(None)
+      case _         => A.fromAST(sexpr).map(Some.apply)
+    }
+  }
   /*  TO DO need to figure out how to do Either
   // supports multiple representations for compatibility with other libraries,
   // but does not support the "discriminator field" encoding with a field named

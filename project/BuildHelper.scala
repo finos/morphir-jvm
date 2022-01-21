@@ -168,10 +168,15 @@ object BuildHelper {
       case _ => Seq.empty
     }
 
+  def platformList(platform: String): List[String] = (platform.toLowerCase match {
+    case "native" => Set("shared", platform)
+    case _        => Set("shared", platform, "shared-not-native")
+  }).toList
+
   def platformSpecificSources(platform: String, conf: String, baseDirectory: File)(
       versions: String*
   ) = for {
-    platform <- List("shared", platform)
+    platform <- platformList(platform)
     version  <- "scala" :: versions.toList.map("scala-" + _)
     result = baseDirectory.getParentFile / platform.toLowerCase / "src" / conf / version
     if result.exists

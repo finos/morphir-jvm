@@ -46,55 +46,11 @@ object RoundTripSpec extends ZioBaseSpec {
         check(Gen.string)(assertRoundtrips)
       } @@ samples(1000)
     ),
-    suite("java.time")(
-      test("Duration") {
-        check(genDuration)(assertRoundtrips)
-      } @@ samples(1000),
-      test("Instant") {
-        check(genInstant)(assertRoundtrips)
-      } @@ samples(1000),
-      test("LocalDate") {
-        check(genLocalDate)(assertRoundtrips)
-      } @@ samples(1000),
-      test("LocalDateTime") {
-        check(genLocalDateTime)(assertRoundtrips)
-      } @@ samples(1000),
-      test("LocalTime") {
-        check(genLocalTime)(assertRoundtrips)
-      } @@ samples(1000),
-      test("Month") {
-        check(genMonth)(assertRoundtrips)
-      } @@ samples(1000),
-      test("MonthDay") {
-        check(genMonthDay)(assertRoundtrips)
-      } @@ samples(1000),
-      test("OffsetDateTime") {
-        check(genOffsetDateTime)(assertRoundtrips)
-      } @@ samples(1000),
-      test("OffsetTime") {
-        check(genOffsetTime)(assertRoundtrips)
-      } @@ samples(1000),
-      test("Period") {
-        check(genPeriod)(assertRoundtrips)
-      } @@ samples(1000),
-      test("Year") {
-        check(genYear)(assertRoundtrips)
-      } @@ samples(1000),
-      test("YearMonth") {
-        check(genYearMonth)(assertRoundtrips)
-      } @@ samples(1000),
-      test("ZoneId") {
-        check(genZoneId)(assertRoundtrips[ZoneId])
-      },
-      test("ZoneOffset") {
-        check(genZoneOffset)(assertRoundtrips[ZoneOffset])
-      },
-      test("ZonedDateTime") {
-        check(genZonedDateTime)(assertRoundtrips)
-      } @@ samples(1000)
-    ),
     test("UUID") {
       check(Gen.uuid)(assertRoundtrips)
+    } @@ samples(1000),
+    test("Option") {
+      check(Gen.option(Gen.int))(assertRoundtrips)
     } @@ samples(1000)
   )
 

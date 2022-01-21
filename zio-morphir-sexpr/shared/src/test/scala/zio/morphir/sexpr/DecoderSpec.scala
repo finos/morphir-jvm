@@ -43,7 +43,7 @@ object DecoderSpec extends ZioBaseSpec {
             assertTrue(x.toString.fromSExpr[Byte] == Right(x))
           }
         },
-        test("char2") {
+        test("char") {
           check(Gen.char) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Char] == Right(x))
           }
@@ -125,7 +125,7 @@ object DecoderSpec extends ZioBaseSpec {
       suite("java.time")(
         suite("Duration")(
           test("Auto-generated") {
-            check(Gens.genDuration) { x =>
+            check(Gen.finiteDuration) { x =>
               assertTrue(s"\"${x.toString}\"".fromSExpr[Duration] == Right(x))
             }
           },
@@ -149,47 +149,47 @@ object DecoderSpec extends ZioBaseSpec {
           }
         ),
         test("Instant") {
-          check(Gens.genInstant) { x =>
+          check(Gen.instant) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Instant] == Right(x))
           }
         },
         test("LocalDate") {
-          check(Gens.genLocalDate) { x =>
+          check(Gen.localDate) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[LocalDate] == Right(x))
           }
         },
         test("LocalDateTime") {
-          check(Gens.genLocalDateTime) { x =>
+          check(Gen.localDateTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[LocalDateTime] == Right(x))
           }
         },
         test("LocalTime") {
-          check(Gens.genLocalTime) { x =>
+          check(Gen.localTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[LocalTime] == Right(x))
           }
         },
         test("Month") {
-          check(Gens.genMonth) { x =>
+          check(Gen.month) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Month] == Right(x))
           }
         },
         test("MonthDay") {
-          check(Gens.genMonthDay) { x =>
+          check(Gen.monthDay) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[MonthDay] == Right(x))
           }
         },
         test("OffsetDateTime") {
-          check(Gens.genOffsetDateTime) { x =>
+          check(Gen.offsetDateTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[OffsetDateTime] == Right(x))
           }
         },
         test("OffsetTime") {
-          check(Gens.genOffsetTime) { x =>
+          check(Gen.offsetTime) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[OffsetTime] == Right(x))
           }
         },
         test("Period") {
-          check(Gens.genPeriod) { x =>
+          check(Gen.period) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[Period] == Right(x))
           }
         },
@@ -205,18 +205,18 @@ object DecoderSpec extends ZioBaseSpec {
           }
         },
         test("ZoneId") {
-          check(Gens.genZoneId) { x =>
+          check(Gen.zoneId) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[ZoneId] == Right(x))
           }
         },
         test("ZoneOffset") {
-          check(Gens.genZoneOffset) { x =>
+          check(Gen.zoneOffset) { x =>
             assertTrue(s"\"${x.toString}\"".fromSExpr[ZoneOffset] == Right(x))
           }
         },
         suite("ZonedDateTime")(
           test("Auto-generated") {
-            check(Gens.genZonedDateTime) { x =>
+            check(Gen.zonedDateTime) { x =>
               assertTrue(s"\"${x.toString}\"".fromSExpr[ZonedDateTime] == Right(x))
             }
           },
@@ -418,7 +418,14 @@ object DecoderSpec extends ZioBaseSpec {
           ) &&
           assert(bad7.as[UUID])(isLeft(containsString("Invalid UUID: 0-0-0-0-00000000000000000")))
         }
-      )
+      ),
+      test("Option") {
+        assertTrue("nil".fromSExpr[Option[Boolean]] == Right(None)) &&
+        assertTrue("false".fromSExpr[Option[Boolean]] == Right(Some(false))) &&
+        assertTrue("true".fromSExpr[Option[Boolean]] == Right(Some(true))) &&
+        assertTrue("nil".fromSExpr[Option[Int]] == Right(None)) &&
+        assertTrue("26".fromSExpr[Option[Int]] == Right(Some(26)))
+      }
     )
   )
 }
