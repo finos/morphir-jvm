@@ -120,7 +120,7 @@ lazy val irNative = ir.native
   .settings(nativeSettings)
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .in(file("zio-morphir-sexpr"))
+  .in(file("morphir-sexpr"))
   .settings(stdCrossProjectSettings("zio-morphir-sexpr"))
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.morphir.sexpr"))
@@ -207,7 +207,7 @@ lazy val sexprNative = sexpr.native
   .settings(nativeSettings)
 
 lazy val docs = project
-  .in(file("zio-morphir-docs"))
+  .in(file("morphir-docs"))
   .settings(stdSettings("zio-morphir"))
   .settings(
     publish / skip := true,
