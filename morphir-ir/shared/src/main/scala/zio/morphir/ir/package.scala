@@ -4,8 +4,8 @@ package object ir {
   type FQName = naming.FQName
   val FQName = naming.FQName
 
-  type Lit = Literal[Nothing]
-  val Lit = Literal
+  type LiteralValue = Literal[Nothing]
+  val LiteralValue = Literal
 
   type ModulePath = naming.ModulePath
   val ModulePath = naming.ModulePath
@@ -19,4 +19,5 @@ package object ir {
   type Path = naming.Path
   val Path = naming.Path
 
+  type ??? = Nothing
 }
