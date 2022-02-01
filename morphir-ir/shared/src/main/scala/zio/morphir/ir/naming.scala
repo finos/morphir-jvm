@@ -101,17 +101,24 @@ object naming {
   }
 
   final case class Path(segments: Chunk[Name]) extends AnyVal { self =>
-    def /:(name: Name): Path = Path(segments ++ Chunk(name))
-    def /(name: Path): Path  = Path(segments ++ name.segments)
+    def /(name: Name): Path = Path(segments ++ Chunk(name))
+    def /(name: Path): Path = Path(segments ++ name.segments)
     def %(other: Path): PackageAndModulePath =
       PackageAndModulePath(PackagePath(self), ModulePath(other))
+    def %(name: Name): ModuleName      = ModuleName(self, name)
     def zip(other: Path): (Path, Path) = (self, other)
   }
 
   final case class PackagePath(toPath: Path) { self =>
     def %(modulePath: ModulePath): PackageAndModulePath = PackageAndModulePath(self, modulePath)
+    def %(moduleName: ModuleName): FQName = FQName(self, ModulePath(moduleName.namespace), moduleName.localName)
   }
   final case class ModulePath(toPath: Path)
+
+  final case class ModuleName(namespace: Path, localName: Name) {
+    lazy val toPath = namespace / localName
+  }
+
   final case class PackageAndModulePath(packagePath: PackagePath, modulePath: ModulePath) { self =>
     def %(name: Name): FQName = FQName(packagePath, modulePath, name)
   }

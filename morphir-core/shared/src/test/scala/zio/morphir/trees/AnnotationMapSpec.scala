@@ -1,4 +1,4 @@
-package zio.morphir.io
+package zio.morphir.trees
 
 import zio.test.*
 
