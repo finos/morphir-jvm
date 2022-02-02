@@ -103,7 +103,7 @@ const siteConfig = {
     cornerOffset: 100,
   },
 
-  customDocsPath: 'zio-sexpr-docs/target/mdoc',
+  customDocsPath: 'zio-morphir-docs/target/mdoc',
 
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...

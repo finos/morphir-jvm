@@ -23,7 +23,7 @@ sealed trait TypeTree extends IR { self =>
     case c @ RecordCase(_)                     => f(RecordCase(c.fields.map(_.fold(f))))
     case c @ ReferenceCase(_, _)               => f(ReferenceCase(c.typeName, c.typeParams.map(_.fold(f))))
     case c @ TupleCase(_)                      => f(TupleCase(c.elementTypes.map(_.fold(f))))
-    case c @ UnitCase                          => f(UnitCase)
+    case UnitCase                              => f(UnitCase)
     case c @ VariableCase(_)                   => f(c)
     case c @ FieldCase(_, _)                   => f(FieldCase(c.name, c.fieldType.fold(f)))
   }

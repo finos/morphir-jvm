@@ -60,8 +60,8 @@ object formula {
         case IntLiteralCase(value)  => value
         case PlusCase(left, right)  => evaluate(left) + evaluate(right)
         case MinusCase(left, right) => evaluate(left) - evaluate(right)
-        case VariableCase(name)     => throw new Exception("variable was never assigned")
-        case LetCase(variable, value, body) =>
+        case VariableCase(_)        => throw new Exception("variable was never assigned")
+        case LetCase(_, _, _) =>
           evaluate(assignVariables(formula))
       }
 
@@ -69,7 +69,7 @@ object formula {
       formula.assignVariablesZIO.flatMap { formula =>
         formula.foldZIO[Any, Throwable, Int] {
           case IntLiteralCase(value) => ZIO.logDebug(s"Providing value: $value") *> ZIO.succeed(value)
-          case c @ PlusCase(left, right) =>
+          case PlusCase(left, right) =>
             val value = left + right
             ZIO.logInfo(s"Adding: $left + $right = value: $value") *> ZIO.succeed(value)
           case MinusCase(left, right) =>
@@ -125,12 +125,12 @@ object formula {
         fa match {
           case LetCase(variable, value, body) =>
             f(value) zip f(body) map { case (value, body) => LetCase(variable, value, body) }
-          case c @ IntLiteralCase(value) => c.succeed
+          case c @ IntLiteralCase(_) => c.succeed
           case PlusCase(left, right) =>
             f(left) zip f(right) map { case (left, right) => PlusCase(left, right) }
           case MinusCase(left, right) =>
             f(left) zip f(right) map { case (left, right) => MinusCase(left, right) }
-          case c @ VariableCase(name) => c.succeed
+          case c @ VariableCase(_) => c.succeed
         }
 
     }

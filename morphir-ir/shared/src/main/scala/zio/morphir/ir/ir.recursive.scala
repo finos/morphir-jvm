@@ -85,7 +85,7 @@ object recursive {
       case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
       case c @ ReferenceCase(_, _)        => ReferenceCase(c.typeName, c.typeParams.map(f))
       case c @ TupleCase(_)               => TupleCase(c.elementTypes.map(f))
-      case c @ UnitCase                   => UnitCase
+      case UnitCase                       => UnitCase
       case c @ VariableCase(_)            => VariableCase(c.name)
       case c @ RecordCase(_)              => RecordCase(c.fields.map(f))
     }

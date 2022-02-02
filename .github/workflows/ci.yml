@@ -7,7 +7,7 @@ env:
 on:
   pull_request:
   push:
-    branches: ['master']
+    branches: ['main']
   release:
     types:
       - published
@@ -48,8 +48,8 @@ jobs:
       fail-fast: false
       matrix:
         java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.11.12', '2.12.15', '2.13.7', '3.1.0']
-        platform: ['JVM', 'JS', 'Native']
+        scala: ['2.12.15', '2.13.7', '3.1.0']
+        platform: ['JVM', 'JS']
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.4.0

@@ -21,10 +21,10 @@ inThisBuild(
 )
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
+addCommandAlias("fix", "; all scalafmtSbt scalafmtAll")
 addCommandAlias(
   "check",
-  "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check"
+  "; scalafmtSbtCheck; scalafmtCheckAll"
 )
 
 addCommandAlias(
@@ -37,11 +37,6 @@ addCommandAlias(
   Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
 )
 
-addCommandAlias(
-  "testNative",
-  Seq("coreNative/test:compile", "irNative/test:compile", "sexprNative/test:compile").mkString(";", ";", ";")
-)
-
 lazy val root = project
   .in(file("."))
   .settings(
@@ -51,13 +46,10 @@ lazy val root = project
   .aggregate(
     coreJVM,
     coreJS,
-    coreNative,
     irJVM,
     irJS,
-    irNative,
     sexprJVM,
     sexprJS,
-    sexprNative,
     docs
   )
 
@@ -93,9 +85,6 @@ lazy val coreJS = core.js
 
 lazy val coreJVM = core.jvm
 
-lazy val coreNative = core.native
-  .settings(nativeSettings)
-
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-ir"))
   .settings(stdCrossProjectSettings("zio-morphir-ir"))
@@ -115,9 +104,6 @@ lazy val irJS = ir.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val irJVM = ir.jvm
-
-lazy val irNative = ir.native
-  .settings(nativeSettings)
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sexpr"))
@@ -186,8 +172,6 @@ lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         file,
         s"""package zio.morphir.sexpr
            |
-           |import zio.morphir.sexpr.internal._
-           |
            |private[sexpr] trait GeneratedTupleEncoders { this: SExprEncoder.type =>
            |  ${encoders.mkString("\n\n  ")}
            |}""".stripMargin
@@ -203,11 +187,8 @@ lazy val sexprJS = sexpr.js
 
 lazy val sexprJVM = sexpr.jvm
 
-lazy val sexprNative = sexpr.native
-  .settings(nativeSettings)
-
 lazy val docs = project
-  .in(file("morphir-docs"))
+  .in(file("zio-morphir-docs"))
   .settings(stdSettings("zio-morphir"))
   .settings(
     publish / skip := true,
@@ -273,8 +254,7 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
     crossProjectPlatform.value match {
       case JSPlatform =>
         Seq(
-          "org.scala-js" % "scalajs-test-bridge_2.13" % "1.8.0"     % Test,
-          "dev.zio"    %%% "zio-test-sbt"             % Version.zio % Test
+          "dev.zio" %%% "zio-test-sbt" % Version.zio % Test
         )
       case JVMPlatform =>
         {

@@ -1,7 +1,5 @@
 package zio.morphir.io
 import zio.*
-import zio.prelude.*
-import scala.language.postfixOps
 
 /**
  * This is meant to pretty much be an implementation of this: https://www.npmjs.com/package/vfile#vfiledata

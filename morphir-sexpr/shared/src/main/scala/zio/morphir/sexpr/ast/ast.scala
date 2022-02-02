@@ -8,11 +8,11 @@ sealed trait SExpr { self =>
   def $case: SExprCase[SExpr]
 
   def fold[Z](f: SExprCase[Z] => Z): Z = self.$case match {
-    case c @ BoolCase(_)      => f(c)
-    case c @ StrCase(_)       => f(c)
-    case c @ NumCase(_)       => f(c)
-    case c @ SymbolCase(_)    => f(c)
-    case MapCase(items)       =>
+    case c @ BoolCase(_)   => f(c)
+    case c @ StrCase(_)    => f(c)
+    case c @ NumCase(_)    => f(c)
+    case c @ SymbolCase(_) => f(c)
+    case MapCase(items) =>
       f(MapCase(items.map { case (k, v) =>
         (k.fold(f), v.fold(f))
       }))
@@ -31,8 +31,8 @@ object SExpr {
   implicit val decoder: SExprDecoder[SExpr] = ???
 
   implicit val encoder: SExprEncoder[SExpr] = SExprEncoder.fromFunction {
-    case (sexpr: Bool, indent, out) => ???
-    case _                          => ???
+    case (_: Bool, _, _) => ???
+    case _               => ???
   }
 
   def bool(value: Boolean): Bool = Bool(value)
@@ -50,7 +50,7 @@ object SExpr {
 
   final case class SMap private[sexpr] ($case: VectorCase[SExpr]) extends SExpr
   object SMap {
-    def apply(items: Map[SExpr, SExpr]): SMap          = SMap(items)
+    def apply(items: Map[SExpr, SExpr]): SMap = SMap(items)
     def unapply(arg: SExpr): Option[Map[SExpr, SExpr]] = arg.$case match {
       case MapCase(items: Map[SExpr, SExpr]) => Some(items)
       case _                                 => None
@@ -97,14 +97,14 @@ sealed trait SExprCase[+Self] { self =>
     case ConsCase(head, tail) => ConsCase(f(head), f(tail))
     case StrCase(value)       => StrCase(value)
     case SymbolCase(value)    => SymbolCase(value)
-    case MapCase(items)       =>
+    case MapCase(items) =>
       MapCase(items.map { case (k, v) =>
         (f(k), f(v))
       })
-    case NilCase              => NilCase
-    case NumCase(value)       => NumCase(value)
-    case QuotedCase(get)      => QuotedCase(f(get))
-    case VectorCase(items)    => VectorCase(items.map(f))
+    case NilCase           => NilCase
+    case NumCase(value)    => NumCase(value)
+    case QuotedCase(get)   => QuotedCase(f(get))
+    case VectorCase(items) => VectorCase(items.map(f))
   }
 
 }

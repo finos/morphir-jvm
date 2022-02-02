@@ -45,7 +45,7 @@ object DecoderSpec extends ZioBaseSpec {
         },
         test("char") {
           check(Gen.char) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[Char] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[Char] == Right(x))
           }
         },
         test("double") {
@@ -76,7 +76,7 @@ object DecoderSpec extends ZioBaseSpec {
         suite("java.util.UUID")(
           test("Auto-generated") {
             check(Gen.uuid) { x =>
-              assertTrue(s"\"${x.toString}\"".fromSExpr[UUID] == Right(x))
+              assertTrue(quoted(x.toString).fromSExpr[UUID] == Right(x))
             }
           },
           test("Manual") {
@@ -126,7 +126,7 @@ object DecoderSpec extends ZioBaseSpec {
         suite("Duration")(
           test("Auto-generated") {
             check(Gen.finiteDuration) { x =>
-              assertTrue(s"\"${x.toString}\"".fromSExpr[Duration] == Right(x))
+              assertTrue(quoted(x.toString).fromSExpr[Duration] == Right(x))
             }
           },
           test("Manual") {
@@ -150,74 +150,74 @@ object DecoderSpec extends ZioBaseSpec {
         ),
         test("Instant") {
           check(Gen.instant) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[Instant] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[Instant] == Right(x))
           }
         },
         test("LocalDate") {
           check(Gen.localDate) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[LocalDate] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[LocalDate] == Right(x))
           }
         },
         test("LocalDateTime") {
           check(Gen.localDateTime) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[LocalDateTime] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[LocalDateTime] == Right(x))
           }
         },
         test("LocalTime") {
           check(Gen.localTime) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[LocalTime] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[LocalTime] == Right(x))
           }
         },
         test("Month") {
           check(Gen.month) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[Month] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[Month] == Right(x))
           }
         },
         test("MonthDay") {
           check(Gen.monthDay) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[MonthDay] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[MonthDay] == Right(x))
           }
         },
         test("OffsetDateTime") {
           check(Gen.offsetDateTime) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[OffsetDateTime] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[OffsetDateTime] == Right(x))
           }
         },
         test("OffsetTime") {
           check(Gen.offsetTime) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[OffsetTime] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[OffsetTime] == Right(x))
           }
         },
         test("Period") {
           check(Gen.period) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[Period] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[Period] == Right(x))
           }
         },
         test("Year") {
           check(Gens.genYear) { x =>
             val year = "%04d".format(x.getValue)
-            assertTrue(s"\"$year\"".fromSExpr[Year] == Right(x))
+            assertTrue(quoted(year).fromSExpr[Year] == Right(x))
           }
         },
         test("YearMonth") {
           check(Gens.genYearMonth) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[YearMonth] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[YearMonth] == Right(x))
           }
         },
         test("ZoneId") {
           check(Gen.zoneId) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[ZoneId] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[ZoneId] == Right(x))
           }
         },
         test("ZoneOffset") {
           check(Gen.zoneOffset) { x =>
-            assertTrue(s"\"${x.toString}\"".fromSExpr[ZoneOffset] == Right(x))
+            assertTrue(quoted(x.toString).fromSExpr[ZoneOffset] == Right(x))
           }
         },
         suite("ZonedDateTime")(
           test("Auto-generated") {
             check(Gen.zonedDateTime) { x =>
-              assertTrue(s"\"${x.toString}\"".fromSExpr[ZonedDateTime] == Right(x))
+              assertTrue(quoted(x.toString).fromSExpr[ZonedDateTime] == Right(x))
             }
           },
           test("Manual") {
@@ -428,4 +428,7 @@ object DecoderSpec extends ZioBaseSpec {
       }
     )
   )
+
+  def quoted(s: String): String =
+    s""""$s""""
 }

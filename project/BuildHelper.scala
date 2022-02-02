@@ -5,7 +5,6 @@ import sbt._
 import sbtbuildinfo.BuildInfoKeys._
 import sbtbuildinfo._
 import sbtcrossproject.CrossPlugin.autoImport._
-import scalafix.sbt.ScalafixPlugin.autoImport._
 import scalanativecrossproject.NativePlatform
 import scalajscrossproject.JSPlatform
 
@@ -24,7 +23,6 @@ object BuildHelper {
     val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
     list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
   }
-  val Scala211: String = versions("2.11")
   val Scala212: String = versions("2.12")
   val Scala213: String = versions("2.13")
   val Scala3: String   = versions("3.1")
@@ -41,7 +39,7 @@ object BuildHelper {
     if (sys.env.contains("CI")) {
       Seq("-Xfatal-warnings")
     } else {
-      Nil // to enable Scalafix locally
+      Nil
     }
   }
 
@@ -219,7 +217,7 @@ object BuildHelper {
 
   def stdSettings(prjName: String) = Seq(
     name                     := s"$prjName",
-    crossScalaVersions       := Seq(Scala211, Scala212, Scala213),
+    crossScalaVersions       := Seq(Scala212, Scala213),
     ThisBuild / scalaVersion := Scala213,
     scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
@@ -235,14 +233,6 @@ object BuildHelper {
           )
         )
     },
-    semanticdbEnabled := scalaVersion.value != Scala3, // enable SemanticDB
-    semanticdbOptions += "-P:semanticdb:synthetics:on",
-    semanticdbVersion                      := scalafixSemanticdb.revision, // use Scalafix compatible version
-    ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
-    ThisBuild / scalafixDependencies ++= List(
-      "com.github.liancheng" %% "organize-imports" % "0.5.0",
-      "com.github.vovapolu"  %% "scaluzzi"         % "0.1.18"
-    ),
     Test / parallelExecution := true,
     incOptions ~= (_.withLogRecompileOnMacro(false)),
     autoAPIMappings := true,
@@ -315,8 +305,7 @@ object BuildHelper {
         |
         |Useful sbt tasks:
         |${item("build")} - Prepares sources, compiles and runs tests.
-        |${item("prepare")} - Prepares sources by applying both scalafix and scalafmt
-        |${item("fix")} - Fixes sources files using scalafix
+        |${item("prepare")} - Prepares sources by applying scalafmt
         |${item("fmt")} - Formats source files using scalafmt
         |${item("~compileJVM")} - Compiles all JVM modules (file-watch enabled)
         |${item("testJVM")} - Runs all JVM tests
