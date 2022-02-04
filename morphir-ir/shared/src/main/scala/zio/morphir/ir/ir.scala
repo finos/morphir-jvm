@@ -5,32 +5,9 @@ import zio.prelude._
 import zio.prelude.fx._
 import scala.collection.immutable._
 import zio._
-import zio.stm._
 
 sealed trait TypeTree[+Annotations] extends IR[Annotations] { self =>
-  import TypeTreeCase.*
-  import DefinitionCase.*
-  import SpecificationCase.*
-  import TypeCase.*
-
   override def caseValue: TypeTreeCase[TypeTree[Annotations]]
-
-  // def fold[Z](f: TypeTreeCase[Z] => Z): Z = self.caseValue match {
-  //   case c @ ConstructorsCase(_) => f(ConstructorsCase(c.args.map { case (name, tree) => (name, tree.fold(f)) }))
-  //   case c @ CustomTypeDefinitionCase(_, _)    => f(CustomTypeDefinitionCase(c.typeParams, c.ctors.map(_.fold(f))))
-  //   case c @ TypeAliasDefinitionCase(_, _)     => f(TypeAliasDefinitionCase(c.typeParams, c.typeExpr.fold(f)))
-  //   case c @ CustomTypeSpecificationCase(_, _) => f(CustomTypeSpecificationCase(c.typeParams, c.ctors.fold(f)))
-  //   case c @ OpaqueTypeSpecificationCase(_)    => f(c)
-  //   case c @ TypeAliasSpecificationCase(_, _)  => f(TypeAliasSpecificationCase(c.typeParams, c.typeExpr.fold(f)))
-  //   case c @ ExtensibleRecordCase(_, _)        => f(ExtensibleRecordCase(c.name, c.fields.map(_.fold(f))))
-  //   case c @ FunctionCase(_, _)                => f(FunctionCase(c.paramTypes.map(_.fold(f)), c.returnType.fold(f)))
-  //   case c @ RecordCase(_)                     => f(RecordCase(c.fields.map(_.fold(f))))
-  //   case c @ ReferenceCase(_, _)               => f(ReferenceCase(c.typeName, c.typeParams.map(_.fold(f))))
-  //   case c @ TupleCase(_)                      => f(TupleCase(c.elementTypes.map(_.fold(f))))
-  //   case UnitCase                              => f(UnitCase)
-  //   case c @ VariableCase(_)                   => f(c)
-  //   case c @ FieldCase(_, _)                   => f(FieldCase(c.name, c.fieldType.fold(f)))
-  // }
 }
 
 object TypeTree {
@@ -180,8 +157,6 @@ object Type {
 }
 
 sealed trait ValueTree[+Annotations] extends IR[Annotations] { self =>
-  import ValueTreeCase.*
-  import ValueCase.*
   override def caseValue: ValueTreeCase[IR[Annotations]]
 }
 
@@ -315,16 +290,14 @@ sealed trait IR[+Annotations] { self =>
       case c @ PatternCase.AsCase(_, _) => f(PatternCase.AsCase(c.pattern.fold(f), c.name))
       case c @ PatternCase.ConstructorCase(_, _) =>
         f(PatternCase.ConstructorCase(c.constructorName, c.argumentPatterns.map(_.fold(f))))
-      case c @ PatternCase.EmptyListCase      => f(PatternCase.EmptyListCase)
+      case _ @PatternCase.EmptyListCase       => f(PatternCase.EmptyListCase)
       case c @ PatternCase.HeadTailCase(_, _) => f(PatternCase.HeadTailCase(c.head.fold(f), c.tail.fold(f)))
       case c @ PatternCase.LiteralCase(_)     => f(PatternCase.LiteralCase(c.value))
       case c @ PatternCase.TupleCase(_)       => f(PatternCase.TupleCase(c.elements.map(_.fold(f))))
-      case c @ PatternCase.UnitCase           => f(PatternCase.UnitCase)
-      case c @ PatternCase.WildcardCase       => f(PatternCase.WildcardCase)
+      case _ @PatternCase.UnitCase            => f(PatternCase.UnitCase)
+      case _ @PatternCase.WildcardCase        => f(PatternCase.WildcardCase)
       case c @ ValueCase.ApplyCase(_, _)      => f(ValueCase.ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
-      case c @ ValueCase.ConstructorCase(_) =>
-        f(c)
-        f(ValueCase.ConstructorCase(c.name))
+      case c @ ValueCase.ConstructorCase(_)   => f(ValueCase.ConstructorCase(c.name))
       case c @ ValueCase.DestructureCase(_, _, _) =>
         f(ValueCase.DestructureCase(c.pattern.fold(f), c.valueToDestruct.fold(f), c.inValue.fold(f)))
       case c @ ValueCase.FieldCase(_, _)      => f(ValueCase.FieldCase(c.target.fold(f), c.name))
@@ -363,8 +336,15 @@ sealed trait IR[+Annotations] { self =>
             c.fieldsToUpdate.map { case (name, value) => (name, value.fold(f)) }
           )
         )
-      case c @ ValueCase.VariableCase(_)             => f(c)
-      case c @ ValueTreeCase.DefinitionCase(_, _, _) => ???
+      case c @ ValueCase.VariableCase(_) => f(c)
+      case c @ ValueTreeCase.DefinitionCase(_, _, _) =>
+        f(
+          ValueTreeCase.DefinitionCase(
+            c.inputTypes.map { case (name, self) => (name, self.fold(f)) },
+            c.outputType.fold(f),
+            c.body.fold(f)
+          )
+        )
       case c @ ValueTreeCase.SpecificationCase(_, _) =>
         f(
           ValueTreeCase.SpecificationCase(
@@ -379,7 +359,7 @@ sealed trait IR[+Annotations] { self =>
       case c @ TypeCase.RecordCase(_)       => f(TypeCase.RecordCase(c.fields.map(_.fold(f))))
       case c @ TypeCase.ReferenceCase(_, _) => f(TypeCase.ReferenceCase(c.typeName, c.typeParams.map(_.fold(f))))
       case c @ TypeCase.TupleCase(_)        => f(TypeCase.TupleCase(c.elementTypes.map(_.fold(f))))
-      case c @ TypeCase.UnitCase            => f(TypeCase.UnitCase)
+      case _ @TypeCase.UnitCase             => f(TypeCase.UnitCase)
       case c @ TypeCase.VariableCase(_)     => f(c)
       case c @ TypeTreeCase.ConstructorsCase(_) =>
         f(TypeTreeCase.ConstructorsCase(c.args.map { case (name, tree) => (name, tree.fold(f)) }))
@@ -430,22 +410,3 @@ sealed trait IR[+Annotations] { self =>
     foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 }
 object IR {}
-// final case class Field[+A](name: Name, fieldType: TypeCase[A]) { self =>
-//   def map[B](f: A => B): Field[B] = copy(fieldType = fieldType.map(f))
-// }
-
-// object Field {
-//   implicit val FieldCovariant: Covariant[Field] = new Covariant[Field] {
-//     def map[A, B](fa: Field[A])(f: A => B): Field[B] = fa.map(f)
-//   }
-// }
-
-// final case class Fields[+A](items: zio.Chunk[Field[A]]) { self =>
-//   def map[B](f: A => B): Fields[B] = copy(items = items.map(_.map(f)))
-// }
-
-// object Fields {
-//   implicit val FieldsCovariant: Covariant[Fields] = new Covariant[Fields] {
-//     def map[A, B](fa: Fields[A])(f: A => B): Fields[B] = fa.map(f)
-//   }
-// }
