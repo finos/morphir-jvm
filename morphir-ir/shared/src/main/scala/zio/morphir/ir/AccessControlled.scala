@@ -38,4 +38,12 @@ object AccessControlled {
   implicit val AccessControlledCovariant: Covariant[AccessControlled] = new Covariant[AccessControlled] {
     def map[A, B](f: A => B): AccessControlled[A] => AccessControlled[B] = _.map(f)
   }
+
+  implicit val AccessControlledForEach: ForEach[AccessControlled] =
+    new ForEach[AccessControlled] {
+      def forEach[G[+_]: IdentityBoth: Covariant, A, B](self: AccessControlled[A])(
+          f: A => G[B]
+      ): G[AccessControlled[B]] =
+        f(self.value).map(AccessControlled(self.access, _))
+    }
 }

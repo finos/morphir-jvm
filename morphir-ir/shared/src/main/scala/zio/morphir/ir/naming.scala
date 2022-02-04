@@ -104,12 +104,12 @@ object naming {
     def /(name: Name): Path = Path(segments ++ Chunk(name))
     def /(name: Path): Path = Path(segments ++ name.segments)
     def %(other: Path): PackageAndModulePath =
-      PackageAndModulePath(PackagePath(self), ModulePath(other))
+      PackageAndModulePath(PackageName(self), ModulePath(other))
     def %(name: Name): ModuleName      = ModuleName(self, name)
     def zip(other: Path): (Path, Path) = (self, other)
   }
 
-  final case class PackagePath(toPath: Path) { self =>
+  final case class PackageName(toPath: Path) { self =>
     def %(modulePath: ModulePath): PackageAndModulePath = PackageAndModulePath(self, modulePath)
     def %(moduleName: ModuleName): FQName = FQName(self, ModulePath(moduleName.namespace), moduleName.localName)
   }
@@ -119,8 +119,8 @@ object naming {
     lazy val toPath = namespace / localName
   }
 
-  final case class PackageAndModulePath(packagePath: PackagePath, modulePath: ModulePath) { self =>
-    def %(name: Name): FQName = FQName(packagePath, modulePath, name)
+  final case class PackageAndModulePath(packageName: PackageName, modulePath: ModulePath) { self =>
+    def %(name: Name): FQName = FQName(packageName, modulePath, name)
   }
-  final case class FQName(packagePath: PackagePath, modulePath: ModulePath, localName: Name)
+  final case class FQName(packagePath: PackageName, modulePath: ModulePath, localName: Name)
 }

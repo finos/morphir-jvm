@@ -7,14 +7,17 @@ package object ir {
   type LiteralValue = Literal[Nothing]
   val LiteralValue = Literal
 
+  type ModuleName = naming.ModuleName
+  val ModuleName = naming.ModuleName
+
   type ModulePath = naming.ModulePath
   val ModulePath = naming.ModulePath
 
   type Name = naming.Name
   val Name = naming.Name
 
-  type PackagePath = naming.PackagePath
-  val PackagePath = naming.PackagePath
+  type PackageName = naming.PackageName
+  val PackageName = naming.PackageName
 
   type Path = naming.Path
   val Path = naming.Path
