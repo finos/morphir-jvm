@@ -1,26 +1,20 @@
 package zio.morphir
 
 package object ir {
-  type FQName = naming.FQName
-  val FQName = naming.FQName
 
   type LiteralValue = Literal[Nothing]
   val LiteralValue = Literal
 
-  type ModuleName = naming.ModuleName
-  val ModuleName = naming.ModuleName
+  type ModuleName = Module.ModuleName
+  val ModuleName = Module.ModuleName
 
-  type ModulePath = naming.ModulePath
-  val ModulePath = naming.ModulePath
+  type ModulePath = Module.ModulePath
+  val ModulePath = Module.ModulePath
 
-  type Name = naming.Name
-  val Name = naming.Name
+  type NativeFunction = value.Native.Function
 
-  type PackageName = naming.PackageName
-  val PackageName = naming.PackageName
-
-  type Path = naming.Path
-  val Path = naming.Path
+  type PackageName = PackageModule.PackageName
+  val PackageName = PackageModule.PackageName
 
   type ??? = Nothing
 }

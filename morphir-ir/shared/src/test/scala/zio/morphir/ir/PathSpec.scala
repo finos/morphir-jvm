@@ -2,19 +2,10 @@ package zio.morphir.ir
 
 import zio.Chunk
 import zio.test.*
+import testing.MorphirBaseSpec
 
-object NamingSpec extends MorphirBaseSpec {
-  def spec = suite("Naming Spec")(
-    fqNameSuite,
-    moduleNameSuite,
-    pathSuite
-  )
-
-  val fqNameSuite = suite("FQName")()
-
-  val moduleNameSuite = suite("ModuleName")()
-
-  val pathSuite = suite("Path")(
+object PathSpec extends MorphirBaseSpec {
+  def spec = suite("Path")(
     test("It can be constructed from names")(
       assertTrue(
         Name("Org") / Name("Finos") == Path(Chunk(Name("Org"), Name("Finos"))),
