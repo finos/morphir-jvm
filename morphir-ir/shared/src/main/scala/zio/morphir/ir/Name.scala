@@ -47,6 +47,8 @@ final case class Name private (toList: List[String]) extends AnyVal { self =>
   def mkString(f: String => String)(sep: String): String =
     toList.map(f).mkString(sep)
 
+  def toUpperCase: String = mkString(part => part.toUpperCase)("")
+
   def toLowerCase: String =
     mkString(part => part.toLowerCase)("")
 
@@ -69,6 +71,7 @@ final case class Name private (toList: List[String]) extends AnyVal { self =>
       .mkString("")
 
 }
+
 object Name {
 
   val empty: Name = Name(Nil)

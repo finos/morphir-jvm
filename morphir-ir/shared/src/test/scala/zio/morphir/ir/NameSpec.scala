@@ -2,6 +2,7 @@ package zio.morphir.ir
 
 import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.test.*
+
 object NameSpec extends MorphirBaseSpec {
   def spec = suite("Name")(
     suite("Create a Name from a string and check that:")(
