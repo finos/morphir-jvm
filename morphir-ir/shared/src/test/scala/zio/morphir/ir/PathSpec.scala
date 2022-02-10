@@ -10,6 +10,15 @@ object PathSpec extends MorphirBaseSpec {
       test("It can be constructed from a simple string") {
         assertTrue(Path.fromString("Person") == Path(Chunk(Name.fromString("person"))))
       },
+      test("It can be constructed from a long string") {
+        assertTrue(
+          Path.fromString("She Sells Seashells") == Path(
+            Chunk(
+              Name.fromList(List("she", "sells", "seashells"))
+            )
+          )
+        )
+      },
       test("It can be constructed when given a dotted string") {
         assertTrue(
           Path.fromString("blog.Author") == Path(
