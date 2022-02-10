@@ -1,6 +1,6 @@
 package zio.morphir.ir
 
-object Module {
+object ModuleModule {
 
   type Definition[+Annotations] = MorphirIR.ModuleDefinition[Annotations]
   val Definition = MorphirIR.ModuleDefinition
@@ -25,14 +25,14 @@ object Module {
 }
 
 trait ModuleSpecFor[A] {
-  import Module.*
+  import ModuleModule.*
 
   def module: ModuleName
   def spec: Specification[Any]
 }
 
 object ModuleSpecFor {
-  import Module.*
+  import ModuleModule.*
 
   /** Summon the module specification for the given module/type. */
   def apply[A](implicit specFor: ModuleSpecFor[A]): ModuleSpecFor[A] = specFor

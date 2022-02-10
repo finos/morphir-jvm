@@ -37,7 +37,14 @@ object NameSpec extends MorphirBaseSpec {
         test("Are complete and utter nonsense") {
           assertTrue(Name.fromString("_-%") == Name.empty)
         }
-      )
+      ),
+      test("It splits the name as expected") {
+        // "fooBar","blahBlah" => ["foo","bar","blah","blah"]
+        // "fooBar","blahBlah" => ["fooBar","blahBlah"]
+        assertTrue(
+          Name.fromString("fooBar").toList == List("foo", "bar")
+        )
+      }
     ),
     suite("Name should be convertible to a title-case string:")(
       test("When the name was originally constructed from a snake-case string") {
@@ -90,6 +97,19 @@ object NameSpec extends MorphirBaseSpec {
         val sut = Name.fromString("ValueInUSD")
         assertTrue(Name.toHumanWords(sut) == List("value", "in", "USD"))
       }
+    ),
+    suite("fromIterable")(
+      test("Splits provided names as expected") {
+        assertTrue(Name.fromIterable(List("fooBar", "fizzBuzz")) == Name("foo", "bar", "fizz", "buzz"))
+      } @@ TestAspect.ignore @@ TestAspect.tag("TOFIX")
+    ),
+    suite("unsafeMake")(
+      test("Creates the name as provided") {
+        assertTrue(
+          Name.unsafeMake("foo", "bar", "baz", "123").toList == List("foo", "bar", "baz", "123")
+        )
+
+      } @@ TestAspect.ignore @@ TestAspect.tag("TOFIX")
     )
   )
 }

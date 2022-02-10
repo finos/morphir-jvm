@@ -1,6 +1,5 @@
 package zio.morphir.ir
 import zio.{Chunk, ZEnvironment}
-
 object Type {
   type Type[+Annotations] = MorphirIR.Type[Annotations]
   val Type = MorphirIR.Type

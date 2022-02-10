@@ -93,7 +93,8 @@ object Name {
   /**
    * Creates a new name from a chunk of strings without checking.
    */
-  private[ir] def unsafeMake(value: List[String]): Name = Name(value)
+  private[ir] def unsafeMake(value: List[String]): Name    = Name(value)
+  private[ir] def unsafeMake(exactSegments: String*): Name = Name(exactSegments.toList)
 
   def toList(name: Name): List[String] = name.toList
 

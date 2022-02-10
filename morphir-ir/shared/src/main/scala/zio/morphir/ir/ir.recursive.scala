@@ -249,6 +249,7 @@ object recursive {
 
   sealed trait ValueCase[+Self] extends ValueTreeCase[Self] { self =>
     import ValueCase.*
+
     override def map[B](f: Self => B): ValueCase[B] = self match {
       case c @ ApplyCase(_, _)          => ApplyCase(f(c.function), c.arguments.map(f))
       case c @ ConstructorCase(_)       => ConstructorCase(c.name)
@@ -261,8 +262,9 @@ object recursive {
       case c @ LetDefinitionCase(_, _, _) => LetDefinitionCase(c.valueName, f(c.valueDefinition), f(c.inValue))
       case c @ LetRecursionCase(_, _) =>
         LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, f(value)) }, f(c.inValue))
-      case c @ ListCase(_)    => ListCase(c.elements.map(f))
-      case c @ LiteralCase(_) => LiteralCase(c.literal)
+      case c @ ListCase(_)           => ListCase(c.elements.map(f))
+      case c @ LiteralCase(_)        => LiteralCase(c.literal)
+      case c @ NativeApplyCase(_, _) => NativeApplyCase(c.function, c.arguments.map(f))
       case c @ PatternMatchCase(_, _) =>
         PatternMatchCase(f(c.branchOutOn), c.cases.map { case (p, v) => (f(p), f(v)) })
       case c @ RecordCase(_)    => RecordCase(c.fields.map { case (name, value) => (name, f(value)) })
@@ -273,22 +275,24 @@ object recursive {
         UpdateRecordCase(f(c.valueToUpdate), c.fieldsToUpdate.map { case (name, self) => (name, f(self)) })
       case c @ VariableCase(_) => c
 
+      case c: PatternCase[_] => c.map(f)
     }
   }
   object ValueCase {
-    final case class ApplyCase[+Self](function: Self, arguments: List[Self]) extends ValueCase[Self]
-    final case class ConstructorCase(name: FQName)                           extends ValueCase[Nothing]
-    final case class FieldCase[+Self](target: Self, name: Name)              extends ValueCase[Self]
-    final case class FieldFunctionCase(name: Name)                           extends ValueCase[Nothing]
+    final case class NativeApplyCase[+Self](function: NativeFunction, arguments: Chunk[Self]) extends ValueCase[Self]
+    final case class ApplyCase[+Self](function: Self, arguments: List[Self])                  extends ValueCase[Self]
+    final case class ConstructorCase(name: FQName)                                            extends ValueCase[Nothing]
+    final case class FieldCase[+Self](target: Self, name: Name)                               extends ValueCase[Self]
+    final case class FieldFunctionCase(name: Name)                                            extends ValueCase[Nothing]
     final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
-    final case class ListCase[+Self](elements: List[Self])                                      extends ValueCase[Self]
-    final case class LiteralCase(literal: LiteralValue)                                    extends ValueCase[Nothing]
-    final case class PatternMatchCase[+Self](branchOutOn: Self, cases: List[(Self, Self)]) extends ValueCase[Self]
-    final case class RecordCase[+Self](fields: List[(Name, Self)])                         extends ValueCase[Self]
-    final case class ReferenceCase(name: FQName)                                           extends ValueCase[Nothing]
-    final case class TupleCase[+Self](elements: List[Self])                                extends ValueCase[Self]
-    case object UnitCase                                                                   extends ValueCase[Nothing]
-    final case class VariableCase(name: Name)                                              extends ValueCase[Nothing]
+    final case class ListCase[+Self](elements: Chunk[Self])                                     extends ValueCase[Self]
+    final case class LiteralCase(literal: LiteralValue)                                     extends ValueCase[Nothing]
+    final case class PatternMatchCase[+Self](branchOutOn: Self, cases: Chunk[(Self, Self)]) extends ValueCase[Self]
+    final case class RecordCase[+Self](fields: Chunk[(Name, Self)])                         extends ValueCase[Self]
+    final case class ReferenceCase(name: FQName)                                            extends ValueCase[Nothing]
+    final case class TupleCase[+Self](elements: Chunk[Self])                                extends ValueCase[Self]
+    case object UnitCase                                                                    extends ValueCase[Nothing]
+    final case class VariableCase(name: Name)                                               extends ValueCase[Nothing]
     final case class LetDefinitionCase[+Self](valueName: Name, valueDefinition: Self, inValue: Self)
         extends ValueCase[Self]
     final case class LetRecursionCase[+Self](valueDefinitions: Map[Name, Self], inValue: Self) extends ValueCase[Self]
@@ -318,8 +322,9 @@ object recursive {
               f(c.valueDefinition).zipWith(f(c.inValue))(LetDefinitionCase(c.valueName, _, _))
             case c @ LetRecursionCase(_, _) =>
               c.valueDefinitions.forEach(f).zipWith(f(c.inValue))(LetRecursionCase(_, _))
-            case c @ ListCase(_)    => c.elements.forEach(f).map(ListCase(_))
-            case c @ LiteralCase(_) => c.succeed
+            case c @ ListCase(_)           => c.elements.forEach(f).map(ListCase(_))
+            case c @ LiteralCase(_)        => c.succeed
+            case c @ NativeApplyCase(_, _) => c.arguments.forEach(f).map(NativeApplyCase(c.function, _))
             case c @ PatternMatchCase(_, _) =>
               f(c.branchOutOn)
                 .zipWith(c.cases.forEach { case (key, value) => f(key).zip(f(value)) })(PatternMatchCase(_, _))
@@ -333,11 +338,12 @@ object recursive {
                 UpdateRecordCase(_, _)
               )
             case c @ VariableCase(_) => c.succeed
+            case c: PatternCase[_]   => c.forEach(f)
           }
       }
   }
 
-  sealed trait PatternCase[+Self] extends MorphirIRCase[Self] { self =>
+  sealed trait PatternCase[+Self] extends ValueCase[Self] { self =>
     import PatternCase.*
 
     override def map[B](f: Self => B): PatternCase[B] = self match {
@@ -354,6 +360,16 @@ object recursive {
   }
 
   object PatternCase {
+    // type Pattern a
+    // = WildcardPattern a
+    // | AsPattern a (Pattern a) Name
+    // | TuplePattern a (List (Pattern a))
+    // | ConstructorPattern a FQName (List (Pattern a))
+    // | EmptyListPattern a
+    // | HeadTailPattern a (Pattern a) (Pattern a)
+    // | LiteralPattern a Literal
+    // | UnitPattern a
+
     final case class AsCase[+Self](pattern: Self, name: Name) extends PatternCase[Self]
     final case class ConstructorCase[+Self](constructorName: FQName, argumentPatterns: List[Self])
         extends PatternCase[Self]
