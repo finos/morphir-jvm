@@ -466,6 +466,8 @@ object MorphirIR {
       l
     }
 
+    def variable(name: Name): Variable[Any] = Variable(name, ZEnvironment.empty)
+
     import ValueCase.*
 
     final case class Field[+Annotations](

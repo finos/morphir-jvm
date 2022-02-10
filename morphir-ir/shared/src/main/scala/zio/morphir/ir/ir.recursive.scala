@@ -359,6 +359,22 @@ object recursive {
 
   }
 
+  // object Example {
+  //   List(1, 2, 3) match {
+  //     case list @ List(a, b, c) => ???
+  //     case Nil                  => ???
+  //   }
+  // }
+
+  // x match {
+  //   case h :: t => doSomething(h)
+  //   case Nil    =>
+  //   case x => ???
+  //      case a~=AsPattern(WildCardPattern, a)
+  // }
+
+  // AsCase(WildCardPattern, "x")
+
   object PatternCase {
     // type Pattern a
     // = WildcardPattern a
