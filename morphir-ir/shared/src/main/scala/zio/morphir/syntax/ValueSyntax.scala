@@ -1,7 +1,7 @@
 package zio.morphir.syntax
 
-import zio.ZEnvironment
-import zio.morphir.ir.{Literal => Lit, ValueModule}
+import zio.{Chunk, ZEnvironment}
+import zio.morphir.ir.{Literal => Lit, Name, ValueModule}
 import ValueModule.Value
 
 trait ValueSyntax {
@@ -14,9 +14,15 @@ trait ValueSyntax {
   ): Literal[Boolean, Annotations] =
     Literal(Lit.boolean(value), annotations)
 
+  final def field(name: Name, record: Record[Any]): Field[Any] = Field(record, name, ZEnvironment.empty)
+  final def field(name: String, record: Record[Any]): Field[Any] =
+    Field(record, Name.fromString(name), ZEnvironment.empty)
+
   final def literal[V](value: Lit[V]): Literal[V, Any] = Literal(value, ZEnvironment.empty)
   final def literal[V, Annotations](value: Lit[V], annotations: ZEnvironment[Annotations]): Literal[V, Annotations] =
     Literal(value, annotations)
+
+  def record(fields: (Name, Value[Any])*): Record[Any] = Record(Chunk.fromIterable(fields), ZEnvironment.empty)
 
   final def string[Annotations](value: String, annotations: ZEnvironment[Annotations]): Value[Annotations] =
     Literal(Lit.string(value), annotations)

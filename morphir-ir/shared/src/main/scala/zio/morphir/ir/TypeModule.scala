@@ -2,9 +2,46 @@ package zio.morphir.ir
 
 import zio.{Chunk, ZEnvironment}
 import zio.prelude.*
+import zio.morphir.syntax.TypeModuleSyntax
 
-object TypeModule {
+object TypeModule extends TypeModuleSyntax {
 
+  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
+
+  sealed trait Definition[+Annotations] { self =>
+    def toSpecification: Specification[Annotations] = ???
+  }
+  object Definition {
+    final case class TypeAlias[+Annotations](typeParams: Chunk[Name], typeExp: Type[Annotations])
+        extends Definition[Annotations]
+
+    final case class CustomType[+Annotations](
+        typeParams: Chunk[Name],
+        ctors: AccessControlled[Constructors[Annotations]]
+    ) extends Definition[Annotations]
+  }
+  sealed trait Specification[+Annotations] {
+    def annotations: ZEnvironment[Annotations]
+  }
+
+  object Specification {
+    final case class TypeAliasSpecification[+Annotations](
+        typeParams: Chunk[Name],
+        expr: Type[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations]
+
+    final case class OpaqueTypeSpecification[+Annotations](
+        typeParams: Chunk[Name],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations]
+
+    final case class CustomTypeSpecification[+Annotations](
+        typeParams: Chunk[Name],
+        expr: Type[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Specification[Annotations]
+  }
   sealed trait Type[+Annotations] { self =>
     // import TypeCase.*
 
@@ -71,6 +108,20 @@ object TypeModule {
       object Case {
         def unapply[Annotations](field: Field[Annotations]): Option[FieldCase[Type[Annotations]]] =
           Some(field.caseValue)
+      }
+    }
+
+    final case class Record[+Annotations](
+        fields: Chunk[Field[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Type[Annotations] {
+      override lazy val caseValue: RecordCase[Type[Annotations]] = RecordCase(fields)
+    }
+    object Record {
+
+      object Case {
+        def unapply[Annotations](record: Record[Annotations]): Option[RecordCase[Type[Annotations]]] =
+          Some(record.caseValue)
       }
     }
 
@@ -156,28 +207,7 @@ object TypeModule {
       tpe: Type[Annotations]
   )
 
-  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
-
-  sealed trait Specification[+Annotations] {
-    def annotations: ZEnvironment[Annotations]
-  }
-
-  object Specification {
-    final case class TypeAliasSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        expr: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
-    ) extends Specification[Annotations]
-
-    final case class OpaqueTypeSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        annotations: ZEnvironment[Annotations]
-    ) extends Specification[Annotations]
-
-    final case class CustomTypeSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        expr: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
-    ) extends Specification[Annotations]
-  }
+  /** Represents an un-annotated type. */
+  type UType = Type[Any]
+  val UType = Type
 }

@@ -1,10 +1,47 @@
 package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
+import zio.morphir.ir.TypeModule.Type
 import zio.{Chunk, ZEnvironment}
 import zio.prelude.*
 
 object ValueModule {
+
+  def mapDefinition[Annotations, Err](definition: Definition[Annotations])(
+      tryMapType: Type[Annotations] => Validation[Err, Type[Annotations]],
+      tryMapValue: Value[Annotations] => Validation[Err, Value[Annotations]]
+  ): Validation[Err, Definition[Annotations]] = ???
+
+  final case class Definition[+Annotations](
+      inputTypes: Chunk[InputParameter[Annotations]],
+      outputType: Type[Annotations],
+      body: Value[Annotations]
+  ) { self =>
+    final def toSpecification: Specification[Annotations] = ???
+
+    def transform[Annotations2 >: Annotations, Err](
+        tryMapType: Type[Annotations2] => Validation[Err, Type[Annotations2]],
+        tryMapValue: Value[Annotations2] => Validation[Err, Value[Annotations2]]
+    ): Validation[Err, Definition[Annotations2]] = {
+      // TODO: Implement this
+      ???
+    }
+    // f(outputType).map(outputType => self.copy(outputType = outputType))
+  }
+
+  final case class InputParameter[+Annotations](
+      name: Name,
+      tpe: Type[Annotations],
+      annotations: ZEnvironment[Annotations]
+  )
+
+  final type RawValue = Value[Any]
+  final val RawValue = Value
+
+  final case class Specification[+Annotations](inputs: Chunk[(Name, Type[Annotations])], output: Type[Annotations])
+
+  final type TypedValue = Value[UType]
+  val TypedValue = Value
 
   sealed trait Value[+Annotations] { self =>
     import ValueCase.*
@@ -71,6 +108,26 @@ object ValueModule {
 
   object Value {
     import ValueCase.*
+
+    def apply(caseValue: ValueCase[Value[Any]]): Value[Any] = GenericValue(caseValue, ZEnvironment.empty)
+
+    def apply[Annotations](
+        caseValue: ValueCase[Value[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ): Value[Annotations] = GenericValue(caseValue, annotations)
+
+    private final case class GenericValue[+Annotations](
+        caseValue: ValueCase[Value[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations]
+
+    final case class Field[+Annotations](
+        target: Value[Annotations],
+        name: Name,
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
+    }
 
     final case class Literal[+V, +Annotations](value: Lit[V], annotations: ZEnvironment[Annotations])
         extends Value[Annotations] {

@@ -41,6 +41,15 @@ object AccessControlled {
     case object Private extends Access
   }
 
+  object WithPrivateAccess {
+    def unapply[A](accessControlled: AccessControlled[A]): Option[A] =
+      Some(accessControlled.withPrivateAccess)
+  }
+  object WithPublicAccess {
+    def unapply[A](accessControlled: AccessControlled[A]): Option[A] =
+      accessControlled.withPublicAccess
+  }
+
   implicit val AccessControlledCovariant: Covariant[AccessControlled] = new Covariant[AccessControlled] {
     def map[A, B](f: A => B): AccessControlled[A] => AccessControlled[B] = _.map(f)
   }

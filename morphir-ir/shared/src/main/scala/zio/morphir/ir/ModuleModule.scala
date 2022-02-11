@@ -2,11 +2,33 @@ package zio.morphir.ir
 
 object ModuleModule {
 
-  type Definition[+Annotations] = MorphirIR.ModuleDefinition[Annotations]
-  val Definition = MorphirIR.ModuleDefinition
+  final case class Definition[+Annotations](
+      types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Annotations]]]],
+      values: Map[Name, AccessControlled[ValueModule.Definition[Annotations]]]
+  ) { self =>
+    def toSpecification: Specification[Annotations] = {
+      Specification(
+        types = self.types.collect { case (name, AccessControlled.WithPublicAccess(documented)) =>
+          name -> documented.map(_.toSpecification)
+        },
+        values = self.values.collect { case (name, AccessControlled.WithPublicAccess(definition)) =>
+          name -> definition.toSpecification
+        }
+      )
+    }
+  }
 
-  type Specification[+Annotations] = MorphirIR.ModuleSpecification[Annotations]
-  val Specification = MorphirIR.ModuleSpecification
+  object Definition {
+    def empty[Annotations]: Definition[Annotations] = Definition(Map.empty, Map.empty)
+  }
+
+  final case class Specification[+Annotations](
+      types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
+      values: Map[Name, ValueModule.Specification[Annotations]]
+  )
+  object Specification {
+    def empty[Annotations]: Specification[Annotations] = Specification(Map.empty, Map.empty)
+  }
 
   lazy val emptyDefinition: Definition[Any] = Definition.empty
 
@@ -16,7 +38,7 @@ object ModuleModule {
     lazy val toPath = namespace / localName
   }
 
-  final case class ModulePath(toPath: Path)
+  final case class ModulePath(toPath: Path) extends AnyVal
 
   final case class QualifiedModuleName(packageName: Path, module: Path) {
     lazy val toPath = packageName / module
