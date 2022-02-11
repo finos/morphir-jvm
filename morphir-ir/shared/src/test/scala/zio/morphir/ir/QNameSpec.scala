@@ -29,8 +29,10 @@ object QNameSpec extends MorphirBaseSpec {
       test("localName and path") {
         val path = Path.fromString("path")
         val name = Name.fromString("name")
-        assertTrue(QName.getLocalName(QName(path, name)) == name)
-        assertTrue(QName.getModulePath(QName(path, name)) == path)
+        assertTrue(
+          QName.getLocalName(QName(path, name)) == name,
+          QName.getModulePath(QName(path, name)) == path
+        )
       }
     ),
     suite("QName and Strings")(
@@ -42,7 +44,8 @@ object QNameSpec extends MorphirBaseSpec {
       test("Create QName from String") {
         val str = "Proper.Path:name"
         assertTrue(QName.fromString(str) == Some(QName(Path.fromString("Proper.Path"), Name.fromString("name"))))
-
+      },
+      test("Provide an invalid String") {
         val str2 = "invalidpathname"
         assertTrue(QName.fromString(str2) == None)
       }

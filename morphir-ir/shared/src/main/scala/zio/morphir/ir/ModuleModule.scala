@@ -35,6 +35,8 @@ object ModuleModule {
   lazy val emptySpecification: Specification[Any] = Specification.empty
 
   final case class ModuleName(namespace: Path, localName: Name) {
+    def %(name: Name): QName = QName(toPath, name)
+
     lazy val toPath = namespace / localName
   }
 

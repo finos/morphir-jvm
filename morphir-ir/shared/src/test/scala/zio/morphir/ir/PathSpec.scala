@@ -25,6 +25,21 @@ object PathSpec extends MorphirBaseSpec {
             Chunk(Name.fromList(List("blog")), Name.fromList(List("author")))
           )
         )
+      },
+      test("It can be constructed from Name arguments") {
+        assertTrue(
+          Path(Name.fromString("projectfiles"), Name.fromString("filePath")) == Path(
+            Chunk(Name.fromList(List("projectfiles")), Name.fromList(List("file", "Path")))
+          )
+        )
+      },
+      test("It can be constructed from string arguments") {
+        assertTrue(
+          Path("myCompany", "some Type") == Path(
+            Name.unsafeMake("my", "company"),
+            Name.unsafeMake("some", "type")
+          )
+        )
       }
     ),
     suite("Transforming a Path into a String")(
@@ -67,21 +82,19 @@ object PathSpec extends MorphirBaseSpec {
       test("""Return true: Given path is "foo/bar" and prefix is "foo" """) {
         val sut    = Path.fromString("foo/bar")
         val prefix = Path.fromString("foo")
-        val x      = Path.isPrefixOf(prefix = prefix, path = sut)
-        assertTrue(x)
+
+        assertTrue(Path.isPrefixOf(prefix = prefix, path = sut))
       },
       test("""Return false: Given path is "foo/foo" and prefix is "bar" """) {
         val sut    = Path.fromString("foo/foo")
         val prefix = Path.fromString("bar")
 
-        val x = Path.isPrefixOf(prefix = prefix, path = sut)
-        assertTrue(!x)
+        assertTrue(!Path.isPrefixOf(prefix = prefix, path = sut))
       },
       test("""Return true: Given equal paths""") {
         val sut    = Path.fromString("foo/bar/baz")
         val prefix = sut
-        val x      = Path.isPrefixOf(prefix = prefix, path = sut)
-        assertTrue(x)
+        assertTrue(Path.isPrefixOf(prefix = prefix, path = sut))
       }
     )
   )

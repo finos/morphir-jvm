@@ -81,12 +81,14 @@ object Name {
   def apply(first: String, rest: String*): Name =
     fromIterable(first +: rest)
 
-  @inline def fromList(list: List[String]): Name = wrap(list)
-  def fromIterable(iterable: Iterable[String]): Name =
-    wrap(iterable.toList)
+  private val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
+
+  @inline def fromList(list: List[String]): Name = fromIterable(list)
+  def fromIterable(iterable: Iterable[String]): Name = {
+    wrap(iterable.flatMap(str => pattern.findAllIn(str)).map(_.toLowerCase).toList)
+  }
 
   def fromString(str: String): Name = {
-    val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
     Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
   }
 

@@ -31,7 +31,6 @@ object NameSpec extends MorphirBaseSpec {
           )
         },
         test("Have a number in the middle") {
-
           assertTrue(Name.fromString("Nintendo64VideoGameSystem") == Name("nintendo", "64", "video", "game", "system"))
         },
         test("Are complete and utter nonsense") {
@@ -101,15 +100,14 @@ object NameSpec extends MorphirBaseSpec {
     suite("fromIterable")(
       test("Splits provided names as expected") {
         assertTrue(Name.fromIterable(List("fooBar", "fizzBuzz")) == Name("foo", "bar", "fizz", "buzz"))
-      } @@ TestAspect.ignore @@ TestAspect.tag("TOFIX")
+      }
     ),
     suite("unsafeMake")(
       test("Creates the name as provided") {
         assertTrue(
           Name.unsafeMake("foo", "bar", "baz", "123").toList == List("foo", "bar", "baz", "123")
         )
-
-      } @@ TestAspect.ignore @@ TestAspect.tag("TOFIX")
+      }
     )
   )
 }
