@@ -451,7 +451,7 @@ object DecoderSpec extends ZioBaseSpec {
           assertTrue(
             map.fromSExpr[SExpr.SMap[SExpr, SExpr]] ==
               Right(
-                SExpr.SMap(
+                SExpr.SMap[SExpr, SExpr](
                   Chunk(
                     SExpr.Str("x")                                -> SExpr.Num(BigDecimal(0)),
                     SExpr.Symbol(":keyword1", SymbolKind.Keyword) -> SExpr.Str("hello"),
@@ -779,9 +779,9 @@ object DecoderSpec extends ZioBaseSpec {
         test("Map") {
           val sExpr = SExpr.SMap(
             Map(
-              SExpr.Str("5XL") -> SExpr.Num(java.math.BigDecimal(3)),
-              SExpr.Str("2XL") -> SExpr.Num(java.math.BigDecimal(14)),
-              SExpr.Str("XL")  -> SExpr.Num(java.math.BigDecimal(159))
+              SExpr.Str("5XL") -> SExpr.Num(new java.math.BigDecimal(3)),
+              SExpr.Str("2XL") -> SExpr.Num(new java.math.BigDecimal(14)),
+              SExpr.Str("XL")  -> SExpr.Num(new java.math.BigDecimal(159))
             )
           )
           val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)

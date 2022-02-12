@@ -69,7 +69,7 @@ object SExprParser {
         vectorSep <~
         Syntax.char('}'))
         .transform(
-          (chunk: zio.Chunk[(SExpr, SExpr)]) => SExpr.SMap[SExpr, SExpr].apply(chunk.toMap),
+          (chunk: zio.Chunk[(SExpr, SExpr)]) => SExpr.SMap.apply(chunk.toMap),
           (map: SExpr.SMap[SExpr, SExpr]) => zio.Chunk.fromIterable[(SExpr, SExpr)](map.items)
         )
 
