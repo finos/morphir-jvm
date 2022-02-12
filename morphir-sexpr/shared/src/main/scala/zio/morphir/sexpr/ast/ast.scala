@@ -47,13 +47,13 @@ object SExpr {
   implicit val encoder: SExprEncoder[SExpr] = new SExprEncoder[SExpr] {
     def unsafeEncode(a: SExpr, indent: Option[Int], out: Write): Unit =
       a match {
-        case j: SVector            => SVector.encoder.unsafeEncode(j, indent, out)
-        case j: SMap[SExpr, SExpr] => SMap.encoder.unsafeEncode(j, indent, out)
-        case j: Symbol             => Symbol.encoder.unsafeEncode(j, indent, out)
-        case j: Bool               => Bool.encoder.unsafeEncode(j, indent, out)
-        case j: Str                => Str.encoder.unsafeEncode(j, indent, out)
-        case j: Num                => Num.encoder.unsafeEncode(j, indent, out)
-        case Nil                   => Nil.encoder.unsafeEncode(Nil, indent, out)
+        case j: SVector  => SVector.encoder.unsafeEncode(j, indent, out)
+        case j @ SMap(_) => SMap.encoder.unsafeEncode(j.asInstanceOf[SMap[SExpr, SExpr]], indent, out)
+        case j: Symbol   => Symbol.encoder.unsafeEncode(j, indent, out)
+        case j: Bool     => Bool.encoder.unsafeEncode(j, indent, out)
+        case j: Str      => Str.encoder.unsafeEncode(j, indent, out)
+        case j: Num      => Num.encoder.unsafeEncode(j, indent, out)
+        case Nil         => Nil.encoder.unsafeEncode(Nil, indent, out)
       }
 
     override final def toAST(a: SExpr): Either[String, SExpr] = Right(a)
@@ -186,8 +186,8 @@ object SExpr {
 
       override final def fromAST(sexpr: SExpr): Either[String, SMap[SExpr, SExpr]] =
         sexpr match {
-          case m: SMap[SExpr, SExpr] => Right(m)
-          case _                     => Left(s"Not a map")
+          case m @ SMap(_) => Right(m.asInstanceOf[SMap[SExpr, SExpr]])
+          case _           => Left(s"Not a map")
         }
     }
 
@@ -269,9 +269,9 @@ object SExpr {
 
   object Symbol {
     def apply(name: String): Symbol = name match {
-      case s"::$rest" => Symbol(name, SymbolKind.Macro)
-      case s":$rest"  => Symbol(name, SymbolKind.Keyword)
-      case name       => Symbol(name, SymbolKind.Standard)
+      case s if s.startsWith("::") => Symbol(name, SymbolKind.Macro)
+      case s if s.startsWith(":")  => Symbol(name, SymbolKind.Keyword)
+      case name                    => Symbol(name, SymbolKind.Standard)
     }
 
     object Case {

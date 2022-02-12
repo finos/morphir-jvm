@@ -352,22 +352,22 @@ object SExprDecoder {
   implicit def linearSeq[A: SExprDecoder]: SExprDecoder[LinearSeq[A]]           = chunk[A].map(_.toList)
   implicit def vector[A: SExprDecoder]: SExprDecoder[Vector[A]]                 = chunk[A].map(_.toVector)
   implicit def set[A: SExprDecoder]: SExprDecoder[Set[A]]                       = chunk[A].map(_.toSet)
-  implicit def hashSet[A: SExprDecoder]: SExprDecoder[HashSet[A]]               = chunk[A].map(new HashSet() ++ _)
-  implicit def listSet[A: SExprDecoder]: SExprDecoder[ListSet[A]]               = chunk[A].map(new ListSet() ++ _)
-  implicit def sortedSet[A: SExprDecoder: Ordering]: SExprDecoder[SortedSet[A]] = chunk[A].map(new TreeSet() ++ _)
-  implicit def treeSet[A: SExprDecoder: Ordering]: SExprDecoder[TreeSet[A]]     = chunk[A].map(new TreeSet() ++ _)
+  implicit def hashSet[A: SExprDecoder]: SExprDecoder[HashSet[A]]               = chunk[A].map(new HashSet[A]() ++ _)
+  implicit def listSet[A: SExprDecoder]: SExprDecoder[ListSet[A]]               = chunk[A].map(new ListSet[A]() ++ _)
+  implicit def sortedSet[A: SExprDecoder: Ordering]: SExprDecoder[SortedSet[A]] = chunk[A].map(new TreeSet[A]() ++ _)
+  implicit def treeSet[A: SExprDecoder: Ordering]: SExprDecoder[TreeSet[A]]     = chunk[A].map(new TreeSet[A]() ++ _)
   implicit def iterable[A: SExprDecoder]: SExprDecoder[Iterable[A]]             = chunk[A].map(identity)
 
   implicit def hashMap[K: SExprDecoder, V: SExprDecoder]: SExprDecoder[HashMap[K, V]] =
-    immutableMap[K, V].map(new HashMap() ++ _)
+    immutableMap[K, V].map(new HashMap[K, V]() ++ _)
   implicit def mutableMap[K: SExprDecoder, V: SExprDecoder]: SExprDecoder[collection.mutable.Map[K, V]] =
-    immutableMap[K, V].map(new collection.mutable.HashMap() ++ _)
+    immutableMap[K, V].map(new collection.mutable.HashMap[K, V]() ++ _)
   implicit def mutableHashMap[K: SExprDecoder, V: SExprDecoder]: SExprDecoder[collection.mutable.HashMap[K, V]] =
-    immutableMap[K, V].map(new collection.mutable.HashMap() ++ _)
+    immutableMap[K, V].map(new collection.mutable.HashMap[K, V]() ++ _)
   implicit def sortedMap[K: SExprDecoder: Ordering, V: SExprDecoder]: SExprDecoder[collection.SortedMap[K, V]] =
-    treeMap[K, V].map(new TreeMap() ++ _)
+    treeMap[K, V].map(new TreeMap[K, V]() ++ _)
   implicit def treeMap[K: SExprDecoder: Ordering, V: SExprDecoder]: SExprDecoder[TreeMap[K, V]] =
-    immutableMap[K, V].map(new TreeMap() ++ _)
+    immutableMap[K, V].map(new TreeMap[K, V]() ++ _)
 
   // use this instead of `string.mapOrFail` in supertypes (to prevent class initialization error at runtime)
   private[sexpr] def mapString[A](f: String => Either[String, A]): SExprDecoder[A] =
