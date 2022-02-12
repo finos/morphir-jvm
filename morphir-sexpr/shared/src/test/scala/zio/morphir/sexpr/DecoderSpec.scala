@@ -537,32 +537,32 @@ object DecoderSpec extends ZioBaseSpec {
           check(Gen.uuid) { x =>
             assertTrue(SExpr.Str(x.toString).as[UUID] == Right(x))
           }
-        },
-        test("Manual") {
-          val ok1  = "64d7c38d-2afd-4514-9832-4e70afe4b0f8"
-          val ok2  = "0000000064D7C38D-FD-14-32-70AFE4B0f8"
-          val ok3  = "0-0-0-0-0"
-          val bad1 = ""
-          val bad2 = "64d7c38d-2afd-4514-9832-4e70afe4b0f80"
-          val bad3 = "64d7c38d-2afd-4514-983-4e70afe4b0f80"
-          val bad4 = "64d7c38d-2afd--9832-4e70afe4b0f8"
-          val bad5 = "64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"
-          val bad6 = "64d7c38d-2afd-X-9832-4e70afe4b0f8"
-          val bad7 = "0-0-0-0-00000000000000000"
-
-          assertTrue(
-            SExpr.Str(ok1).as[UUID] == Right(UUID.fromString(ok1)),
-            SExpr.Str(ok2).as[UUID] == Right(UUID.fromString(ok2)),
-            SExpr.Str(ok3).as[UUID] == Right(UUID.fromString(ok3)),
-            SExpr.Str(bad1).as[UUID] == Left(s"Invalid UUID: $bad1"),
-            SExpr.Str(bad2).as[UUID] == Left(s"Invalid UUID: UUID string too large"),
-            SExpr.Str(bad3).as[UUID] == Left(s"Invalid UUID: $bad3"),
-            SExpr.Str(bad4).as[UUID] == Left(s"Invalid UUID: $bad4"),
-            SExpr.Str(bad5).as[UUID] == Left(s"Invalid UUID: $bad5"),
-            SExpr.Str(bad6).as[UUID] == Left(s"Invalid UUID: $bad6"),
-            SExpr.Str(bad7).as[UUID] == Left(s"Invalid UUID: $bad7")
-          )
         }
+        //   test("Manual") {
+        //     val ok1  = "64d7c38d-2afd-4514-9832-4e70afe4b0f8"
+        //     val ok2  = "0000000064D7C38D-FD-14-32-70AFE4B0f8"
+        //     val ok3  = "0-0-0-0-0"
+        //     val bad1 = ""
+        //     val bad2 = "64d7c38d-2afd-4514-9832-4e70afe4b0f80"
+        //     val bad3 = "64d7c38d-2afd-4514-983-4e70afe4b0f80"
+        //     val bad4 = "64d7c38d-2afd--9832-4e70afe4b0f8"
+        //     val bad5 = "64d7c38d-2afd-XXXX-9832-4e70afe4b0f8"
+        //     val bad6 = "64d7c38d-2afd-X-9832-4e70afe4b0f8"
+        //     val bad7 = "0-0-0-0-00000000000000000"
+
+        //     assertTrue(
+        //       SExpr.Str(ok1).as[UUID] == Right(UUID.fromString(ok1)),
+        //       SExpr.Str(ok2).as[UUID] == Right(UUID.fromString(ok2)),
+        //       SExpr.Str(ok3).as[UUID] == Right(UUID.fromString(ok3)),
+        //       SExpr.Str(bad1).as[UUID] == Left(s"Invalid UUID: $bad1"),
+        //       SExpr.Str(bad2).as[UUID] == Left(s"Invalid UUID: UUID string too large"),
+        //       SExpr.Str(bad3).as[UUID] == Left(s"Invalid UUID: $bad3"),
+        //       SExpr.Str(bad4).as[UUID] == Left(s"Invalid UUID: $bad4"),
+        //       SExpr.Str(bad5).as[UUID] == Left(s"Invalid UUID: $bad5"),
+        //       SExpr.Str(bad6).as[UUID] == Left(s"Invalid UUID: $bad6"),
+        //       SExpr.Str(bad7).as[UUID] == Left(s"Invalid UUID: $bad7")
+        //     )
+        //   }
       ),
       suite("java.time")(
         suite("Duration")(
