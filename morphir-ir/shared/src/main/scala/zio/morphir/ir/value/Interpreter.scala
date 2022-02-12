@@ -1,32 +1,48 @@
 package zio.morphir.ir.value
-
-import scala.collection.immutable.ListMap
-import zio.morphir.ir.MorphirIR
-import zio.morphir.ir.recursive.PatternCase
-import zio.morphir.ir.recursive.ValueCase
-import zio.morphir.ir.Literal
-import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
-import zio.Chunk
-import zio.morphir.ir.FQName
-import zio.morphir.ir.MorphirIR.Value
+import zio.morphir.ir.ValueModule.RawValue
+import zio.morphir.IRModule.IR
+import zio.morphir.ir.LiteralValue
+import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
+import zio.morphir.ir.FQName
 import zio.morphir.ir.NativeFunction.*
 
+import zio.Chunk
+
+import scala.collection.immutable.ListMap
 object Interpreter {
-  def eval[Annotations](ir: MorphirIR[Annotations]): Either[InterpretationError, Any] = {
+
+  final case class Variables(toMap: Map[Name, RawValue])
+
+  type ??? = Nothing
+
+  def evaluate(value: RawValue): Any = evaluate(value, IR.empty, Map.empty)
+
+  def evaluate(value: RawValue, ir: IR, nativeFunctions: Map[FQName, NativeFunction]): Any = {
+
+    // HACK: Just quieting some warnings
+    val _ = (ir, nativeFunctions)
 
     def loop(
-        ir: MorphirIR[Annotations],
+        value: RawValue,
         variables: Map[Name, Any],
-        references: Map[FQName, Value[Annotations]]
+        references: Map[FQName, Any]
     ): Any = {
-      ir.caseValue match {
+      value.caseValue match {
 
-        case ValueCase.ApplyCase(_, _) =>
+        case NativeApplyCase(function, args) =>
+          evalNativeFunction(function, args.map(loop(_, variables, references)))
+
+        case ApplyCase(function, arguments) =>
+          val scalaFunction      = loop(function, variables, references)
+          val evaluatedArguments = arguments.map(loop(_, variables, references))
+          applyFunction(scalaFunction, evaluatedArguments)
+
+        case ConstructorCase(_) =>
           ???
 
-        case ValueCase.FieldCase(target, name) =>
+        case FieldCase(target, name) =>
           val record = loop(target, variables, references).asInstanceOf[ListMap[Name, Any]]
           record.get(name) match {
             case Some(value) => value
@@ -34,35 +50,31 @@ object Interpreter {
               throw new InterpretationError.FieldNotFound(name, s"Field $name not found in $record")
           }
 
-        case ValueCase.IfThenElseCase(condition, thenCase, elseCase) =>
+        case FieldFunctionCase(name) =>
+          (input: Any) =>
+            input match {
+              case record: ListMap[_, _] =>
+                record.asInstanceOf[ListMap[Name, Any]].get(name) match {
+                  case Some(fieldValue) => fieldValue
+                  case None             => InterpretationError.FieldNotFound(name, s"Field $name not found in $input")
+                }
+              case _ => throw new InterpretationError.RecordExpected(name, s"Record expected but got $input")
+            }
+
+        case IfThenElseCase(condition, thenBranch, elseBranch) =>
           if (loop(condition, variables, references).asInstanceOf[Boolean]) {
-            loop(thenCase, variables, references)
+            loop(thenBranch, variables, references)
           } else {
-            loop(elseCase, variables, references)
+            loop(elseBranch, variables, references)
           }
 
-        case ValueCase.LambdaCase(_, _) =>
-          ???
+        case ListCase(elements) =>
+          elements.map(loop(_, variables, references)).toList
 
-        case ValueCase.LetDefinitionCase(name, value, body) =>
-          loop(body, variables + (name -> loop(value, variables, references)), references)
+        case LiteralCase(literal) =>
+          evalLiteralValue(literal)
 
-        case ValueCase.ListCase(values) =>
-          values.map(loop(_, variables, references)).toList
-
-        case ValueCase.LiteralCase(value) =>
-          evalLiteralValue(value)
-
-        case ValueCase.NativeApplyCase(function, args) =>
-          evalNativeFunction(function, args.map(loop(_, variables, references)))
-
-        // 42 match {
-        //   case x => x
-        // }
-
-        // PatternMatchChase(42, Map(AsCase("x", WildCaseCase)) -> VariableCase("x"))
-
-        case ValueCase.PatternMatchCase(branchOutOn, cases) =>
+        case PatternMatchCase(branchOutOn, cases) =>
           sealed trait MatchResult
           object MatchResult {
             case object Failure                                 extends MatchResult
@@ -70,35 +82,46 @@ object Interpreter {
           }
           // Option[Map[Name, Any]]
 
-          def matches(body: Any, caseStatement: MorphirIR[Annotations]): MatchResult = {
+          def matches(body: Any, caseStatement: RawValue): MatchResult = {
             val unitValue: Unit = ()
             caseStatement.caseValue match {
-              case PatternCase.AsCase(pattern, name) =>
+              case PatternCase.AsPatternCase(pattern, name) =>
                 matches(body, pattern) match {
                   case MatchResult.Success(_) =>
                     MatchResult.Success(Map.empty + (name -> body))
                   case MatchResult.Failure =>
                     MatchResult.Failure
                 }
-              case PatternCase.EmptyListCase =>
+              case PatternCase.EmptyListPatternCase =>
                 if (body == Nil) MatchResult.Success(Map.empty) else MatchResult.Failure
-              case PatternCase.LiteralCase(literal) =>
+              case PatternCase.LiteralPatternCase(literal) =>
                 if (body == literal) MatchResult.Success(Map.empty) else MatchResult.Failure
-              case PatternCase.UnitCase =>
+              case PatternCase.UnitPatternCase =>
                 if (body == unitValue) MatchResult.Success(Map.empty) else MatchResult.Failure
-              case PatternCase.WildcardCase =>
+              // case PatternCase.TuplePatternCase(patterns) =>
+              //   def helper(remainingBody, remainingTuple) => (remainingTuple, remainingPattern) match
+              //    case (Nil, Nil) =>MatchResult.Success(List.Empty)
+              //    case (_, Nil) => MatchResult.Failure
+              //    case (Nil, _) => MatchResult.Failure
+              //    case (b :: bs, t :: ts) =>(helper(bs, ts), matches(b, t)) match
+              //      case (MatchResult.Success(m1), MatchResult.Success(m2)) =>MatchResult.Success(m1 + m2)
+              //      case _ => MatchResult.Failure
+              //   body match
+              //    case Tuple(bodyVals) => helper(bodyVals, patterns)
+              //    case _ => MatchResult.Failure
+              case PatternCase.WildcardPatternCase =>
                 MatchResult.Success(Map.empty)
               case _ =>
                 throw new InterpretationError.Message("we don't know how to handle this pattern yet")
             }
           }
 
-          val evaluatedBody                         = loop(branchOutOn, variables, references)
-          val casesChunk                            = cases
-          var i                                     = 0
-          val length                                = casesChunk.length
-          var rightHandSide: MorphirIR[Annotations] = null
-          var newVariables: Map[Name, Any]          = Map.empty
+          val evaluatedBody                = loop(branchOutOn, variables, references)
+          val casesChunk                   = cases
+          var i                            = 0
+          val length                       = casesChunk.length
+          var rightHandSide: RawValue      = null
+          var newVariables: Map[Name, Any] = Map.empty
           while (i < length) {
             matches(evaluatedBody, casesChunk(i)._1) match {
               case MatchResult.Success(variables) =>
@@ -120,55 +143,106 @@ object Interpreter {
         // }
         // }
 
-        case ValueCase.RecordCase(fields) =>
-          println(s"Interpreting RecordCase for $fields")
+        case RecordCase(fields) =>
           val values = fields.map { case (name, value) =>
             name -> loop(value, variables, references)
           }
           ListMap(values: _*)
 
-        case ValueCase.ReferenceCase(fqName) =>
-          references.get(fqName) match {
+        case ReferenceCase(name) =>
+          references.get(name) match {
             case Some(value) => value
-            case None        => throw new InterpretationError.ReferenceNotFound(fqName, s"Reference $fqName not found")
+
+            case None => throw new InterpretationError.ReferenceNotFound(name, s"Reference $name not found")
           }
 
-        case ValueCase.TupleCase(value) =>
-          evalTuple(value.map(loop(_, variables, references)))
+        case TupleCase(elements) =>
+          evalTuple(elements.map(loop(_, variables, references)))
 
-        case ValueCase.UnitCase =>
+        case UnitCase =>
           ()
 
-        case ValueCase.VariableCase(name) =>
+        case VariableCase(name) =>
           variables.get(name) match {
             case Some(value) => value
 
             case None => throw new InterpretationError.VariableNotFound(name, s"Variable $name not found")
           }
 
-        case _ => ???
+        case LetDefinitionCase(name, value, body) =>
+          loop(body, variables + (name -> loop(value, variables, references)), references)
+
+        case LetRecursionCase(valueDefinitions, inValue) =>
+          // TODO: handle case where definitions in valueDefinitions refer to each other
+          val newVariables: Map[Name, Any] = valueDefinitions.map { case (name, value) =>
+            val evaluatedValue = loop(value, variables, references)
+            (name, evaluatedValue)
+          }
+          loop(inValue, variables ++ newVariables, references)
+
+        case UpdateRecordCase(_, _) =>
+          ???
+
+        case LambdaCase(argumentPattern, body) =>
+          // (input: Any) => loop(Value(PatternMatchCase(input, Chunk(argumentPattern -> body))), variables, references)
+          argumentPattern.caseValue match {
+            case PatternCase.WildcardPatternCase =>
+              (_: Any) => loop(body, variables, references)
+            case _ =>
+              ???
+          }
+
+        // ZIO.succeed(1).map(_ => 2)
+
+        case DestructureCase(_, _, _)                 => ???
+        case PatternCase.AsPatternCase(_, _)          => ???
+        case PatternCase.ConstructorPatternCase(_, _) => ???
+        case PatternCase.EmptyListPatternCase         => ???
+        case PatternCase.HeadTailPatternCase(_, _)    => ???
+        case PatternCase.LiteralPatternCase(_)        => ???
+        case PatternCase.TuplePatternCase(_)          => ???
+        case PatternCase.UnitPatternCase              => ???
+        case PatternCase.WildcardPatternCase          => ???
       }
     }
 
     try {
-      Right(loop(ir, Map.empty, Map.empty))
+      Right(loop(value, Map.empty, Map.empty))
     } catch {
       case interpretationError: InterpretationError => Left(interpretationError)
     }
   }
 
-  // val x = 1
-  // val y = 2
-  // x + y
-
   private def evalLiteralValue(literalValue: LiteralValue): Any =
     literalValue match {
-      case Literal.Bool(value)        => value
-      case Literal.Char(value)        => value
-      case Literal.String(value)      => value
-      case Literal.WholeNumber(value) => value
-      case Literal.Float(value)       => value
+      case LiteralValue.Bool(value)        => value
+      case LiteralValue.Char(value)        => value
+      case LiteralValue.String(value)      => value
+      case LiteralValue.WholeNumber(value) => value
+      case LiteralValue.Float(value)       => value
     }
+
+  private def evalNativeFunction(function: NativeFunction, args: Chunk[Any]): Any =
+    function match {
+      case Addition    => evalAddition(args)
+      case Subtraction => evalSubtraction(args)
+    }
+
+  private def evalAddition(args: Chunk[Any]): Any =
+    if (args.length == 0)
+      throw new InterpretationError.InvalidArguments(args, s"Addition expected at least two argument but got none.")
+    else if (args(0).isInstanceOf[java.math.BigInteger])
+      args.asInstanceOf[Chunk[java.math.BigInteger]].reduce(_ add _)
+    else
+      args.asInstanceOf[Chunk[java.math.BigDecimal]].reduce(_ add _)
+
+  private def evalSubtraction(args: Chunk[Any]): Any =
+    if (args.length != 2)
+      throw new InterpretationError.InvalidArguments(args, s"Subtraction expected exactly two arguments.")
+    else if (args(0).isInstanceOf[java.math.BigInteger])
+      args(0).asInstanceOf[java.math.BigInteger] subtract args(1).asInstanceOf[java.math.BigInteger]
+    else
+      args(0).asInstanceOf[java.math.BigDecimal] subtract args(1).asInstanceOf[java.math.BigDecimal]
 
   // format: off
   private def evalTuple(value: Chunk[Any]): Any =
@@ -199,27 +273,12 @@ object Interpreter {
     }
     // format: on
 
-  private def evalNativeFunction(function: NativeFunction, args: Chunk[Any]): Any =
+  def applyFunction(function: Any, arguments: Chunk[Any]): Any =
     function match {
-      case Addition    => evalAddition(args)
-      case Subtraction => evalSubtraction(args)
+      case f: Function1[_, _]    => f.asInstanceOf[Function1[Any, Any]](arguments(0))
+      case f: Function2[_, _, _] => f.asInstanceOf[Function2[Any, Any, Any]](arguments(0), arguments(1))
+      case _                     => throw new Exception("more than two arguments not currently supported")
     }
-
-  private def evalAddition(args: Chunk[Any]): Any =
-    if (args.length == 0)
-      throw new InterpretationError.InvalidArguments(args, s"Addition expected at least two argument but got none.")
-    else if (args(0).isInstanceOf[java.math.BigInteger])
-      args.asInstanceOf[Chunk[java.math.BigInteger]].reduce(_ add _)
-    else
-      args.asInstanceOf[Chunk[java.math.BigDecimal]].reduce(_ add _)
-
-  private def evalSubtraction(args: Chunk[Any]): Any =
-    if (args.length != 2)
-      throw new InterpretationError.InvalidArguments(args, s"Subtraction expected exactly two arguments.")
-    else if (args(0).isInstanceOf[java.math.BigInteger])
-      args(0).asInstanceOf[java.math.BigInteger] subtract args(1).asInstanceOf[java.math.BigInteger]
-    else
-      args(0).asInstanceOf[java.math.BigDecimal] subtract args(1).asInstanceOf[java.math.BigDecimal]
 }
 
 sealed trait InterpretationError extends Throwable
@@ -227,6 +286,7 @@ object InterpretationError {
   final case class Message(message: String)                            extends InterpretationError
   final case class VariableNotFound(name: Name, message: String)       extends InterpretationError
   final case class ReferenceNotFound(name: FQName, message: String)    extends InterpretationError
+  final case class RecordExpected(name: Name, message: String)         extends InterpretationError
   final case class InvalidArguments(args: Chunk[Any], message: String) extends InterpretationError
   final case class TupleTooLong(length: Int)                           extends InterpretationError
   final case class FieldNotFound(name: Name, message: String)          extends InterpretationError

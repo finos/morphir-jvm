@@ -121,6 +121,13 @@ object ValueModule {
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations]
 
+    final case class Apply[+Annotations](
+        function: Value[Annotations],
+        arguments: Chunk[Value[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override def caseValue: ApplyCase[Value[Annotations]] = ValueCase.ApplyCase(function, arguments)
+    }
     final case class Field[+Annotations](
         target: Value[Annotations],
         name: Name,
@@ -129,11 +136,45 @@ object ValueModule {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
     }
 
+    final case class Lambda[+Annotations](
+        pattern: Pattern[Annotations],
+        body: Value[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: LambdaCase[Value[Annotations]] = LambdaCase(pattern, body)
+    }
+
     final case class Literal[+V, +Annotations](value: Lit[V], annotations: ZEnvironment[Annotations])
         extends Value[Annotations] {
       def caseValue: LiteralCase = ValueCase.LiteralCase(value)
     }
 
+    sealed trait Pattern[+Annotations] extends Value[Annotations] {
+      def annotations: ZEnvironment[Annotations]
+    }
+    object Pattern {
+      import ValueCase.PatternCase.*
+      // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
+      // def unit[Annotations](annotations: ZEnvironment[Annotations]): UnitPattern[Annotations] = UnitPattern(annotations)
+      // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
+      // def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Wildcard[Annotations] = Wildcard(annotations)
+
+      // final case class LiteralPattern[+Annotations, +Value](value: Lit[Value], annotations: ZEnvironment[Annotations])
+      //     extends Pattern[Annotations]
+
+      // final case class UnitPattern[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations]
+      final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations] {
+        override def caseValue: WildcardPatternCase = WildcardPatternCase
+      }
+    }
+
+    final case class PatternMatch[+Annotations](
+        scrutinee: Value[Annotations],
+        cases: Chunk[(Value[Annotations], Value[Annotations])],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = PatternMatchCase(scrutinee, cases)
+    }
     final case class Record[+Annotations](
         fields: Chunk[(Name, Value[Annotations])],
         annotations: ZEnvironment[Annotations]
@@ -143,6 +184,11 @@ object ValueModule {
 
     final case class Unit[+Annotations](annotations: ZEnvironment[Annotations]) extends Value[Annotations] {
       override def caseValue: UnitCase = ValueCase.UnitCase
+    }
+
+    final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
+        extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = VariableCase(name)
     }
   }
 
@@ -180,18 +226,18 @@ object ValueModule {
 
   object ValueCase {
     final case class NativeApplyCase[+Self](function: NativeFunction, arguments: Chunk[Self]) extends ValueCase[Self]
-    final case class ApplyCase[+Self](function: Self, arguments: List[Self])                  extends ValueCase[Self]
+    final case class ApplyCase[+Self](function: Self, arguments: Chunk[Self])                 extends ValueCase[Self]
     final case class ConstructorCase(name: FQName)                                            extends ValueCase[Nothing]
     final case class FieldCase[+Self](target: Self, name: Name)                               extends ValueCase[Self]
     final case class FieldFunctionCase(name: Name)                                            extends ValueCase[Nothing]
     final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
     final case class ListCase[+Self](elements: Chunk[Self])                                     extends ValueCase[Self]
-    final case class LiteralCase(literal: LiteralValue)                                    extends ValueCase[Nothing]
-    final case class PatternMatchCase[+Self](branchOutOn: Self, cases: List[(Self, Self)]) extends ValueCase[Self]
-    final case class RecordCase[+Self](fields: Chunk[(Name, Self)])                        extends ValueCase[Self]
-    final case class ReferenceCase(name: FQName)                                           extends ValueCase[Nothing]
-    final case class TupleCase[+Self](elements: Chunk[Self])                               extends ValueCase[Self]
-    case object UnitCase                                                                   extends ValueCase[Nothing]
+    final case class LiteralCase(literal: LiteralValue)                                     extends ValueCase[Nothing]
+    final case class PatternMatchCase[+Self](branchOutOn: Self, cases: Chunk[(Self, Self)]) extends ValueCase[Self]
+    final case class RecordCase[+Self](fields: Chunk[(Name, Self)])                         extends ValueCase[Self]
+    final case class ReferenceCase(name: FQName)                                            extends ValueCase[Nothing]
+    final case class TupleCase[+Self](elements: Chunk[Self])                                extends ValueCase[Self]
+    case object UnitCase                                                                    extends ValueCase[Nothing]
     type UnitCase = UnitCase.type
     final case class VariableCase(name: Name) extends ValueCase[Nothing]
     final case class LetDefinitionCase[+Self](valueName: Name, valueDefinition: Self, inValue: Self)
@@ -218,22 +264,6 @@ object ValueModule {
       }
 
     }
-
-    sealed trait Pattern[+Annotations] extends Value[Annotations] {
-      def annotations: ZEnvironment[Annotations]
-    }
-    object Pattern {
-      // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
-      // def unit[Annotations](annotations: ZEnvironment[Annotations]): UnitPattern[Annotations] = UnitPattern(annotations)
-      // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
-      // def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Wildcard[Annotations] = Wildcard(annotations)
-
-      // final case class LiteralPattern[+Annotations, +Value](value: Lit[Value], annotations: ZEnvironment[Annotations])
-      //     extends Pattern[Annotations]
-
-      // final case class UnitPattern[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations]
-      // final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations])    extends Pattern[Annotations]
-    }
     object PatternCase {
 
       final case class AsPatternCase[+Self](pattern: Self, name: Name) extends PatternCase[Self]
@@ -244,7 +274,8 @@ object ValueModule {
       final case class LiteralPatternCase(value: Literal[Nothing])        extends PatternCase[Nothing]
       final case class TuplePatternCase[+Self](elements: List[Self])      extends PatternCase[Self]
       case object UnitPatternCase                                         extends PatternCase[Nothing]
-      case object WildcardPatternCase                                     extends PatternCase[Nothing]
+      type WildcardPatternCase = WildcardPatternCase.type
+      case object WildcardPatternCase extends PatternCase[Nothing]
 
       implicit val PatternCaseForEach: ForEach[PatternCase] =
         new ForEach[PatternCase] {
