@@ -3,8 +3,6 @@ package zio.morphir.sexpr
 import zio.Chunk
 import zio.test.DefaultRunnableSpec
 import zio.test.*
-import zio.test.Assertion.*
-import zio.parser.{Syntax, *}
 import zio.morphir.sexpr.SExprParser.*
 import zio.morphir.sexpr.SExprParser.grammar.*
 import zio.morphir.sexpr.ast.SExpr
@@ -45,13 +43,6 @@ object SExprParserSpec extends DefaultRunnableSpec {
         )
       }
     },
-    test("Float") {
-      check(Gen.float) { x =>
-        assertTrue(
-          grammar.num.parseString(x.toDouble.toString) == Right(SExpr.Num(BigDecimal.apply(x)))
-        )
-      }
-    },
     test("Int") {
       check(Gen.int) { x =>
         assertTrue(
@@ -69,7 +60,7 @@ object SExprParserSpec extends DefaultRunnableSpec {
     test("Short") {
       check(Gen.short) { x =>
         assertTrue(
-          grammar.num.parseString(x.toString) == Right(SExpr.Num(BigDecimal(x)))
+          grammar.num.parseString(x.toString) == Right(SExpr.Num(BigDecimal(x.toInt)))
         )
       }
     },

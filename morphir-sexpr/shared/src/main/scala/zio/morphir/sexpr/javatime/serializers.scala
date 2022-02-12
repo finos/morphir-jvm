@@ -200,8 +200,10 @@ private[sexpr] object serializers {
 
   private[this] def appendZoneOffset(x: ZoneOffset, s: java.lang.StringBuilder): Unit = {
     val totalSeconds = x.getTotalSeconds
-    if (totalSeconds == 0) s.append('Z'): Unit
-    else {
+    if (totalSeconds == 0) {
+      s.append('Z')
+      ()
+    } else {
       val q0 =
         if (totalSeconds > 0) {
           s.append('+')
@@ -224,9 +226,15 @@ private[sexpr] object serializers {
   private[this] def appendYear(x: Int, s: java.lang.StringBuilder): Unit =
     if (x >= 0) {
       if (x < 10000) append4Digits(x, s)
-      else s.append('+').append(x): Unit
+      else {
+        s.append('+').append(x)
+        ()
+      }
     } else if (x > -10000) append4Digits(-x, s.append('-'))
-    else s.append(x): Unit
+    else {
+      s.append(x)
+      ()
+    }
 
   private[this] def append4Digits(x: Int, s: java.lang.StringBuilder): Unit = {
     val q = x * 5243 >> 19 // divide a 4-digit positive int by 100
@@ -241,7 +249,8 @@ private[sexpr] object serializers {
 
   private[this] def append2Digits(x: Int, s: java.lang.StringBuilder): Unit = {
     val q = x * 103 >> 10 // divide a 2-digit positive int by 10
-    s.append((q + '0').toChar).append((x + '0' - q * 10).toChar): Unit
+    s.append((q + '0').toChar).append((x + '0' - q * 10).toChar)
+    ()
   }
 
   private[this] def to400YearCycle(day: Long): Int =

@@ -9,7 +9,7 @@ import zio.test._
 import java.time._
 import java.util.UUID
 import java.time.LocalTime
-import scala.collection.{SortedMap, immutable, mutable}
+import scala.collection.{SortedMap, immutable}
 import scala.collection.immutable.*
 
 object DecoderSpec extends ZioBaseSpec {

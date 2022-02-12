@@ -1,7 +1,6 @@
 package zio.morphir.sexpr
 
 import zio.morphir.sexpr.Gens._
-import zio.morphir.sexpr._
 import zio.morphir.testing.ZioBaseSpec
 import zio.test._
 import zio.test.Assertion._

@@ -20,9 +20,15 @@ final class WriteWriter(out: java.io.Writer) extends Write {
 final class FastStringWrite(initial: Int) extends Write {
   private[this] val sb: java.lang.StringBuilder = new java.lang.StringBuilder(initial)
 
-  def write(s: String): Unit = sb.append(s): Unit
+  def write(s: String): Unit = {
+    sb.append(s)
+    ()
+  }
 
-  def write(c: Char): Unit = sb.append(c): Unit
+  def write(c: Char): Unit = {
+    sb.append(c)
+    ()
+  }
 
   def buffer: CharSequence = sb
 }

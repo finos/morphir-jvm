@@ -212,10 +212,9 @@ object EncoderSpec extends ZioBaseSpec {
           assertTrue(Map(1 -> "a").toSExpr == """{1 "a"}""")
         },
         test("java.util.UUID") {
-          val uuid = "e142f1aa-6e9e-4352-adfe-7e6eb9814ccd"
-          assertTrue(
-            UUID.fromString(uuid).toSExpr == s""""$uuid""""
-          )
+          val input = "e142f1aa-6e9e-4352-adfe-7e6eb9814ccd"
+          val uuid: UUID = java.util.UUID.fromString(input)
+          assertTrue(uuid.toSExpr == s""""$input"""")
         }
       )
     ),
