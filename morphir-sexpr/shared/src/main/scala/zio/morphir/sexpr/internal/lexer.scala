@@ -1,11 +1,35 @@
 package zio.morphir.sexpr.internal
 
-import zio.morphir.sexpr.SExprDecoder.{SExprError, UnsafeSExpr}
+import zio.morphir.sexpr.{SExprError, UnsafeSExpr}
 
 import scala.annotation._
 
 object Lexer {
   val NumberMaxBits: Int = 128
+
+  // True if we got a string (implies a retraction), False for }
+  def firstField(trace: List[SExprError], in: RetractReader): Boolean =
+    (in.nextNonWhitespace(): @switch) match {
+      case '"' =>
+        in.retract()
+        true
+      case '}' => false
+      case c =>
+        throw UnsafeSExpr(
+          SExprError.Message(s"expected string or '}' got '$c'") :: trace
+        )
+    }
+
+  // True if we got a comma, and False for }
+  def nextField(trace: List[SExprError], in: OneCharReader): Boolean =
+    (in.nextNonWhitespace(): @switch) match {
+      case ',' => true
+      case '}' => false
+      case c =>
+        throw UnsafeSExpr(
+          SExprError.Message(s"expected ',' or '}' got '$c'") :: trace
+        )
+    }
 
   // TODO: Rename to firstVectorElement
   // True if we got anything besides a ], False for ]
@@ -28,13 +52,45 @@ object Lexer {
         )
     }
 
-  private[this] val ull: Array[Char]  = "ull".toCharArray
+  // avoids allocating lots of strings (they are often the bulk of incoming
+  // messages) by only checking for what we expect to see (Jon Pretty's idea).
+  //
+  // returns the index of the matched field, or -1
+  def field(
+      trace: List[SExprError],
+      in: OneCharReader,
+      matrix: StringMatrix
+  ): Int = {
+    val f = enumeration(trace, in, matrix)
+    char(trace, in, ':')
+    f
+  }
+
+  def enumeration(
+      trace: List[SExprError],
+      in: OneCharReader,
+      matrix: StringMatrix
+  ): Int = {
+    val stream = streamingString(trace, in)
+
+    var i: Int   = 0
+    var bs: Long = matrix.initial
+    var c: Int   = -1
+    while ({ c = stream.read(); c != -1 }) {
+      bs = matrix.update(bs, i, c)
+      i += 1
+    }
+    bs = matrix.exact(bs, i)
+    matrix.first(bs)
+  }
+
+  private[this] val il: Array[Char]   = "il".toCharArray
   private[this] val alse: Array[Char] = "alse".toCharArray
   private[this] val rue: Array[Char]  = "rue".toCharArray
 
   def skipValue(trace: List[SExprError], in: RetractReader): Unit =
     (in.nextNonWhitespace(): @switch) match {
-      case 'n' => readChars(trace, in, ull, "null")
+      case 'n' => readChars(trace, in, il, "nil")
       case 'f' => readChars(trace, in, alse, "false")
       case 't' => readChars(trace, in, rue, "true")
       case '[' =>
@@ -59,13 +115,52 @@ object Lexer {
   def skipString(trace: List[SExprError], in: OneCharReader): Unit = {
     val stream = new EscapedString(trace, in)
     var i: Int = 0
-    while ({ i = stream.read(); i != -1 }) ()
+    while ({
+      i = stream.read();
+      i != -1
+    }) ()
   }
 
-  // useful for embedded documents, e.g. CSV contained inside JSON
+  // useful for embedded documents, e.g. CSV contained inside SExpr
   def streamingString(trace: List[SExprError], in: OneCharReader): java.io.Reader = {
     char(trace, in, '"')
     new EscapedString(trace, in)
+  }
+
+  def symbol(trace: List[SExprError], in: RetractReader): CharSequence = {
+    checkStartSymbol(trace, in)
+    val sb = new FastStringBuilder(64)
+
+    // Read the first char
+    var c = in.readChar()
+    sb.append(c.toChar)
+    c = in.readChar()
+
+    while (isSymbolChar(c)) {
+      sb.append(c)
+      c = in.readChar()
+    }
+    if (c.isWhitespace)
+      sb.buffer
+    else
+      throw UnsafeSExpr(SExprError.Message(s"${sb.buffer} is followed by unexpected character $c in Symbol") :: trace)
+  }
+
+  // non-positional for performance
+  @inline private[this] def isFirstSymbolChar(c: Char): Boolean =
+    (c == '/' || c == '.' || c.isLetter)
+
+  @inline private[this] def isSymbolChar(c: Char): Boolean =
+    (c == '/' || c == '.' || c.isLetterOrDigit)
+
+  // really just a way to consume the whitespace
+  private def checkStartSymbol(trace: List[SExprError], in: RetractReader): Unit = {
+    (in.nextNonWhitespace(): @switch) match {
+      case c if isFirstSymbolChar(c) => ()
+      case c =>
+        throw UnsafeSExpr(SExprError.Message(s"expected a symbol, got $c") :: trace)
+    }
+    in.retract()
   }
 
   def string(trace: List[SExprError], in: OneCharReader): CharSequence = {
@@ -228,9 +323,7 @@ object Lexer {
     (in.nextNonWhitespace(): @switch) match {
       case '-' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => ()
       case c =>
-        throw UnsafeSExpr(
-          SExprError.Message(s"expected a number, got $c") :: trace
-        )
+        throw UnsafeSExpr(SExprError.Message(s"expected a number, got $c") :: trace)
     }
     in.retract()
   }
@@ -275,9 +368,7 @@ private final class EscapedString(trace: List[SExprError], in: OneCharReader)
         case 't'              => '\t'.toInt
         case 'u'              => nextHex4()
         case _ =>
-          throw UnsafeSExpr(
-            SExprError.Message(s"invalid '\\${c.toChar}' in string") :: trace
-          )
+          throw UnsafeSExpr(SExprError.Message(s"invalid '\\${c.toChar}' in string") :: trace)
       }
     } else if (c == '\\') {
       escaped = true
@@ -308,9 +399,7 @@ private final class EscapedString(trace: List[SExprError], in: OneCharReader)
         else if ('A' <= c && c <= 'F') c - 'A' + 10
         else if ('a' <= c && c <= 'f') c - 'a' + 10
         else
-          throw UnsafeSExpr(
-            SExprError.Message("invalid charcode in string") :: trace
-          )
+          throw UnsafeSExpr(SExprError.Message("invalid charcode in string") :: trace)
       accum = accum * 16 + c
       i += 1
     }

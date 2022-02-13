@@ -1,7 +1,12 @@
 package zio.morphir.sexpr
 
 import zio.morphir.testing.ZioBaseSpec
+import zio.morphir.sexpr.ast.SExpr
 import zio.test._
+import zio.{Chunk, NonEmptyChunk}
+
+import java.util.UUID
+import scala.collection.{immutable, mutable}
 
 object EncoderSpec extends ZioBaseSpec {
   def spec = suite("Encoder")(
@@ -137,9 +142,94 @@ object EncoderSpec extends ZioBaseSpec {
           )
         } + test("int") {
           assertTrue(1.toSExpr == "1")
+        } + test("symbol") {
+
+          assertTrue(
+            SExpr.Symbol(".").toSExpr == ".",
+            Symbol(".").toSExpr == "."
+          )
+        }
+      ),
+      suite("complex")(
+        test("options") {
+          assertTrue((None: Option[Int]).toSExpr == "nil") &&
+          assertTrue((Some(1): Option[Int]).toSExpr == "1")
+        },
+        test("eithers") {
+          assertTrue((Left(1): Either[Int, Int]).toSExpr == "{Left 1}") &&
+          assertTrue((Right(1): Either[Int, Int]).toSExpr == "{Right 1}") &&
+          assertTrue((Left(1): Either[Int, Int]).toSExprPretty == "{\n  Left 1\n}") &&
+          assertTrue((Right(1): Either[Int, Int]).toSExprPretty == "{\n  Right 1\n}")
+        },
+        test("collections") {
+          assertTrue(Chunk[Int]().toSExpr == "[]") &&
+          assertTrue(Chunk(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(NonEmptyChunk(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(List[Int]().toSExpr == "[]") &&
+          assertTrue(List(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(Vector[Int]().toSExpr == "[]") &&
+          assertTrue(Vector(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(Seq[Int]().toSExpr == "[]") &&
+          assertTrue(Seq(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(IndexedSeq[Int]().toSExpr == "[]") &&
+          assertTrue(IndexedSeq(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(immutable.LinearSeq[Int]().toSExpr == "[]") &&
+          assertTrue(immutable.LinearSeq(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(immutable.ListSet[Int]().toSExpr == "[]") &&
+          assertTrue(immutable.ListSet(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(immutable.TreeSet[Int]().toSExpr == "[]") &&
+          assertTrue(immutable.TreeSet(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(Array[Int]().toSExpr == "[]") &&
+          assertTrue(Array(1, 2, 3).toSExpr == "[1,2,3]") &&
+          assertTrue(Map[String, String]().toSExpr == "{}") &&
+          assertTrue(Map("hello" -> "world").toSExpr == """{"hello" "world"}""") &&
+          assertTrue(mutable.Map("hello" -> "world").toSExpr == """{"hello" "world"}""") &&
+          assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExpr == """{"hello" "world"}""") &&
+          assertTrue(immutable.HashMap(1 -> 891.2, 2 -> -590.6).toSExpr == """{1 891.2,2 -590.6}""") &&
+          assertTrue(List[Int]().toSExprPretty == "[]") &&
+          assertTrue(List(0).toSExprPretty == "[\n  0\n]") &&
+          assertTrue(List(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&
+          assertTrue(Vector[Int]().toSExprPretty == "[]") &&
+          assertTrue(Vector(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&
+          assertTrue(Seq[String]().toSExprPretty == "[]") &&
+          assertTrue(Seq("foo", "bar").toSExprPretty == "[\n  \"foo\",\n  \"bar\"\n]") &&
+          assertTrue(IndexedSeq[String]().toSExprPretty == "[]") &&
+          assertTrue(IndexedSeq("foo", "bar").toSExprPretty == "[\n  \"foo\",\n  \"bar\"\n]") &&
+          assertTrue(immutable.LinearSeq[String]().toSExprPretty == "[]") &&
+          assertTrue(immutable.LinearSeq("foo", "bar").toSExprPretty == "[\n  \"foo\",\n  \"bar\"\n]") &&
+          assertTrue(immutable.ListSet[String]().toSExprPretty == "[]") &&
+          assertTrue(immutable.ListSet("foo", "bar").toSExprPretty == "[\n  \"foo\",\n  \"bar\"\n]") &&
+          assertTrue(immutable.TreeSet[String]().toSExprPretty == "[]") &&
+          assertTrue(immutable.TreeSet("bar", "foo").toSExprPretty == "[\n  \"bar\",\n  \"foo\"\n]") &&
+          assertTrue(Array[Int]().toSExprPretty == "[]") &&
+          assertTrue(Array(1, 2, 3).toSExprPretty == "[\n  1,\n  2,\n  3\n]") &&
+          assertTrue(Map[String, String]().toSExprPretty == "{}") &&
+          assertTrue(Map("hello" -> "world").toSExprPretty == "{\n  \"hello\" \"world\"\n}") &&
+          assertTrue(Map("hello" -> Some("world"), "goodbye" -> None).toSExprPretty == "{\n  \"hello\" \"world\"\n}") &&
+          assertTrue(immutable.HashMap(1 -> 891.2, 2 -> -590.6).toSExprPretty == "{\n  1 891.2,\n  2 -590.6\n}")
+        },
+        test("Map, custom keys") {
+          assertTrue(Map(1 -> "a").toSExpr == """{1 "a"}""")
+        },
+        test("java.util.UUID") {
+          val input      = "e142f1aa-6e9e-4352-adfe-7e6eb9814ccd"
+          val uuid: UUID = java.util.UUID.fromString(input)
+          assertTrue(uuid.toSExpr == s""""$input"""")
         }
       )
     ),
-    suite("toSExprAst")()
+    suite("toSExprAst")(
+      suite("primitives")(
+        test("strings") {
+          assertTrue("hello world".toSExprAST == Right(SExpr.Str("hello world")))
+        },
+        test("boolean") {
+          assertTrue(
+            true.toSExprAST == Right(SExpr.Bool(true)),
+            false.toSExprAST == Right(SExpr.Bool(false))
+          )
+        }
+      )
+    )
   )
 }

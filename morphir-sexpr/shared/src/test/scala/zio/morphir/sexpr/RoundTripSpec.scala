@@ -6,7 +6,7 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 
-import java.util.UUID
+import java.time._
 
 object RoundTripSpec extends ZioBaseSpec {
   def spec = suite("RoundTrip")(
@@ -46,12 +46,45 @@ object RoundTripSpec extends ZioBaseSpec {
       } @@ samples(1000)
     ),
     test("UUID") {
-      check(Gen.uuid)(assertRoundtrips[UUID])
+      check(Gen.uuid)(assertRoundtrips[java.util.UUID])
     } @@ samples(1000),
     test("Option") {
       check(Gen.option(Gen.int))(assertRoundtrips[Option[Int]])
+    } @@ samples(1000),
+    test("Either") {
+      check(Gen.either(Gen.int, Gen.string))(assertRoundtrips[Either[Int, String]])
+    } @@ samples(1000),
+    test("List[Int]") {
+      check(Gen.listOf(Gen.int))(assertRoundtrips[List[Int]])
+    } @@ samples(1000),
+    test("Vector[Double]") {
+      check(Gen.vectorOf(Gen.double))(assertRoundtrips[Vector[Double]])
+    } @@ samples(1000),
+    test("Vector[LocalDate]") {
+      check(Gen.vectorOf(Gen.localDate))(assertRoundtrips[Vector[LocalDate]])
+    } @@ samples(1000),
+    test("Chunk[UUID]") {
+      check(Gen.chunkOf(Gen.uuid))(assertRoundtrips[zio.Chunk[java.util.UUID]])
+    } @@ samples(1000),
+    test("Map[Long, Int]") {
+      check(Gen.mapOf(Gen.long, Gen.int))(assertRoundtrips[Map[Long, Int]])
+    } @@ samples(1000),
+    test("Map[List[Int], Vector[Double]]") {
+      check(Gen.mapOf(Gen.listOf(Gen.int), Gen.vectorOf(Gen.double)))(assertRoundtrips[Map[List[Int], Vector[Double]]])
     } @@ samples(1000)
   )
+
+  // TODO: Be more complete, cover more cases
+  val symbolGen = Gen
+    .oneOf(
+      Gen.alphaNumericString.filter(_.nonEmpty),
+      Gen.alphaNumericString.map(str => "#" + str),
+      Gen.alphaNumericString.map(str => "##" + str),
+      Gen.const("."),
+      Gen.const("/"),
+      Gen.const("*")
+    )
+    .map(Symbol.apply)
 
   private def assertRoundtrips[A: SExprEncoder: SExprDecoder](a: A) =
     assert(a.toSExpr.fromSExpr[A])(isRight(equalTo(a))) &&
