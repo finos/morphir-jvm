@@ -2,17 +2,14 @@ package zio.morphir.ir.value
 
 import java.math.BigInteger
 import zio.test.*
-import zio.morphir.ir.Literal
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.testing.MorphirBaseSpec
-// import zio.morphir.syntax.ValueSyntax
 import zio.morphir.Dsl
 import zio.morphir.ir.ValueModule.Value.*
-import ValueCase.PatternCase
 
 object InterpreterSpec extends MorphirBaseSpec {
   def spec = suite("Interpreter")(
