@@ -2,18 +2,16 @@ package zio.morphir.ir.value
 
 import java.math.BigInteger
 import zio.test.*
-import zio.morphir.ir.Literal
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.testing.MorphirBaseSpec
-import zio.morphir.syntax.ValueSyntax
 import zio.morphir.Dsl
-import ValueCase.PatternCase
+import zio.morphir.ir.ValueModule.Value.*
 
-object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
+object InterpreterSpec extends MorphirBaseSpec {
   def spec = suite("Interpreter")(
     suite("native functions")(
       suite("addition")(
@@ -54,11 +52,32 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
             )
           )
         )
+      },
+      test("Should update correctly") {
+        assertTrue(
+          Interpreter.evaluate(recordCaseUpdateExample) == Right(
+            Map(
+              Name.unsafeMake(List("field", "a")) -> "hello",
+              Name.unsafeMake(List("field", "b")) -> new BigInteger("3")
+            )
+          )
+        )
       }
     ),
     suite("let recursion case")(
       test("Multiple bindings that do not refer to each other") {
         assertTrue(Interpreter.evaluate(letIntroduceMultipleExample) == Right(new BigInteger("42")))
+      },
+      test("Multiple bindings where earlier binding refers to later definition") {
+        assertTrue(Interpreter.evaluate(letIntroduceOutOfOrderExample) == Right(new BigInteger("44")))
+      },
+      test("recursive let definition example") {
+        assertTrue(Interpreter.evaluate(letRecExample) == Right(new BigInteger("6")))
+      }
+    ),
+    suite("let non recursion case")(
+      test("Let destructor case") {
+        assertTrue(Interpreter.evaluate(letDestructExample) == Right("red"))
       }
     ),
     suite("apply case")(
@@ -67,8 +86,17 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
       },
       test("Apply lambda with wildcard") {
         assertTrue(Interpreter.evaluate(applyWithWildCard) == Right(new BigInteger("42")))
+      },
+      test("Lambda defined in let") {
+        assertTrue(Interpreter.evaluate(lambdaExample) == Right(new BigInteger("66")))
       }
     ),
+    // suite("constructor case") {
+    //   test("Should evaluate correctly") {
+    //     val evaluatedValue = Interpreter.evaluate(constructorExample)
+    //     assertCompletes
+    //   }
+    // },
     suite("pattern matching")(
       suite("literal")(),
       suite("wildcard")(
@@ -78,7 +106,22 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
       ),
       suite("as")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternMatchAsCasExample) == Right(new BigInteger("42")))
+          assertTrue(Interpreter.evaluate(patternMatchAsCaseExample) == Right(new BigInteger("42")))
+        }
+      ),
+      suite("as with literal")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(patternMatchAsCaseComplexExample) == Right(new BigInteger("14")))
+        }
+      ),
+      suite("tuple")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(tuplePatternCaseExample) == Right(new BigInteger("107")))
+        }
+      ),
+      suite("list")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(patternMatchListCaseExample) == Right(List("world")))
         }
       )
       // a @ b @ 1
@@ -88,92 +131,81 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
   )
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
-  val letIntroduceMultipleExample: Value[Any] = Value {
-    ValueCase.LetRecursionCase(
-      Map(
-        Name.fromString("x") -> Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("20")))),
-        Name.fromString("y") -> Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("22"))))
-      ),
-      Value(
-        ValueCase.NativeApplyCase(
+  val letIntroduceMultipleExample: Value[Any] = letRecursion(
+    Map(
+      Name.fromString("x") -> literal(20), // lit(20)
+      Name.fromString("y") -> literal(22)
+    ),
+    nativeApply(
+      NativeFunction.Addition,
+      Chunk(variable("x"), variable("y"))
+    )
+  )
+
+  val letIntroduceOutOfOrderExample: Value[Any] = letRecursion(
+    Map(
+      Name.fromString("x") ->
+        nativeApply(
           NativeFunction.Addition,
-          Chunk(Value(ValueCase.VariableCase(Name("x"))), Value(ValueCase.VariableCase(Name("y"))))
+          Chunk(
+            variable("y"),
+            Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("22"))))
+          )
+        ),
+      Name.fromString("y") -> Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("22"))))
+    ),
+    variable("x")
+  )
+
+  val applyFieldFunction: Value[Any] =
+    Dsl.apply(fieldFunction(Name.fromString("fieldA")), recordCaseExample)
+
+  val additionExample: Value[Any] =
+    letDefinition(
+      Name("x"),
+      literal(1),
+      letDefinition(
+        Name("y"),
+        literal(2),
+        nativeApply(
+          NativeFunction.Addition,
+          Chunk(variable("x"), variable("y"))
         )
       )
     )
 
-  }
-
-  val applyFieldFunction: Value[Any] =
-    Dsl.apply(Value(ValueCase.FieldFunctionCase(Name.fromString("fieldA"))), recordCaseExample)
-
-  val additionExample: Value[Any] =
-    Value {
-      ValueCase.LetDefinitionCase(
-        Name("x"),
-        Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("1")))),
-        Value(
-          ValueCase.LetDefinitionCase(
-            Name("y"),
-            Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("2")))),
-            Value(
-              ValueCase.NativeApplyCase(
-                NativeFunction.Addition,
-                Chunk(Value(ValueCase.VariableCase(Name("x"))), Value(ValueCase.VariableCase(Name("y"))))
-              )
-            )
-          )
-        )
-      )
-    }
-
   val subtractionExample: Value[Any] =
-    Value {
-      ValueCase.LetDefinitionCase(
-        Name("x"),
-        Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new java.math.BigInteger("1")))),
-        Value(
-          ValueCase.LetDefinitionCase(
-            Name("y"),
-            Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new java.math.BigInteger("2")))),
-            Value(
-              ValueCase.NativeApplyCase(
-                NativeFunction.Subtraction,
-                Chunk(Value(ValueCase.VariableCase(Name("x"))), Value(ValueCase.VariableCase(Name("y"))))
-              )
-            )
-          )
+    letDefinition(
+      Name("x"),
+      literal(1),
+      letDefinition(
+        Name("y"),
+        literal(2),
+        nativeApply(
+          NativeFunction.Subtraction,
+          Chunk(variable(Name("x")), variable(Name("y")))
         )
       )
-    }
+    )
 
   val tupleCaseExample: Value[Any] =
-    Value(
-      ValueCase.TupleCase(
-        Chunk(
-          Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new java.math.BigInteger("1")))),
-          Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new java.math.BigInteger("2"))))
-        )
-      )
+    tuple(
+      literal(1),
+      literal(2)
     )
 
   val listCaseExample: Value[Any] =
-    Value(
-      ValueCase.ListCase(
-        Chunk(
-          Value(ValueCase.LiteralCase(LiteralValue.String("hello"))),
-          Value(ValueCase.LiteralCase(LiteralValue.String("world")))
-        )
+    list(
+      Chunk(
+        literal("hello"),
+        literal("world")
       )
     )
-
   val ifThenElseCaseExample: Value[Any] =
-    Value(
-      ValueCase.IfThenElseCase(
-        condition = Value(ValueCase.LiteralCase(Literal.boolean(false))),
-        thenBranch = Value(ValueCase.LiteralCase(Literal.string("yes"))),
-        elseBranch = Value(ValueCase.LiteralCase(Literal.string("no")))
-      )
+    ifThenElse(
+      condition = literal(false),
+      thenBranch = literal("yes"),
+      elseBranch = literal("no")
     )
 
   lazy val recordCaseExample = {
@@ -188,37 +220,137 @@ object InterpreterSpec extends MorphirBaseSpec with ValueSyntax {
     Dsl.record(element1, element2)
   }
 
+  val recordCaseUpdateExample = {
+    updateRecord(
+      recordCaseExample,
+      Chunk(
+        Name("fieldB") -> Dsl.wholeNumber(new java.math.BigInteger("3"))
+      )
+    )
+  }
+
   val patternMatchWildcardCaseExample =
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("42")),
-      Value(PatternCase.WildcardPatternCase, ZEnvironment.empty) -> Dsl.wholeNumber(
+      wildcardPattern -> Dsl.wholeNumber(
         new java.math.BigInteger("100")
       )
     )
 
-  val patternMatchAsCasExample =
+  val patternMatchAsCaseExample =
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("42")),
-      Value(
-        PatternCase.AsPatternCase(Value(PatternCase.WildcardPatternCase, ZEnvironment.empty), Name.fromString("x")),
-        ZEnvironment.empty
-      ) -> Dsl.variable(Name.fromString("x"))
+      asPattern(wildcardPattern, Name.fromString("x")) -> Dsl.variable(Name.fromString("x"))
     )
 
-  val applyWithWildCard = Dsl.apply(Dsl.lambda(Dsl.wildcard, Dsl.wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
+  val patternMatchListCaseExample =
+    Dsl.patternMatch(
+      listCaseExample,
+      headTailPattern(
+        literalPattern("hello"),
+        asPattern(wildcardPattern, Name("tail"))
+      ) -> variable("tail")
+    )
 
-  // val patternMatchAwfulExample =
-  //   Value.patternMatch(
-  //     Value.wholeNumber(new java.math.BigInteger("7")),
-  //     Value(
-  //       PatternCase.AsCase(
-  //         PatternCase.AsCase(PatternCase.LiteralCase(Literal.wholeNumber(new BigInteger("7"))), Name("x")),
-  //         Name("y")
-  //       )
-  //     ) ->
-  //       ValueCase.NativeApplyCase(
-  //         NativeFunction.Addition,
-  //         Chunk(Value(ValueCase.VariableCase(Name("x"))), Value(ValueCase.VariableCase(Name("y"))))
-  //       )
-  //   )
+  val tuplePatternCaseExample =
+    Dsl.patternMatch(
+      tupleCaseExample,
+      Value.tuplePattern(
+        Value.wildcardPattern,
+        Value.wildcardPattern
+      ) -> Dsl.wholeNumber(new java.math.BigInteger("107"))
+    )
+
+  val letDestructExample =
+    destructure(
+      tuplePattern(asPattern(wildcardPattern, Name("x")), asPattern(wildcardPattern, Name("y"))),
+      tuple(Value.literal("red"), Value.literal("blue")),
+      variable("x")
+    )
+  val letRecExample =
+    letRecursion(
+      Map(
+        Name.fromString("x") -> ifThenElse(
+          condition = literal(false),
+          thenBranch = variable("y"),
+          elseBranch = literal(3)
+        ),
+        Name.fromString("y") ->
+          ifThenElse(
+            condition = literal(false),
+            thenBranch = literal(2),
+            elseBranch = variable("x")
+          )
+      ),
+      nativeApply(
+        NativeFunction.Addition,
+        Chunk(
+          variable("x"),
+          variable("y")
+        )
+      )
+    )
+
+  // (valueDefinitions: Map[Name, Self], inValue: Self)
+
+  // example : letrec (x, y) = if (cond) then (0, x) else (y, 0)
+
+  /**
+   * letRec x -> 3 y -> 4 x + y
+   */
+
+  val patternMatchAsCaseComplexExample =
+    Dsl.patternMatch(
+      Dsl.wholeNumber(new java.math.BigInteger("7")),
+      Value.asPattern(
+        literalPattern(8),
+        Name.fromString("x")
+      ) ->
+        nativeApply(
+          NativeFunction.Subtraction,
+          Chunk(
+            variable(Name.fromString("x")),
+            variable(Name.fromString("x"))
+          )
+        ),
+      asPattern(
+        literalPattern(7),
+        Name.fromString("x")
+      ) ->
+        nativeApply(
+          NativeFunction.Addition,
+          Chunk(
+            variable(Name.fromString("x")),
+            variable(Name.fromString("x"))
+          )
+        )
+    )
+
+  // { case _ => 42}()
+
+  val applyWithWildCard =
+    Dsl.apply(Value.lambda(Dsl.wildcard, Dsl.wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
+
+  val lambdaExample = letDefinition(
+    Name("foo"),
+    Value.lambda(
+      Value.asPattern(Dsl.wildcard, Name("x")),
+      nativeApply(
+        NativeFunction.Addition,
+        Chunk(
+          variable("x"),
+          variable("x")
+        )
+      )
+    ),
+    Dsl.apply(variable("foo"), literal(33))
+  )
+
+  val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
+
+  val constructorExample =
+    apply(
+      constructor(personName),
+      Chunk(literal("Adam"), literal(42))
+    )
 }

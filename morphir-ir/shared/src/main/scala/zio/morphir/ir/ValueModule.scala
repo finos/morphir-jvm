@@ -116,6 +116,105 @@ object ValueModule {
         annotations: ZEnvironment[Annotations]
     ): Value[Annotations] = GenericValue(caseValue, annotations)
 
+    def asPattern(pattern: Value[Any], name: Name): Value[Any] =
+      Value(PatternCase.AsPatternCase(pattern, name))
+
+    def constructorPattern(name: FQName, patterns: Chunk[Pattern[Any]]): Value[Any] =
+      Value(PatternCase.ConstructorPatternCase(name, patterns))
+
+    def headTailPattern(head: Value[Any], tail: Value[Any]): Value[Any] =
+      Value(PatternCase.HeadTailPatternCase(head, tail))
+
+    def literalPattern(literal: Lit[Any]): Value[Any] =
+      Value(PatternCase.LiteralPatternCase(literal))
+
+    def literalPattern(string: String): Value[Any] =
+      Value(PatternCase.LiteralPatternCase(Lit.string(string)))
+
+    def literalPattern(int: Int): Value[Any] =
+      Value(PatternCase.LiteralPatternCase(Lit.int(int)))
+
+    def literalPattern(boolean: Boolean): Value[Any] =
+      Value(PatternCase.LiteralPatternCase(Lit.boolean(boolean)))
+
+    def tuplePattern(patterns: Value[Any]*): Value[Any] =
+      Value(PatternCase.TuplePatternCase(Chunk.fromIterable(patterns)))
+
+    def nativeApply(function: NativeFunction, arguments: Chunk[Value[Any]]): Value[Any] =
+      Value(NativeApplyCase(function, arguments))
+
+    def apply(function: Value[Any], arguments: Chunk[Value[Any]]): Value[Any] =
+      Value(ApplyCase(function, arguments))
+
+    def constructor(name: FQName): Value[Any] =
+      Value(ConstructorCase(name))
+
+    def fieldCase(tag: Value[Any], name: Name): Value[Any] =
+      Value(FieldCase(tag, name))
+
+    def fieldFunction(name: Name): Value[Any] =
+      Value(FieldFunctionCase(name))
+
+    def ifThenElse(condition: Value[Any], thenBranch: Value[Any], elseBranch: Value[Any]): Value[Any] =
+      Value(IfThenElseCase(condition, thenBranch, elseBranch))
+
+    def letRecursion(valueDefinitions: Map[Name, Value[Any]], inValue: Value[Any]): Value[Any] =
+      Value(LetRecursionCase(valueDefinitions, inValue))
+
+    def list(elements: Chunk[Value[Any]]): Value[Any] =
+      Value(ListCase(elements))
+
+    def literal(literal: LiteralValue): Value[Any] =
+      Value(LiteralCase(literal))
+
+    def literal(int: Int): Value[Any] =
+      Value(LiteralCase(Lit.int(int)))
+
+    def literal(string: String): Value[Any] =
+      Value(LiteralCase(Lit.string(string)))
+
+    def literal(boolean: Boolean): Value[Any] =
+      Value(LiteralCase(Lit.boolean(boolean)))
+
+    def patternMatch(branchOutOn: Value[Any], cases: Chunk[(Pattern[Any], Value[Any])]): Value[Any] =
+      Value(PatternMatchCase(branchOutOn, cases))
+
+    def record(fields: Chunk[(Name, Value[Any])]): Value[Any] =
+      Value(RecordCase(fields))
+
+    def reference(name: FQName): Value[Any] =
+      Value(ReferenceCase(name))
+
+    val unitPattern: Value[Any] =
+      Value(PatternCase.UnitPatternCase)
+
+    val wildcardPattern: Value[Any] =
+      Value(PatternCase.WildcardPatternCase)
+
+    def tuple(elements: Value[Any]*): Value[Any] =
+      Value(TupleCase(Chunk.fromIterable(elements)))
+
+    val unit: Value[Any] =
+      Value(UnitCase)
+
+    def variable(name: Name): Value[Any] =
+      Value(VariableCase(name))
+
+    def variable(string: String): Value[Any] =
+      Value(VariableCase(Name.fromString(string)))
+
+    def letDefinition(valueName: Name, valueDefinition: Value[Any], inValue: Value[Any]): Value[Any] =
+      Value(LetDefinitionCase(valueName, valueDefinition, inValue))
+
+    def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =
+      Value(UpdateRecordCase(valueToUpdate, fieldsToUpdate))
+
+    def lambda(argumentPattern: Value[Any], body: Value[Any]): Value[Any] =
+      Value(LambdaCase(argumentPattern, body))
+
+    def destructure(pattern: Value[Any], valueToDestruct: Value[Any], inValue: Value[Any]): Value[Any] =
+      Value(DestructureCase(pattern, valueToDestruct, inValue))
+
     private final case class GenericValue[+Annotations](
         caseValue: ValueCase[Value[Annotations]],
         annotations: ZEnvironment[Annotations]
@@ -224,6 +323,27 @@ object ValueModule {
     }
   }
 
+  // class Dog(name) = {
+  //  name : String = "Spot"
+  // }
+
+  // GenericRecord("Dog", Map("name" -> "Spot"))
+  // val myDog = if true then Dog("Spot") else Dog("Fuzzy")
+  // myDog match
+  // case Dog(name) => name
+
+  // ApplyCase(ConstructorCase("Person"), Chunk(FieldCase("Name"), LiteralCase("Adam")), FieldCase("Person", LiteralCase("42"))))
+  // ApplyCase(function, args)
+
+  // let myFunction = actualFunction ..
+  // ApplyCase(myFunction, args) // actually uses "myFunction"
+
+  // Person("Adam", 42)
+
+  // case ApplyCase(fun, args) =
+  // val theFunction = interpret(fun)
+  // apply(theFunction, args.map(interpret))
+
   object ValueCase {
     final case class NativeApplyCase[+Self](function: NativeFunction, arguments: Chunk[Self]) extends ValueCase[Self]
     final case class ApplyCase[+Self](function: Self, arguments: Chunk[Self])                 extends ValueCase[Self]
@@ -267,12 +387,12 @@ object ValueModule {
     object PatternCase {
 
       final case class AsPatternCase[+Self](pattern: Self, name: Name) extends PatternCase[Self]
-      final case class ConstructorPatternCase[+Self](constructorName: FQName, argumentPatterns: List[Self])
+      final case class ConstructorPatternCase[+Self](constructorName: FQName, argumentPatterns: Chunk[Self])
           extends PatternCase[Self]
       case object EmptyListPatternCase                                    extends PatternCase[Nothing]
       final case class HeadTailPatternCase[+Self](head: Self, tail: Self) extends PatternCase[Self]
-      final case class LiteralPatternCase(value: Literal[Nothing])        extends PatternCase[Nothing]
-      final case class TuplePatternCase[+Self](elements: List[Self])      extends PatternCase[Self]
+      final case class LiteralPatternCase(value: Literal[Any])            extends PatternCase[Nothing]
+      final case class TuplePatternCase[+Self](elements: Chunk[Self])     extends PatternCase[Self]
       case object UnitPatternCase                                         extends PatternCase[Nothing]
       type WildcardPatternCase = WildcardPatternCase.type
       case object WildcardPatternCase extends PatternCase[Nothing]

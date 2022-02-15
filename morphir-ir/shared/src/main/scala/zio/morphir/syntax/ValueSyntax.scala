@@ -4,6 +4,7 @@ import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.{Literal => Lit, Name, ValueModule}
 import ValueModule.{RawValue, Value}
 
+// TODO: Evaluate if still necessary after adding constructors to Value
 trait ValueSyntax {
   import Value.*
 
@@ -41,10 +42,8 @@ trait ValueSyntax {
 
   final def variable(name: Name): Variable[Any] = Variable(name, ZEnvironment.empty)
 
-  def wholeNumber(value: java.math.BigInteger): Value.Literal[java.math.BigInteger, Any] = {
-    println("In Value.wholeNumber")
+  def wholeNumber(value: java.math.BigInteger): Value.Literal[java.math.BigInteger, Any] =
     Value.Literal(Lit.wholeNumber(value), ZEnvironment.empty)
-  }
 
   val wildcard: Pattern.Wildcard[Any] = Pattern.Wildcard(ZEnvironment.empty)
   def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Pattern.Wildcard[Annotations] =
