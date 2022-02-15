@@ -51,7 +51,7 @@ object Interpreter {
 
         // function("Adam", 42)
 
-        case ConstructorCase(name) =>
+        case ConstructorCase(_) =>
         // TODO: Need to look up this type in the IR to determine field names and whether a valid type
         // store.get(name) match {
         //   case Some(arguments) =>
