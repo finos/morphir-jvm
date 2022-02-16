@@ -116,12 +116,32 @@ object InterpreterSpec extends MorphirBaseSpec {
       ),
       suite("tuple")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(tuplePatternCaseExample) == Right(new BigInteger("107")))
+          assertTrue(Interpreter.evaluate(patternTupleCaseExample) == Right(new BigInteger("107")))
         }
       ),
-      suite("list")(
+      suite("singleton tuple")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternMatchListCaseExample) == Right(List("world")))
+          assertTrue(Interpreter.evaluate(patternTupleOneCaseExample) == Right("singleton tuple"))
+        }
+      ),
+      suite("singleton non match tuple")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(patternTupleOneCaseCounterExample) == Right("right"))
+        }
+      ),
+      suite("head tail list")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(patternHeadTailCaseExample) == Right(List("world")))
+        }
+      ),
+      suite("empty list")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(patternMatchEmptyListCaseExample) == Right("empty list"))
+        }
+      ),
+      suite("unit")(
+        test("Should evaluate correctly") {
+          assertTrue(Interpreter.evaluate(patternUnitCaseExample) == Right("right"))
         }
       )
       // a @ b @ 1
@@ -243,7 +263,13 @@ object InterpreterSpec extends MorphirBaseSpec {
       asPattern(wildcardPattern, Name.fromString("x")) -> Dsl.variable(Name.fromString("x"))
     )
 
-  val patternMatchListCaseExample =
+  val patternMatchEmptyListCaseExample =
+    Dsl.patternMatch(
+      list(Chunk()),
+      emptyListPattern -> literal("empty list")
+    )
+
+  val patternHeadTailCaseExample =
     Dsl.patternMatch(
       listCaseExample,
       headTailPattern(
@@ -252,13 +278,33 @@ object InterpreterSpec extends MorphirBaseSpec {
       ) -> variable("tail")
     )
 
-  val tuplePatternCaseExample =
+  val patternTupleOneCaseExample =
+    Dsl.patternMatch(
+      tuple(literal("singleton tuple")),
+      tuplePattern(asPattern(wildcardPattern, Name("x"))) -> variable(Name("x"))
+    )
+
+  val patternTupleOneCaseCounterExample =
+    Dsl.patternMatch(
+      literal("singleton tuple"),
+      tuplePattern(wildcardPattern) -> literal("wrong"),
+      wildcardPattern               -> literal("right")
+    )
+
+  val patternTupleCaseExample =
     Dsl.patternMatch(
       tupleCaseExample,
-      Value.tuplePattern(
-        Value.wildcardPattern,
-        Value.wildcardPattern
+      tuplePattern(
+        wildcardPattern,
+        wildcardPattern
       ) -> Dsl.wholeNumber(new java.math.BigInteger("107"))
+    )
+
+  val patternUnitCaseExample =
+    Dsl.patternMatch(
+      unit,
+      emptyListPattern -> literal("wrong"),
+      unitPattern      -> literal("right")
     )
 
   val letDestructExample =

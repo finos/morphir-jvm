@@ -122,6 +122,9 @@ object ValueModule {
     def constructorPattern(name: FQName, patterns: Chunk[Pattern[Any]]): Value[Any] =
       Value(PatternCase.ConstructorPatternCase(name, patterns))
 
+    def emptyListPattern: Value[Any] =
+      Value(PatternCase.EmptyListPatternCase)
+
     def headTailPattern(head: Value[Any], tail: Value[Any]): Value[Any] =
       Value(PatternCase.HeadTailPatternCase(head, tail))
 
