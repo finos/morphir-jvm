@@ -399,7 +399,7 @@ object InterpretationError {
 // To Do List:
 // // Tests:
 // EmptyList
-// Head, Tail (when done)
+// Head, Tail (when done) CHECK
 // Unit
 // Tuple1 (and ensure does not match everything?)
 // // Ergonomics: CHECK
