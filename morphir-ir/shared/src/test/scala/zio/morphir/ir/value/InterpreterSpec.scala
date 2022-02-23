@@ -10,8 +10,21 @@ import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.Dsl
 import zio.morphir.ir.ValueModule.Value.*
+import zio.morphir.ir.ValueModule.RawValue
+import zio.morphir.IRModule.IR
+
+import zio.ZEnvironment
 
 object InterpreterSpec extends MorphirBaseSpec {
+
+  val sampleIR = IR(
+    valueSpecifications = Map.empty,
+    valueDefinitions = Map.empty,
+    typeSpecifications = Map(recordTypeName -> recordTypeAliasSpecification),
+    typeConstructors = Map.empty
+  )
+  def evaluate(value: RawValue): Any = Interpreter.evaluate(value, sampleIR, Map.empty)
+
   def spec = suite("Interpreter")(
     suite("native functions")(
       suite("addition")(
@@ -91,12 +104,11 @@ object InterpreterSpec extends MorphirBaseSpec {
         assertTrue(Interpreter.evaluate(lambdaExample) == Right(new BigInteger("66")))
       }
     ),
-    // suite("constructor case") {
-    //   test("Should evaluate correctly") {
-    //     val evaluatedValue = Interpreter.evaluate(constructorExample)
-    //     assertCompletes
-    //   }
-    // },
+    suite("constructor case") {
+      test("Should evaluate correctly") {
+        assertTrue(evaluate(constructorExample) == Right(("Adam", new BigInteger("42"))))
+      }
+    },
     suite("pattern matching")(
       suite("literal")(),
       suite("wildcard")(
@@ -392,11 +404,33 @@ object InterpreterSpec extends MorphirBaseSpec {
     Dsl.apply(variable("foo"), literal(33))
   )
 
+  import zio.morphir.ir.TypeModule
+
   val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
+  lazy val recordTypeName =
+    zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
+
+  lazy val recordType = zio.morphir.ir.TypeModule.Type.Record[Any](
+    fields = Chunk(
+      TypeModule.Type.Field(Name("name"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty),
+      TypeModule.Type.Field(Name("age"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty)
+    ),
+    annotations = ZEnvironment.empty
+  )
+
+  lazy val recordTypeAliasSpecification = zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification[Any](
+    typeParams = Chunk.empty,
+    expr = recordType,
+    annotations = ZEnvironment.empty
+  )
 
   val constructorExample =
     apply(
-      constructor(personName),
+      constructor(recordTypeName),
       Chunk(literal("Adam"), literal(42))
     )
+
+  // tuple ("Adam", 42)
+  // record (name: "Adam", age: 42)
+  // extensiblerecord (Person((name: "Adam", age: 42)
 }
