@@ -8,7 +8,7 @@ import ValueModule.{RawValue, Value}
 trait ValueSyntax {
   import Value.*
 
-  def apply(function: RawValue, args: RawValue*): Apply[Any] =
+  final def apply(function: RawValue, args: RawValue*): Apply[Any] =
     Apply(function, Chunk.fromIterable(args), ZEnvironment.empty)
 
   final def boolean(value: Boolean): Literal[Boolean, Any] = Literal(Lit.boolean(value), ZEnvironment.empty)

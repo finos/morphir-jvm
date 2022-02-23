@@ -108,6 +108,12 @@ object NameSpec extends MorphirBaseSpec {
           Name.unsafeMake("foo", "bar", "baz", "123").toList == List("foo", "bar", "baz", "123")
         )
       }
+    ),
+    suite("Misc")(
+      test("Name.toString")
+      {
+        assertTrue(Name.fromString("fooBar").toString == "[foo,bar]", Name.fromString("a").toString == "[a]")
+      }
     )
   )
 }

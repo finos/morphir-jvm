@@ -70,6 +70,8 @@ final case class Name private (toList: List[String]) extends AnyVal { self =>
       .map(_.capitalize)
       .mkString("")
 
+
+  override def toString: String = toList.mkString("[", ",", "]")
 }
 
 object Name {
