@@ -2,8 +2,9 @@ package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.TypeModule.Type
-import zio.{Chunk, ZEnvironment}
+import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude.*
+import zio.prelude.fx.ZPure
 
 object ValueModule {
 
@@ -223,6 +224,67 @@ object ValueModule {
         )
       case c @ ValueCase.VariableCase(_) => f(c)
     }
+
+    def foldDown[Z](z: Z)(f: (Z, Value[Annotations]) => Z): Z =
+      caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+
+    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Value[Annotations]), Z]): Z =
+      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: ValueCase[Z] => F[Z]): F[Z] =
+      fold[F[Z]](_.flip.flatMap(f))
+
+    def foldPure[W, S, R, E, Z](f: ValueCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+      foldM(f)
+
+    // TODO: Uncomment once appropriate instances are provided by ZIO Prelude
+
+    // def foldManaged[R, E, Z](f: ValueCase[Z] => ZManaged[R, E, Z]): ZManaged[R, E, Z] =
+    //   foldM(f)
+
+    // def foldSTM[R, E, Z](f: ValueCase[Z] => ZSTM[R, E, Z]): ZSTM[R, E, Z] =
+    //   foldM(f)
+
+    // def foldValidation[W, E, Z](f: ValueCase[Z] => ZValidation[W, E, Z]): ZValidation[W, E, Z] =
+    //   foldM(f)
+
+    def foldZIO[R, E, Z](f: ValueCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
+      foldM(f)
+
+    def foldRecursive[Z](f: ValueCase[(Value[Annotations], Z)] => Z): Z =
+      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
+
+    def foldUp[Z](z: Z)(f: (Z, Value[Annotations]) => Z): Z =
+      f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+
+    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Value[Annotations]), Z]): Z =
+      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+    def transformDown[Annotations0 >: Annotations](
+        f: Value[Annotations0] => Value[Annotations0]
+    ): Value[Annotations0] = {
+      def loop(recursive: Value[Annotations0]): Value[Annotations] =
+        Value(f(recursive).caseValue.map(loop), annotations)
+      loop(self)
+    }
+
+    def transformDownSome[Annotations0 >: Annotations](
+        pf: PartialFunction[Value[Annotations0], Value[Annotations0]]
+    ): Value[Annotations0] =
+      transformDown[Annotations0]((recursive => pf.lift(recursive).getOrElse(recursive)))
+
+    def transformUp[Annotations0 >: Annotations](
+        f: Value[Annotations0] => Value[Annotations0]
+    ): Value[Annotations0] = {
+      def loop(recursive: Value[Annotations0]): Value[Annotations0] =
+        f(Value(recursive.caseValue.map(loop), annotations))
+      loop(self)
+    }
+
+    def transformUpSome[Annotations0 >: Annotations](
+        pf: PartialFunction[Value[Annotations0], Value[Annotations0]]
+    ): Value[Annotations0] =
+      transformUp[Annotations0]((recursive => pf.lift(recursive).getOrElse(recursive)))
 
 //    def collectAttributes: List[Annotations] = ???
 
