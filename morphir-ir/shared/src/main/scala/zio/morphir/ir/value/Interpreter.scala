@@ -21,13 +21,14 @@ object Interpreter {
   sealed trait Result
 
   object Result {
-    final case class Strict(value: Any)    extends Result
+    final case class Strict(value: Any) extends Result
 
     final case class Lazy(
-      value: RawValue,
-      variables : Map[Name, Result],
-      references : Map[FQName, Any],
-      definitions : Map[Name, Value[Any]]) extends Result
+        value: RawValue,
+        variables: Map[Name, Result],
+        references: Map[FQName, Any],
+        definitions: Map[Name, Value[Any]]
+    ) extends Result
   }
 
   type ??? = Nothing
@@ -149,8 +150,10 @@ object Interpreter {
         case VariableCase(name) =>
           variables.get(name) match {
             case Some(Result.Strict(value)) => value
-            case Some(Result.Lazy(value, variables, references, definitions))   => {
-              def shallow = definitions.map { case (key, value ) => key -> Result.Lazy(value, variables, references, definitions)}
+            case Some(Result.Lazy(value, variables, references, definitions)) => {
+              def shallow = definitions.map { case (key, value) =>
+                key -> Result.Lazy(value, variables, references, definitions)
+              }
               loop(value, variables ++ shallow, references)
             }
             case None => throw new InterpretationError.VariableNotFound(name, s"Variable $name not found")
@@ -159,10 +162,10 @@ object Interpreter {
         case LetDefinitionCase(name, value, body) =>
           loop(body, variables + (name -> Result.Strict(loop(value, variables, references))), references)
 
-
-
         case LetRecursionCase(valueDefinitions, inValue) =>
-          def shallow = valueDefinitions.map { case (key, value ) => key -> Result.Lazy(value, variables, references, valueDefinitions)}
+          def shallow = valueDefinitions.map { case (key, value) =>
+            key -> Result.Lazy(value, variables, references, valueDefinitions)
+          }
 
           loop(
             inValue,
