@@ -472,7 +472,7 @@ object ValueModule {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldFunctionCase(fieldName)
     }
 
-    final case class Lambda[+Annotations] private[ir] (
+    final case class Lambda[+Annotations] private[morphir] (
         pattern: Value[Annotations], // TODO: Restrict to pattern only
         body: Value[Annotations],
         annotations: ZEnvironment[Annotations]
