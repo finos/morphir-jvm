@@ -2,6 +2,7 @@ package zio.morphir.ir.value
 
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
+import zio.morphir.ir.TypeModule
 import zio.morphir.IRModule.IR
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
@@ -51,20 +52,21 @@ object Interpreter {
 
         // function("Adam", 42)
 
-        case ConstructorCase(_) =>
-        // TODO: Need to look up this type in the IR to determine field names and whether a valid type
-        // store.get(name) match {
-        //   case Some(arguments) =>
-        //     if (arguments == 1) (a: A) => ???
-        //     else if (argments == 2) (a: A, b: B) => ???
-        //     else ???
-        // }
-
-        // lookup this name in some source of definitions
-        // find out that it is a Person(name: String, age: Int)
-        // (name: String, age: Int) => GenericCaseClass("Person", List("name" -> name, "age" -> age))
-
-        // lambda :{body: Expr, }
+        case ConstructorCase(fqName) =>
+          ir.typeSpecifications.get(fqName) match {
+            case Some(typeSpecification) =>
+              typeSpecification match {
+                case TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _) =>
+                  underlyingType.caseValue match {
+                    case TypeModule.TypeCase.RecordCase(fields) =>
+                      constructFunction(fields.length)
+                    case _ => ???
+                  }
+                case _ => ???
+              }
+            case None =>
+              throw new InterpretationError.TypeNotFound(fqName.toString)
+          }
 
         case FieldCase(target, name) =>
           val record = loop(target, variables, references).asInstanceOf[ListMap[Name, Any]]
@@ -382,6 +384,19 @@ object Interpreter {
       case f: Function2[_, _, _] => f.asInstanceOf[Function2[Any, Any, Any]](arguments(0), arguments(1))
       case _                     => throw new Exception("more than two arguments not currently supported")
     }
+
+  private def constructFunction(arguments: Int): Any =
+    arguments match {
+      case 1 =>
+        new Function1[Any, Any] {
+          override def apply(v1: Any): Any = Tuple1(v1)
+        }
+      case 2 =>
+        new Function2[Any, Any, Any] {
+          override def apply(v1: Any, v2: Any): Any = (v1, v2)
+        }
+      case _ => throw new Exception("more than two arguments not currently supported")
+    }
 }
 
 sealed trait InterpretationError extends Throwable
@@ -394,6 +409,7 @@ object InterpretationError {
   final case class TupleTooLong(length: Int)                           extends InterpretationError
   final case class FieldNotFound(name: Name, message: String)          extends InterpretationError
   final case class MatchError(mesage: String)                          extends InterpretationError
+  final case class TypeNotFound(message: String)                       extends InterpretationError
 }
 
 // To Do List:

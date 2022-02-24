@@ -2,7 +2,7 @@ package zio.morphir.syntax
 
 import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.{Literal => Lit, Name, ValueModule}
-import ValueModule.{RawValue, Value}
+import ValueModule.{RawValue, Value, Pattern}
 
 // TODO: Evaluate if still necessary after adding constructors to Value
 trait ValueSyntax {
@@ -22,7 +22,7 @@ trait ValueSyntax {
   final def field(name: String, record: Record[Any]): Field[Any] =
     Field(record, Name.fromString(name), ZEnvironment.empty)
 
-  final def lambda(pattern: Value.Pattern[Any], body: Value[Any]): Lambda[Any] =
+  final def lambda(pattern: ValueModule.Pattern[Any], body: Value[Any]): Lambda[Any] =
     Lambda(pattern, body, ZEnvironment.empty)
 
   final def literal[V](value: Lit[V]): Literal[V, Any] = Literal(value, ZEnvironment.empty)

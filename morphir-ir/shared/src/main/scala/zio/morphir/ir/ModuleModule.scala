@@ -16,6 +16,30 @@ object ModuleModule {
         }
       )
     }
+
+    def toSpecificationWithPrivate: Specification[Annotations] = {
+      Specification(
+        types = self.types.collect { case (name, AccessControlled.WithPrivateAccess(documented)) =>
+          name -> documented.map(_.toSpecification)
+        },
+        values = self.values.collect { case (name, AccessControlled.WithPrivateAccess(definition)) =>
+          name -> definition.toSpecification
+        }
+      )
+    }
+
+    def lookupValue(localName: Name): Option[ValueModule.Definition[Annotations]] = {
+      values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x))
+    }
+
+    def eraseAttributes: Definition[Annotations] = Definition.empty
+
+    def mapAttributes: Definition[Annotations] = ???
+
+    def collectTypeReferences: Set[FQName]         = ???
+    def collectValueReferences: Set[FQName]        = ???
+    def collectReferences: Set[FQName]             = ???
+    def dependsOnModules: Set[QualifiedModuleName] = ???
   }
 
   object Definition {
@@ -25,7 +49,16 @@ object ModuleModule {
   final case class Specification[+Annotations](
       types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
       values: Map[Name, ValueModule.Specification[Annotations]]
-  )
+  ) {
+    def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] = values.get(localName)
+    def lookupType(localName: Name): Option[TypeModule.Specification[Annotations]] =
+      types.get(localName).map(doc => doc.value)
+
+    def eraseAttributes: Specification[Annotations] = Specification.empty
+
+    def mapAttributes: Specification[Annotations] = ???
+  }
+
   object Specification {
     def empty[Annotations]: Specification[Annotations] = Specification(Map.empty, Map.empty)
   }
