@@ -12,18 +12,55 @@ object ValueModule {
       tryMapValue: Value[Annotations] => Validation[Err, Value[Annotations]]
   ): Validation[Err, Definition[Annotations]] = ???
 
+  def mapSpecificationAttributes[A, B](spec: Specification[A])(func: A => B): Specification[B] =
+    spec.mapSpecificationAttributes(func)
+
+//  def mapValueAttributes[A, B](value: Value[A])(func: A => B): Value[B] = ???
+
+//  def mapPatternAttributes[A, B](pattern: Pattern[A])(func: A => B): Pattern[B] = ???
+
+  def mapDefinitionAttributes[A, B](definition: Definition[A])(func1: A => B): Pattern[B] = ???
+
+  def collectValueAttributes[Annotations](value: Value[Annotations]): List[Annotations] = ???
+
+  def countValueNodes[Annotations](value: Value[Annotations]): Int = ???
+
+  def collectPatternAttributes[Annotations](pattern: Pattern[Annotations]): List[Annotations] = ???
+
+  def collectDefinitionAttributes[Annotations](definition: Definition[Annotations]): List[Annotations] = ???
+
+  def collectVariables[Annotations](value: Value[Annotations]): Set[Name] = ???
+
+  def collectReferences[Annotations](value: Value[Annotations]): Set[FQName] = ???
+
+  def collectPatternVariables[Annotations](pattern: Pattern[Annotations]): Set[Name] = ???
+
+  def collectPatternReferences[Annotations](pattern: Pattern[Annotations]): Set[FQName] = ???
+
+  def toRawValue[Annotations](value: Value[Annotations]): RawValue = ???
+
   final case class Definition[+Annotations](
       inputTypes: Chunk[InputParameter[Annotations]],
       outputType: Type[Annotations],
       body: Value[Annotations]
   ) { self =>
-    final def toSpecification: Specification[Annotations] = ???
+    final def toSpecification: Specification[Annotations] =
+      Specification(inputTypes.map(input => (input.name, input.tpe)), outputType)
+
+    final def toValue: Value[Annotations] = {
+      inputTypes.toList match {
+        case Nil => body
+        case inputParam :: restOfArgs =>
+          inputParam.toValue(Definition(Chunk.fromIterable(restOfArgs), outputType, body).toValue)
+      }
+    }
+
+    def collectAttributes: List[Annotations] = ???
 
     def transform[Annotations2 >: Annotations, Err](
         tryMapType: Type[Annotations2] => Validation[Err, Type[Annotations2]],
         tryMapValue: Value[Annotations2] => Validation[Err, Value[Annotations2]]
     ): Validation[Err, Definition[Annotations2]] = {
-      // TODO: Implement this
       ???
     }
     // f(outputType).map(outputType => self.copy(outputType = outputType))
@@ -33,15 +70,97 @@ object ValueModule {
       name: Name,
       tpe: Type[Annotations],
       annotations: ZEnvironment[Annotations]
-  )
+  ) {
+    def toValue[A >: Annotations](body: Value[A]): Value[A] =
+      Value.Lambda[A](
+        Pattern.AsPattern[A](Pattern.Wildcard[A](annotations), name, annotations),
+        body,
+        annotations
+      )
+  }
 
   final type RawValue = Value[Any]
   final val RawValue = Value
 
-  final case class Specification[+Annotations](inputs: Chunk[(Name, Type[Annotations])], output: Type[Annotations])
+  final case class Specification[+Annotations](inputs: Chunk[(Name, Type[Annotations])], output: Type[Annotations]) {
+    def mapSpecificationAttributes[B](func: Annotations => B): Specification[B] = ???
+  }
 
   final type TypedValue = Value[UType]
   val TypedValue = Value
+
+  sealed trait Pattern[+Annotations] extends Value[Annotations] {
+    def annotations: ZEnvironment[Annotations]
+    def mapAttributes[B](f: Annotations => B): Pattern[B] = ???
+  }
+
+  object Pattern {
+    import ValueCase.*
+
+    import ValueCase.PatternCase.*
+    // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
+    // def unit[Annotations](annotations: ZEnvironment[Annotations]): UnitPattern[Annotations] = UnitPattern(annotations)
+    // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
+    // def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Wildcard[Annotations] = Wildcard(annotations)
+
+    // final case class LiteralPattern[+Annotations, +Value](value: Lit[Value], annotations: ZEnvironment[Annotations])
+    //     extends Pattern[Annotations]
+
+    final case class UnitPattern[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations] {
+      override def caseValue: UnitPatternCase = UnitPatternCase
+    }
+
+    final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations] {
+      override def caseValue: WildcardPatternCase = WildcardPatternCase
+    }
+
+    final case class AsPattern[+Annotations](
+        pattern: Pattern[Annotations],
+        name: Name,
+        annotations: ZEnvironment[Annotations]
+    ) extends Pattern[Annotations] {
+      override def caseValue: PatternCase[Pattern[Annotations]] = AsPatternCase(pattern, name)
+    }
+
+    final case class TuplePattern[+Annotations](
+        elementPatterns: Chunk[Pattern[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Pattern[Annotations] {
+      override def caseValue: TuplePatternCase[Pattern[Annotations]] = TuplePatternCase(elementPatterns)
+
+    }
+
+    final case class ConstructorPattern[+Annotations](
+        constructorName: FQName,
+        argumentPatterns: Chunk[Pattern[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Pattern[Annotations] {
+      override def caseValue: ConstructorPatternCase[Pattern[Annotations]] =
+        ConstructorPatternCase(constructorName, argumentPatterns)
+    }
+
+    final case class EmptyListPattern[+Annotations](annotations: ZEnvironment[Annotations])
+        extends Pattern[Annotations] {
+      override def caseValue: EmptyListPatternCase = EmptyListPatternCase
+    }
+
+    final case class HeadTailPattern[+Annotations](
+        headPattern: Pattern[Annotations],
+        tailPattern: Pattern[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Pattern[Annotations] {
+      override def caseValue: HeadTailPatternCase[Pattern[Annotations]] =
+        HeadTailPatternCase(headPattern, tailPattern)
+    }
+
+    final case class LiteralPattern[+Annotations](
+        literal: LiteralValue,
+        annotations: ZEnvironment[Annotations]
+    ) extends Pattern[Annotations] {
+      override def caseValue: LiteralPatternCase =
+        LiteralPatternCase(literal)
+    }
+  }
 
   sealed trait Value[+Annotations] { self =>
     import ValueCase.*
@@ -104,6 +223,54 @@ object ValueModule {
         )
       case c @ ValueCase.VariableCase(_) => f(c)
     }
+
+//    def collectAttributes: List[Annotations] = ???
+
+//    def countValueNodes: Int = self.collectAttributes.length
+
+    def collectVariables: Set[Name] = fold[Set[Name]] {
+      case c @ ValueCase.ApplyCase(_, _)            => c.function ++ c.arguments.flatten
+      case c @ ValueCase.FieldCase(_, _)            => c.target
+      case c @ ValueCase.FieldFunctionCase(_)       => Set(c.name)
+      case c @ ValueCase.LambdaCase(_, _)           => c.argumentPattern ++ c.body
+      case _ @ValueCase.LiteralCase(_)              => Set.empty
+      case c @ ValueCase.PatternMatchCase(_, _)     => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
+      case c @ ValueCase.RecordCase(_)              => c.fields.flatMap(_._2).toSet
+      case _ @ValueCase.UnitCase                    => Set.empty
+      case c @ ValueCase.VariableCase(_)            => Set(c.name)
+      case c @ ValueCase.TupleCase(_)               => c.elements.flatten.toSet
+      case c @ ValueCase.ListCase(_)                => c.elements.flatten.toSet
+      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition ++ c.inValue + c.valueName
+      case c @ ValueCase.LetRecursionCase(_, _) =>
+        c.valueDefinitions.foldLeft(Set.empty[Name])((acc, kv) => acc ++ kv._2 + kv._1)
+      case c @ ValueCase.DestructureCase(_, _, _) => c.valueToDestruct ++ c.inValue
+      case c @ ValueCase.IfThenElseCase(_, _, _)  => c.condition ++ c.thenBranch ++ c.elseBranch
+      case c @ ValueCase.UpdateRecordCase(_, _)   => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case _                                      => Set.empty
+    }
+
+    def collectReferences: Set[FQName] = fold[Set[FQName]] {
+      case c @ ValueCase.ApplyCase(_, _)            => c.function ++ c.arguments.flatten
+      case c @ ValueCase.FieldCase(_, _)            => c.target
+      case _ @ValueCase.FieldFunctionCase(_)        => Set.empty
+      case c @ ValueCase.LambdaCase(_, _)           => c.body
+      case _ @ValueCase.LiteralCase(_)              => Set.empty
+      case c @ ValueCase.PatternMatchCase(_, _)     => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
+      case c @ ValueCase.RecordCase(_)              => c.fields.flatMap(_._2).toSet
+      case _ @ValueCase.UnitCase                    => Set.empty
+      case _ @ValueCase.VariableCase(_)             => Set.empty
+      case c @ ValueCase.TupleCase(_)               => c.elements.flatten.toSet
+      case c @ ValueCase.ListCase(_)                => c.elements.flatten.toSet
+      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition ++ c.inValue
+      case c @ ValueCase.LetRecursionCase(_, _) =>
+        c.valueDefinitions.foldLeft(Set.empty[FQName])((acc, kv) => acc ++ kv._2)
+      case c @ ValueCase.DestructureCase(_, _, _) => c.valueToDestruct ++ c.inValue
+      case c @ ValueCase.IfThenElseCase(_, _, _)  => c.condition ++ c.thenBranch ++ c.elseBranch
+      case c @ ValueCase.UpdateRecordCase(_, _)   => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case _                                      => Set.empty
+    }
+
+    // todo maybe implement indexedMapValue
   }
 
   object Value {
@@ -230,12 +397,20 @@ object ValueModule {
     ) extends Value[Annotations] {
       override def caseValue: ApplyCase[Value[Annotations]] = ValueCase.ApplyCase(function, arguments)
     }
+
     final case class Field[+Annotations](
         target: Value[Annotations],
         name: Name,
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
+    }
+
+    final case class FieldFunction[+Annotations](
+        fieldName: Name,
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override lazy val caseValue: ValueCase[Value[Annotations]] = FieldFunctionCase(fieldName)
     }
 
     final case class Lambda[+Annotations](
@@ -251,25 +426,6 @@ object ValueModule {
       def caseValue: LiteralCase = ValueCase.LiteralCase(value)
     }
 
-    sealed trait Pattern[+Annotations] extends Value[Annotations] {
-      def annotations: ZEnvironment[Annotations]
-    }
-    object Pattern {
-      import ValueCase.PatternCase.*
-      // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
-      // def unit[Annotations](annotations: ZEnvironment[Annotations]): UnitPattern[Annotations] = UnitPattern(annotations)
-      // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
-      // def wildcard[Annotations](annotations: ZEnvironment[Annotations]): Wildcard[Annotations] = Wildcard(annotations)
-
-      // final case class LiteralPattern[+Annotations, +Value](value: Lit[Value], annotations: ZEnvironment[Annotations])
-      //     extends Pattern[Annotations]
-
-      // final case class UnitPattern[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations]
-      final case class Wildcard[+Annotations](annotations: ZEnvironment[Annotations]) extends Pattern[Annotations] {
-        override def caseValue: WildcardPatternCase = WildcardPatternCase
-      }
-    }
-
     final case class PatternMatch[+Annotations](
         scrutinee: Value[Annotations],
         cases: Chunk[(Value[Annotations], Value[Annotations])],
@@ -277,6 +433,7 @@ object ValueModule {
     ) extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = PatternMatchCase(scrutinee, cases)
     }
+
     final case class Record[+Annotations](
         fields: Chunk[(Name, Value[Annotations])],
         annotations: ZEnvironment[Annotations]
@@ -292,6 +449,65 @@ object ValueModule {
         extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = VariableCase(name)
     }
+
+    final case class Tuple[+Annotations](elements: Chunk[Value[Annotations]], annotations: ZEnvironment[Annotations])
+        extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = TupleCase(elements)
+    }
+
+    final case class List[+Annotations](elements: Chunk[Value[Annotations]], annotations: ZEnvironment[Annotations])
+        extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = ListCase(elements)
+    }
+
+    final case class LetDefinition[+Annotations](
+        name: Name,
+        definition: Definition[Annotations],
+        inValue: Value[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = LetDefinitionCase(name, definition, inValue)
+    }
+
+    final case class LetRecursion[+Annotations](
+        dict: Map[Name, Definition[Annotations]],
+        inValue: Value[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = LetRecursionCase(dict, inValue)
+    }
+
+    // todo fix Definition
+    final case class Definition[+Annotations](annotations: ZEnvironment[Annotations]) extends Value[Annotations] {
+      override def caseValue: UnitCase = ValueCase.UnitCase
+    }
+
+    final case class Destructure[+Annotations](
+        pattern: Pattern[Annotations],
+        valueToDestruct: Value[Annotations],
+        inValue: Value[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = DestructureCase(pattern, valueToDestruct, inValue)
+    }
+
+    final case class IfThenElse[+Annotations](
+        condition: Value[Annotations],
+        thenBranch: Value[Annotations],
+        elseBranch: Value[Annotations],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = IfThenElseCase(condition, thenBranch, elseBranch)
+    }
+
+    final case class UpdateRecord[+Annotations](
+        valueToUpdate: Value[Annotations],
+        fieldsToUpdate: Chunk[(Name, Value[Annotations])],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
+      override val caseValue: ValueCase[Value[Annotations]] = UpdateRecordCase(valueToUpdate, fieldsToUpdate)
+    }
+
   }
 
   sealed trait ValueCase[+Self] { self =>
@@ -392,11 +608,13 @@ object ValueModule {
       final case class AsPatternCase[+Self](pattern: Self, name: Name) extends PatternCase[Self]
       final case class ConstructorPatternCase[+Self](constructorName: FQName, argumentPatterns: Chunk[Self])
           extends PatternCase[Self]
+      type EmptyListPatternCase = EmptyListPatternCase.type
       case object EmptyListPatternCase                                    extends PatternCase[Nothing]
       final case class HeadTailPatternCase[+Self](head: Self, tail: Self) extends PatternCase[Self]
-      final case class LiteralPatternCase(value: Literal[Any])            extends PatternCase[Nothing]
+      final case class LiteralPatternCase(value: LiteralValue)            extends PatternCase[Nothing]
       final case class TuplePatternCase[+Self](elements: Chunk[Self])     extends PatternCase[Self]
-      case object UnitPatternCase                                         extends PatternCase[Nothing]
+      type UnitPatternCase = UnitPatternCase.type
+      case object UnitPatternCase extends PatternCase[Nothing]
       type WildcardPatternCase = WildcardPatternCase.type
       case object WildcardPatternCase extends PatternCase[Nothing]
 
