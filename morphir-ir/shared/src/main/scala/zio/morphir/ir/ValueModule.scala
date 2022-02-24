@@ -547,15 +547,15 @@ object ValueModule {
       }
     }
 
-    final case class Literal[+V, Annotations] private[morphir] (value: Lit[V], annotations: ZEnvironment[Annotations])
+    final case class Literal[+A, Annotations] private[morphir] (value: Lit[A], annotations: ZEnvironment[Annotations])
         extends Value[Annotations] {
-      def caseValue: LiteralCase = ValueCase.LiteralCase(value)
+      def caseValue: LiteralCase[A] = ValueCase.LiteralCase(value)
     }
 
     object Literal {
       object Case {
-        def apply[V](caseValue: ValueCase.LiteralCase): Literal[V, Any] =
-          caseValue.literal.toIRValue
+        def apply[A](caseValue: ValueCase.LiteralCase[A]): Literal[A, Any] =
+          Literal(caseValue.literal, ZEnvironment.empty)
       }
     }
 
@@ -676,13 +676,13 @@ object ValueModule {
 
     object LetDefinition {
       object Case {
-        def apply(caseValue: ValueCase.LetDefinitionCase[Value[Any]]): LetDefinition[Any] =
-          LetDefinition(caseValue.valueName, caseValue.valueDefinition, caseValue.inValue, ZEnvironment.empty)
-        def apply[Annotations](
-            caseValue: ValueCase.LetDefinitionCase[Value[Annotations]],
-            annotations: ZEnvironment[Annotations]
-        ): LetDefinition[Annotations] =
-          LetDefinition(caseValue.valueName, caseValue.valueDefinition, caseValue.inValue, annotations)
+        // def apply(caseValue: ValueCase.LetDefinitionCase[Value[Any]]): LetDefinition[Any] =
+        //   LetDefinition(caseValue.valueName, caseValue.valueDefinition, caseValue.inValue, ZEnvironment.empty)
+        // def apply[Annotations](
+        //     caseValue: ValueCase.LetDefinitionCase[Value[Annotations]],
+        //     annotations: ZEnvironment[Annotations]
+        // ): LetDefinition[Annotations] =
+        //   LetDefinition(caseValue.valueName, caseValue.valueDefinition, caseValue.inValue, annotations)
       }
     }
 
@@ -696,13 +696,13 @@ object ValueModule {
 
     object LetRecursion {
       object Case {
-        def apply(caseValue: ValueCase.LetRecursionCase[Value[Any]]): LetRecursion[Any] =
-          LetRecursion(caseValue.valueDefinitions, caseValue.inValue, ZEnvironment.empty)
-        def apply[Annotations](
-            caseValue: ValueCase.LetRecursionCase[Value[Annotations]],
-            annotations: ZEnvironment[Annotations]
-        ): LetRecursion[Annotations] =
-          LetRecursion(caseValue.valueDefinitions, caseValue.inValue, annotations)
+        // def apply(caseValue: ValueCase.LetRecursionCase[Value[Any]]): LetRecursion[Any] =
+        //   LetRecursion(caseValue.valueDefinitions, caseValue.inValue, ZEnvironment.empty)
+        // def apply[Annotations](
+        //     caseValue: ValueCase.LetRecursionCase[Value[Annotations]],
+        //     annotations: ZEnvironment[Annotations]
+        // ): LetRecursion[Annotations] =
+        //   LetRecursion(caseValue.valueDefinitions, caseValue.inValue, annotations)
       }
     }
 
@@ -723,13 +723,13 @@ object ValueModule {
 
     object Destructure {
       object Case {
-        def apply(caseValue: ValueCase.DestructureCase[Value[Any]]): Destructure[Any] =
-          Destructure(caseValue.pattern, caseValue.valueToDestruct, caseValue.inValue, ZEnvironment.empty)
-        def apply[Annotations](
-            caseValue: ValueCase.DestructureCase[Value[Annotations]],
-            annotations: ZEnvironment[Annotations]
-        ): Destructure[Annotations] =
-          Destructure(caseValue.pattern, caseValue.valueToDestruct, caseValue.inValue, annotations)
+        // def apply(caseValue: ValueCase.DestructureCase[Value[Any]]): Destructure[Any] =
+        //   Destructure(caseValue.pattern, caseValue.valueToDestruct, caseValue.inValue, ZEnvironment.empty)
+        // def apply[Annotations](
+        //     caseValue: ValueCase.DestructureCase[Value[Annotations]],
+        //     annotations: ZEnvironment[Annotations]
+        // ): Destructure[Annotations] =
+        //   Destructure(caseValue.pattern, caseValue.valueToDestruct, caseValue.inValue, annotations)
       }
     }
 
@@ -837,7 +837,7 @@ object ValueModule {
     final case class FieldFunctionCase(name: Name)                                            extends ValueCase[Nothing]
     final case class IfThenElseCase[+Self](condition: Self, thenBranch: Self, elseBranch: Self) extends ValueCase[Self]
     final case class ListCase[+Self](elements: Chunk[Self])                                     extends ValueCase[Self]
-    final case class LiteralCase(literal: LiteralValue)                                     extends ValueCase[Nothing]
+    final case class LiteralCase[+A](literal: Lit[A])                                       extends ValueCase[Nothing]
     final case class PatternMatchCase[+Self](branchOutOn: Self, cases: Chunk[(Self, Self)]) extends ValueCase[Self]
     final case class RecordCase[+Self](fields: Chunk[(Name, Self)])                         extends ValueCase[Self]
     final case class ReferenceCase(name: FQName)                                            extends ValueCase[Nothing]
