@@ -5,6 +5,7 @@ import zio.morphir.ir.TypeModule.Type
 import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude.*
 import zio.prelude.fx.ZPure
+import zio.morphir.syntax.ValueSyntax
 
 object ValueModule {
 
@@ -416,7 +417,7 @@ object ValueModule {
     // todo maybe implement indexedMapValue
   }
 
-  object Value {
+  object Value extends ValueSyntax {
     import ValueCase.*
 
     def apply(caseValue: ValueCase[Value[Any]]): Value[Any] = GenericValue(caseValue, ZEnvironment.empty)
@@ -425,7 +426,6 @@ object ValueModule {
         caseValue: ValueCase[Value[Annotations]],
         annotations: ZEnvironment[Annotations]
     ): Value[Annotations] = GenericValue(caseValue, annotations)
-
 
     private final case class GenericValue[+Annotations](
         caseValue: ValueCase[Value[Annotations]],
