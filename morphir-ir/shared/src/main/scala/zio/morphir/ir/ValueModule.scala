@@ -313,26 +313,26 @@ object ValueModule {
     // }
 
     def toRawValue: RawValue = fold[RawValue] {
-      case c @ ValueCase.ApplyCase(_, _)                => Value.Apply(c.function, c.arguments, ZEnvironment.empty)
-      case c @ ValueCase.ConstructorCase(_)             => Value.Constructor(c)
-      case c @ ValueCase.FieldCase(_, _)                => ???
-      case c @ ValueCase.FieldFunctionCase(_)           => ???
-      case c @ ValueCase.LambdaCase(_, _)               => ???
-      case _ @ValueCase.LiteralCase(_)                  => ???
-      case c @ ValueCase.PatternMatchCase(_, _)         => ???
-      case c @ ValueCase.ReferenceCase(_)               => ???
-      case c @ ValueCase.RecordCase(_)                  => ???
-      case _ @ValueCase.UnitCase                        => ???
-      case c @ ValueCase.VariableCase(_)                => ???
-      case c @ ValueCase.TupleCase(_)                   => ???
-      case c @ ValueCase.ListCase(_)                    => ???
-      case c @ ValueCase.LetDefinitionCase(_, _, _)     => ???
-      case c @ ValueCase.LetRecursionCase(_, _)         => ???
-      case c @ ValueCase.NativeApplyCase(_, _)          => ???
-      case c @ ValueCase.DestructureCase(_, _, _)       => ???
-      case c @ ValueCase.IfThenElseCase(_, _, _)        => ???
-      case c @ ValueCase.UpdateRecordCase(_, _)         => ???
-      case c @ PatternCase.AsPatternCase(_, _)          => ???
+      case c @ ValueCase.ApplyCase(_, _)            => Value.Apply(c.function, c.arguments, ZEnvironment.empty)
+      case c @ ValueCase.ConstructorCase(_)         => Value.Constructor(c)
+      case c @ ValueCase.FieldCase(_, _)            => Value.Field(c.target, c.name, ZEnvironment.empty)
+      case c @ ValueCase.FieldFunctionCase(_)       => Value.FieldFunction(c.name, ZEnvironment.empty)
+      case c @ ValueCase.LambdaCase(_, _)           => Value.Lambda(c.argumentPattern, c.body, ZEnvironment.empty)
+      case c @ ValueCase.LiteralCase(_)             => Value.Literal(c.literal, ZEnvironment.empty)
+      case c @ ValueCase.PatternMatchCase(_, _)     => Value.PatternMatch(c.branchOutOn, c.cases, ZEnvironment.empty)
+      case c @ ValueCase.ReferenceCase(_)           => ???
+      case c @ ValueCase.RecordCase(_)              => ???
+      case _ @ValueCase.UnitCase                    => ???
+      case c @ ValueCase.VariableCase(_)            => ???
+      case c @ ValueCase.TupleCase(_)               => ???
+      case c @ ValueCase.ListCase(_)                => ???
+      case c @ ValueCase.LetDefinitionCase(_, _, _) => ???
+      case c @ ValueCase.LetRecursionCase(_, _)     => ???
+      case c @ ValueCase.NativeApplyCase(_, _)      => ???
+      case c @ ValueCase.DestructureCase(_, _, _)   => ???
+      case c @ ValueCase.IfThenElseCase(_, _, _)    => ???
+      case c @ ValueCase.UpdateRecordCase(_, _)     => ???
+      case c @ PatternCase.AsPatternCase(_, _)      => ???
       case c @ PatternCase.ConstructorPatternCase(_, _) => ???
       case _ @PatternCase.EmptyListPatternCase          => ???
       case c @ PatternCase.HeadTailPatternCase(_, _)    => ???
@@ -472,12 +472,19 @@ object ValueModule {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldFunctionCase(fieldName)
     }
 
-    final case class Lambda[+Annotations](
-        pattern: Pattern[Annotations],
+    final case class Lambda[+Annotations] private[ir] (
+        pattern: Value[Annotations], // TODO: Restrict to pattern only
         body: Value[Annotations],
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override lazy val caseValue: LambdaCase[Value[Annotations]] = LambdaCase(pattern, body)
+    }
+
+    object Lambda {
+      object Case {
+        def apply(caseValue: ValueCase.LambdaCase[Value[Any]]): Lambda[Any] =
+          Lambda(caseValue.argumentPattern, caseValue.body, ZEnvironment.empty)
+      }
     }
 
     final case class Literal[+V, +Annotations](value: Lit[V], annotations: ZEnvironment[Annotations])
