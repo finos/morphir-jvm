@@ -21,15 +21,15 @@ object ValueModule {
 
 //  def mapPatternAttributes[A, B](pattern: Pattern[A])(func: A => B): Pattern[B] = ???
 
-  def mapDefinitionAttributes[A, B](definition: Definition[A])(func1: A => B): Pattern[B] = ???
+//  def mapDefinitionAttributes[A, B](definition: Definition[A])(func1: A => B): Pattern[B] = ???
 
-  def collectValueAttributes[Annotations](value: Value[Annotations]): List[Annotations] = ???
+//  def collectValueAttributes[Annotations](value: Value[Annotations]): List[Annotations] = ???
 
-  def countValueNodes[Annotations](value: Value[Annotations]): Int = ???
+//  def countValueNodes[Annotations](value: Value[Annotations]): Int = ???
 
-  def collectPatternAttributes[Annotations](pattern: Pattern[Annotations]): List[Annotations] = ???
+//  def collectPatternAttributes[Annotations](pattern: Pattern[Annotations]): List[Annotations] = ???
 
-  def collectDefinitionAttributes[Annotations](definition: Definition[Annotations]): List[Annotations] = ???
+//  def collectDefinitionAttributes[Annotations](definition: Definition[Annotations]): List[Annotations] = ???
 
   def collectVariables[Annotations](value: Value[Annotations]): Set[Name] = value.collectVariables
 
@@ -283,56 +283,37 @@ object ValueModule {
       foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
     // def toRawValue: RawValue = fold[RawValue] {
-    //   case c @ ValueCase.ApplyCase(_, _)                => ???
-    //   case c @ ValueCase.ConstructorCase(_)             => ???
-    //   case c @ ValueCase.FieldCase(_, _)                => ???
-    //   case c @ ValueCase.FieldFunctionCase(_)           => ???
-    //   case c @ ValueCase.LambdaCase(_, _)               => ???
-    //   case _ @ValueCase.LiteralCase(_)                  => ???
-    //   case c @ ValueCase.PatternMatchCase(_, _)         => ???
-    //   case c @ ValueCase.ReferenceCase(_)               => ???
-    //   case c @ ValueCase.RecordCase(_)                  => ???
-    //   case _ @ValueCase.UnitCase                        => ???
-    //   case c @ ValueCase.VariableCase(_)                => ???
-    //   case c @ ValueCase.TupleCase(_)                   => ???
-    //   case c @ ValueCase.ListCase(_)                    => ???
-    //   case c @ ValueCase.LetDefinitionCase(_, _, _)     => ???
-    //   case c @ ValueCase.LetRecursionCase(_, _)         => ???
-    //   case c @ ValueCase.NativeApplyCase(_, _)          => ???
-    //   case c @ ValueCase.DestructureCase(_, _, _)       => ???
-    //   case c @ ValueCase.IfThenElseCase(_, _, _)        => ???
-    //   case c @ ValueCase.UpdateRecordCase(_, _)         => ???
-    //   case c @ PatternCase.AsPatternCase(_, _)          => ???
-    //   case c @ PatternCase.ConstructorPatternCase(_, _) => ???
-    //   case _ @PatternCase.EmptyListPatternCase          => ???
-    //   case c @ PatternCase.HeadTailPatternCase(_, _)    => ???
-    //   case c @ PatternCase.LiteralPatternCase(_)        => ???
-    //   case c @ PatternCase.TuplePatternCase(_)          => ???
-    //   case _ @PatternCase.UnitPatternCase               => ???
-    //   case _ @PatternCase.WildcardPatternCase           => ???
+//    case c @ PatternCase.AsPatternCase(_, _)          => ???
+//    case c @ PatternCase.ConstructorPatternCase(_, _) => ???
+//    case _ @PatternCase.EmptyListPatternCase          => ???
+//    case c @ PatternCase.HeadTailPatternCase(_, _)    => ???
+//    case c @ PatternCase.LiteralPatternCase(_)        => ???
+//    case c @ PatternCase.TuplePatternCase(_)          => ???
+//    case _ @PatternCase.UnitPatternCase               => ???
+//    case _ @PatternCase.WildcardPatternCase           => ???
+//    case c @ ValueCase.ApplyCase(_, _)                => ???
+//    case c @ ValueCase.ConstructorCase(_)             => ???
+//    case c @ ValueCase.DestructureCase(_, _, _)       => ???
+//    case c @ ValueCase.FieldCase(_, _)                => ???
+//    case c @ ValueCase.FieldFunctionCase(_)           => ???
+//    case c @ ValueCase.IfThenElseCase(_, _, _)        => ???
+//    case c @ ValueCase.LambdaCase(_, _)               => ???
+//    case c @ ValueCase.LetDefinitionCase(_, _, _)     => ???
+//    case c @ ValueCase.LetRecursionCase(_, _)         => ???
+//    case c @ ValueCase.ListCase(_)                    => ???
+//    case c @ ValueCase.LiteralCase(_)                 => ???
+//    case c @ ValueCase.NativeApplyCase(_, _)          => ???
+//    case c @ ValueCase.PatternMatchCase(_, _) => ???
+//    case c @ ValueCase.ReferenceCase(_)       => ???
+//    case c @ ValueCase.RecordCase(_)          => ???
+//    case c @ ValueCase.TupleCase(_)           => ???
+//    case _ @ValueCase.UnitCase                => ???
+//    case c @ ValueCase.UpdateRecordCase(_, _) => ???
+//    case c @ ValueCase.VariableCase(_)        => ???
     // }
 
     def toRawValue: RawValue = fold[RawValue] {
-      case c @ ValueCase.ApplyCase(_, _)            => Value.Apply(c.function, c.arguments, ZEnvironment.empty)
-      case c @ ValueCase.ConstructorCase(_)         => Value.Constructor(c)
-      case c @ ValueCase.FieldCase(_, _)            => Value.Field(c.target, c.name, ZEnvironment.empty)
-      case c @ ValueCase.FieldFunctionCase(_)       => Value.FieldFunction(c.name, ZEnvironment.empty)
-      case c @ ValueCase.LambdaCase(_, _)           => Value.Lambda(c.argumentPattern, c.body, ZEnvironment.empty)
-      case c @ ValueCase.LiteralCase(_)             => Value.Literal(c.literal, ZEnvironment.empty)
-      case c @ ValueCase.PatternMatchCase(_, _)     => Value.PatternMatch(c.branchOutOn, c.cases, ZEnvironment.empty)
-      case c @ ValueCase.ReferenceCase(_)           => ???
-      case c @ ValueCase.RecordCase(_)              => ???
-      case _ @ValueCase.UnitCase                    => ???
-      case c @ ValueCase.VariableCase(_)            => ???
-      case c @ ValueCase.TupleCase(_)               => ???
-      case c @ ValueCase.ListCase(_)                => ???
-      case c @ ValueCase.LetDefinitionCase(_, _, _) => ???
-      case c @ ValueCase.LetRecursionCase(_, _)     => ???
-      case c @ ValueCase.NativeApplyCase(_, _)      => ???
-      case c @ ValueCase.DestructureCase(_, _, _)   => ???
-      case c @ ValueCase.IfThenElseCase(_, _, _)    => ???
-      case c @ ValueCase.UpdateRecordCase(_, _)     => ???
-      case c @ PatternCase.AsPatternCase(_, _)      => ???
+      case c @ PatternCase.AsPatternCase(_, _)          => ???
       case c @ PatternCase.ConstructorPatternCase(_, _) => ???
       case _ @PatternCase.EmptyListPatternCase          => ???
       case c @ PatternCase.HeadTailPatternCase(_, _)    => ???
@@ -340,6 +321,25 @@ object ValueModule {
       case c @ PatternCase.TuplePatternCase(_)          => ???
       case _ @PatternCase.UnitPatternCase               => ???
       case _ @PatternCase.WildcardPatternCase           => ???
+      case c @ ValueCase.ApplyCase(_, _)                => Value.Apply(c.function, c.arguments, ZEnvironment.empty)
+      case c @ ValueCase.ConstructorCase(_)             => ???
+      case c @ ValueCase.DestructureCase(_, _, _)       => ???
+      case c @ ValueCase.FieldCase(_, _)                => Value.Field(c.target, c.name, ZEnvironment.empty)
+      case c @ ValueCase.FieldFunctionCase(_)           => Value.FieldFunction(c.name, ZEnvironment.empty)
+      case c @ ValueCase.IfThenElseCase(_, _, _)        => ???
+      case c @ ValueCase.LambdaCase(_, _)               => Value.Lambda(c.argumentPattern, c.body, ZEnvironment.empty)
+      case c @ ValueCase.LetDefinitionCase(_, _, _)     => ???
+      case c @ ValueCase.LetRecursionCase(_, _)         => ???
+      case c @ ValueCase.ListCase(_)                    => ???
+      case c @ ValueCase.LiteralCase(_)                 => Value.Literal(c.literal, ZEnvironment.empty)
+      case c @ ValueCase.NativeApplyCase(_, _)          => ???
+      case c @ ValueCase.PatternMatchCase(_, _) => Value.PatternMatch(c.branchOutOn, c.cases, ZEnvironment.empty)
+      case c @ ValueCase.ReferenceCase(_)       => ???
+      case c @ ValueCase.RecordCase(_)          => ???
+      case c @ ValueCase.TupleCase(_)           => ???
+      case _ @ValueCase.UnitCase                => ???
+      case c @ ValueCase.UpdateRecordCase(_, _) => ???
+      case c @ ValueCase.VariableCase(_)        => ???
     }
 
     def transformDown[Annotations0 >: Annotations](
@@ -373,44 +373,60 @@ object ValueModule {
 //    def countValueNodes: Int = self.collectAttributes.length
 
     def collectVariables: Set[Name] = fold[Set[Name]] {
-      case c @ ValueCase.ApplyCase(_, _)            => c.function ++ c.arguments.flatten
-      case c @ ValueCase.FieldCase(_, _)            => c.target
-      case c @ ValueCase.FieldFunctionCase(_)       => Set(c.name)
-      case c @ ValueCase.LambdaCase(_, _)           => c.argumentPattern ++ c.body
-      case _ @ValueCase.LiteralCase(_)              => Set.empty
-      case c @ ValueCase.PatternMatchCase(_, _)     => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
-      case c @ ValueCase.RecordCase(_)              => c.fields.flatMap(_._2).toSet
-      case _ @ValueCase.UnitCase                    => Set.empty
-      case c @ ValueCase.VariableCase(_)            => Set(c.name)
-      case c @ ValueCase.TupleCase(_)               => c.elements.flatten.toSet
-      case c @ ValueCase.ListCase(_)                => c.elements.flatten.toSet
-      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition ++ c.inValue + c.valueName
+      case c @ PatternCase.AsPatternCase(_, _)          => c.pattern + c.name
+      case c @ PatternCase.ConstructorPatternCase(_, _) => c.argumentPatterns.flatten.toSet
+      case _ @PatternCase.EmptyListPatternCase          => Set.empty
+      case c @ PatternCase.HeadTailPatternCase(_, _)    => c.head ++ c.tail
+      case c @ PatternCase.LiteralPatternCase(_)        => Set.empty
+      case c @ PatternCase.TuplePatternCase(_)          => c.elements.flatten.toSet
+      case _ @PatternCase.UnitPatternCase               => Set.empty
+      case _ @PatternCase.WildcardPatternCase           => Set.empty
+      case c @ ValueCase.ApplyCase(_, _)                => c.function ++ c.arguments.flatten
+      case c @ ValueCase.DestructureCase(_, _, _)       => c.valueToDestruct ++ c.inValue
+      case c @ ValueCase.FieldCase(_, _)                => c.target
+      case c @ ValueCase.FieldFunctionCase(_)           => Set(c.name)
+      case c @ ValueCase.IfThenElseCase(_, _, _)        => c.condition ++ c.thenBranch ++ c.elseBranch
+      case c @ ValueCase.LambdaCase(_, _)               => c.argumentPattern ++ c.body
+      case c @ ValueCase.LetDefinitionCase(_, _, _)     => c.valueDefinition ++ c.inValue + c.valueName
       case c @ ValueCase.LetRecursionCase(_, _) =>
         c.valueDefinitions.foldLeft(Set.empty[Name])((acc, kv) => acc ++ kv._2 + kv._1)
-      case c @ ValueCase.DestructureCase(_, _, _) => c.valueToDestruct ++ c.inValue
-      case c @ ValueCase.IfThenElseCase(_, _, _)  => c.condition ++ c.thenBranch ++ c.elseBranch
-      case c @ ValueCase.UpdateRecordCase(_, _)   => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case c @ ValueCase.ListCase(_)            => c.elements.flatten.toSet
+      case _ @ValueCase.LiteralCase(_)          => Set.empty
+      case c @ ValueCase.PatternMatchCase(_, _) => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
+      case c @ ValueCase.RecordCase(_)          => c.fields.flatMap(_._2).toSet
+      case c @ ValueCase.TupleCase(_)           => c.elements.flatten.toSet
+      case _ @ValueCase.UnitCase                => Set.empty
+      case c @ ValueCase.UpdateRecordCase(_, _) => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case c @ ValueCase.VariableCase(_)        => Set(c.name)
       case _ => Set.empty // TODO: Ensure we actually want empty in the all these cases tests will help
     }
 
     def collectReferences: Set[FQName] = fold[Set[FQName]] {
-      case c @ ValueCase.ApplyCase(_, _)            => c.function ++ c.arguments.flatten
-      case c @ ValueCase.FieldCase(_, _)            => c.target
-      case _ @ValueCase.FieldFunctionCase(_)        => Set.empty
-      case c @ ValueCase.LambdaCase(_, _)           => c.body
-      case _ @ValueCase.LiteralCase(_)              => Set.empty
-      case c @ ValueCase.PatternMatchCase(_, _)     => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
-      case c @ ValueCase.RecordCase(_)              => c.fields.flatMap(_._2).toSet
-      case _ @ValueCase.UnitCase                    => Set.empty
-      case _ @ValueCase.VariableCase(_)             => Set.empty
-      case c @ ValueCase.TupleCase(_)               => c.elements.flatten.toSet
-      case c @ ValueCase.ListCase(_)                => c.elements.flatten.toSet
-      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition ++ c.inValue
+      case c @ PatternCase.AsPatternCase(_, _)          => c.pattern
+      case c @ PatternCase.ConstructorPatternCase(_, _) => c.argumentPatterns.flatten.toSet + c.constructorName
+      case _ @PatternCase.EmptyListPatternCase          => Set.empty
+      case c @ PatternCase.HeadTailPatternCase(_, _)    => c.head ++ c.tail
+      case c @ PatternCase.LiteralPatternCase(_)        => Set.empty
+      case c @ PatternCase.TuplePatternCase(_)          => c.elements.flatten.toSet
+      case _ @PatternCase.UnitPatternCase               => Set.empty
+      case _ @PatternCase.WildcardPatternCase           => Set.empty
+      case c @ ValueCase.ApplyCase(_, _)                => c.function ++ c.arguments.flatten
+      case c @ ValueCase.DestructureCase(_, _, _)       => c.valueToDestruct ++ c.inValue
+      case c @ ValueCase.FieldCase(_, _)                => c.target
+      case _ @ValueCase.FieldFunctionCase(_)            => Set.empty
+      case c @ ValueCase.IfThenElseCase(_, _, _)        => c.condition ++ c.thenBranch ++ c.elseBranch
+      case c @ ValueCase.LambdaCase(_, _)               => c.body
+      case c @ ValueCase.LetDefinitionCase(_, _, _)     => c.valueDefinition ++ c.inValue
       case c @ ValueCase.LetRecursionCase(_, _) =>
         c.valueDefinitions.foldLeft(Set.empty[FQName])((acc, kv) => acc ++ kv._2)
-      case c @ ValueCase.DestructureCase(_, _, _) => c.valueToDestruct ++ c.inValue
-      case c @ ValueCase.IfThenElseCase(_, _, _)  => c.condition ++ c.thenBranch ++ c.elseBranch
-      case c @ ValueCase.UpdateRecordCase(_, _)   => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case c @ ValueCase.ListCase(_)            => c.elements.flatten.toSet
+      case _ @ValueCase.LiteralCase(_)          => Set.empty
+      case c @ ValueCase.PatternMatchCase(_, _) => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
+      case c @ ValueCase.RecordCase(_)          => c.fields.flatMap(_._2).toSet
+      case c @ ValueCase.TupleCase(_)           => c.elements.flatten.toSet
+      case _ @ValueCase.UnitCase                => Set.empty
+      case c @ ValueCase.UpdateRecordCase(_, _) => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
+      case _ @ValueCase.VariableCase(_)         => Set.empty
       case _ => Set.empty // TODO: Ensure we actually want empty in the all these cases tests will help
     }
 
@@ -432,7 +448,7 @@ object ValueModule {
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations]
 
-    final case class Apply[+Annotations](
+    final case class Apply[+Annotations] private[morphir] (
         function: Value[Annotations],
         arguments: Chunk[Value[Annotations]],
         annotations: ZEnvironment[Annotations]
@@ -440,7 +456,19 @@ object ValueModule {
       override def caseValue: ApplyCase[Value[Annotations]] = ValueCase.ApplyCase(function, arguments)
     }
 
-    final case class Constructor[+Annotations](
+    object Apply {
+      object Case {
+        def apply(caseValue: ValueCase.ApplyCase[Value[Any]]): Apply[Any] =
+          Apply(caseValue.function, caseValue.arguments, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.ApplyCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): Apply[Annotations] =
+          Apply(caseValue.function, caseValue.arguments, annotations)
+      }
+    }
+
+    final case class Constructor[+Annotations] private[morphir] (
         name: FQName,
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
@@ -448,16 +476,19 @@ object ValueModule {
     }
 
     object Constructor {
-      def apply(caseValue: ValueCase.ConstructorCase): Constructor[Any] =
-        Constructor(caseValue.name, ZEnvironment.empty)
-      def apply[Annotations](
-          caseValue: ValueCase.ConstructorCase,
-          annotations: ZEnvironment[Annotations]
-      ): Constructor[Annotations] =
-        Constructor(caseValue.name, annotations)
+      object Case {
+        def apply(caseValue: ValueCase.ConstructorCase): Constructor[Any] =
+          Constructor(caseValue.name, ZEnvironment.empty)
+
+        def apply[Annotations](
+            caseValue: ValueCase.ConstructorCase,
+            annotations: ZEnvironment[Annotations]
+        ): Constructor[Annotations] =
+          Constructor(caseValue.name, annotations)
+      }
     }
 
-    final case class Field[+Annotations](
+    final case class Field[+Annotations] private[morphir] (
         target: Value[Annotations],
         name: Name,
         annotations: ZEnvironment[Annotations]
@@ -465,11 +496,35 @@ object ValueModule {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldCase(target, name)
     }
 
-    final case class FieldFunction[+Annotations](
+    object Field {
+      object Case {
+        def apply(caseValue: ValueCase.FieldCase[Value[Any]]): Field[Any] =
+          Field(caseValue.target, caseValue.name, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.FieldCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): Field[Annotations] =
+          Field(caseValue.target, caseValue.name, annotations)
+      }
+    }
+
+    final case class FieldFunction[+Annotations] private[morphir] (
         fieldName: Name,
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = FieldFunctionCase(fieldName)
+    }
+
+    object FieldFunction {
+      object Case {
+        def apply(caseValue: ValueCase.FieldFunctionCase): FieldFunction[Any] =
+          FieldFunction(caseValue.name, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.FieldFunctionCase,
+            annotations: ZEnvironment[Annotations]
+        ): FieldFunction[Annotations] =
+          FieldFunction(caseValue.name, annotations)
+      }
     }
 
     final case class Lambda[+Annotations] private[morphir] (
@@ -484,15 +539,27 @@ object ValueModule {
       object Case {
         def apply(caseValue: ValueCase.LambdaCase[Value[Any]]): Lambda[Any] =
           Lambda(caseValue.argumentPattern, caseValue.body, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.LambdaCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): Lambda[Annotations] =
+          Lambda(caseValue.argumentPattern, caseValue.body, annotations)
       }
     }
 
-    final case class Literal[+V, +Annotations](value: Lit[V], annotations: ZEnvironment[Annotations])
+    final case class Literal[+V, Annotations] private[morphir] (value: Lit[V], annotations: ZEnvironment[Annotations])
         extends Value[Annotations] {
       def caseValue: LiteralCase = ValueCase.LiteralCase(value)
     }
 
-    final case class PatternMatch[+Annotations](
+    object Literal {
+      object Case {
+        def apply[V](caseValue: ValueCase.LiteralCase): Literal[V, Any] =
+          caseValue.literal.toIRValue
+      }
+    }
+
+    final case class PatternMatch[Annotations] private[morphir] (
         scrutinee: Value[Annotations],
         cases: Chunk[(Value[Annotations], Value[Annotations])],
         annotations: ZEnvironment[Annotations]
@@ -500,33 +567,105 @@ object ValueModule {
       override lazy val caseValue: ValueCase[Value[Annotations]] = PatternMatchCase(scrutinee, cases)
     }
 
-    final case class Record[+Annotations](
+    object PatternMatch {
+      object Case {
+        def apply(caseValue: ValueCase.PatternMatchCase[Value[Any]]): PatternMatch[Any] =
+          PatternMatch(caseValue.branchOutOn, caseValue.cases, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.PatternMatchCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): PatternMatch[Annotations] =
+          PatternMatch(caseValue.branchOutOn, caseValue.cases, annotations)
+      }
+    }
+
+    final case class Record[Annotations] private[morphir] (
         fields: Chunk[(Name, Value[Annotations])],
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = RecordCase(fields)
     }
 
-    final case class Unit[+Annotations](annotations: ZEnvironment[Annotations]) extends Value[Annotations] {
+    object Record {
+      object Case {
+        def apply(caseValue: ValueCase.RecordCase[Value[Any]]): Record[Any] =
+          Record(caseValue.fields, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.RecordCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): Record[Annotations] =
+          Record(caseValue.fields, annotations)
+      }
+    }
+
+    final case class Unit[Annotations] private[morphir] (annotations: ZEnvironment[Annotations])
+        extends Value[Annotations] {
       override def caseValue: UnitCase = ValueCase.UnitCase
     }
 
-    final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
+    object Unit {
+      object Case {
+        def apply: Unit[Any] =
+          Unit(ZEnvironment.empty)
+      }
+    }
+
+    final case class Variable[Annotations] private[morphir] (name: Name, annotations: ZEnvironment[Annotations])
         extends Value[Annotations] {
       override lazy val caseValue: ValueCase[Value[Annotations]] = VariableCase(name)
     }
 
-    final case class Tuple[+Annotations](elements: Chunk[Value[Annotations]], annotations: ZEnvironment[Annotations])
-        extends Value[Annotations] {
+    object Variable {
+      object Case {
+        def apply(caseValue: ValueCase.VariableCase): Variable[Any] =
+          Variable(caseValue.name, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.VariableCase,
+            annotations: ZEnvironment[Annotations]
+        ): Variable[Annotations] =
+          Variable(caseValue.name, annotations)
+      }
+    }
+
+    final case class Tuple[Annotations] private[morphir] (
+        elements: Chunk[Value[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
       override val caseValue: ValueCase[Value[Annotations]] = TupleCase(elements)
     }
 
-    final case class List[+Annotations](elements: Chunk[Value[Annotations]], annotations: ZEnvironment[Annotations])
-        extends Value[Annotations] {
+    object Tuple {
+      object Case {
+        def apply(caseValue: ValueCase.TupleCase[Value[Any]]): Tuple[Any] =
+          Tuple(caseValue.elements, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.TupleCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): Tuple[Annotations] =
+          Tuple(caseValue.elements, annotations)
+      }
+    }
+
+    final case class List[Annotations] private[morphir] (
+        elements: Chunk[Value[Annotations]],
+        annotations: ZEnvironment[Annotations]
+    ) extends Value[Annotations] {
       override val caseValue: ValueCase[Value[Annotations]] = ListCase(elements)
     }
 
-    final case class LetDefinition[+Annotations](
+    object List {
+      object Case {
+        def apply(caseValue: ValueCase.ListCase[Value[Any]]): List[Any] =
+          List(caseValue.elements, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.ListCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): List[Annotations] =
+          List(caseValue.elements, annotations)
+      }
+    }
+
+    final case class LetDefinition[Annotations] private[morphir] (
         name: Name,
         definition: Definition[Annotations],
         inValue: Value[Annotations],
@@ -535,7 +674,19 @@ object ValueModule {
       override val caseValue: ValueCase[Value[Annotations]] = LetDefinitionCase(name, definition, inValue)
     }
 
-    final case class LetRecursion[+Annotations](
+    object LetDefinition {
+      object Case {
+        def apply(caseValue: ValueCase.LetDefinitionCase[Value[Any]]): LetDefinition[Any] =
+          LetDefinition(caseValue.valueName, caseValue.valueDefinition, caseValue.inValue, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.LetDefinitionCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): LetDefinition[Annotations] =
+          LetDefinition(caseValue.valueName, caseValue.valueDefinition, caseValue.inValue, annotations)
+      }
+    }
+
+    final case class LetRecursion[Annotations] private[morphir] (
         dict: Map[Name, Definition[Annotations]],
         inValue: Value[Annotations],
         annotations: ZEnvironment[Annotations]
@@ -543,12 +694,25 @@ object ValueModule {
       override val caseValue: ValueCase[Value[Annotations]] = LetRecursionCase(dict, inValue)
     }
 
+    object LetRecursion {
+      object Case {
+        def apply(caseValue: ValueCase.LetRecursionCase[Value[Any]]): LetRecursion[Any] =
+          LetRecursion(caseValue.valueDefinitions, caseValue.inValue, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.LetRecursionCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): LetRecursion[Annotations] =
+          LetRecursion(caseValue.valueDefinitions, caseValue.inValue, annotations)
+      }
+    }
+
     // todo fix Definition
-    final case class Definition[+Annotations](annotations: ZEnvironment[Annotations]) extends Value[Annotations] {
+    final case class Definition[Annotations] private[morphir] (annotations: ZEnvironment[Annotations])
+        extends Value[Annotations] {
       override def caseValue: UnitCase = ValueCase.UnitCase
     }
 
-    final case class Destructure[+Annotations](
+    final case class Destructure[Annotations] private[morphir] (
         pattern: Pattern[Annotations],
         valueToDestruct: Value[Annotations],
         inValue: Value[Annotations],
@@ -557,7 +721,19 @@ object ValueModule {
       override val caseValue: ValueCase[Value[Annotations]] = DestructureCase(pattern, valueToDestruct, inValue)
     }
 
-    final case class IfThenElse[+Annotations](
+    object Destructure {
+      object Case {
+        def apply(caseValue: ValueCase.DestructureCase[Value[Any]]): Destructure[Any] =
+          Destructure(caseValue.pattern, caseValue.valueToDestruct, caseValue.inValue, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.DestructureCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): Destructure[Annotations] =
+          Destructure(caseValue.pattern, caseValue.valueToDestruct, caseValue.inValue, annotations)
+      }
+    }
+
+    final case class IfThenElse[Annotations] private[morphir] (
         condition: Value[Annotations],
         thenBranch: Value[Annotations],
         elseBranch: Value[Annotations],
@@ -566,12 +742,36 @@ object ValueModule {
       override val caseValue: ValueCase[Value[Annotations]] = IfThenElseCase(condition, thenBranch, elseBranch)
     }
 
-    final case class UpdateRecord[+Annotations](
+    object IfThenElse {
+      object Case {
+        def apply(caseValue: ValueCase.IfThenElseCase[Value[Any]]): IfThenElse[Any] =
+          IfThenElse(caseValue.condition, caseValue.thenBranch, caseValue.elseBranch, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.IfThenElseCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): IfThenElse[Annotations] =
+          IfThenElse(caseValue.condition, caseValue.thenBranch, caseValue.elseBranch, annotations)
+      }
+    }
+
+    final case class UpdateRecord[Annotations] private[morphir] (
         valueToUpdate: Value[Annotations],
         fieldsToUpdate: Chunk[(Name, Value[Annotations])],
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
       override val caseValue: ValueCase[Value[Annotations]] = UpdateRecordCase(valueToUpdate, fieldsToUpdate)
+    }
+
+    object UpdateRecord {
+      object Case {
+        def apply(caseValue: ValueCase.UpdateRecordCase[Value[Any]]): UpdateRecord[Any] =
+          UpdateRecord(caseValue.valueToUpdate, caseValue.fieldsToUpdate, ZEnvironment.empty)
+        def apply[Annotations](
+            caseValue: ValueCase.UpdateRecordCase[Value[Annotations]],
+            annotations: ZEnvironment[Annotations]
+        ): UpdateRecord[Annotations] =
+          UpdateRecord(caseValue.valueToUpdate, caseValue.fieldsToUpdate, annotations)
+      }
     }
 
   }
