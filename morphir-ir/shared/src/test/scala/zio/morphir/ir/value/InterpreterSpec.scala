@@ -79,6 +79,9 @@ object InterpreterSpec extends MorphirBaseSpec {
       },
       test("recursive let definition example") {
         assertTrue(Interpreter.evaluate(letRecExample) == Right(new BigInteger("6")))
+      },
+      test("Static scoping example") {
+        assertTrue(Interpreter.evaluate(staticScopingExample) == Right("static"))
       }
     ),
     suite("let non recursion case")(
