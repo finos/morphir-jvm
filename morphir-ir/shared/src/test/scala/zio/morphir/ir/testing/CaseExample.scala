@@ -7,9 +7,9 @@ import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.Dsl
-import zio.morphir.ir.ValueModule.Value.*
+import zio.morphir.syntax.ValueSyntax
 
-object CaseExample {
+object CaseExample extends ValueSyntax {
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
   val letIntroduceMultipleExample: Value[Any] = letRecursion(
@@ -171,7 +171,7 @@ object CaseExample {
   val letDestructExample =
     destructure(
       tuplePattern(asPattern(wildcardPattern, Name("x")), asPattern(wildcardPattern, Name("y"))),
-      tuple(Value.literal("red"), Value.literal("blue")),
+      tuple(string("red"), string("blue")),
       variable("x")
     )
   val letRecExample =
@@ -209,7 +209,7 @@ object CaseExample {
   val patternMatchAsCaseComplexExample =
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("7")),
-      Value.asPattern(
+      asPattern(
         literalPattern(8),
         Name.fromString("x")
       ) ->
@@ -236,12 +236,12 @@ object CaseExample {
   // { case _ => 42}()
 
   val applyWithWildCard =
-    Dsl.apply(Value.lambda(Dsl.wildcard, Dsl.wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
+    Dsl.apply(lambda(wildcardPattern, wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
 
   val lambdaExample = letDefinition(
     Name("foo"),
-    Value.lambda(
-      Value.asPattern(Dsl.wildcard, Name("x")),
+    lambda(
+      asPattern(wildcardPattern, Name("x")),
       nativeApply(
         NativeFunction.Addition,
         Chunk(
