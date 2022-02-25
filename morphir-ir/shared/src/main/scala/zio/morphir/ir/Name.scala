@@ -70,7 +70,6 @@ final case class Name private (toList: List[String]) extends AnyVal { self =>
       .map(_.capitalize)
       .mkString("")
 
-
   override def toString: String = toList.mkString("[", ",", "]")
 }
 
@@ -97,8 +96,8 @@ object Name {
   /**
    * Creates a new name from a chunk of strings without checking.
    */
-  private[ir] def unsafeMake(value: List[String]): Name    = Name(value)
-  private[ir] def unsafeMake(exactSegments: String*): Name = Name(exactSegments.toList)
+  private[morphir] def unsafeMake(value: List[String]): Name    = Name(value)
+  private[morphir] def unsafeMake(exactSegments: String*): Name = Name(exactSegments.toList)
 
   def toList(name: Name): List[String] = name.toList
 
