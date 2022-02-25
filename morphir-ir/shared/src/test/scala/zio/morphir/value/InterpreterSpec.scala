@@ -1,4 +1,4 @@
-package zio.morphir.ir.value
+package zio.morphir.value
 
 import java.math.BigInteger
 import zio.test.*

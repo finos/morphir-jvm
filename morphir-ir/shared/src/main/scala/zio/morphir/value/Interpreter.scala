@@ -1,4 +1,4 @@
-package zio.morphir.ir.value
+package zio.morphir.value
 
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
@@ -8,6 +8,7 @@ import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.FQName
+import zio.morphir.ir.Pattern
 import zio.morphir.ir.NativeFunction.*
 
 import zio.Chunk
@@ -160,11 +161,20 @@ object Interpreter {
           }
 
         case LetDefinitionCase(name, value, body) =>
-          loop(body, variables + (name -> Result.Strict(loop(value, variables, references))), references)
+          loop(
+            body,
+            variables + (name -> Result.Strict(loop(value.toValue, variables, references))),
+            references
+          )
 
         case LetRecursionCase(valueDefinitions, inValue) =>
           def shallow = valueDefinitions.map { case (key, value) =>
-            key -> Result.Lazy(value, variables, references, valueDefinitions)
+            key -> Result.Lazy(
+              value.toValue,
+              variables,
+              references,
+              valueDefinitions.map { case (k, v) => k -> v.toValue }
+            )
           }
 
           loop(
@@ -217,15 +227,6 @@ object Interpreter {
                 s"Pattern $pattern didn't match input $input"
               )
           }
-
-        case PatternCase.AsPatternCase(_, _)          => ???
-        case PatternCase.ConstructorPatternCase(_, _) => ???
-        case PatternCase.EmptyListPatternCase         => ???
-        case PatternCase.HeadTailPatternCase(_, _)    => ???
-        case PatternCase.LiteralPatternCase(_)        => ???
-        case PatternCase.TuplePatternCase(_)          => ???
-        case PatternCase.UnitPatternCase              => ???
-        case PatternCase.WildcardPatternCase          => ???
       }
     }
 
@@ -240,25 +241,25 @@ object Interpreter {
 
   sealed trait MatchResult
   object MatchResult {
-    final case class Failure(body: Any, caseStatement: RawValue) extends MatchResult
-    final case class Success(variables: Map[Name, Any])          extends MatchResult
+    final case class Failure(body: Any, caseStatement: Pattern[Any]) extends MatchResult
+    final case class Success(variables: Map[Name, Any])              extends MatchResult
   }
 
-  def matchPattern(body: Any, caseStatement: RawValue): MatchResult = {
+  def matchPattern(body: Any, caseStatement: Pattern[Any]): MatchResult = {
     val unitValue: Unit = ()
     val err             = MatchResult.Failure(body, caseStatement)
-    caseStatement.caseValue match {
-      case PatternCase.AsPatternCase(pattern, name) =>
+    caseStatement match {
+      case Pattern.AsPattern(pattern, name, _) =>
         matchPattern(body, pattern) match {
           case MatchResult.Success(_) =>
             MatchResult.Success(Map.empty + (name -> body))
           case x: MatchResult.Failure => x
         }
-      case PatternCase.ConstructorPatternCase(_, _) =>
+      case Pattern.ConstructorPattern(_, _, _) =>
         ???
-      case PatternCase.EmptyListPatternCase =>
+      case Pattern.EmptyListPattern(_) =>
         if (body == Nil) MatchResult.Success(Map.empty) else err
-      case PatternCase.HeadTailPatternCase(headPattern, tailPattern) =>
+      case Pattern.HeadTailPattern(headPattern, tailPattern, _) =>
         body match {
           case head :: tail =>
             val headMatchResult = matchPattern(head, headPattern)
@@ -271,12 +272,12 @@ object Interpreter {
             }
           case _ => err
         }
-      case PatternCase.LiteralPatternCase(literal) =>
+      case Pattern.LiteralPattern(literal, _) =>
         if (body == literal.value) MatchResult.Success(Map.empty) else err
-      case PatternCase.UnitPatternCase =>
+      case Pattern.UnitPattern(_) =>
         if (body == unitValue) MatchResult.Success(Map.empty) else err
-      case PatternCase.TuplePatternCase(patterns) =>
-        def helper(remainingBody: List[Any], remainingPattern: List[RawValue]): MatchResult =
+      case Pattern.TuplePattern(patterns, _) =>
+        def helper(remainingBody: List[Any], remainingPattern: List[Pattern[_]]): MatchResult =
           (remainingBody, remainingPattern) match {
             case (Nil, Nil) => MatchResult.Success(Map.empty)
             case (_, Nil)   => err
@@ -293,10 +294,8 @@ object Interpreter {
         } catch {
           case _: InterpretationError.MatchError => err
         }
-      case PatternCase.WildcardPatternCase =>
+      case Pattern.WildcardPattern(_) =>
         MatchResult.Success(Map.empty)
-      case _ =>
-        throw new InterpretationError.Message("we don't know how to handle this pattern yet")
     }
   }
 

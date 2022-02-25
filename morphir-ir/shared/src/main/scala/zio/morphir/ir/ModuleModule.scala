@@ -4,7 +4,7 @@ object ModuleModule {
 
   final case class Definition[+Annotations](
       types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Annotations]]]],
-      values: Map[Name, AccessControlled[ValueModule.Definition[Annotations]]]
+      values: Map[Name, AccessControlled[ValueModule.ValueDefinition[Annotations]]]
   ) { self =>
     def toSpecification: Specification[Annotations] = {
       Specification(
@@ -28,7 +28,7 @@ object ModuleModule {
       )
     }
 
-    def lookupValue(localName: Name): Option[ValueModule.Definition[Annotations]] = {
+    def lookupValue(localName: Name): Option[ValueModule.ValueDefinition[Annotations]] = {
       values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x))
     }
 
