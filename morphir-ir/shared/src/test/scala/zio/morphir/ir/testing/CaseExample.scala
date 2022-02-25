@@ -1,15 +1,14 @@
 package zio.morphir.ir.testing
 
-import java.math.BigInteger
-import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}
-import zio.morphir.ir.ValueModule.{Value, ValueCase, ValueDefinition}
+import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
 
 object CaseExample extends ValueSyntax {
+
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
   val letIntroduceMultipleExample: Value[Any] = letRecursion(

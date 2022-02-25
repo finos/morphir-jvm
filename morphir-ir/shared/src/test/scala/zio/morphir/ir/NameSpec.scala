@@ -110,8 +110,7 @@ object NameSpec extends MorphirBaseSpec {
       }
     ),
     suite("Misc")(
-      test("Name.toString")
-      {
+      test("Name.toString") {
         assertTrue(Name.fromString("fooBar").toString == "[foo,bar]", Name.fromString("a").toString == "[a]")
       }
     )
