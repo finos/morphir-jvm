@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.TypeModule.{Type, UType}
 import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude.*
 import zio.prelude.fx.ZPure
@@ -9,10 +9,10 @@ import zio.morphir.syntax.ValueSyntax
 
 object ValueModule {
 
-  def mapDefinition[Annotations, Err](definition: Definition[Annotations])(
+  def mapDefinition[Annotations, Err](definition: ValueDefinition[Annotations])(
       tryMapType: Type[Annotations] => Validation[Err, Type[Annotations]],
       tryMapValue: Value[Annotations] => Validation[Err, Value[Annotations]]
-  ): Validation[Err, Definition[Annotations]] = ???
+  ): Validation[Err, ValueDefinition[Annotations]] = ???
 
   def mapSpecificationAttributes[A, B](spec: Specification[A])(func: A => B): Specification[B] =
     spec.mapSpecificationAttributes(func)
@@ -41,15 +41,23 @@ object ValueModule {
 
   def toRawValue[Annotations](value: Value[Annotations]): RawValue = ???
 
-  final case class Definition[+Annotations](
+  // type alias Definition ta va =
+  //   { inputTypes : List ( Name, va, Type ta )
+  //   , outputType : Type ta
+  //   , body : Value ta va
+  //   }
+
+  type ValueDefinition[+Annotations] = Definition[Value[Annotations], Annotations]
+  val ValueDefinition = Definition
+  final case class Definition[+Self, +Annotations](
       inputTypes: Chunk[InputParameter[Annotations]],
       outputType: Type[Annotations],
-      body: Value[Annotations]
+      body: Self
   ) { self =>
     final def toSpecification: Specification[Annotations] =
       Specification(inputTypes.map(input => (input.name, input.tpe)), outputType)
 
-    final def toValue: Value[Annotations] = {
+    final def toValue[Annotations1 >: Annotations](implicit ev: Self <:< Value[Annotations1]): Value[Annotations1] = {
       inputTypes.toList match {
         case Nil => body
         case inputParam :: restOfArgs =>
@@ -62,12 +70,33 @@ object ValueModule {
     def transform[Annotations2 >: Annotations, Err](
         tryMapType: Type[Annotations2] => Validation[Err, Type[Annotations2]],
         tryMapValue: Value[Annotations2] => Validation[Err, Value[Annotations2]]
-    ): Validation[Err, Definition[Annotations2]] = {
+    ): Validation[Err, Definition[Self, Annotations2]] = {
       ???
     }
     // f(outputType).map(outputType => self.copy(outputType = outputType))
+
+    def map[Self2](f: Self => Self2): Definition[Self2, Annotations] =
+      self.copy(body = f(self.body))
+
+    // def fold
+
+    def forEach[G[+_]: IdentityBoth: Covariant, Self2](f: Self => G[Self2]): G[Definition[Self2, Annotations]] =
+      f(self.body).map(body => self.copy(body = body))
   }
 
+  object Definition {
+    def fromLiteral[A](value: Value.Literal[A, Any]): Definition[Value[Any], Any] =
+      Definition(Chunk.empty, TypeModule.Type.unit, value)
+
+    def fromTypedValue(value: TypedValue): ValueDefinition[Any] = {
+      val typeAttrib = value.annotations.get[UType]
+      Definition(Chunk.empty, typeAttrib, value)
+    }
+
+    def fromTypedValue(value: Value[Any], valueType: UType): ValueDefinition[Any] = {
+      Definition(Chunk.empty, valueType, value)
+    }
+  }
   final case class InputParameter[+Annotations](
       name: Name,
       tpe: Type[Annotations],
@@ -108,11 +137,11 @@ object ValueModule {
         f(ValueCase.IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
       case c @ ValueCase.LambdaCase(_, _) => f(ValueCase.LambdaCase(c.argumentPattern, c.body.fold(f)))
       case c @ ValueCase.LetDefinitionCase(_, _, _) =>
-        f(ValueCase.LetDefinitionCase(c.valueName, c.valueDefinition.fold(f), c.inValue.fold(f)))
+        f(ValueCase.LetDefinitionCase(c.valueName, c.valueDefinition.map(_.fold(f)), c.inValue.fold(f)))
       case c @ ValueCase.LetRecursionCase(_, _) =>
         f(
           ValueCase.LetRecursionCase(
-            c.valueDefinitions.map { case (name, value) => (name, value.fold(f)) },
+            c.valueDefinitions.map { case (name, value) => (name, value.map(_.fold(f))) },
             c.inValue.fold(f)
           )
         )
@@ -258,9 +287,9 @@ object ValueModule {
       case c @ ValueCase.FieldFunctionCase(_)       => Set(c.name)
       case c @ ValueCase.IfThenElseCase(_, _, _)    => c.condition ++ c.thenBranch ++ c.elseBranch
       case c @ ValueCase.LambdaCase(_, _)           => c.body
-      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition ++ c.inValue + c.valueName
+      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition.body ++ c.inValue + c.valueName
       case c @ ValueCase.LetRecursionCase(_, _) =>
-        c.valueDefinitions.foldLeft(Set.empty[Name])((acc, kv) => acc ++ kv._2 + kv._1)
+        c.valueDefinitions.foldLeft(Set.empty[Name])((acc, kv) => acc ++ kv._2.body + kv._1)
       case c @ ValueCase.ListCase(_)            => c.elements.flatten.toSet
       case _ @ValueCase.LiteralCase(_)          => Set.empty
       case c @ ValueCase.PatternMatchCase(_, _) => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
@@ -279,9 +308,9 @@ object ValueModule {
       case _ @ValueCase.FieldFunctionCase(_)        => Set.empty
       case c @ ValueCase.IfThenElseCase(_, _, _)    => c.condition ++ c.thenBranch ++ c.elseBranch
       case c @ ValueCase.LambdaCase(_, _)           => c.body
-      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition ++ c.inValue
+      case c @ ValueCase.LetDefinitionCase(_, _, _) => c.valueDefinition.body ++ c.inValue
       case c @ ValueCase.LetRecursionCase(_, _) =>
-        c.valueDefinitions.foldLeft(Set.empty[FQName])((acc, kv) => acc ++ kv._2)
+        c.valueDefinitions.foldLeft(Set.empty[FQName])((acc, kv) => acc ++ kv._2.body)
       case c @ ValueCase.ListCase(_)            => c.elements.flatten.toSet
       case _ @ValueCase.LiteralCase(_)          => Set.empty
       case c @ ValueCase.PatternMatchCase(_, _) => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
@@ -294,6 +323,11 @@ object ValueModule {
     }
 
     // todo maybe implement indexedMapValue
+
+    def toDefinition: ValueDefinition[Annotations] = {
+      // HACK: This is not correct it needs to be made correct
+      ValueDefinition(Chunk.empty, Type.unit[Annotations](annotations), self)
+    }
   }
 
   object Value extends ValueSyntax {
@@ -535,7 +569,7 @@ object ValueModule {
 
     final case class LetDefinition[Annotations] private[morphir] (
         name: Name,
-        definition: Definition[Annotations],
+        definition: ValueDefinition[Annotations],
         inValue: Value[Annotations],
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
@@ -555,7 +589,7 @@ object ValueModule {
     }
 
     final case class LetRecursion[Annotations] private[morphir] (
-        dict: Map[Name, Definition[Annotations]],
+        dict: Map[Name, ValueDefinition[Annotations]],
         inValue: Value[Annotations],
         annotations: ZEnvironment[Annotations]
     ) extends Value[Annotations] {
@@ -572,12 +606,6 @@ object ValueModule {
         // ): LetRecursion[Annotations] =
         //   LetRecursion(caseValue.valueDefinitions, caseValue.inValue, annotations)
       }
-    }
-
-    // todo fix Definition
-    final case class Definition[Annotations] private[morphir] (annotations: ZEnvironment[Annotations])
-        extends Value[Annotations] {
-      override def caseValue: UnitCase = ValueCase.UnitCase
     }
 
     final case class Destructure[Annotations] private[morphir] (
@@ -656,9 +684,9 @@ object ValueModule {
       case c @ IfThenElseCase(_, _, _) =>
         IfThenElseCase(f(c.condition), f(c.thenBranch), f(c.elseBranch))
       case c @ LambdaCase(_, _)           => LambdaCase(c.argumentPattern, f(c.body))
-      case c @ LetDefinitionCase(_, _, _) => LetDefinitionCase(c.valueName, f(c.valueDefinition), f(c.inValue))
+      case c @ LetDefinitionCase(_, _, _) => LetDefinitionCase(c.valueName, c.valueDefinition.map(f), f(c.inValue))
       case c @ LetRecursionCase(_, _) =>
-        LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, f(value)) }, f(c.inValue))
+        LetRecursionCase(c.valueDefinitions.map { case (name, value) => (name, value.map(f)) }, f(c.inValue))
       case c @ ListCase(_)           => ListCase(c.elements.map(f))
       case c @ LiteralCase(_)        => LiteralCase(c.literal)
       case c @ NativeApplyCase(_, _) => NativeApplyCase(c.function, c.arguments.map(f))
@@ -715,9 +743,15 @@ object ValueModule {
     case object UnitCase                                            extends ValueCase[Nothing]
     type UnitCase = UnitCase.type
     final case class VariableCase(name: Name) extends ValueCase[Nothing]
-    final case class LetDefinitionCase[+Self](valueName: Name, valueDefinition: Self, inValue: Self)
-        extends ValueCase[Self]
-    final case class LetRecursionCase[+Self](valueDefinitions: Map[Name, Self], inValue: Self) extends ValueCase[Self]
+    final case class LetDefinitionCase[+Annotations, +Self](
+        valueName: Name,
+        valueDefinition: Definition[Self, Annotations],
+        inValue: Self
+    ) extends ValueCase[Self]
+    final case class LetRecursionCase[+Annotations, +Self](
+        valueDefinitions: Map[Name, Definition[Self, Annotations]],
+        inValue: Self
+    ) extends ValueCase[Self]
     final case class UpdateRecordCase[+Self](valueToUpdate: Self, fieldsToUpdate: Chunk[(Name, Self)])
         extends ValueCase[Self]
     final case class LambdaCase[+Annotations, +Self](argumentPattern: Pattern[Annotations], body: Self)
@@ -745,9 +779,9 @@ object ValueModule {
               (f(c.condition), f(c.thenBranch), f(c.elseBranch)).mapN(IfThenElseCase(_, _, _))
             case c @ LambdaCase(_, _) => f(c.body).map(LambdaCase(c.argumentPattern, _))
             case c @ LetDefinitionCase(_, _, _) =>
-              f(c.valueDefinition).zipWith(f(c.inValue))(LetDefinitionCase(c.valueName, _, _))
+              c.valueDefinition.forEach(f).zipWith(f(c.inValue))(LetDefinitionCase(c.valueName, _, _))
             case c @ LetRecursionCase(_, _) =>
-              c.valueDefinitions.forEach(f).zipWith(f(c.inValue))(LetRecursionCase(_, _))
+              c.valueDefinitions.forEach(_.forEach(f)).zipWith(f(c.inValue))(LetRecursionCase(_, _))
             case c @ ListCase(_)           => c.elements.forEach(f).map(ListCase(_))
             case c @ LiteralCase(_)        => c.succeed
             case c @ NativeApplyCase(_, _) => c.arguments.forEach(f).map(NativeApplyCase(c.function, _))

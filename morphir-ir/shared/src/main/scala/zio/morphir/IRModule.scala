@@ -9,7 +9,7 @@ object IRModule {
 
   final case class IR(
       valueSpecifications: Map[FQName, ValueModule.Specification[Any]],
-      valueDefinitions: Map[FQName, ValueModule.Definition[UType]],
+      valueDefinitions: Map[FQName, ValueModule.ValueDefinition[UType]],
       typeSpecifications: Map[FQName, TypeModule.Specification[Any]],
       typeConstructors: Map[FQName, (FQName, Chunk[Name], Chunk[(Name, UType)])]
   ) { self => }

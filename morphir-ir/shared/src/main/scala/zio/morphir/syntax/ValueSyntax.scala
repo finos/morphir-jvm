@@ -2,7 +2,8 @@ package zio.morphir.syntax
 
 import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.{Literal => Lit, _}
-import ValueModule.{RawValue, Value, ValueCase}
+import ValueModule.{RawValue, Value, ValueDefinition, ValueCase}
+import java.math.BigInteger
 
 trait ValueSyntax {
   import Value.*
@@ -21,6 +22,8 @@ trait ValueSyntax {
   final def field(name: Name, record: Record[Any]): Field[Any] = Field(record, name, ZEnvironment.empty)
   final def field(name: String, record: Record[Any]): Field[Any] =
     Field(record, Name.fromString(name), ZEnvironment.empty)
+
+  final def int(value: Int): Literal[BigInteger, Any] = Literal(Lit.int(value), ZEnvironment.empty)
 
   final def lambda(pattern: Pattern[Any], body: Value[Any]): Lambda[Any] =
     Lambda(pattern, body, ZEnvironment.empty)
@@ -96,7 +99,7 @@ trait ValueSyntax {
   def ifThenElse(condition: Value[Any], thenBranch: Value[Any], elseBranch: Value[Any]): Value[Any] =
     Value(IfThenElseCase(condition, thenBranch, elseBranch))
 
-  def letRecursion(valueDefinitions: Map[Name, Value[Any]], inValue: Value[Any]): Value[Any] =
+  def letRecursion(valueDefinitions: Map[Name, ValueDefinition[Any]], inValue: Value[Any]): Value[Any] =
     Value(LetRecursionCase(valueDefinitions, inValue))
 
   def list(elements: Chunk[Value[Any]]): Value[Any] =
@@ -125,7 +128,7 @@ trait ValueSyntax {
   def tuple(elements: Value[Any]*): Value[Any] =
     Value(TupleCase(Chunk.fromIterable(elements)))
 
-  def letDefinition(valueName: Name, valueDefinition: Value[Any], inValue: Value[Any]): Value[Any] =
+  def letDefinition(valueName: Name, valueDefinition: ValueDefinition[Any], inValue: Value[Any]): Value[Any] =
     Value(LetDefinitionCase(valueName, valueDefinition, inValue))
 
   def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =

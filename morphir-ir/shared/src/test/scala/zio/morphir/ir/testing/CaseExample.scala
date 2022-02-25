@@ -4,7 +4,7 @@ import java.math.BigInteger
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}
-import zio.morphir.ir.ValueModule.{Value, ValueCase}
+import zio.morphir.ir.ValueModule.{Value, ValueCase, ValueDefinition}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
@@ -14,8 +14,8 @@ object CaseExample extends ValueSyntax {
   // y = if (!foo) x else 0
   val letIntroduceMultipleExample: Value[Any] = letRecursion(
     Map(
-      Name.fromString("x") -> literal(20), // lit(20)
-      Name.fromString("y") -> literal(22)
+      Name.fromString("x") -> ValueDefinition.fromLiteral(int(20)), // lit(20)
+      Name.fromString("y") -> ValueDefinition.fromLiteral(int(22))
     ),
     nativeApply(
       NativeFunction.Addition,
@@ -30,10 +30,10 @@ object CaseExample extends ValueSyntax {
           NativeFunction.Addition,
           Chunk(
             variable("y"),
-            Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("22"))))
+            int(22)
           )
-        ),
-      Name.fromString("y") -> Value(ValueCase.LiteralCase(LiteralValue.WholeNumber(new BigInteger("22"))))
+        ).toDefinition,
+      Name.fromString("y") -> ValueDefinition.fromLiteral(int(22))
     ),
     variable("x")
   )
@@ -44,10 +44,10 @@ object CaseExample extends ValueSyntax {
   val additionExample: Value[Any] =
     letDefinition(
       Name("x"),
-      literal(1),
+      ValueDefinition.fromLiteral(int(1)),
       letDefinition(
         Name("y"),
-        literal(2),
+        ValueDefinition.fromLiteral(int(2)),
         nativeApply(
           NativeFunction.Addition,
           Chunk(variable("x"), variable("y"))
@@ -58,10 +58,10 @@ object CaseExample extends ValueSyntax {
   val subtractionExample: Value[Any] =
     letDefinition(
       Name("x"),
-      literal(1),
+      ValueDefinition.fromLiteral(int(1)),
       letDefinition(
         Name("y"),
-        literal(2),
+        ValueDefinition.fromLiteral(int(2)),
         nativeApply(
           NativeFunction.Subtraction,
           Chunk(variable(Name("x")), variable(Name("y")))
@@ -177,10 +177,10 @@ object CaseExample extends ValueSyntax {
   val staticScopingExample =
     letDefinition(
       Name("x"),
-      literal("static"),
+      ValueDefinition.fromLiteral(string("static")),
       letRecursion(
-        Map(Name("y") -> variable(Name("x"))),
-        letDefinition(Name("x"), literal("dynamic"), variable(Name("y")))
+        Map(Name("y") -> variable(Name("x")).toDefinition),
+        letDefinition(Name("x"), ValueDefinition.fromLiteral(string(("dynamic"))), variable(Name("y")))
       )
     )
   val letRecExample =
@@ -190,13 +190,13 @@ object CaseExample extends ValueSyntax {
           condition = literal(false),
           thenBranch = variable("y"),
           elseBranch = literal(3)
-        ),
+        ).toDefinition,
         Name.fromString("y") ->
           ifThenElse(
             condition = literal(false),
             thenBranch = literal(2),
             elseBranch = variable("x")
-          )
+          ).toDefinition
       ),
       nativeApply(
         NativeFunction.Addition,
@@ -258,7 +258,7 @@ object CaseExample extends ValueSyntax {
           variable("x")
         )
       )
-    ),
+    ).toDefinition,
     Dsl.apply(variable("foo"), literal(33))
   )
 

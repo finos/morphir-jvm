@@ -186,6 +186,7 @@ object TypeModule extends TypeModuleSyntax {
     def variable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
     def variable(name: String): Variable[Any] = variable(Name(name))
     val unit: Type[Any]                       = Unit(ZEnvironment.empty)
+    def unit[Annotations](annotations: ZEnvironment[Annotations]): Type[Annotations] = Type(UnitCase, annotations)
 
     def field(name: Name, fieldType: Type[Any]): Field[Any] = Field(name, fieldType, ZEnvironment.empty)
     def record(fields: Chunk[Field[Any]]): Record[Any]      = Record(fields, ZEnvironment.empty)

@@ -161,11 +161,20 @@ object Interpreter {
           }
 
         case LetDefinitionCase(name, value, body) =>
-          loop(body, variables + (name -> Result.Strict(loop(value, variables, references))), references)
+          loop(
+            body,
+            variables + (name -> Result.Strict(loop(value.toValue, variables, references))),
+            references
+          )
 
         case LetRecursionCase(valueDefinitions, inValue) =>
           def shallow = valueDefinitions.map { case (key, value) =>
-            key -> Result.Lazy(value, variables, references, valueDefinitions)
+            key -> Result.Lazy(
+              value.toValue,
+              variables,
+              references,
+              valueDefinitions.map { case (k, v) => k -> v.toValue }
+            )
           }
 
           loop(
