@@ -13,6 +13,7 @@ import zio.morphir.ir.NativeFunction.*
 import zio.Chunk
 
 import scala.collection.immutable.ListMap
+import zio.morphir.ir.ValueModule.Value
 object Interpreter {
 
   final case class Variables(map: Map[Name, Result])
@@ -20,8 +21,14 @@ object Interpreter {
   sealed trait Result
 
   object Result {
-    final case class Strict(value: Any)    extends Result
-    final case class Lazy(value: RawValue) extends Result
+    final case class Strict(value: Any) extends Result
+
+    final case class Lazy(
+        value: RawValue,
+        variables: Map[Name, Result],
+        references: Map[FQName, Any],
+        definitions: Map[Name, Value[Any]]
+    ) extends Result
   }
 
   type ??? = Nothing
@@ -143,8 +150,12 @@ object Interpreter {
         case VariableCase(name) =>
           variables.get(name) match {
             case Some(Result.Strict(value)) => value
-            case Some(Result.Lazy(value))   => loop(value, variables, references)
-
+            case Some(Result.Lazy(value, variables, references, definitions)) => {
+              def shallow = definitions.map { case (key, value) =>
+                key -> Result.Lazy(value, variables, references, definitions)
+              }
+              loop(value, variables ++ shallow, references)
+            }
             case None => throw new InterpretationError.VariableNotFound(name, s"Variable $name not found")
           }
 
@@ -152,9 +163,13 @@ object Interpreter {
           loop(body, variables + (name -> Result.Strict(loop(value, variables, references))), references)
 
         case LetRecursionCase(valueDefinitions, inValue) =>
+          def shallow = valueDefinitions.map { case (key, value) =>
+            key -> Result.Lazy(value, variables, references, valueDefinitions)
+          }
+
           loop(
             inValue,
-            variables ++ valueDefinitions.map { case (key, value) => key -> Result.Lazy(value) },
+            variables ++ shallow,
             references
           )
 

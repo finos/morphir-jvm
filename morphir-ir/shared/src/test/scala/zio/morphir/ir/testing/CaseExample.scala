@@ -174,6 +174,15 @@ object CaseExample extends ValueSyntax {
       tuple(string("red"), string("blue")),
       variable("x")
     )
+  val staticScopingExample =
+    letDefinition(
+      Name("x"),
+      literal("static"),
+      letRecursion(
+        Map(Name("y") -> variable(Name("x"))),
+        letDefinition(Name("x"), literal("dynamic"), variable(Name("y")))
+      )
+    )
   val letRecExample =
     letRecursion(
       Map(
