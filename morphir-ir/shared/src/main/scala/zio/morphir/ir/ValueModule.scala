@@ -556,6 +556,11 @@ object ValueModule {
       object Case {
         def apply[A](caseValue: ValueCase.LiteralCase[A]): Literal[A, Any] =
           Literal(caseValue.literal, ZEnvironment.empty)
+
+        def apply[A, Annotations](
+            caseValue: ValueCase.LiteralCase[A],
+            annotations: ZEnvironment[Annotations]
+        ): Literal[A, Annotations] = Literal(caseValue.literal, annotations)
       }
     }
 
