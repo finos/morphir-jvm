@@ -1,6 +1,6 @@
 package zio.morphir.ir
 
-import testing.MorphirBaseSpec
+import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.TypeModule.TypeCase
 import zio.test.*
 import zio.morphir.syntax.TypeModuleSyntax

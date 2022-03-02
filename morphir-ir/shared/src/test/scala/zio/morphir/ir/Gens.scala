@@ -1,4 +1,5 @@
-package zio.morphir.ir.testing
+package zio.morphir.ir
+
 import zio.test.*
 
 object Gens {

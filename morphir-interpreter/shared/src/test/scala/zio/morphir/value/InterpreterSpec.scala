@@ -3,10 +3,10 @@ package zio.morphir.value
 import java.math.BigInteger
 import zio.test.*
 import zio.morphir.ir.Name
-import zio.morphir.ir.testing.MorphirBaseSpec
 import zio.morphir.ir.testing.CaseExample.*
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IRModule.IR
+import zio.morphir.testing.MorphirBaseSpec
 
 object InterpreterSpec extends MorphirBaseSpec {
 

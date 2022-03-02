@@ -2,7 +2,7 @@ package zio.morphir.ir
 
 import zio.Chunk
 import zio.test.*
-import testing.MorphirBaseSpec
+import zio.morphir.testing.MorphirBaseSpec
 
 object PathSpec extends MorphirBaseSpec {
   def spec = suite("Path")(

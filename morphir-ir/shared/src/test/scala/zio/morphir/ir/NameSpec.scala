@@ -1,6 +1,6 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.testing.MorphirBaseSpec
+import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
 
 object NameSpec extends MorphirBaseSpec {

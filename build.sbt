@@ -42,6 +42,8 @@ lazy val root = project
   .aggregate(
     coreJVM,
     coreJS,
+    interpreterJVM,
+    interpreterJS,
     irJVM,
     irJS,
     sexprJVM,
@@ -80,6 +82,28 @@ lazy val coreJS = core.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val coreJVM = core.jvm
+
+lazy val interpreter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("morphir-interpreter"))
+  .dependsOn(ir, ir % "test->test")
+  .settings(stdCrossProjectSettings("zio-morphir-ir"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.ir"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"               %%% "zio"                     % Version.zio,
+      "dev.zio"               %%% "zio-prelude"             % Version.`zio-prelude`,
+      "dev.zio"               %%% "zio-test"                % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val interpreterJS = interpreter.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val interpreterJVM = interpreter.jvm
 
 lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-ir"))
