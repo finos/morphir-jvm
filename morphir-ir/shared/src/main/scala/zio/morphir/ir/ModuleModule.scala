@@ -1,4 +1,5 @@
 package zio.morphir.ir
+import zio.Chunk
 
 object ModuleModule {
 
@@ -46,6 +47,9 @@ object ModuleModule {
     def empty[Annotations]: Definition[Annotations] = Definition(Map.empty, Map.empty)
   }
 
+  type USpecification = Specification[Any]
+  val USpecification = Specification
+
   final case class Specification[+Annotations](
       types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
       values: Map[Name, ValueModule.Specification[Annotations]]
@@ -71,6 +75,26 @@ object ModuleModule {
     def %(name: Name): QName = QName(toPath, name)
 
     lazy val toPath = namespace / localName
+  }
+
+  object ModuleName {
+    def fromPath(path: Path): ModuleName = path.segments match {
+      case Chunk()     => ModuleName(Path.empty, Name.empty)
+      case Chunk(name) => ModuleName(Path.empty, name)
+      case ns :+ name  => ModuleName(Path(ns), name)
+      case names =>
+        val ns   = names.take(names.length - 1)
+        val name = names.last
+        ModuleName(Path(ns), name)
+    }
+
+    def fromString(input: String): ModuleName = fromPath(Path.fromString(input))
+
+    private[morphir] def unsafeMake(namespace: String*)(nameSegments: String*): ModuleName = {
+      val ns        = namespace.foldLeft(Path.empty) { case (path, pathStr) => path / Path.fromString(pathStr) }
+      val localName = Name.unsafeMake(nameSegments: _*)
+      ModuleName(ns, localName)
+    }
   }
 
   final case class ModulePath(toPath: Path) extends AnyVal

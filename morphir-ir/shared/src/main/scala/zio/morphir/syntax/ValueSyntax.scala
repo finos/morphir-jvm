@@ -3,51 +3,90 @@ package zio.morphir.syntax
 import zio.{Chunk, ZEnvironment}
 import zio.morphir.ir.{Literal => Lit, _}
 import ValueModule.{RawValue, Value, ValueDefinition, ValueCase}
-import java.math.BigInteger
+import zio.morphir.ir.ValueModule.ValueCase.*
 
 trait ValueSyntax {
-  import Value.*
+
   import ValueCase.*
 
-  final def apply(function: RawValue, args: RawValue*): Apply[Any] =
-    Apply(function, Chunk.fromIterable(args), ZEnvironment.empty)
+  def apply(function: Value[Any], arguments: Chunk[Value[Any]]): Value[Any] = Value(ApplyCase(function, arguments))
+  def apply(function: Value[Any], arguments: Value[Any]*): Value[Any] = Value(
+    ApplyCase(function, Chunk.fromIterable(arguments))
+  )
 
-  final def boolean(value: Boolean): Literal[Boolean, Any] = Literal(Lit.boolean(value), ZEnvironment.empty)
   final def boolean[Annotations](
       value: Boolean,
       annotations: ZEnvironment[Annotations]
-  ): Literal[Boolean, Annotations] =
-    Literal(Lit.boolean(value), annotations)
+  ): Value[Any] = literal(Lit.boolean(value), annotations)
 
-  final def field(name: Name, record: Record[Any]): Field[Any] = Field(record, name, ZEnvironment.empty)
-  final def field(name: String, record: Record[Any]): Field[Any] =
-    Field(record, Name.fromString(name), ZEnvironment.empty)
+  def constructor(name: FQName): Value[Any] = Value(ConstructorCase(name))
 
-  final def int(value: Int): Literal[BigInteger, Any] = Literal(Lit.int(value), ZEnvironment.empty)
+  final def boolean(value: Boolean): Value[Any] = literal(Lit.boolean(value))
 
-  final def lambda(pattern: Pattern[Any], body: Value[Any]): Lambda[Any] =
-    Lambda(pattern, body, ZEnvironment.empty)
+  def destructure(pattern: Pattern[Any], valueToDestruct: Value[Any], inValue: Value[Any]): Value[Any] =
+    Value(DestructureCase(pattern, valueToDestruct, inValue))
 
-  final def literal[V](value: Lit[V]): Literal[V, Any] = Literal(value, ZEnvironment.empty)
-  final def literal[V, Annotations](value: Lit[V], annotations: ZEnvironment[Annotations]): Literal[V, Annotations] =
-    Literal(value, annotations)
+  def field(tag: Value[Any], name: Name): Value[Any]         = Value(FieldCase(tag, name))
+  final def field(tag: Value[Any], name: String): Value[Any] = Value(FieldCase(tag, Name.fromString(name)))
 
-  def patternMatch(scrutinee: Value[Any], cases: (Pattern[Any], Value[Any])*): PatternMatch[Any] =
-    PatternMatch(scrutinee, Chunk.fromIterable(cases), ZEnvironment.empty)
-  def record(fields: (Name, Value[Any])*): Record[Any] = Record(Chunk.fromIterable(fields), ZEnvironment.empty)
+  def fieldFunction(name: Name): Value[Any] = Value(FieldFunctionCase(name))
 
-  final def string(value: String): Literal[String, Any] = Literal(Lit.string(value), ZEnvironment.empty)
-  final def string[Annotations](value: String, annotations: ZEnvironment[Annotations]): Value[Annotations] =
-    Literal(Lit.string(value), annotations)
+  def ifThenElse(condition: Value[Any], thenBranch: Value[Any], elseBranch: Value[Any]): Value[Any] =
+    Value(IfThenElseCase(condition, thenBranch, elseBranch))
 
-  final val unit: Unit[Any]                                                              = Unit(ZEnvironment.empty)
-  final def unit[Annotations](annotations: ZEnvironment[Annotations]): Unit[Annotations] = Unit(annotations)
+  final def int(value: Int): Value[Any] = literal(Lit.int(value))
 
-  final def variable(name: Name): Variable[Any]             = Variable(name, ZEnvironment.empty)
-  @inline final def variable(string: String): Variable[Any] = variable(Name.fromString(string))
+  final def lambda(pattern: Pattern[Any], body: Value[Any]): Value[Any] =
+    Value(LambdaCase(pattern, body))
 
-  def wholeNumber(value: java.math.BigInteger): Value.Literal[java.math.BigInteger, Any] =
-    Value.Literal(Lit.wholeNumber(value), ZEnvironment.empty)
+  def letDefinition(valueName: Name, valueDefinition: ValueDefinition[Any], inValue: Value[Any]): Value[Any] =
+    Value(LetDefinitionCase(valueName, valueDefinition, inValue))
+
+  def letRecursion(valueDefinitions: Map[Name, ValueDefinition[Any]], inValue: Value[Any]): Value[Any] =
+    Value(LetRecursionCase(valueDefinitions, inValue))
+
+  def list(elements: Chunk[Value[Any]]): Value[Any] = Value(ListCase(elements))
+
+  def literal(literal: LiteralValue): Value[Any] = Value(LiteralCase(literal))
+  def literal(int: Int): Value[Any]              = Value(LiteralCase(Lit.int(int)))
+  def literal(string: String): Value[Any]        = Value(LiteralCase(Lit.string(string)))
+  def literal(boolean: Boolean): Value[Any]      = Value(LiteralCase(Lit.boolean(boolean)))
+
+  final def literal[V, Annotations](value: Lit[V], annotations: ZEnvironment[Annotations]): Value[Any] =
+    Value(LiteralCase(value), annotations)
+
+  def patternMatch(scrutinee: Value[Any], cases: (Pattern[Any], Value[Any])*): Value[Any] =
+    Value(PatternMatchCase(scrutinee, Chunk.fromIterable(cases)))
+
+  def patternMatch(scrutinee: Value[Any], cases: Chunk[(Pattern[Any], Value[Any])]): Value[Any] =
+    Value(PatternMatchCase(scrutinee, cases))
+
+  def record(fields: (Name, Value[Any])*): Value[Any] =
+    Value(RecordCase(Chunk.fromIterable(fields)))
+
+  def record(fields: Chunk[(Name, Value[Any])]): Value[Any] =
+    Value(RecordCase(fields))
+
+  def reference(name: FQName): Value[Any] = Value(ReferenceCase(name))
+
+  final def string(value: String): Value[Any] = literal(Lit.string(value))
+  final def string[Annotations](value: String, annotations: ZEnvironment[Annotations]): Value[Any] =
+    literal[String, Annotations](Lit.string(value), annotations)
+
+  def tuple[Any](elements: Chunk[Value[Any]])  = Value(TupleCase(elements))
+  def tuple(elements: Value[Any]*): Value[Any] = Value(TupleCase(Chunk.fromIterable(elements)))
+
+  final val unit: Value[Any]                                                              = Value(UnitCase)
+  final def unit[Annotations](annotations: ZEnvironment[Annotations]): Value[Annotations] = Value(UnitCase, annotations)
+
+  def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =
+    Value(UpdateRecordCase(valueToUpdate, fieldsToUpdate))
+
+  final def variable(name: Name): Value[Any]             = Value(VariableCase(name))
+  @inline final def variable(string: String): Value[Any] = variable(Name.fromString(string))
+
+  def wholeNumber(value: java.math.BigInteger): Value[Any] =
+    literal(Lit.wholeNumber(value))
 
   @inline final val wildcardPattern: Pattern.WildcardPattern[Any] = Pattern.wildcardPattern
   @inline final def wildcardPattern[Annotations](
@@ -82,59 +121,13 @@ trait ValueSyntax {
     Pattern.TuplePattern(Chunk.fromIterable(patterns), ZEnvironment.empty)
 
   def nativeApply(function: NativeFunction, arguments: Chunk[Value[Any]]): Value[Any] =
-    Value(NativeApplyCase(function, arguments))
-
-  def apply(function: Value[Any], arguments: Chunk[Value[Any]]): Value[Any] =
-    Value(ApplyCase(function, arguments))
-
-  def constructor(name: FQName): Value[Any] =
-    Value(ConstructorCase(name))
-
-  def fieldCase(tag: Value[Any], name: Name): Value[Any] =
-    Value(FieldCase(tag, name))
-
-  def fieldFunction(name: Name): Value[Any] =
-    Value(FieldFunctionCase(name))
-
-  def ifThenElse(condition: Value[Any], thenBranch: Value[Any], elseBranch: Value[Any]): Value[Any] =
-    Value(IfThenElseCase(condition, thenBranch, elseBranch))
-
-  def letRecursion(valueDefinitions: Map[Name, ValueDefinition[Any]], inValue: Value[Any]): Value[Any] =
-    Value(LetRecursionCase(valueDefinitions, inValue))
-
-  def list(elements: Chunk[Value[Any]]): Value[Any] =
-    Value(ListCase(elements))
-
-  def literal(literal: LiteralValue): Value[Any] =
-    Value(LiteralCase(literal))
-
-  def literal(int: Int): Value[Any] =
-    Value(LiteralCase(Lit.int(int)))
-
-  def literal(string: String): Value[Any] =
-    Value(LiteralCase(Lit.string(string)))
-
-  def literal(boolean: Boolean): Value[Any] =
-    Value(LiteralCase(Lit.boolean(boolean)))
-
-  def record(fields: Chunk[(Name, Value[Any])]): Value[Any] =
-    Value(RecordCase(fields))
-
-  def reference(name: FQName): Value[Any] =
-    Value(ReferenceCase(name))
+    Value(NativeApplyCase(function, arguments), ZEnvironment.empty)
 
   val unitPattern: Pattern[Any] = Pattern.UnitPattern(ZEnvironment.empty)
 
-  def tuple(elements: Value[Any]*): Value[Any] =
-    Value(TupleCase(Chunk.fromIterable(elements)))
+}
 
-  def letDefinition(valueName: Name, valueDefinition: ValueDefinition[Any], inValue: Value[Any]): Value[Any] =
-    Value(LetDefinitionCase(valueName, valueDefinition, inValue))
-
-  def updateRecord(valueToUpdate: Value[Any], fieldsToUpdate: Chunk[(Name, Value[Any])]): Value[Any] =
-    Value(UpdateRecordCase(valueToUpdate, fieldsToUpdate))
-
-  def destructure(pattern: Pattern[Any], valueToDestruct: Value[Any], inValue: Value[Any]): Value[Any] =
-    Value(DestructureCase(pattern, valueToDestruct, inValue))
-
+object ValueSyntax {
+  final def apply(function: RawValue, args: RawValue*): Value[Any] =
+    Value(ApplyCase(function, Chunk.fromIterable(args)))
 }

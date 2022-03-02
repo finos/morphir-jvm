@@ -14,7 +14,10 @@ object InterpreterSpec extends MorphirBaseSpec {
     valueSpecifications = Map.empty,
     valueDefinitions = Map.empty,
     typeSpecifications = Map(recordTypeName -> recordTypeAliasSpecification),
-    typeConstructors = Map.empty
+    typeConstructors = Map(
+      savingsAccountTypeName  -> savingsAccountTypeConstructor,
+      checkingAccountTypeName -> checkingAccountTypeConstructor
+    )
   )
   def evaluate(value: RawValue): Any = Interpreter.evaluate(value, sampleIR, Map.empty)
 
@@ -23,35 +26,35 @@ object InterpreterSpec extends MorphirBaseSpec {
       suite("addition")(
         test("Should evaluate correctly") {
           assertTrue(
-            Interpreter.evaluate(additionExample) == Right(new BigInteger("3"))
+            evaluate(additionExample) == Right(new BigInteger("3"))
           )
         }
       ),
       suite("subtraction")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(subtractionExample) == Right(new BigInteger("-1")))
+          assertTrue(evaluate(subtractionExample) == Right(new BigInteger("-1")))
         }
       )
     ),
     suite("tuple case")(
       test("Should evaluate correctly") {
-        assertTrue(Interpreter.evaluate(tupleCaseExample) == Right((new BigInteger("1"), new BigInteger("2"))))
+        assertTrue(evaluate(tupleCaseExample) == Right((new BigInteger("1"), new BigInteger("2"))))
       }
     ),
     suite("list case")(
       test("Should evaluate correctly") {
-        assertTrue(Interpreter.evaluate(listCaseExample) == Right(List("hello", "world")))
+        assertTrue(evaluate(listCaseExample) == Right(List("hello", "world")))
       }
     ),
     suite("if then else case")(
       test("Should evaluate correctly") {
-        assertTrue(Interpreter.evaluate(ifThenElseCaseExample) == Right("no"))
+        assertTrue(evaluate(ifThenElseCaseExample) == Right("no"))
       }
     ),
     suite("record case")(
       test("Should evaluate correctly") {
         assertTrue(
-          Interpreter.evaluate(recordCaseExample) == Right(
+          evaluate(recordCaseExample) == Right(
             Map(
               Name.unsafeMake(List("field", "a")) -> "hello",
               Name.unsafeMake(List("field", "b")) -> new BigInteger("2")
@@ -61,7 +64,7 @@ object InterpreterSpec extends MorphirBaseSpec {
       },
       test("Should update correctly") {
         assertTrue(
-          Interpreter.evaluate(recordCaseUpdateExample) == Right(
+          evaluate(recordCaseUpdateExample) == Right(
             Map(
               Name.unsafeMake(List("field", "a")) -> "hello",
               Name.unsafeMake(List("field", "b")) -> new BigInteger("3")
@@ -72,84 +75,105 @@ object InterpreterSpec extends MorphirBaseSpec {
     ),
     suite("let recursion case")(
       test("Multiple bindings that do not refer to each other") {
-        assertTrue(Interpreter.evaluate(letIntroduceMultipleExample) == Right(new BigInteger("42")))
+        assertTrue(evaluate(letIntroduceMultipleExample) == Right(new BigInteger("42")))
       },
       test("Multiple bindings where earlier binding refers to later definition") {
-        assertTrue(Interpreter.evaluate(letIntroduceOutOfOrderExample) == Right(new BigInteger("44")))
+        assertTrue(evaluate(letIntroduceOutOfOrderExample) == Right(new BigInteger("44")))
       },
       test("recursive let definition example") {
-        assertTrue(Interpreter.evaluate(letRecExample) == Right(new BigInteger("6")))
+        assertTrue(evaluate(letRecExample) == Right(new BigInteger("6")))
       },
       test("Static scoping example") {
-        assertTrue(Interpreter.evaluate(staticScopingExample) == Right("static"))
+        assertTrue(evaluate(staticScopingExample) == Right("static"))
       }
     ),
     suite("let non recursion case")(
       test("Let destructor case") {
-        assertTrue(Interpreter.evaluate(letDestructExample) == Right("red"))
+        assertTrue(evaluate(letDestructExample) == Right("red"))
       }
     ),
     suite("apply case")(
       test("Apply field function") {
-        assertTrue(Interpreter.evaluate(applyFieldFunction) == Right("hello"))
+        assertTrue(evaluate(applyFieldFunction) == Right("hello"))
       },
       test("Apply lambda with wildcard") {
-        assertTrue(Interpreter.evaluate(applyWithWildCard) == Right(new BigInteger("42")))
+        assertTrue(evaluate(applyWithWildCard) == Right(new BigInteger("42")))
       },
       test("Lambda defined in let") {
-        assertTrue(Interpreter.evaluate(lambdaExample) == Right(new BigInteger("66")))
+        assertTrue(evaluate(lambdaExample) == Right(new BigInteger("66")))
       }
     ),
-    suite("constructor case") {
-      test("Should evaluate correctly") {
-        assertTrue(evaluate(constructorExample) == Right(("Adam", new BigInteger("42"))))
+    suite("constructor case")(
+      test("Should evaluate correctly XYZ") {
+        assertTrue(
+          evaluate(constructorExample) == Right(
+            GenericCaseClass.fromFields(recordTypeName, Name("name") -> "Adam", Name("age") -> new BigInteger("42"))
+          )
+        )
+      },
+      test("Custom type should evaluate correctly") {
+        assertTrue(
+          evaluate(savingsAccountConstructorExample) == Right(
+            GenericCaseClass.fromFields(
+              savingsAccountTypeName,
+              Name("arg1") -> "Adam"
+            )
+          ),
+          evaluate(checkingAccountConstructorExample) == Right(
+            GenericCaseClass.fromFields(
+              checkingAccountTypeName,
+              Name("arg1") -> "Brad",
+              Name("arg2") -> new BigInteger("10000")
+            )
+          )
+        )
       }
-    },
+    ),
     suite("pattern matching")(
       suite("literal")(),
       suite("wildcard")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternMatchWildcardCaseExample) == Right(new BigInteger("100")))
+          assertTrue(evaluate(patternMatchWildcardCaseExample) == Right(new BigInteger("100")))
         }
       ),
       suite("as")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternMatchAsCaseExample) == Right(new BigInteger("42")))
+          assertTrue(evaluate(patternMatchAsCaseExample) == Right(new BigInteger("42")))
         }
       ),
       suite("as with literal")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternMatchAsCaseComplexExample) == Right(new BigInteger("14")))
+          assertTrue(evaluate(patternMatchAsCaseComplexExample) == Right(new BigInteger("14")))
         }
       ),
       suite("tuple")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternTupleCaseExample) == Right(new BigInteger("107")))
+          assertTrue(evaluate(patternTupleCaseExample) == Right(new BigInteger("107")))
         }
       ),
       suite("singleton tuple")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternTupleOneCaseExample) == Right("singleton tuple"))
+          assertTrue(evaluate(patternTupleOneCaseExample) == Right("singleton tuple"))
         }
       ),
       suite("singleton non match tuple")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternTupleOneCaseCounterExample) == Right("right"))
+          assertTrue(evaluate(patternTupleOneCaseCounterExample) == Right("right"))
         }
       ),
       suite("head tail list")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternHeadTailCaseExample) == Right(List("world")))
+          assertTrue(evaluate(patternHeadTailCaseExample) == Right(List("world")))
         }
       ),
       suite("empty list")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternMatchEmptyListCaseExample) == Right("empty list"))
+          assertTrue(evaluate(patternMatchEmptyListCaseExample) == Right("empty list"))
         }
       ),
       suite("unit")(
         test("Should evaluate correctly") {
-          assertTrue(Interpreter.evaluate(patternUnitCaseExample) == Right("right"))
+          assertTrue(evaluate(patternUnitCaseExample) == Right("right"))
         }
       )
       // a @ b @ 1

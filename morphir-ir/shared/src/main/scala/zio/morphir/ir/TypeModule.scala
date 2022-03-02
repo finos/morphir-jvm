@@ -1,12 +1,25 @@
 package zio.morphir.ir
 
-import zio.{Chunk, ZEnvironment}
+import zio.{Chunk, ZEnvironment, ZIO}
 import zio.prelude.*
 import zio.morphir.syntax.TypeModuleSyntax
+import zio.prelude.fx.ZPure
 
 object TypeModule extends TypeModuleSyntax {
 
-  final case class Constructors[+Annotations](items: Map[Name, TypeArg[Annotations]])
+  final case class Field[+T](name: Name, tpe: T) { self =>
+    def forEach[G[+_]: IdentityBoth: Covariant, U](f: T => G[U]): G[Field[U]] =
+      f(self.tpe).map(newType => self.copy(tpe = newType))
+
+    def map[U](f: T => U): Field[U] = Field(name, f(tpe))
+
+  }
+
+  final case class Constructors[+Annotations](items: Map[Name, Chunk[(Name, Type[Annotations])]]) { self =>
+    def toUnannotated: Constructors[Any] = Constructors(items.map { case (ctor, args) =>
+      (ctor, args.map { case (paramName, paramType) => (paramName, paramType.toUnannotated) })
+    })
+  }
 
   sealed trait Definition[+Annotations] { self =>
     import Definition._
@@ -41,8 +54,10 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Definition[Annotations]
   }
 
+  type USpecification = Specification[Any]
+  val USpecification = Specification
   sealed trait Specification[+Annotations] { self =>
-    // import Specification._
+    import Specification.*
 
     def annotations: ZEnvironment[Annotations]
 
@@ -54,6 +69,14 @@ object TypeModule extends TypeModuleSyntax {
     //   case c @ CustomTypeSpecification(_, _, _) =>
     //     CustomTypeSpecification[Annotations0](c.typeParams, c.ctors.map(f), c.annotations.map(f))
     // }
+    def toUnannotated: Specification[Any] = self match {
+      case c @ TypeAliasSpecification(_, _, _) =>
+        TypeAliasSpecification(c.typeParams, c.expr.toUnannotated, ZEnvironment.empty)
+      case c @ OpaqueTypeSpecification(_, _) =>
+        OpaqueTypeSpecification[Any](c.typeParams, ZEnvironment.empty)
+      case c @ CustomTypeSpecification(_, _, _) =>
+        CustomTypeSpecification[Any](c.typeParams, c.ctors.toUnannotated, ZEnvironment.empty)
+    }
   }
 
   object Specification {
@@ -75,25 +98,40 @@ object TypeModule extends TypeModuleSyntax {
     ) extends Specification[Annotations]
   }
 
-  sealed trait Type[+Annotations] { self =>
+  final case class Type[+Annotations] private[morphir] (
+      caseValue: TypeCase[Type[Annotations]],
+      annotations: ZEnvironment[Annotations]
+  ) {
+    self =>
     // import TypeCase.*
+
+    def ??(doc: String): Documented[Type[Annotations]] = Documented(doc, self)
 
     final def asType: Type[Annotations] = self
 
-    def annotations: ZEnvironment[Annotations]
-    def caseValue: TypeCase[Type[Annotations]]
-
     def fold[Z](f: TypeCase[Z] => Z): Z = self.caseValue match {
-      case c @ TypeCase.ExtensibleRecordCase(_, _) => f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(_.fold(f))))
-      case c @ TypeCase.FieldCase(_, _)            => f(TypeCase.FieldCase(c.name, c.fieldType.fold(f)))
+      case c @ TypeCase.ExtensibleRecordCase(_, _) =>
+        f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(field => field.map(_.fold(f)))))
       case c @ TypeCase.FunctionCase(_, _) =>
         f(TypeCase.FunctionCase(c.paramTypes.map(_.fold(f)), c.returnType.fold(f)))
-      case c @ TypeCase.RecordCase(_)       => f(TypeCase.RecordCase(c.fields.map(_.fold(f))))
+      case c @ TypeCase.RecordCase(_)       => f(TypeCase.RecordCase(c.fields.map(field => field.map(_.fold(f)))))
       case c @ TypeCase.ReferenceCase(_, _) => f(TypeCase.ReferenceCase(c.typeName, c.typeParams.map(_.fold(f))))
       case c @ TypeCase.TupleCase(_)        => f(TypeCase.TupleCase(c.elementTypes.map(_.fold(f))))
       case _ @TypeCase.UnitCase             => f(TypeCase.UnitCase)
       case c @ TypeCase.VariableCase(_)     => f(c)
     }
+
+    def foldDown[Z](z: Z)(f: (Z, Type[Annotations]) => Z): Z =
+      caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
+
+    def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Annotations]), Z]): Z =
+      foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[Z] => F[Z]): F[Z] =
+      fold[F[Z]](_.flip.flatMap(f))
+
+    def foldPure[W, S, R, E, Z](f: TypeCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
+      foldM(f)
 
     def transformDown[Annotations0 >: Annotations](
         f: Type[Annotations0] => Type[Annotations0]
@@ -103,46 +141,43 @@ object TypeModule extends TypeModuleSyntax {
       loop(self)
     }
 
+    def foldZIO[R, E, Z](f: TypeCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
+      foldM(f)
+
+    def foldRecursive[Z](f: TypeCase[(Type[Annotations], Z)] => Z): Z =
+      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
+
+    def foldUp[Z](z: Z)(f: (Z, Type[Annotations]) => Z): Z =
+      f(caseValue.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
+
+    def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Annotations]), Z]): Z =
+      foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
     // TODO
     // def mapTypeAttributes[B](f: Annotations => B): Type[B] =
     //   Type(self.caseValue.map(f), annotations.map(f))
 
-    def collectVariables: Set[Name] = self.caseValue match {
-      case TypeCase.ExtensibleRecordCase(_, fields) =>
-        fields.flatMap(_.collectVariables).toSet
-      case TypeCase.FieldCase(_, fieldType) =>
-        fieldType.collectVariables
-      case TypeCase.FunctionCase(paramTypes, returnType) =>
-        paramTypes.flatMap(_.collectVariables).toSet ++ returnType.collectVariables
-      case TypeCase.RecordCase(fields) =>
-        fields.flatMap(_.collectVariables).toSet
-      case TypeCase.ReferenceCase(_, typeParams) =>
-        typeParams.flatMap(_.collectVariables).toSet
-      case TypeCase.TupleCase(elementTypes) =>
-        elementTypes.flatMap(_.collectVariables).toSet
-      case TypeCase.UnitCase =>
-        Set.empty
-      case TypeCase.VariableCase(name) =>
-        Set(name)
+    def collectVariables: Set[Name] = fold[Set[Name]] {
+      case c @ TypeCase.ExtensibleRecordCase(_, _)       => c.fields.map(_.tpe).flatten.toSet + c.name
+      case TypeCase.FunctionCase(paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
+      case TypeCase.RecordCase(fields)                   => fields.map(_.tpe).flatten.toSet
+      case TypeCase.ReferenceCase(_, typeParams)         => typeParams.flatten.toSet
+      case TypeCase.TupleCase(elementTypes)              => elementTypes.flatten.toSet
+      case TypeCase.UnitCase                             => Set.empty
+      case TypeCase.VariableCase(name)                   => Set(name)
     }
 
-    def collectReferences: Set[FQName] = self.caseValue match {
-      case TypeCase.ExtensibleRecordCase(_, fields) =>
-        fields.flatMap(_.collectReferences).toSet
-      case TypeCase.FieldCase(_, fieldType) =>
-        fieldType.collectReferences
+    def collectReferences: Set[FQName] = fold[Set[FQName]] {
+      case c @ TypeCase.ExtensibleRecordCase(_, _) => c.fields.map(_.tpe).flatten.toSet
       case TypeCase.FunctionCase(paramTypes, returnType) =>
-        paramTypes.flatMap(_.collectReferences).toSet ++ returnType.collectReferences
+        paramTypes.flatten.toSet ++ returnType
       case TypeCase.RecordCase(fields) =>
-        fields.flatMap(_.collectReferences).toSet
+        fields.map(_.tpe).flatten.toSet
       case TypeCase.ReferenceCase(name, typeParams) =>
-        typeParams.flatMap(_.collectReferences).toSet + name
-      case TypeCase.TupleCase(elementTypes) =>
-        elementTypes.flatMap(_.collectReferences).toSet
-      case TypeCase.UnitCase =>
-        Set.empty
-      case TypeCase.VariableCase(_) =>
-        Set.empty
+        typeParams.flatten.toSet + name
+      case TypeCase.TupleCase(elementTypes) => elementTypes.flatten.toSet
+      case TypeCase.UnitCase                => Set.empty
+      case TypeCase.VariableCase(_)         => Set.empty
     }
 
     // TO DO
@@ -164,215 +199,80 @@ object TypeModule extends TypeModuleSyntax {
     //   case TypeCase.UnitCase =>
     //     TypeCase.UnitCase
     // }
-  }
 
-  object Type {
-    import TypeCase.*
+    def satisfiesCaseOf(check: PartialFunction[TypeCase[Type[Annotations]], Boolean]): Boolean =
+      check.lift(self.caseValue).getOrElse(false)
 
-    def apply[Annotations](
-        caseValue0: TypeCase[Type[Annotations]],
-        annotations0: ZEnvironment[Annotations]
-    ): Type[Annotations] =
-      new Type[Annotations] {
-        override def caseValue: TypeCase[Type[Annotations]] = caseValue0
-        override def annotations: ZEnvironment[Annotations] = annotations0
-      }
+    def toUnannotated: UType =
+      Type(self.caseValue.map(t => t.copy(annotations = ZEnvironment.empty)))
 
-    def ref(name: FQName): Reference[Any] = Reference(name, Chunk.empty, ZEnvironment.empty)
-
-    /**
-     * Creates a type variable with the given `name`.
-     */
-    def variable(name: Name): Variable[Any]   = Variable(name, ZEnvironment.empty)
-    def variable(name: String): Variable[Any] = variable(Name(name))
-    val unit: Type[Any]                       = Unit(ZEnvironment.empty)
-    def unit[Annotations](annotations: ZEnvironment[Annotations]): Type[Annotations] = Type(UnitCase, annotations)
-
-    def field(name: Name, fieldType: Type[Any]): Field[Any] = Field(name, fieldType, ZEnvironment.empty)
-    def record(fields: Chunk[Field[Any]]): Record[Any]      = Record(fields, ZEnvironment.empty)
-    def tuple(elementTypes: Chunk[Type[Any]]): Tuple[Any]   = Tuple(elementTypes, ZEnvironment.empty)
-    def function(paramTypes: Chunk[Type[Any]], returnType: Type[Any]): Function[Any] =
-      Function(paramTypes, returnType, ZEnvironment.empty)
-    def extensibleRecord(name: Name, fields: Chunk[Field[Any]]): ExtensibleRecord[Any] =
-      ExtensibleRecord(name, fields, ZEnvironment.empty)
-    def reference(name: FQName, typeParams: Chunk[Type[Any]]): Reference[Any] =
-      Reference(name, typeParams, ZEnvironment.empty)
-
-    final case class Unit[+Annotations](annotations: ZEnvironment[Annotations]) extends Type[Annotations] {
-      override val caseValue: TypeCase[Type[Annotations]] = UnitCase
-
-      override def toString: String = "()"
-    }
-
-    final case class ExtensibleRecord[+Annotations](
-        name: Name,
-        fields: Chunk[Field[Annotations]],
-        annotations: ZEnvironment[Annotations]
-    ) extends Type[Annotations] {
-      override lazy val caseValue: ExtensibleRecordCase[Type[Annotations]] = ExtensibleRecordCase(name, fields)
-
-      override def toString: String =
-        s"{ ${name.toCamelCase} | ${fields.map(_.toString).mkString(", ")} }"
-    }
-
-    object ExtensibleRecord {
-      object Case {
-        def unapply[Annotations](
-            extensibleRecord: ExtensibleRecord[Annotations]
-        ): Option[ExtensibleRecordCase[Type[Annotations]]] =
-          Some(extensibleRecord.caseValue)
-      }
-    }
-
-    final case class Field[+Annotations](
-        name: Name,
-        fieldType: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
-    ) extends Type[Annotations] { self =>
-      override lazy val caseValue: FieldCase[Type[Annotations]] = FieldCase(name, fieldType)
-
-      override def toString: String =
-        s"${name.toCamelCase} : ${fieldType.toString}"
-
-      def mapFieldType[Annotations0 >: Annotations](f: Type[Annotations0] => Type[Annotations0]): Field[Annotations0] =
-        Field(name, f(fieldType), annotations)
-
-      def mapFieldName[Annotations0 >: Annotations](f: Name => Name): Field[Annotations0] =
-        Field(f(name), fieldType, annotations)
-    }
-
-    object Field {
-      object Case {
-        def unapply[Annotations](field: Field[Annotations]): Option[FieldCase[Type[Annotations]]] =
-          Some(field.caseValue)
-      }
-    }
-
-    final case class Function[+Annotations](
-        paramTypes: Chunk[Type[Annotations]],
-        returnType: Type[Annotations],
-        annotations: ZEnvironment[Annotations]
-    ) extends Type[Annotations] {
-      override lazy val caseValue: FunctionCase[Type[Annotations]] = FunctionCase(paramTypes, returnType)
-
-      override def toString: String =
+    override def toString: String = fold[String] {
+      case c @ TypeCase.ExtensibleRecordCase(_, _) =>
+        s"{ ${c.name.toCamelCase} | ${c.fields.mkString(", ")} }"
+      case TypeCase.FunctionCase(paramTypes, returnType) =>
         paramTypes
           .map(_.toString)
           .mkString("(", ",", ")")
           .concat(" -> " + returnType.toString)
+      case TypeCase.RecordCase(fields)              => fields.mkString("{ ", ", ", " }")
+      case TypeCase.ReferenceCase(name, typeParams) => s"${name.toString} ${typeParams.mkString(" ")}"
+      case TypeCase.TupleCase(elementTypes)         => elementTypes.mkString("(", ", ", ")")
+      case TypeCase.UnitCase                        => "()"
+      case TypeCase.VariableCase(name)              => name.toCamelCase
     }
+  }
 
-    object Function {
-      object Case {
-        def unapply[Annotations](function: Function[Annotations]): Option[FunctionCase[Type[Annotations]]] =
-          Some(function.caseValue)
-      }
-    }
+  object Type extends TypeModuleSyntax {
+    import TypeCase.*
 
-    final case class Record[+Annotations](
-        fields: Chunk[Field[Annotations]],
-        annotations: ZEnvironment[Annotations]
-    ) extends Type[Annotations] {
-      override lazy val caseValue: RecordCase[Type[Annotations]] = RecordCase(fields)
-
-      override def toString: String =
-        fields.map(_.toString).mkString("{ ", ", ", " }")
-    }
-    object Record {
-
-      object Case {
-        def unapply[Annotations](record: Record[Annotations]): Option[RecordCase[Type[Annotations]]] =
-          Some(record.caseValue)
-      }
-    }
-
-    final case class Reference[+Annotations](
-        name: FQName,
-        typeParams: Chunk[Type[Annotations]],
-        annotations: ZEnvironment[Annotations]
-    ) extends Type[Annotations] {
-      override lazy val caseValue: ReferenceCase[Type[Annotations]] = ReferenceCase(name, typeParams)
-
-      override def toString: String =
-        s"${name.toString} ${typeParams.map(_.toString).mkString(" ")}"
-    }
-
-    object Reference {
-      object Case {
-        def unapply[Annotations](reference: Reference[Annotations]): Option[ReferenceCase[Type[Annotations]]] =
-          Some(reference.caseValue)
-      }
-    }
-
-    final case class Tuple[+Annotations](
-        typeParams: Chunk[Type[Annotations]],
-        annotations: ZEnvironment[Annotations]
-    ) extends Type[Annotations] {
-      override lazy val caseValue: TupleCase[Type[Annotations]] = TupleCase(typeParams)
-
-      override def toString: String =
-        typeParams.map(_.toString).mkString("(", ", ", ")")
-    }
-
-    object Tuple {
-      object Case {
-        def unapply[Annotations](tuple: Tuple[Annotations]): Option[TupleCase[Type[Annotations]]] =
-          Some(tuple.caseValue)
-      }
-    }
-
-    final case class Variable[+Annotations](name: Name, annotations: ZEnvironment[Annotations])
-        extends Type[Annotations] {
-      override lazy val caseValue: VariableCase = VariableCase(name)
-
-      override def toString: String = name.toCamelCase
-    }
+    private[morphir] def apply(
+        caseValue: TypeCase[Type[Any]]
+    ): Type[Any] = Type(caseValue, ZEnvironment.empty)
 
     object Variable {
-      object Case {
-        def unapply[Annotations](variable: Variable[Annotations]): Option[VariableCase] =
-          Some(variable.caseValue)
+      def unapply(tpe: Type[Any]): Option[Name] = tpe.caseValue match {
+        case VariableCase(name) => Some(name)
+        case _                  => None
       }
     }
+
   }
 
   sealed trait TypeCase[+Self] { self =>
     import TypeCase.*
 
     def map[B](f: Self => B): TypeCase[B] = self match {
-      case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(f))
-      case c @ FieldCase(_, _)            => FieldCase(c.name, f(c.fieldType))
+      case c @ ExtensibleRecordCase(_, _) => ExtensibleRecordCase(c.name, c.fields.map(_.map(f)))
       case c @ FunctionCase(_, _)         => FunctionCase(c.paramTypes.map(f), f(c.returnType))
       case c @ ReferenceCase(_, _)        => ReferenceCase(c.typeName, c.typeParams.map(f))
       case c @ TupleCase(_)               => TupleCase(c.elementTypes.map(f))
       case UnitCase                       => UnitCase
       case c @ VariableCase(_)            => VariableCase(c.name)
-      case c @ RecordCase(_)              => RecordCase(c.fields.map(f))
+      case c @ RecordCase(_)              => RecordCase(c.fields.map(_.map(f)))
     }
   }
 
   object TypeCase {
-    final case class ExtensibleRecordCase[+Self](name: Name, fields: Chunk[Self])    extends TypeCase[Self]
-    final case class FunctionCase[+Self](paramTypes: Chunk[Self], returnType: Self)  extends TypeCase[Self]
-    final case class RecordCase[+Self](fields: Chunk[Self])                          extends TypeCase[Self]
-    final case class ReferenceCase[+Self](typeName: FQName, typeParams: Chunk[Self]) extends TypeCase[Self]
-    final case class TupleCase[+Self](elementTypes: Chunk[Self])                     extends TypeCase[Self]
-    case object UnitCase                                                             extends TypeCase[Nothing]
-    final case class VariableCase(name: Name)                                        extends TypeCase[Nothing]
-    final case class FieldCase[+Self](name: Name, fieldType: Self)                   extends TypeCase[Self]
+    final case class ExtensibleRecordCase[+Self](name: Name, fields: Chunk[Field[Self]]) extends TypeCase[Self]
+    final case class FunctionCase[+Self](paramTypes: Chunk[Self], returnType: Self)      extends TypeCase[Self]
+    final case class RecordCase[+Self](fields: Chunk[Field[Self]])                       extends TypeCase[Self]
+    final case class ReferenceCase[+Self](typeName: FQName, typeParams: Chunk[Self])     extends TypeCase[Self]
+    final case class TupleCase[+Self](elementTypes: Chunk[Self])                         extends TypeCase[Self]
+    case object UnitCase                                                                 extends TypeCase[Nothing]
+    final case class VariableCase(name: Name)                                            extends TypeCase[Nothing]
 
     implicit val TypeCaseForEach: ForEach[TypeCase] =
       new ForEach[TypeCase] {
         def forEach[G[+_]: IdentityBoth: Covariant, A, B](fa: TypeCase[A])(f: A => G[B]): G[TypeCase[B]] =
           fa match {
             case ExtensibleRecordCase(name, fields) =>
-              fields.forEach(f).map(fields => ExtensibleRecordCase(name, fields))
+              fields.forEach(_.forEach(f)).map(fields => ExtensibleRecordCase(name, fields))
             case FunctionCase(paramTypes, returnType) =>
               paramTypes
                 .forEach(f)
                 .zipWith(f(returnType))((paramTypes, returnType) => FunctionCase(paramTypes, returnType))
             case RecordCase(fields) =>
-              fields.forEach(f).map(fields => RecordCase(fields))
+              fields.forEach(_.forEach(f)).map(fields => RecordCase(fields))
             case ReferenceCase(typeName, typeParams) =>
               typeParams.forEach(f).map(typeParams => ReferenceCase(typeName, typeParams))
             case TupleCase(elementTypes) =>
@@ -381,16 +281,9 @@ object TypeModule extends TypeModuleSyntax {
               UnitCase.succeed
             case VariableCase(name) =>
               VariableCase(name).succeed
-            case FieldCase(name, fieldType) =>
-              f(fieldType).map(fieldType => FieldCase(name, fieldType))
           }
       }
   }
-
-  final case class TypeArg[+Annotations](
-      name: Name,
-      tpe: Type[Annotations]
-  )
 
   /** Represents an un-annotated type. */
   type UType = Type[Any]

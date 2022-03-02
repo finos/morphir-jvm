@@ -2,12 +2,15 @@ package zio.morphir.ir.testing
 
 import zio.morphir.ir.Name
 import zio.{Chunk, ZEnvironment}
+import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
+import zio.morphir.ir.{FQName, Path, TypeModule}
 import zio.morphir.Dsl
 import zio.morphir.syntax.ValueSyntax
+import zio.morphir.syntax.TypeSyntax
 
-object CaseExample extends ValueSyntax {
+object CaseExample extends ValueSyntax with TypeSyntax {
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
@@ -261,30 +264,73 @@ object CaseExample extends ValueSyntax {
     Dsl.apply(variable("foo"), literal(33))
   )
 
-  import zio.morphir.ir.TypeModule
-
   val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
   lazy val recordTypeName =
-    zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("RecordType"))
+    zio.morphir.ir.FQName(
+      zio.morphir.ir.Path(Name("Morphir.SDK")),
+      zio.morphir.ir.Path(Name("Morphir.SDK")),
+      Name("RecordType")
+    )
 
-  lazy val recordType = zio.morphir.ir.TypeModule.Type.Record[Any](
-    fields = Chunk(
-      TypeModule.Type.Field(Name("name"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty),
-      TypeModule.Type.Field(Name("age"), TypeModule.Type.Unit[Any](ZEnvironment.empty), ZEnvironment.empty)
-    ),
-    annotations = ZEnvironment.empty
+  lazy val recordType = defineRecord(
+    defineField(Name("name"), Type.unit),
+    defineField(Name("age"), Type.unit)
   )
 
-  lazy val recordTypeAliasSpecification = zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification[Any](
+  lazy val recordTypeAliasSpecification = TypeModule.Specification.TypeAliasSpecification[Any](
     typeParams = Chunk.empty,
     expr = recordType,
     annotations = ZEnvironment.empty
+  )
+
+  lazy val accountTypeName = FQName(
+    Path(Name("Morphir.SDK")),
+    Path(Name("Morphir.SDK.Account")),
+    Name("Account")
+  )
+
+  lazy val savingsAccountTypeName = FQName(
+    Path(Name("Morphir.SDK")),
+    Path(Name("Morphir.SDK.Account")),
+    Name("SavingsAccount")
+  )
+  lazy val checkingAccountTypeName = FQName(
+    Path(Name("Morphir.SDK")),
+    Path(Name("Morphir.SDK.Account")),
+    Name("CheckingAccount")
+  )
+
+  lazy val savingsAccountTypeConstructor = zio.morphir.IRModule.TypeConstructorInfo(
+    containingType = accountTypeName,
+    typeParams = Chunk.empty,
+    typeArgs = Chunk(Name.fromString("arg1") -> defineReference(FQName.fromString("Morphir.SDK.String"), Chunk.empty))
+  )
+
+  lazy val checkingAccountTypeConstructor = zio.morphir.IRModule.TypeConstructorInfo(
+    containingType = accountTypeName,
+    typeParams = Chunk.empty,
+    typeArgs = Chunk(
+      Name.fromString("arg1") -> defineReference(FQName.fromString(":Morphir.SDK:String"), Chunk.empty),
+      Name.fromString("arg2") -> defineReference(FQName.fromString(":Morphir.SDK:Int"), Chunk.empty)
+    )
   )
 
   val constructorExample =
     apply(
       constructor(recordTypeName),
       Chunk(literal("Adam"), literal(42))
+    )
+
+  val savingsAccountConstructorExample =
+    apply(
+      constructor(savingsAccountTypeName),
+      Chunk(literal("Adam"))
+    )
+
+  val checkingAccountConstructorExample =
+    apply(
+      constructor(checkingAccountTypeName),
+      Chunk(literal("Brad"), literal(10000))
     )
 
   // tuple ("Adam", 42)

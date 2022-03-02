@@ -6,11 +6,13 @@ import scala.annotation.tailrec
 
 final case class Path(segments: Chunk[Name]) { self =>
 
+  def ++(that: Path): Path = Path(segments ++ that.segments)
+
   /** Constructs a new path by combining this path with the given name. */
   def /(name: Name): Path = Path(segments ++ Chunk(name))
 
   /** Constructs a new path by combining this path with the given path. */
-  def /(name: Path): Path = Path(segments ++ name.segments)
+  def /(that: Path): Path = Path(segments ++ that.segments)
   def %(other: Path): PackageAndModulePath =
     PackageAndModulePath(PackageName(self), ModulePath(other))
 
@@ -66,4 +68,6 @@ object Path {
         )
       else false
   }
+
+  private[morphir] def unsafeMake(parts: Name*): Path = Path(Chunk.fromIterable(parts))
 }

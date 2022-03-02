@@ -55,9 +55,9 @@ lazy val cli = project
   .dependsOn(coreJVM, irJVM, sexprJVM)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.alexarchambault" % "case-app_2.13" % "2.1.0-M12",
-      "dev.zio"                   %% "zio-test"      % Version.zio,
-      "dev.zio"                   %% "zio-test"      % Version.zio % Test
+      "dev.zio" %% "zio-cli"  % Version.`zio-cli`,
+      "dev.zio" %% "zio-test" % Version.zio,
+      "dev.zio" %% "zio-test" % Version.zio % Test
     )
   )
 
@@ -88,9 +88,10 @@ lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(buildInfoSettings("zio.morphir.ir"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio"         % Version.zio,
-      "dev.zio" %%% "zio-prelude" % Version.`zio-prelude`,
-      "dev.zio" %%% "zio-test"    % Version.zio % Test
+      "org.scala-lang.modules" %% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"               %%% "zio"                     % Version.zio,
+      "dev.zio"               %%% "zio-prelude"             % Version.`zio-prelude`,
+      "dev.zio"               %%% "zio-test"                % Version.zio % Test
     )
   )
   .enablePlugins(BuildInfoPlugin)
