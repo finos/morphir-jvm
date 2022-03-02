@@ -163,6 +163,15 @@ object CaseExample extends ValueSyntax with TypeSyntax {
       ) -> Dsl.wholeNumber(new java.math.BigInteger("107"))
     )
 
+  lazy val patternConstructorCaseExample =
+    Dsl.patternMatch(
+      checkingAccountConstructorExample,
+      constructorPattern(
+        checkingAccountTypeName,
+        Chunk(wildcardPattern, asPattern(wildcardPattern, Name("x")))
+      ) -> variable(Name("x"))
+    )
+
   val patternUnitCaseExample =
     Dsl.patternMatch(
       unit,
