@@ -161,6 +161,11 @@ object InterpreterSpec extends MorphirBaseSpec {
           assertTrue(evaluate(patternTupleOneCaseCounterExample) == Right("right"))
         }
       ),
+      suite("constructor")(
+        test("Should evaluate correctly") {
+          assertTrue(evaluate(patternConstructorCaseExample) == Right(new BigInteger("10000")))
+        }
+      ),
       suite("head tail list")(
         test("Should evaluate correctly") {
           assertTrue(evaluate(patternHeadTailCaseExample) == Right(List("world")))
