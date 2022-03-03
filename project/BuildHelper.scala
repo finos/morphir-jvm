@@ -217,8 +217,8 @@ object BuildHelper {
 
   def stdSettings(prjName: String) = Seq(
     name                     := s"$prjName",
-    crossScalaVersions       := Seq(Scala212, Scala213),
-    ThisBuild / scalaVersion := Scala213,
+    crossScalaVersions       := Seq(Scala213, Scala212),
+    ThisBuild / scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
       if (scalaVersion.value == Scala3)

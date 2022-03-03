@@ -3,7 +3,7 @@ package zio.morphir.value
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.ir.TypeModule
-import zio.morphir.IRModule.IR
+import zio.morphir.IR
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase.*
 import zio.morphir.ir.NativeFunction
@@ -17,7 +17,8 @@ import zio.prelude._
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
-import zio.morphir.IRModule
+
+import IR.*
 object Interpreter {
 
   sealed trait Result
@@ -61,7 +62,7 @@ object Interpreter {
 
         // function("Adam", 42)
 
-        /**
+        /*
          * type Employee
          * = Worker { name: String tenure: Int }
          * | Manager { name: String tenure: Int bonus: Int }
@@ -283,17 +284,16 @@ object Interpreter {
       else
         bodies
           .zip(caseStatements)
-          .forEach((body, caseStatement) => matchPattern(body, caseStatement))
+          .forEach { case (body, caseStatement) => matchPattern(body, caseStatement) }
           .map(_.foldLeft(empty)(_ ++ _))
     }
-    println(s"Attempting to match $body vs $caseStatement")
     caseStatement match {
       case WildcardPattern(_) => Right(empty)
       case AsPattern(pattern, name, _) =>
         val result = matchPattern(body, pattern)
         result match {
-          case Right(vars) => println("As matched properly"); Right(vars + (name -> body))
-          case Left(blah)  => println(s"As failed to match: $result"); Left(blah)
+          case Right(vars) => Right(vars + (name -> body))
+          case Left(blah)  => Left(blah)
         }
       case TuplePattern(patterns, _) =>
         try {
@@ -443,7 +443,7 @@ object Interpreter {
   private def nameToFieldName(name: Name): String =
     GenericCaseClass.nameToFieldName(name)
 
-  private def constructConstructor(name: FQName, info: IRModule.TypeConstructorInfo): Any = {
+  private def constructConstructor(name: FQName, info: TypeConstructorInfo): Any = {
     println(s"Creating constructor for $name: with info $info")
     info.typeArgs.length match {
       case 1 =>

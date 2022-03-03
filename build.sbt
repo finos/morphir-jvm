@@ -11,6 +11,12 @@ inThisBuild(
         "John De Goes",
         "john@degoes.net",
         url("http://degoes.net")
+      ),
+      Developer(
+        "DamianReeves",
+        "Damian Reeves",
+        "957246+DamianReeves@users.noreply.github.com",
+        url("http://damianreeves.com")
       )
     )
   )
@@ -36,24 +42,43 @@ addCommandAlias(
 lazy val root = project
   .in(file("."))
   .settings(
+    name           := "morphir",
     publish / skip := true,
-    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library")
+    unusedCompileDependenciesFilter -= moduleFilter("org.scala-js", "scalajs-library"),
+    welcomeMessage
   )
   .aggregate(
+    annotationJVM,
+    annotationJS,
     coreJVM,
     coreJS,
     interpreterJVM,
     interpreterJS,
     irJVM,
     irJS,
+    sdkJVM,
+    sdkJS,
     sexprJVM,
     sexprJS,
     docs
   )
 
+lazy val annotation = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("morphir-annotation"))
+  .settings(stdCrossProjectSettings("zio-morphir-annotation"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.annotation"))
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val annotationJS = annotation.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val annotationJVM = annotation.jvm
+
 lazy val cli = project
   .in(file("morphir-cli"))
-  .settings(stdProjectSettings("zio-morphir-cli"))
+  .settings(stdProjectSettings("zio-morphir-cli", Scala3))
   .dependsOn(coreJVM, irJVM, sexprJVM)
   .settings(
     libraryDependencies ++= Seq(
@@ -86,9 +111,9 @@ lazy val coreJVM = core.jvm
 lazy val interpreter = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-interpreter"))
   .dependsOn(ir, ir % "test->test")
-  .settings(stdCrossProjectSettings("zio-morphir-ir"))
+  .settings(stdCrossProjectSettings("zio-morphir-interpreter"))
   .settings(crossProjectSettings)
-  .settings(buildInfoSettings("zio.morphir.ir"))
+  .settings(buildInfoSettings("zio.morphir.interpreter"))
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-collection-compat" % Version.`scala-collection-compat`,
@@ -112,10 +137,11 @@ lazy val ir = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(buildInfoSettings("zio.morphir.ir"))
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % Version.`scala-collection-compat`,
-      "dev.zio"               %%% "zio"                     % Version.zio,
-      "dev.zio"               %%% "zio-prelude"             % Version.`zio-prelude`,
-      "dev.zio"               %%% "zio-test"                % Version.zio % Test
+      "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"                %%% "zio"                     % Version.zio,
+      "dev.zio"                %%% "zio-parser"              % Version.`zio-parser`,
+      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`,
+      "dev.zio"                %%% "zio-test"                % Version.zio % Test
     )
   )
   .enablePlugins(BuildInfoPlugin)
@@ -125,6 +151,28 @@ lazy val irJS = ir.js
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val irJVM = ir.jvm
+
+lazy val sdk = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("morphir-sdk"))
+  .dependsOn(annotation, ir)
+  .settings(stdCrossProjectSettings("zio-morphir-sdk"))
+  .settings(crossProjectSettings)
+  .settings(buildInfoSettings("zio.morphir.sdk"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %%% "scala-collection-compat" % Version.`scala-collection-compat`,
+      "dev.zio"                %%% "zio"                     % Version.zio,
+      "dev.zio"                %%% "zio-prelude"             % Version.`zio-prelude`,
+      "dev.zio"                %%% "zio-test"                % Version.zio % Test
+    )
+  )
+  .enablePlugins(BuildInfoPlugin)
+
+lazy val sdkJS = sdk.js
+  .settings(jsSettings)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val sdkJVM = sdk.jvm
 
 lazy val sexpr = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("morphir-sexpr"))
@@ -193,6 +241,56 @@ lazy val docs = project
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
 
 //------------------------------------------------------------------------------
+// Scalafix related projects
+//------------------------------------------------------------------------------
+// lazy val scalafixInput = project
+//   .in(file("scalafix/input"))
+//   .settings(
+//     scalafixSettings,
+//     publish / skip := true
+//   )
+//   .disablePlugins(ScalafixPlugin)
+
+// lazy val scalafixOutput = project
+//   .in(file("scalafix/output"))
+//   .settings(
+//     scalafixSettings,
+//     publish / skip := true
+//   )
+//   .disablePlugins(ScalafixPlugin)
+
+// lazy val scalafixRules = project
+//   .in(file("scalafix/rules"))
+//   .settings(
+//     scalafixSettings,
+//     semanticdbEnabled := true,
+//     libraryDependencies ++= Seq(
+//       "ch.epfl.scala" %% "scalafix-core" % Version.scalafix,
+//       "dev.zio"       %% "zio-prelude"   % Version.`zio-prelude`,
+//       "dev.zio"       %% "zio-test"      % Version.zio % Test
+//     )
+//   )
+//   .disablePlugins(ScalafixPlugin)
+//   .enablePlugins(BuildInfoPlugin)
+
+// lazy val scalafixTests = project
+//   .in(file("scalafix/tests"))
+//   .settings(
+//     scalafixSettings,
+//     publish / skip                        := true,
+//     libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % Version.scalafix % Test cross CrossVersion.full,
+//     scalafixTestkitOutputSourceDirectories :=
+//       (scalafixOutput / Compile / unmanagedSourceDirectories).value,
+//     scalafixTestkitInputSourceDirectories :=
+//       (scalafixInput / Compile / unmanagedSourceDirectories).value,
+//     scalafixTestkitInputClasspath :=
+//       (scalafixInput / Compile / fullClasspath).value ++ (annotationJVM / Compile / fullClasspath).value
+//   )
+//   .enablePlugins(BuildInfoPlugin)
+//   .enablePlugins(ScalafixTestkitPlugin)
+//   .dependsOn(scalafixInput, scalafixRules)
+
+//------------------------------------------------------------------------------
 // Settings
 //------------------------------------------------------------------------------
 
@@ -200,13 +298,13 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   crossScalaVersions := {
     crossProjectPlatform.value match {
       case NativePlatform => crossScalaVersions.value.distinct
-      case _              => (Seq(Scala3) ++ crossScalaVersions.value).distinct
+      case _              => (crossScalaVersions.value :+ Scala3).distinct
     }
   },
   ThisBuild / scalaVersion := {
     crossProjectPlatform.value match {
       case NativePlatform => scalaVersion.value
-      case _              => Scala3
+      case _              => crossScalaVersions.value.head
     }
   },
   scalacOptions ++= {
@@ -260,7 +358,7 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   }
 )
 
-def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala3) = stdSettings(prjName) ++ Seq(
+def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala213) = stdSettings(prjName) ++ Seq(
   ThisBuild / scalaVersion := givenScalaVersion,
   scalacOptions ++= {
     if (scalaVersion.value == Scala3)
@@ -305,4 +403,21 @@ def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala3) = st
 
     versionSpecificDependencies ++ Seq("dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
   }
+)
+
+lazy val scalafixSettings = List(
+  scalaVersion := Scala213,
+  addCompilerPlugin(scalafixSemanticdb),
+  libraryDependencies ++= {
+    if (scalaVersion.value.startsWith("3"))
+      Nil
+    else
+      Seq(compilerPlugin(scalafixSemanticdb))
+  },
+  crossScalaVersions --= List(Scala212, Scala3),
+  scalacOptions ++= List(
+    "-Yrangepos",
+    "-P:semanticdb:synthetics:on",
+    "-Xsource:3.0"
+  )
 )

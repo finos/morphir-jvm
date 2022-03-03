@@ -1,6 +1,7 @@
 object Dependencies {
   object Version {
     val `scala-collection-compat` = "2.6.0"
+    val scalafix                  = "0.9.34"
     val `zio-cli`                 = "0.2.1"
     val zio                       = "2.0.0-RC2"
     val `zio-parser`              = "0.1.3"
