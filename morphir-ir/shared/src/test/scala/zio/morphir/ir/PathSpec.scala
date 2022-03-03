@@ -26,6 +26,41 @@ object PathSpec extends MorphirBaseSpec {
           )
         )
       },
+      test("It can be constructed when given a '-' separated string") {
+        assertTrue(
+          Path.fromString("blog-Author") == Path(
+            Chunk(Name.fromList(List("blog")), Name.fromList(List("author")))
+          )
+        )
+      },
+      test("It can be constructed when given a '/' separated string") {
+        assertTrue(
+          Path.fromString("blog/Author") == Path(
+            Chunk(Name.fromList(List("blog")), Name.fromList(List("author")))
+          )
+        )
+      },
+      test("It can be constructed when given a '\' separated string") {
+        assertTrue(
+          Path.fromString("blog\\Author") == Path(
+            Chunk(Name.fromList(List("blog")), Name.fromList(List("author")))
+          )
+        )
+      },
+      test("It can be constructed when given a ':' separated string") {
+        assertTrue(
+          Path.fromString("blog:Author") == Path(
+            Chunk(Name.fromList(List("blog")), Name.fromList(List("author")))
+          )
+        )
+      },
+      test("It can be constructed when given a ';' separated string") {
+        assertTrue(
+          Path.fromString("Blog ; Author") == Path(
+            Chunk(Name.fromList(List("blog")), Name.fromList(List("author")))
+          )
+        )
+      },
       test("It can be constructed from Name arguments") {
         assertTrue(
           Path(Name.fromString("projectfiles"), Name.fromString("filePath")) == Path(
