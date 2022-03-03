@@ -1,8 +1,8 @@
 package zio.morphir.sdk
-import zio.morphir.module
+import zio.morphir.{module, namespace}
 
-@module(namespace = Some("Morphir.SDK")) object Bool {}
+@module @namespace("Morphir.SDK") object Bool {}
 
-@module(namespace = Some("Morphir.SDK")) object Int {}
+@module @namespace("Morphir.SDK") object Int {}
 
-@module(namespace = Some("Morphir.SDK")) object String {}
+@module @namespace("Morphir.SDK") object String {}

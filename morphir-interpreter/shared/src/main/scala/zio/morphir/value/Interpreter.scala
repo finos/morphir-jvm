@@ -299,7 +299,7 @@ object Interpreter {
         try {
           helper(tupleToChunk(body), patterns)
         } catch {
-          case _ => noMatch
+          case _: Throwable => noMatch
         }
 
       case ConstructorPattern(patternName, patternArgs, _) =>
