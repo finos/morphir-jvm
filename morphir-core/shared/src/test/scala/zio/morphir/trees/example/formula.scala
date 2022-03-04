@@ -1,15 +1,15 @@
 package zio.morphir.trees.example
 
-import zio.*
-import zio.prelude.*
-import zio.morphir.trees.*
+import zio._
+import zio.prelude._
+import zio.morphir.trees._
 
 object formula {
 
   type Formula[+Annotations] = Recursive[FormulaCase, Annotations with Context]
 
   object Formula {
-    import FormulaCase.*
+    import FormulaCase._
 
     def int(value: Int): Formula[Any] =
       Recursive(IntLiteralCase(value), ZEnvironment.empty.add(Context.empty))
@@ -137,7 +137,7 @@ object formula {
   }
 
   final case class Context private (private val data: NonEmptyList[Map[String, Int]]) { self =>
-    import zio.prelude.NonEmptyList.*
+    import zio.prelude.NonEmptyList._
 
     def ++(that: Context): Context = Context(self.data ++ that.data)
     def set(name: String, value: Int): Context = self.data match {
@@ -169,7 +169,7 @@ object formula {
 }
 
 object FormulaExample extends zio.ZIOAppDefault {
-  import formula.Formula.*
+  import formula.Formula._
   def run = {
     val theFormula =
       let("x", int(5))(
