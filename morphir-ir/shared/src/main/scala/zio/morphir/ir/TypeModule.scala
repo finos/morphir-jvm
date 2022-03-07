@@ -109,17 +109,23 @@ object TypeModule extends TypeModuleSyntax {
 
     final def asType: Type[Annotations] = self
 
-    def fold[Z](f: TypeCase[Z] => Z): Z = self.caseValue match {
-      case c @ TypeCase.ExtensibleRecordCase(_, _) =>
-        f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(field => field.map(_.fold(f)))))
-      case c @ TypeCase.FunctionCase(_, _) =>
-        f(TypeCase.FunctionCase(c.paramTypes.map(_.fold(f)), c.returnType.fold(f)))
-      case c @ TypeCase.RecordCase(_)       => f(TypeCase.RecordCase(c.fields.map(field => field.map(_.fold(f)))))
-      case c @ TypeCase.ReferenceCase(_, _) => f(TypeCase.ReferenceCase(c.typeName, c.typeParams.map(_.fold(f))))
-      case c @ TypeCase.TupleCase(_)        => f(TypeCase.TupleCase(c.elementTypes.map(_.fold(f))))
-      case _ @TypeCase.UnitCase             => f(TypeCase.UnitCase)
-      case c @ TypeCase.VariableCase(_)     => f(c)
-    }
+    def fold[Z](f: TypeCase[Z] => Z): Z =
+      foldAnnotated((typeCase, _) => f(typeCase))
+
+    def foldAnnotated[Z](f: (TypeCase[Z], ZEnvironment[Annotations]) => Z): Z =
+      self.caseValue match {
+        case c @ TypeCase.ExtensibleRecordCase(_, _) =>
+          f(TypeCase.ExtensibleRecordCase(c.name, c.fields.map(field => field.map(_.foldAnnotated(f)))), annotations)
+        case c @ TypeCase.FunctionCase(_, _) =>
+          f(TypeCase.FunctionCase(c.paramTypes.map(_.foldAnnotated(f)), c.returnType.foldAnnotated(f)), annotations)
+        case c @ TypeCase.RecordCase(_) =>
+          f(TypeCase.RecordCase(c.fields.map(field => field.map(_.foldAnnotated(f)))), annotations)
+        case c @ TypeCase.ReferenceCase(_, _) =>
+          f(TypeCase.ReferenceCase(c.typeName, c.typeParams.map(_.foldAnnotated(f))), annotations)
+        case c @ TypeCase.TupleCase(_)    => f(TypeCase.TupleCase(c.elementTypes.map(_.foldAnnotated(f))), annotations)
+        case _ @TypeCase.UnitCase         => f(TypeCase.UnitCase, annotations)
+        case c @ TypeCase.VariableCase(_) => f(c, annotations)
+      }
 
     def foldDown[Z](z: Z)(f: (Z, Type[Annotations]) => Z): Z =
       caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))

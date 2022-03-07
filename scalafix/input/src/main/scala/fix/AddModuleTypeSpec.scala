@@ -2,10 +2,11 @@
 rule = AddModuleTypeSpec
  */
 package zio.morphir.sdk
+import zio.morphir._
 
-@module(namespace = Some("Morphir.SDK")) object Bool {}
+@module @namespace("Morphir.SDK") object Bool {}
 
-@module(namespace = Some("Morphir.SDK"), name = Some("Basics")) object BasicsModule {}
+@module(Some("Basics")) @namespace("Morphir.SDK") object BasicsModule {}
 
 package foo.bar {
   object Foo

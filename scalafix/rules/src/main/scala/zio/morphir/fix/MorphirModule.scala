@@ -18,7 +18,14 @@ object MorphirModule {
       case PackageAndBody(pkg, body) =>
         println(s"package: $pkg")
         body.foreach { tree =>
-          println(s"pkg: $pkg", tree.syntax)
+          println("================================================================================")
+          println(s"pkg: $pkg")
+          println("--------------------------------------------------------------------------------")
+          println(s"body: ${tree.syntax}")
+          println("--------------------------------------------------------------------------------")
+          println(s"body(tree): ${tree.structure}")
+          println("================================================================================")
+          println("********************************************************************************")
         }
 
         List(Result.succeed(MorphirModule(pkg.mkString("."), pkg.mkString("."), "DistPackage", body)))
@@ -55,6 +62,12 @@ object MorphirModule {
       case Pkg(PackageParts(pkg), body) => Some((pkg.reverse, body))
       case _                            => None
     }
+  }
+
+  object TopLevelType {
+    final case class MatchData(packageSegments: List[String], name: String)
+
+    
   }
 
   object TraitOrClass {

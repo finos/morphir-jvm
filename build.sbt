@@ -268,52 +268,58 @@ lazy val docs = project
 //------------------------------------------------------------------------------
 // Scalafix related projects
 //------------------------------------------------------------------------------
-// lazy val scalafixInput = project
-//   .in(file("scalafix/input"))
-//   .settings(
-//     scalafixSettings,
-//     publish / skip := true
-//   )
-//   .disablePlugins(ScalafixPlugin)
+lazy val scalafixInput = project
+  .in(file("scalafix/input"))
+  .settings(
+    scalafixSettings,
+    publish / skip := true,
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio-morphir-annotation" % Version.`zio-morphir`
+    )
+  )
+  .disablePlugins(ScalafixPlugin)
 
-// lazy val scalafixOutput = project
-//   .in(file("scalafix/output"))
-//   .settings(
-//     scalafixSettings,
-//     publish / skip := true
-//   )
-//   .disablePlugins(ScalafixPlugin)
+lazy val scalafixOutput = project
+  .in(file("scalafix/output"))
+  .settings(
+    scalafixSettings,
+    publish / skip := true
+  )
+  .disablePlugins(ScalafixPlugin)
+  .disablePlugins(ScalafmtPlugin)
 
-// lazy val scalafixRules = project
-//   .in(file("scalafix/rules"))
-//   .settings(
-//     scalafixSettings,
-//     semanticdbEnabled := true,
-//     libraryDependencies ++= Seq(
-//       "ch.epfl.scala" %% "scalafix-core" % Version.scalafix,
-//       "dev.zio"       %% "zio-prelude"   % Version.`zio-prelude`,
-//       "dev.zio"       %% "zio-test"      % Version.zio % Test
-//     )
-//   )
-//   .disablePlugins(ScalafixPlugin)
-//   .enablePlugins(BuildInfoPlugin)
+lazy val scalafixRules = project
+  .in(file("scalafix/rules"))
+  .settings(
+    scalafixSettings,
+    semanticdbEnabled := true,
+    libraryDependencies ++= Seq(
+      "ch.epfl.scala" %% "scalafix-core"          % Version.scalafix,
+      "dev.zio"       %% "zio-morphir-annotation" % Version.`zio-morphir`,
+      "dev.zio"       %% "zio-morphir-ir"         % Version.`zio-morphir`,
+      "dev.zio"       %% "zio-prelude"            % Version.`zio-prelude`,
+      "dev.zio"       %% "zio-test"               % Version.zio % Test
+    )
+  )
+  .disablePlugins(ScalafixPlugin)
+  .enablePlugins(BuildInfoPlugin)
 
-// lazy val scalafixTests = project
-//   .in(file("scalafix/tests"))
-//   .settings(
-//     scalafixSettings,
-//     publish / skip                        := true,
-//     libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % Version.scalafix % Test cross CrossVersion.full,
-//     scalafixTestkitOutputSourceDirectories :=
-//       (scalafixOutput / Compile / unmanagedSourceDirectories).value,
-//     scalafixTestkitInputSourceDirectories :=
-//       (scalafixInput / Compile / unmanagedSourceDirectories).value,
-//     scalafixTestkitInputClasspath :=
-//       (scalafixInput / Compile / fullClasspath).value ++ (annotationJVM / Compile / fullClasspath).value
-//   )
-//   .enablePlugins(BuildInfoPlugin)
-//   .enablePlugins(ScalafixTestkitPlugin)
-//   .dependsOn(scalafixInput, scalafixRules)
+lazy val scalafixTests = project
+  .in(file("scalafix/tests"))
+  .settings(
+    scalafixSettings,
+    publish / skip                        := true,
+    libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % Version.scalafix % Test cross CrossVersion.full,
+    scalafixTestkitOutputSourceDirectories :=
+      (scalafixOutput / Compile / unmanagedSourceDirectories).value,
+    scalafixTestkitInputSourceDirectories :=
+      (scalafixInput / Compile / unmanagedSourceDirectories).value,
+    scalafixTestkitInputClasspath :=
+      (scalafixInput / Compile / fullClasspath).value ++ (annotationJVM / Compile / fullClasspath).value
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(ScalafixTestkitPlugin)
+  .dependsOn(scalafixInput, scalafixRules)
 
 //------------------------------------------------------------------------------
 // Settings
