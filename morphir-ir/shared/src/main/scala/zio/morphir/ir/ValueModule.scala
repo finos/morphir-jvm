@@ -100,6 +100,7 @@ object ValueModule {
       Definition(Chunk.empty, valueType, value)
     }
   }
+
   final case class InputParameter[+Annotations](
       name: Name,
       tpe: Type[Annotations],
@@ -337,6 +338,7 @@ object ValueModule {
       case _ @ValueCase.LiteralCase(_)          => Set.empty
       case c @ ValueCase.PatternMatchCase(_, _) => c.cases.flatMap(_._2).toSet ++ c.branchOutOn
       case c @ ValueCase.RecordCase(_)          => c.fields.flatMap(_._2).toSet
+      case c @ ValueCase.ReferenceCase(_)       => Set(c.name)
       case c @ ValueCase.TupleCase(_)           => c.elements.flatten.toSet
       case _ @ValueCase.UnitCase                => Set.empty
       case c @ ValueCase.UpdateRecordCase(_, _) => c.fieldsToUpdate.flatMap(_._2).toSet ++ c.valueToUpdate
