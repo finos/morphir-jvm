@@ -1,5 +1,7 @@
 package zio.morphir.ir
+
 import zio.Chunk
+import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
 
 object ModuleModule {
 
@@ -37,10 +39,33 @@ object ModuleModule {
 
     def mapAttributes: Definition[Annotations] = ???
 
-    def collectTypeReferences: Set[FQName]         = ???
-    def collectValueReferences: Set[FQName]        = ???
-    def collectReferences: Set[FQName]             = ???
-    def dependsOnModules: Set[QualifiedModuleName] = ???
+    def collectTypeReferences: Set[FQName] = self.types.flatMap {
+      case (_, AccessControlled.WithPrivateAccess(definition)) =>
+        definition.value match {
+          case TypeAlias(_, typeExp) => typeExp.collectReferences
+          case CustomType(_, ctors)  => ctors.withPrivateAccess.collectReferences
+        }
+      case (_, AccessControlled.WithPublicAccess(definition)) =>
+        definition.value match {
+          case TypeAlias(_, typeExp) => typeExp.collectReferences
+          case CustomType(_, ctors)  => ctors.withPrivateAccess.collectReferences
+        }
+      case _ => Nil
+
+    }.toSet
+
+    def collectValueReferences: Set[FQName] = self.values.flatMap {
+      case (_, AccessControlled.WithPrivateAccess(definition)) =>
+        definition.body.collectReferences
+      case (_, AccessControlled.WithPublicAccess(definition)) =>
+        definition.body.collectReferences
+      case _ => Nil
+    }.toSet
+
+    def collectReferences: Set[FQName] = collectTypeReferences ++ collectValueReferences
+    def dependsOnModules: Set[QualifiedModuleName] = self.collectReferences.map { case FQName(pp, mp, _) =>
+      QualifiedModuleName(pp.toPath, mp.toPath)
+    }
   }
 
   object Definition {
