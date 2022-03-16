@@ -10,6 +10,7 @@ sealed trait Literal[+A] { self =>
 }
 object Literal {
   def boolean(value: Boolean): Bool                         = Bool(value)
+  def char(value: scala.Char): Char                         = Char(value)
   def double(value: scala.Double): Float                    = Float(java.math.BigDecimal.valueOf(value))
   def float(value: scala.Float): Float                      = Float(java.math.BigDecimal.valueOf(value.toDouble))
   def int(value: Int): WholeNumber                          = WholeNumber(java.math.BigInteger.valueOf(value.toLong))
@@ -24,5 +25,4 @@ object Literal {
   final case class String(value: java.lang.String)          extends Literal[java.lang.String]
   final case class WholeNumber(value: java.math.BigInteger) extends Literal[java.math.BigInteger]
   final case class Float(value: java.math.BigDecimal)       extends Literal[java.math.BigDecimal]
-
 }

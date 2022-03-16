@@ -31,12 +31,12 @@ addCommandAlias(
 
 addCommandAlias(
   "testJVM",
-  Seq("cli/test", "coreJVM/test", "irJVM/test", "sexprJVM/test").mkString(";", ";", ";")
+  Seq("cli/test", "coreJVM/test", "irJVM/test", "sexprJVM/test", "jsonJVM/test").mkString(";", ";", ";")
 )
 
 addCommandAlias(
   "testJS",
-  Seq("coreJS/test", "irJS/test", "sexprJS/test").mkString(";", ";", ";")
+  Seq("coreJS/test", "irJS/test", "sexprJS/test", "jsonJS/test").mkString(";", ";", ";")
 )
 
 lazy val root = project

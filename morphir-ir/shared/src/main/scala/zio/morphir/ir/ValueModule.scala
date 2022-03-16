@@ -144,50 +144,83 @@ object ValueModule {
     import ValueCase.*
     import Value.*
 
-    def fold[Z](f: ValueCase[Z] => Z): Z = self.caseValue match {
-      case c @ ValueCase.ApplyCase(_, _)    => f(ValueCase.ApplyCase(c.function.fold(f), c.arguments.map(_.fold(f))))
-      case c @ ValueCase.ConstructorCase(_) => f(ValueCase.ConstructorCase(c.name))
-      case c @ ValueCase.DestructureCase(_, _, _) =>
-        f(ValueCase.DestructureCase(c.pattern, c.valueToDestruct.fold(f), c.inValue.fold(f)))
-      case c @ ValueCase.FieldCase(_, _)      => f(ValueCase.FieldCase(c.target.fold(f), c.name))
-      case c @ ValueCase.FieldFunctionCase(_) => f(c)
-      case c @ ValueCase.IfThenElseCase(_, _, _) =>
-        f(ValueCase.IfThenElseCase(c.condition.fold(f), c.thenBranch.fold(f), c.elseBranch.fold(f)))
-      case c @ ValueCase.LambdaCase(_, _) => f(ValueCase.LambdaCase(c.argumentPattern, c.body.fold(f)))
-      case c @ ValueCase.LetDefinitionCase(_, _, _) =>
-        f(ValueCase.LetDefinitionCase(c.valueName, c.valueDefinition.map(_.fold(f)), c.inValue.fold(f)))
-      case c @ ValueCase.LetRecursionCase(_, _) =>
-        f(
-          ValueCase.LetRecursionCase(
-            c.valueDefinitions.map { case (name, value) => (name, value.map(_.fold(f))) },
-            c.inValue.fold(f)
+    def fold[Z](f: ValueCase[Z] => Z): Z =
+      foldAnnotated((caseValue, _) => f(caseValue))
+
+    def foldAnnotated[Z](f: (ValueCase[Z], ZEnvironment[Annotations]) => Z): Z =
+      self.caseValue match {
+        case c @ ValueCase.ApplyCase(_, _) =>
+          f(ValueCase.ApplyCase(c.function.foldAnnotated(f), c.arguments.map(_.foldAnnotated(f))), annotations)
+        case c @ ValueCase.ConstructorCase(_) =>
+          f(ValueCase.ConstructorCase(c.name), annotations)
+        case c @ ValueCase.DestructureCase(_, _, _) =>
+          f(
+            ValueCase.DestructureCase(c.pattern, c.valueToDestruct.foldAnnotated(f), c.inValue.foldAnnotated(f)),
+            annotations
           )
-        )
-      case c @ ValueCase.ListCase(_)           => f(ValueCase.ListCase(c.elements.map(_.fold(f))))
-      case c @ ValueCase.LiteralCase(_)        => f(c)
-      case c @ ValueCase.NativeApplyCase(_, _) => f(ValueCase.NativeApplyCase(c.function, c.arguments.map(_.fold(f))))
-      case c @ ValueCase.PatternMatchCase(_, _) =>
-        f(
-          ValueCase.PatternMatchCase(
-            c.branchOutOn.fold(f),
-            c.cases.map { case (pattern, value) =>
-              (pattern, value.fold(f))
-            }
+        case c @ ValueCase.FieldCase(_, _) =>
+          f(ValueCase.FieldCase(c.target.foldAnnotated(f), c.name), annotations)
+        case c @ ValueCase.FieldFunctionCase(_) =>
+          f(c, annotations)
+        case c @ ValueCase.IfThenElseCase(_, _, _) =>
+          f(
+            ValueCase.IfThenElseCase(
+              c.condition.foldAnnotated(f),
+              c.thenBranch.foldAnnotated(f),
+              c.elseBranch.foldAnnotated(f)
+            ),
+            annotations
           )
-        )
-      case c @ ValueCase.RecordCase(_)    => f(ValueCase.RecordCase(c.fields.map { case (k, v) => (k, v.fold(f)) }))
-      case c @ ValueCase.ReferenceCase(_) => f(c)
-      case c @ ValueCase.TupleCase(_)     => f(ValueCase.TupleCase(c.elements.map(_.fold(f))))
-      case _ @ValueCase.UnitCase          => f(ValueCase.UnitCase)
-      case c @ ValueCase.UpdateRecordCase(_, _) =>
-        f(
-          ValueCase.UpdateRecordCase(
-            c.valueToUpdate.fold(f),
-            c.fieldsToUpdate.map { case (name, value) => (name, value.fold(f)) }
+        case c @ ValueCase.LambdaCase(_, _) =>
+          f(ValueCase.LambdaCase(c.argumentPattern, c.body.foldAnnotated(f)), annotations)
+        case c @ ValueCase.LetDefinitionCase(_, _, _) =>
+          f(
+            ValueCase
+              .LetDefinitionCase(c.valueName, c.valueDefinition.map(_.foldAnnotated(f)), c.inValue.foldAnnotated(f)),
+            annotations
           )
-        )
-      case c @ ValueCase.VariableCase(_) => f(c)
-    }
+        case c @ ValueCase.LetRecursionCase(_, _) =>
+          f(
+            ValueCase.LetRecursionCase(
+              c.valueDefinitions.map { case (name, value) => (name, value.map(_.foldAnnotated(f))) },
+              c.inValue.foldAnnotated(f)
+            ),
+            annotations
+          )
+        case c @ ValueCase.ListCase(_) =>
+          f(ValueCase.ListCase(c.elements.map(_.foldAnnotated(f))), annotations)
+        case c @ ValueCase.LiteralCase(_) =>
+          f(c, annotations)
+        case c @ ValueCase.NativeApplyCase(_, _) =>
+          f(ValueCase.NativeApplyCase(c.function, c.arguments.map(_.foldAnnotated(f))), annotations)
+        case c @ ValueCase.PatternMatchCase(_, _) =>
+          f(
+            ValueCase.PatternMatchCase(
+              c.branchOutOn.foldAnnotated(f),
+              c.cases.map { case (pattern, value) =>
+                (pattern, value.foldAnnotated(f))
+              }
+            ),
+            annotations
+          )
+        case c @ ValueCase.RecordCase(_) =>
+          f(ValueCase.RecordCase(c.fields.map { case (k, v) => (k, v.foldAnnotated(f)) }), annotations)
+        case c @ ValueCase.ReferenceCase(_) =>
+          f(c, annotations)
+        case c @ ValueCase.TupleCase(_) =>
+          f(ValueCase.TupleCase(c.elements.map(_.foldAnnotated(f))), annotations)
+        case _ @ValueCase.UnitCase =>
+          f(ValueCase.UnitCase, annotations)
+        case c @ ValueCase.UpdateRecordCase(_, _) =>
+          f(
+            ValueCase.UpdateRecordCase(
+              c.valueToUpdate.foldAnnotated(f),
+              c.fieldsToUpdate.map { case (name, value) => (name, value.foldAnnotated(f)) }
+            ),
+            annotations
+          )
+        case c @ ValueCase.VariableCase(_) => f(c, annotations)
+      }
 
     def foldDown[Z](z: Z)(f: (Z, Value[Annotations]) => Z): Z =
       caseValue.foldLeft(f(z, self))((z, recursive) => recursive.foldDown(z)(f))
