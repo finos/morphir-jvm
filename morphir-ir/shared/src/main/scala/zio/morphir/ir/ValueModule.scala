@@ -15,7 +15,7 @@ object ValueModule {
   ): Validation[Err, ValueDefinition[Annotations]] = ???
 
   def mapSpecificationAttributes[A, B](spec: Specification[A])(func: A => B): Specification[B] =
-    spec.mapSpecificationAttributes(func)
+    spec.map(func)
 
 //  def mapValueAttributes[A, B](value: Value[A])(func: A => B): Value[B] = ???
 
@@ -120,8 +120,10 @@ object ValueModule {
   final type RawValue = Value[Any]
   final val RawValue = Value
 
-  final case class Specification[+Annotations](inputs: Chunk[(Name, Type[Annotations])], output: Type[Annotations]) {
-    def mapSpecificationAttributes[B](func: Annotations => B): Specification[B] = ???
+  final case class Specification[+Attributes](inputs: Chunk[(Name, Type[Attributes])], output: Type[Attributes]) {
+    self =>
+    def map[B](f: Attributes => B): Specification[B] =
+      Specification(inputs.map { case (name, tpe) => (name, tpe.mapAttributes(f)) }, output.mapAttributes(f))
   }
 
   object Specification {

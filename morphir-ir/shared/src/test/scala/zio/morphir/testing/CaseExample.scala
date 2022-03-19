@@ -1,7 +1,7 @@
 package zio.morphir.ir.testing
 
 import zio.morphir.ir.Name
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.TypeModule.Type
 import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
 import zio.morphir.ir.NativeFunction
@@ -289,8 +289,7 @@ object CaseExample extends ValueSyntax with TypeSyntax {
 
   lazy val recordTypeAliasSpecification = TypeModule.Specification.TypeAliasSpecification[Any](
     typeParams = Chunk.empty,
-    expr = recordType,
-    annotations = ZEnvironment.empty
+    expr = recordType
   )
 
   lazy val accountTypeName = FQName(

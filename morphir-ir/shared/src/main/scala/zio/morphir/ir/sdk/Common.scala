@@ -1,13 +1,27 @@
 package zio.morphir.ir.sdk
 
-import zio.morphir.ir.ValueModule
-import zio.morphir.ir.TypeModule.Type
-import zio.morphir.ir.Name
+import zio.Chunk
+import zio.morphir.ir.PackageModule.PackageName
+import zio.morphir.ir.{FQName, ModuleName, Name, UType, ValueModule}
 
 object Common {
-  final class VSpec(private val name: () => String) extends AnyVal {
-    def apply[Annotations](inputs: (Name, Type[Annotations])*) =
-      ValueModule.Specification.create(inputs: _*)
+  val packageName: PackageName = PackageName.fromString("Morphir.SDK")
+
+  def toFQName(moduleName: ModuleName, localName: String): FQName =
+    FQName(packageName, moduleName.toModulePath, Name.fromString(localName))
+
+  def tVar(varName: String): UType = UType.variable(varName)
+
+  def vSpec(name: String, inputs: (String, UType)*) = new VSpec(() => (name, Chunk.fromIterable(inputs)))
+
+  final class VSpec(private val data: () => (String, Chunk[(String, UType)])) extends AnyVal {
+    def apply(outputType: UType): (Name, ValueModule.Specification[Any]) = {
+      val (name, inputs) = data()
+      (
+        Name.fromString(name),
+        ValueModule.Specification(inputs.map { case (name, tpe) => (Name.fromString(name), tpe) }, outputType)
+      )
+    }
   }
 
 }

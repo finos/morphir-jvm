@@ -99,6 +99,8 @@ object ModuleModule {
   final case class ModuleName(namespace: Path, localName: Name) {
     def %(name: Name): QName = QName(toPath, name)
 
+    def toModulePath: ModulePath = ModulePath(toPath)
+
     lazy val toPath = namespace / localName
   }
 
@@ -131,14 +133,14 @@ object ModuleModule {
 }
 
 trait ModuleSpecFor[A] {
-  import ModuleModule.*
+  import ModuleModule._
 
   def module: ModuleName
   def spec: Specification[Any]
 }
 
 object ModuleSpecFor {
-  import ModuleModule.*
+  import ModuleModule._
 
   /** Summon the module specification for the given module/type. */
   def apply[A](implicit specFor: ModuleSpecFor[A]): ModuleSpecFor[A] = specFor

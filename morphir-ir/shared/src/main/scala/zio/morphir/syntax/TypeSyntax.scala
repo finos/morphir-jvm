@@ -3,59 +3,59 @@ package zio.morphir.syntax
 import zio.morphir.ir.TypeModule.TypeCase._
 import zio.morphir.ir.TypeModule.{Field, Type}
 import zio.morphir.ir.{FQName, Name, UType}
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 
 trait TypeSyntax {
-  def defineVariable(name: String): Type[Any] = Type(VariableCase(Name.fromString(name)), ZEnvironment.empty)
-  def defineVariable(name: Name): Type[Any]   = Type(VariableCase(name), ZEnvironment.empty)
+  def defineVariable(name: String): UType = Type(VariableCase(Name.fromString(name)), Type.emptyAttributes)
+  def defineVariable(name: Name): UType   = Type(VariableCase(name), Type.emptyAttributes)
 
-  def defineField(name: Name, fieldType: Type[Any]): Field[Type[Any]]   = Field(name, fieldType)
-  def defineField(name: String, fieldType: Type[Any]): Field[Type[Any]] = Field(Name.fromString(name), fieldType)
+  def defineField(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
+  def defineField(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
-  def defineRecord(fields: Chunk[Field[Type[Any]]]): Type[Any] =
-    Type(RecordCase(fields), ZEnvironment.empty)
-  def defineRecord(fields: Field[Type[Any]]*): Type[Any] =
-    Type(RecordCase(Chunk.fromIterable(fields)), ZEnvironment.empty)
+  def defineRecord(fields: Chunk[Field[UType]]): UType =
+    Type(RecordCase(fields), Type.emptyAttributes)
+  def defineRecord(fields: Field[UType]*): UType =
+    Type(RecordCase(Chunk.fromIterable(fields)), Type.emptyAttributes)
 
-  def defineTuple(elementTypes: Chunk[Type[Any]]): Type[Any] =
-    Type(TupleCase(elementTypes), ZEnvironment.empty)
-  def defineTuple(first: Type[Any], second: Type[Any], rest: Type[Any]*): Type[Any] =
-    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), ZEnvironment.empty)
+  def defineTuple(elementTypes: Chunk[UType]): UType =
+    Type(TupleCase(elementTypes), Type.emptyAttributes)
+  def defineTuple(first: UType, second: UType, rest: UType*): UType =
+    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), Type.emptyAttributes)
 
-  def defineFunction(paramTypes: Chunk[Type[Any]], returnType: Type[Any]): Type[Any] =
-    Type(FunctionCase(paramTypes, returnType), ZEnvironment.empty)
+  def defineFunction(paramTypes: Chunk[UType], returnType: UType): UType =
+    Type(FunctionCase(paramTypes, returnType), Type.emptyAttributes)
   def defineFunction[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
-  def defineExtensibleRecord(name: Name, fields: Chunk[Field[Type[Any]]]): Type[Any] =
-    Type(ExtensibleRecordCase(name, fields), ZEnvironment.empty)
-  def defineExtensibleRecord(name: Name, fields: Field[Type[Any]]*): Type[Any] =
-    Type(ExtensibleRecordCase(name, Chunk.fromIterable(fields)), ZEnvironment.empty)
-  def defineExtensibleRecord(name: String, fields: Chunk[Field[Type[Any]]]): Type[Any] =
-    Type(ExtensibleRecordCase(Name.fromString(name), fields), ZEnvironment.empty)
-  def defineExtensibleRecord(name: String, fields: Field[Type[Any]]*): Type[Any] =
-    Type(ExtensibleRecordCase(Name.fromString(name), Chunk.fromIterable(fields)), ZEnvironment.empty)
+  def defineExtensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
+    Type(ExtensibleRecordCase(name, fields), Type.emptyAttributes)
+  def defineExtensibleRecord(name: Name, fields: Field[UType]*): UType =
+    Type(ExtensibleRecordCase(name, Chunk.fromIterable(fields)), Type.emptyAttributes)
+  def defineExtensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
+    Type(ExtensibleRecordCase(Name.fromString(name), fields), Type.emptyAttributes)
+  def defineExtensibleRecord(name: String, fields: Field[UType]*): UType =
+    Type(ExtensibleRecordCase(Name.fromString(name), Chunk.fromIterable(fields)), Type.emptyAttributes)
 
-  def defineReference(name: FQName, typeParams: Chunk[Type[Any]]): Type[Any] =
-    Type(ReferenceCase(name, typeParams), ZEnvironment.empty)
-  def defineReference(name: FQName, typeParams: Type[Any]*): Type[Any] =
-    Type(ReferenceCase(name, Chunk.fromIterable(typeParams)), ZEnvironment.empty)
+  def defineReference(name: FQName, typeParams: Chunk[UType]): UType =
+    Type(ReferenceCase(name, typeParams), Type.emptyAttributes)
+  def defineReference(name: FQName, typeParams: UType*): UType =
+    Type(ReferenceCase(name, Chunk.fromIterable(typeParams)), Type.emptyAttributes)
   def defineReference(
       packageName: String,
       moduleName: String,
       localName: String,
-      typeParams: Chunk[Type[Any]]
-  ): Type[Any] =
-    Type(ReferenceCase(FQName.fqn(packageName, moduleName, localName), typeParams), ZEnvironment.empty)
-  def defineReference(packageName: String, moduleName: String, localName: String, typeParams: Type[Any]*): Type[Any] =
+      typeParams: Chunk[UType]
+  ): UType =
+    Type(ReferenceCase(FQName.fqn(packageName, moduleName, localName), typeParams), Type.emptyAttributes)
+  def defineReference(packageName: String, moduleName: String, localName: String, typeParams: UType*): UType =
     Type(
       ReferenceCase(FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams)),
-      ZEnvironment.empty
+      Type.emptyAttributes
     )
 }
 
 trait TypeModuleSyntax {
-  val unit: Type[Any]                                                      = Type(UnitCase, ())
+  val unit: UType                                                          = Type(UnitCase, ())
   final def unit[Annotations](annotations: Annotations): Type[Annotations] = Type(UnitCase, annotations)
 
   /**
@@ -71,49 +71,49 @@ trait TypeModuleSyntax {
   final def field(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
   final def field(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
-  final def record(fields: Chunk[Field[Type[Any]]]): Type[Any] =
-    Type(RecordCase(fields), ZEnvironment.empty)
-  final def record(fields: Field[Type[Any]]*): Type[Any] =
-    Type(RecordCase(Chunk.fromIterable(fields)), ZEnvironment.empty)
+  final def record(fields: Chunk[Field[UType]]): UType =
+    Type(RecordCase(fields), Type.emptyAttributes)
+  final def record(fields: Field[UType]*): UType =
+    Type(RecordCase(Chunk.fromIterable(fields)), Type.emptyAttributes)
 
-  final def tuple(elementTypes: Chunk[Type[Any]]): Type[Any] =
-    Type(TupleCase(elementTypes), ZEnvironment.empty)
-  final def tuple(first: Type[Any], second: Type[Any], rest: Type[Any]*): Type[Any] =
-    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), ZEnvironment.empty)
+  final def tuple(elementTypes: Chunk[UType]): UType =
+    Type(TupleCase(elementTypes), Type.emptyAttributes)
+  final def tuple(first: UType, second: UType, rest: UType*): UType =
+    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), Type.emptyAttributes)
 
-  final def function(paramTypes: Chunk[Type[Any]], returnType: Type[Any]): Type[Any] =
-    Type(FunctionCase(paramTypes, returnType), ZEnvironment.empty)
+  final def function(paramTypes: Chunk[UType], returnType: UType): UType =
+    Type(FunctionCase(paramTypes, returnType), Type.emptyAttributes)
   final def function[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
-  final def extensibleRecord(name: Name, fields: Chunk[Field[Type[Any]]]): Type[Any] =
-    Type(ExtensibleRecordCase(name, fields), ZEnvironment.empty)
-  final def extensibleRecord(name: Name, fields: Field[Type[Any]]*): Type[Any] =
-    Type(ExtensibleRecordCase(name, Chunk.fromIterable(fields)), ZEnvironment.empty)
-  final def extensibleRecord(name: String, fields: Chunk[Field[Type[Any]]]): Type[Any] =
-    Type(ExtensibleRecordCase(Name.fromString(name), fields), ZEnvironment.empty)
-  final def extensibleRecord(name: String, fields: Field[Type[Any]]*): Type[Any] =
-    Type(ExtensibleRecordCase(Name.fromString(name), Chunk.fromIterable(fields)), ZEnvironment.empty)
+  final def extensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
+    Type(ExtensibleRecordCase(name, fields), Type.emptyAttributes)
+  final def extensibleRecord(name: Name, fields: Field[UType]*): UType =
+    Type(ExtensibleRecordCase(name, Chunk.fromIterable(fields)), Type.emptyAttributes)
+  final def extensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
+    Type(ExtensibleRecordCase(Name.fromString(name), fields), Type.emptyAttributes)
+  final def extensibleRecord(name: String, fields: Field[UType]*): UType =
+    Type(ExtensibleRecordCase(Name.fromString(name), Chunk.fromIterable(fields)), Type.emptyAttributes)
 
-  final def reference(name: FQName, typeParams: Chunk[Type[Any]]): Type[Any] =
-    Type(ReferenceCase(name, typeParams), ZEnvironment.empty)
-  final def reference(name: FQName, typeParams: Type[Any]*): Type[Any] =
-    Type(ReferenceCase(name, Chunk.fromIterable(typeParams)), ZEnvironment.empty)
+  final def reference(name: FQName, typeParams: Chunk[UType]): UType =
+    Type(ReferenceCase(name, typeParams), Type.emptyAttributes)
+  final def reference(name: FQName, typeParams: UType*): UType =
+    Type(ReferenceCase(name, Chunk.fromIterable(typeParams)), Type.emptyAttributes)
   final def reference(
       packageName: String,
       moduleName: String,
       localName: String,
-      typeParams: Chunk[Type[Any]]
-  ): Type[Any] =
-    Type(ReferenceCase(FQName.fqn(packageName, moduleName, localName), typeParams), ZEnvironment.empty)
+      typeParams: Chunk[UType]
+  ): UType =
+    Type(ReferenceCase(FQName.fqn(packageName, moduleName, localName), typeParams), Type.emptyAttributes)
 
-  def reference(packageName: String, moduleName: String, localName: String, typeParams: Type[Any]*): Type[Any] =
+  def reference(packageName: String, moduleName: String, localName: String, typeParams: UType*): UType =
     Type(
       ReferenceCase(FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams)),
-      ZEnvironment.empty
+      Type.emptyAttributes
     )
 
-  @inline final def ref(name: FQName): Type[Any] = reference(name, Chunk.empty)
+  @inline final def ref(name: FQName): UType = reference(name, Chunk.empty)
 }
 
 object SyntaxHelper {

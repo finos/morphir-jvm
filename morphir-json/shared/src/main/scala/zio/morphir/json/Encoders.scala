@@ -39,7 +39,9 @@ object Encoders {
       )
 
     implicit def fieldEncoder[A](implicit encoder: JsonEncoder[A]): JsonEncoder[Field[A]] =
-      Json.encoder.contramap[Field[A]](field => Json.Arr(toJsonAstOrThrow(field.name), toJsonAstOrThrow(field.tpe)))
+      Json.encoder.contramap[Field[A]](field =>
+        Json.Arr(toJsonAstOrThrow(field.name), toJsonAstOrThrow(field.fieldType))
+      )
 
     implicit def literalBoolEncoder: JsonEncoder[Literal.Bool] = Json.encoder.contramap[Literal.Bool] { literal =>
       Json.Arr(Json.Str("bool_literal"), Json.Bool(literal.value))
@@ -152,21 +154,21 @@ object Encoders {
     ): JsonEncoder[TypeModule.Specification[Annotations]] = {
       Json.encoder.contramap[TypeModule.Specification[Annotations]] { specification =>
         specification match {
-          case TypeAliasSpecification(typeParams, expr, _) => {
+          case TypeAliasSpecification(typeParams, expr) => {
             Json.Arr(
               Json.Str("type_alias_specification"),
               toJsonAstOrThrow(typeParams),
               toJsonAstOrThrow(expr)
             )
           }
-          case CustomTypeSpecification(typeParams, ctors, _) => {
+          case CustomTypeSpecification(typeParams, ctors) => {
             Json.Arr(
               Json.Str("custom_type_specification"),
               toJsonAstOrThrow(typeParams),
               toJsonAstOrThrow(ctors)
             )
           }
-          case OpaqueTypeSpecification(typeParams, _) => {
+          case OpaqueTypeSpecification(typeParams) => {
             Json.Arr(
               Json.Str("opaque_type_specification"),
               toJsonAstOrThrow(typeParams)

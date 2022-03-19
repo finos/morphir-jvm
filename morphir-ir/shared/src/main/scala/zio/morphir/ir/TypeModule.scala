@@ -6,7 +6,7 @@ import zio.morphir.syntax.TypeModuleSyntax
 import zio.prelude.fx.ZPure
 object TypeModule extends TypeModuleSyntax {
 
-  final case class Field[+T](name: Name, tpe: T) { self =>
+  final case class Field[+T](name: Name, fieldType: T) { self =>
 
     /**
      * An alias for `attributeTypeWith`.
@@ -20,7 +20,7 @@ object TypeModule extends TypeModuleSyntax {
      * Attributes the field with the given `attributes`.
      */
     def attributeTypeAs[Attributes](attributes: => Attributes)(implicit ev: T <:< Type[_]): Field[Type[Attributes]] =
-      Field(name, tpe.mapAttributes(_ => attributes))
+      Field(name, fieldType.mapAttributes(_ => attributes))
 
     /**
      * Attributes the field's type using the given function.
@@ -28,12 +28,12 @@ object TypeModule extends TypeModuleSyntax {
     def attributeTypeWith[Attributes0, Attributes](f: Attributes0 => Attributes)(implicit
         ev: T <:< Type[Attributes0]
     ): Field[Type[Attributes]] =
-      Field(name, tpe.mapAttributes(f))
+      Field(name, fieldType.mapAttributes(f))
 
     def forEach[G[+_]: IdentityBoth: Covariant, U](f: T => G[U]): G[Field[U]] =
-      f(self.tpe).map(newType => self.copy(tpe = newType))
+      f(self.fieldType).map(newType => self.copy(fieldType = newType))
 
-    def map[U](f: T => U): Field[U] = Field(name, f(tpe))
+    def map[U](f: T => U): Field[U] = Field(name, f(fieldType))
 
   }
 
@@ -51,19 +51,19 @@ object TypeModule extends TypeModuleSyntax {
     }
   }
 
-  sealed trait Definition[+Annotations] { self =>
+  sealed trait Definition[+Attributes] { self =>
     import Definition._
     import Specification._
 
-    def toSpecification: Specification[Annotations] = self match {
+    def toSpecification: Specification[Attributes] = self match {
       case TypeAlias(typeParams, typeExp) =>
-        TypeAliasSpecification[Annotations](typeParams, typeExp, typeExp.attributes)
+        TypeAliasSpecification[Attributes](typeParams, typeExp)
       case CustomType(typeParams: Chunk[Name], ctors) if ctors.withPublicAccess.isDefined =>
-        val constructors: Constructors[Annotations] = ctors.withPublicAccess.get
+        val constructors: Constructors[Attributes] = ctors.withPublicAccess.get
         // val annotations = constructors.items.values.map(_.tpe.annotations).reduce(_ ++ _) // ???
-        CustomTypeSpecification[Annotations](typeParams, constructors, ???)
+        CustomTypeSpecification[Attributes](typeParams, constructors)
       case CustomType(typeParams, _) =>
-        OpaqueTypeSpecification[Annotations](typeParams, ???) // TODO fix annotations
+        OpaqueTypeSpecification(typeParams) // TODO fix annotations
     }
 
     // def eraseAttributes: Definition[Nothing] = self match {
@@ -75,21 +75,22 @@ object TypeModule extends TypeModuleSyntax {
   }
 
   object Definition {
-    final case class TypeAlias[+Annotations](typeParams: Chunk[Name], typeExp: Type[Annotations])
-        extends Definition[Annotations]
+    final case class TypeAlias[+Attributes](typeParams: Chunk[Name], typeExp: Type[Attributes])
+        extends Definition[Attributes]
 
-    final case class CustomType[+Annotations](
+    final case class CustomType[+Attributes](
         typeParams: Chunk[Name],
-        ctors: AccessControlled[Constructors[Annotations]]
-    ) extends Definition[Annotations]
+        ctors: AccessControlled[Constructors[Attributes]]
+    ) extends Definition[Attributes]
   }
 
   type USpecification = Specification[Any]
   val USpecification = Specification
-  sealed trait Specification[+Annotations] { self =>
+  sealed trait Specification[+Attributes] { self =>
     import Specification._
 
-    def annotations: Annotations
+    def ??(doc: String): Documented[Specification[Attributes]] =
+      Documented(doc, self)
 
     // def map[Annotations0 >: Annotations](f: Annotations => Annotations0): Specification[Annotations0] = self match {
     //   case c @ TypeAliasSpecification(_, _, _) =>
@@ -99,33 +100,33 @@ object TypeModule extends TypeModuleSyntax {
     //   case c @ CustomTypeSpecification(_, _, _) =>
     //     CustomTypeSpecification[Annotations0](c.typeParams, c.ctors.map(f), c.annotations.map(f))
     // }
-    def toUnannotated: Specification[Any] = self match {
-      case c @ TypeAliasSpecification(_, _, _) =>
-        TypeAliasSpecification(c.typeParams, c.expr.eraseAttributes, ())
-      case c @ OpaqueTypeSpecification(_, _) =>
-        OpaqueTypeSpecification[Any](c.typeParams, ())
-      case c @ CustomTypeSpecification(_, _, _) =>
-        CustomTypeSpecification[Any](c.typeParams, c.ctors.eraseAttributes, ())
+    def eraseAttributes: Specification[Any] = self match {
+      case c @ TypeAliasSpecification(_, _) =>
+        TypeAliasSpecification(c.typeParams, c.expr.eraseAttributes)
+      case c @ OpaqueTypeSpecification(_) =>
+        OpaqueTypeSpecification(c.typeParams)
+      case c @ CustomTypeSpecification(_, _) =>
+        CustomTypeSpecification(c.typeParams, c.ctors.eraseAttributes)
     }
   }
 
   object Specification {
-    final case class TypeAliasSpecification[+Annotations](
+    final case class TypeAliasSpecification[+Attributes](
         typeParams: Chunk[Name],
-        expr: Type[Annotations],
-        annotations: Annotations
-    ) extends Specification[Annotations]
+        expr: Type[Attributes]
+    ) extends Specification[Attributes]
 
-    final case class OpaqueTypeSpecification[+Annotations](
-        typeParams: Chunk[Name],
-        annotations: Annotations
-    ) extends Specification[Annotations]
+    final case class OpaqueTypeSpecification(typeParams: Chunk[Name]) extends Specification[Nothing]
 
-    final case class CustomTypeSpecification[+Annotations](
+    object OpaqueTypeSpecification {
+      def apply(typeParams: String*): OpaqueTypeSpecification =
+        OpaqueTypeSpecification(Chunk.fromIterable(typeParams.map(Name.fromString)))
+    }
+
+    final case class CustomTypeSpecification[+Attributes](
         typeParams: Chunk[Name],
-        ctors: Constructors[Annotations],
-        annotations: Annotations
-    ) extends Specification[Annotations]
+        ctors: Constructors[Attributes]
+    ) extends Specification[Attributes]
   }
 
   final case class Type[+Attributes] private[morphir] (
@@ -195,9 +196,9 @@ object TypeModule extends TypeModuleSyntax {
       }
 
     def collectVariables: Set[Name] = fold[Set[Name]] {
-      case c @ TypeCase.ExtensibleRecordCase(_, _)       => c.fields.map(_.tpe).flatten.toSet + c.name
+      case c @ TypeCase.ExtensibleRecordCase(_, _)       => c.fields.map(_.fieldType).flatten.toSet + c.name
       case TypeCase.FunctionCase(paramTypes, returnType) => paramTypes.flatten.toSet ++ returnType
-      case TypeCase.RecordCase(fields)                   => fields.map(_.tpe).flatten.toSet
+      case TypeCase.RecordCase(fields)                   => fields.map(_.fieldType).flatten.toSet
       case TypeCase.ReferenceCase(_, typeParams)         => typeParams.flatten.toSet
       case TypeCase.TupleCase(elementTypes)              => elementTypes.flatten.toSet
       case TypeCase.UnitCase                             => Set.empty
@@ -205,11 +206,11 @@ object TypeModule extends TypeModuleSyntax {
     }
 
     def collectReferences: Set[FQName] = fold[Set[FQName]] {
-      case c @ TypeCase.ExtensibleRecordCase(_, _) => c.fields.map(_.tpe).flatten.toSet
+      case c @ TypeCase.ExtensibleRecordCase(_, _) => c.fields.map(_.fieldType).flatten.toSet
       case TypeCase.FunctionCase(paramTypes, returnType) =>
         paramTypes.flatten.toSet ++ returnType
       case TypeCase.RecordCase(fields) =>
-        fields.map(_.tpe).flatten.toSet
+        fields.map(_.fieldType).flatten.toSet
       case TypeCase.ReferenceCase(name, typeParams) =>
         typeParams.flatten.toSet + name
       case TypeCase.TupleCase(elementTypes) => elementTypes.flatten.toSet

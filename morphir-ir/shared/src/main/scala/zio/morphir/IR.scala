@@ -22,7 +22,7 @@ final case class IR(
     typeSpecifications.get(fqName) match {
       case Some(typeSpecification) =>
         typeSpecification match {
-          case TypeModule.Specification.TypeAliasSpecification(_, underlyingType, _) =>
+          case TypeModule.Specification.TypeAliasSpecification(_, underlyingType) =>
             underlyingType.caseValue match {
               case TypeModule.TypeCase.ReferenceCase(fqName, _) =>
                 fqName

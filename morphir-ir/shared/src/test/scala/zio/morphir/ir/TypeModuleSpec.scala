@@ -42,16 +42,16 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val actual = field(Name("field1"), variable("FizzBuzz"))
         assertTrue(
           actual.name == Name("field1"),
-          actual.tpe.satisfiesCaseOf { case VariableCase(name) => name.toString == "[fizz,buzz]" },
-          actual.tpe.collectVariables == Set(Name.fromString("FizzBuzz"))
+          actual.fieldType.satisfiesCaseOf { case VariableCase(name) => name.toString == "[fizz,buzz]" },
+          actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
         )
       },
       test("testing second field constructor") {
         val actual = field("field1", variable("FizzBuzz"))
         assertTrue(
           actual.name == Name("field1"),
-          actual.tpe.satisfiesCaseOf { case VariableCase(name) => name.toString == "[fizz,buzz]" },
-          actual.tpe.collectVariables == Set(Name.fromString("FizzBuzz"))
+          actual.fieldType.satisfiesCaseOf { case VariableCase(name) => name.toString == "[fizz,buzz]" },
+          actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
         )
       }
     ),

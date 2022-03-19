@@ -1,15 +1,15 @@
 package zio.morphir.samples
 
-import zio.{Chunk, ZEnvironment}
+import zio.Chunk
 import zio.morphir.ir.ModuleModule.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.{defineVariable, string}
 import zio.morphir.ir.TypeModule.Constructors
 import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.{AccessControlled, Documented, Name, ValueModule}
+import zio.morphir.ir.{AccessControlled, Documented, Name, UType, ValueModule}
 
 object ModuleExample {
-  val items = Map {
+  val items: Map[Name, Chunk[(Name, UType)]] = Map {
     Name("type")    -> Chunk((Name("var"), defineVariable("var1")))
     Name("rainbow") -> Chunk((Name("red"), defineVariable("red")))
   }
@@ -21,7 +21,7 @@ object ModuleExample {
 
   val customType = Documented(
     "doc",
-    CustomType(Chunk(Name.fromString("world")), AccessControlled.publicAccess(Constructors(items)))
+    CustomType[Any](Chunk(Name.fromString("world")), AccessControlled.publicAccess(Constructors(items)))
   )
 
   val definitionTypes = Map {
@@ -40,11 +40,11 @@ object ModuleExample {
   val specTypes = Map {
     Name("hello") -> Documented(
       "doc",
-      OpaqueTypeSpecification(Chunk(Name("name1")), ZEnvironment.empty)
+      OpaqueTypeSpecification(Chunk(Name("name1")))
     )
     Name("world") -> Documented(
       "doc",
-      OpaqueTypeSpecification(Chunk(Name("name2")), ZEnvironment.empty)
+      OpaqueTypeSpecification(Chunk(Name("name2")))
     )
   }
 

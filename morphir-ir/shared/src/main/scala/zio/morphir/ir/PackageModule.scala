@@ -73,13 +73,17 @@ object PackageModule {
       FQName(self, ModulePath(moduleName.namespace), moduleName.localName)
   }
 
+  object PackageName {
+    def fromString(input: String): PackageName = PackageName(Path.fromString(input))
+  }
+
   final case class PackageAndModulePath(packageName: PackageName, modulePath: ModulePath) { self =>
     def %(name: Name): FQName = FQName(packageName, modulePath, name)
   }
 }
 
 trait PackageSpecFor[A] {
-  import PackageModule.*
+  import PackageModule._
 
   def packageName: PackageName
   def spec: Specification[Any]
