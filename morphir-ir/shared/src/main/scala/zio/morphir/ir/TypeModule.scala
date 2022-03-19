@@ -37,18 +37,30 @@ object TypeModule extends TypeModuleSyntax {
 
   }
 
-  final case class Constructors[+Attributes](items: Map[Name, Chunk[(Name, Type[Attributes])]]) { self =>
-    def eraseAttributes: Constructors[Any] = Constructors(items.map { case (ctor, args) =>
+  final case class Constructors[+Attributes](toMap: Map[Name, Chunk[(Name, Type[Attributes])]]) extends AnyVal { self =>
+    def eraseAttributes: Constructors[Any] = Constructors(toMap.map { case (ctor, args) =>
       (ctor, args.map { case (paramName, paramType) => (paramName, paramType.eraseAttributes) })
     })
 
     def collectReferences: Set[FQName] = {
-      items.values.flatMap {
+      toMap.values.flatMap {
         case Chunk((_, tpe)) =>
           tpe.collectReferences
         case _ => Nil
       }.toSet
     }
+
+    def ctorNames: Set[Name] = toMap.keySet
+  }
+
+  object Constructors {
+
+    def forEnum(case1: String, otherCases: String*): Constructors[Any] = {
+      val allCases  = (Chunk(case1) ++ otherCases).map(Name.fromString)
+      val emptyArgs = Chunk[(Name, UType)]()
+      Constructors(allCases.map(name => (name, emptyArgs)).toMap)
+    }
+
   }
 
   sealed trait Definition[+Attributes] { self =>
@@ -127,6 +139,29 @@ object TypeModule extends TypeModuleSyntax {
         typeParams: Chunk[Name],
         ctors: Constructors[Attributes]
     ) extends Specification[Attributes]
+
+    object CustomTypeSpecification {
+      def fromCtors[Attributes](
+          ctor: (String, Iterable[(String, Type[Attributes])]),
+          ctors: (String, Iterable[(String, Type[Attributes])])*
+      ): CustomTypeSpecification[Attributes] = {
+        val allCtors = (ctor +: ctors).map { case (name, args) =>
+          (
+            Name.fromString(name),
+            Chunk.fromIterable(args.map { case (name, tpe) =>
+              (Name.fromString(name), tpe)
+            })
+          )
+        }.toMap
+        CustomTypeSpecification(Chunk.empty, Constructors(allCtors))
+      }
+
+      def mkEnum(case1: String, otherCases: String*): CustomTypeSpecification[Any] =
+        CustomTypeSpecification(Chunk.empty, Constructors.forEnum(case1, otherCases: _*))
+    }
+
+    type UCustomTypeSpecification = CustomTypeSpecification[Any]
+    val UCustomTypeSpecification: CustomTypeSpecification.type = CustomTypeSpecification
   }
 
   final case class Type[+Attributes] private[morphir] (
@@ -323,6 +358,9 @@ object TypeModule extends TypeModuleSyntax {
           }
       }
   }
+
+  type UConstructors = Constructors[Any]
+  val UConstructors: Constructors.type = Constructors
 
   /** Represents an un-annotated type. */
   type UType = Type[Any]

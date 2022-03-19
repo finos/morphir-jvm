@@ -217,6 +217,16 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
           }
         )
       }
+    ),
+    suite("Constructors")(
+      test("Can make type constructors for an enum") {
+        val actual        = TypeConstructors.forEnum("Red", "Yellow", "Green")
+        val expectedNames = Set("Red", "Yellow", "Green").map(Name.fromString)
+        assertTrue(
+          actual.ctorNames == expectedNames,
+          actual.toMap.values.forall(_.isEmpty)
+        )
+      }
     )
   )
 }

@@ -111,7 +111,7 @@ object Encoders {
         Json.Arr(
           (
             toJsonAstOrThrow(
-              ctors.items.toList.map { case (ctorName: Name, ctorArgs: Chunk[(Name, Type[Annotations])]) =>
+              ctors.toMap.toList.map { case (ctorName: Name, ctorArgs: Chunk[(Name, Type[Annotations])]) =>
                 (
                   toJsonAstOrThrow(ctorName),
                   toJsonAstOrThrow(

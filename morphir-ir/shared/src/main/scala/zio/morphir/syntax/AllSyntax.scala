@@ -1,5 +1,5 @@
 package zio.morphir.syntax
 
-trait AllSyntax extends TypeSyntax with ValueSyntax
+trait AllSyntax extends NamingSyntax with TypeSyntax with ValueSyntax
 
 object all extends AllSyntax
