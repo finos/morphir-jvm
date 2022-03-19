@@ -1,10 +1,10 @@
 package zio.morphir.ir
 
 import zio.morphir.testing.MorphirBaseSpec
-import zio.morphir.ir.TypeModule.TypeCase
-import zio.test.*
+import zio.morphir.ir.TypeModule.{Type, TypeCase}
+import zio.test._
 import zio.morphir.syntax.TypeModuleSyntax
-import TypeCase.*
+import TypeCase._
 import zio.ZEnvironment
 
 object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
@@ -25,6 +25,16 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
         val actual = variable(Name("FizzBuzz"))
         assertTrue(actual.satisfiesCaseOf { case VariableCase(name) => name.toString == "[fizz,buzz]" }) &&
         assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+      },
+      test("eraseAttributes should clear out the Attributes") {
+        val actual   = variable("foo", (0, 0))
+        val expected = variable("foo")
+        assertTrue(
+          actual != expected,
+          actual.attributes == ((0, 0)) && expected.attributes == Type.emptyAttributes,
+          actual.eraseAttributes == variable("foo"),
+          actual.eraseAttributes == actual.mapAttributes(_ => Type.emptyAttributes)
+        )
       }
     ),
     suite("Field")(

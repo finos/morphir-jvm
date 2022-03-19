@@ -2,8 +2,8 @@ package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.TypeModule.Type
-import zio.{Chunk, ZEnvironment, ZIO}
-import zio.prelude.*
+import zio.{Chunk, ZIO}
+import zio.prelude._
 import zio.prelude.fx.ZPure
 import zio.morphir.syntax.ValueSyntax
 
@@ -92,7 +92,7 @@ object ValueModule {
       Definition(Chunk.empty, TypeModule.Type.unit, value)
 
     def fromTypedValue(value: TypedValue): ValueDefinition[Any] = {
-      val typeAttrib = value.annotations.get[UType]
+      val typeAttrib = value.annotations
       Definition(Chunk.empty, typeAttrib, value)
     }
 
@@ -104,7 +104,7 @@ object ValueModule {
   final case class InputParameter[+Annotations](
       name: Name,
       tpe: Type[Annotations],
-      annotations: ZEnvironment[Annotations]
+      annotations: Annotations
   ) {
     def toValue[A >: Annotations](body: Value[A]): Value[A] =
       Value(
@@ -139,15 +139,15 @@ object ValueModule {
 
   final case class Value[+Annotations] private[morphir] (
       caseValue: ValueCase[Value[Annotations]],
-      annotations: ZEnvironment[Annotations]
+      annotations: Annotations
   ) { self =>
-    import ValueCase.*
-    import Value.*
+    import ValueCase._
+    import Value._
 
     def fold[Z](f: ValueCase[Z] => Z): Z =
       foldAnnotated((caseValue, _) => f(caseValue))
 
-    def foldAnnotated[Z](f: (ValueCase[Z], ZEnvironment[Annotations]) => Z): Z =
+    def foldAnnotated[Z](f: (ValueCase[Z], Annotations) => Z): Z =
       self.caseValue match {
         case c @ ValueCase.ApplyCase(_, _) =>
           f(ValueCase.ApplyCase(c.function.foldAnnotated(f), c.arguments.map(_.foldAnnotated(f))), annotations)
@@ -388,12 +388,12 @@ object ValueModule {
   }
 
   object Value extends ValueSyntax {
-    def apply(caseValue: ValueCase[Value[Any]]): Value[Any] = Value(caseValue, ZEnvironment.empty)
+    def apply(caseValue: ValueCase[Value[Any]]): Value[Any] = Value(caseValue, ())
 
   }
 
   sealed trait ValueCase[+Self] { self =>
-    import ValueCase.*
+    import ValueCase._
 
     def map[B](f: Self => B): ValueCase[B] = self match {
       case c @ ApplyCase(_, _)          => ApplyCase(f(c.function), c.arguments.map(f))

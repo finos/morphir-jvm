@@ -61,7 +61,7 @@ object Encoders {
     implicit def literalEncoder[A]: JsonEncoder[Literal[A]] = Json.encoder.contramap[Literal[A]] { ??? }
 
     implicit def patternEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[Pattern[Annotations]] = Json.encoder.contramap[Pattern[Annotations]] { pattern =>
       pattern match {
         case Pattern.AsPattern(pattern @ _, name, annotations) =>
@@ -103,7 +103,7 @@ object Encoders {
     }
 
     implicit def constructorsEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[Constructors[Annotations]] = {
       Json.encoder.contramap[Constructors[Annotations]] { ctors =>
         Json.Arr(
@@ -134,7 +134,7 @@ object Encoders {
       }
 
     implicit def typeDefinitionEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[TypeModule.Definition[Annotations]] = {
       Json.encoder.contramap[TypeModule.Definition[Annotations]] { definition =>
         definition match {
@@ -148,7 +148,7 @@ object Encoders {
     }
 
     implicit def typeSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[TypeModule.Specification[Annotations]] = {
       Json.encoder.contramap[TypeModule.Specification[Annotations]] { specification =>
         specification match {
@@ -177,14 +177,14 @@ object Encoders {
     }
 
     implicit def inputParameterEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[ValueModule.InputParameter[Annotations]] =
       Json.encoder.contramap[ValueModule.InputParameter[Annotations]](ip =>
         Json.Arr(toJsonAstOrThrow(ip.name), toJsonAstOrThrow(ip.annotations), toJsonAstOrThrow(ip.tpe))
       )
 
     implicit def valueDefinitionEncoder[Self, Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]],
+        annotationsEncoder: JsonEncoder[Annotations],
         bodyEncoder: JsonEncoder[Self]
     ): JsonEncoder[ValueModule.Definition[Self, Annotations]] = {
       Json.encoder.contramap[ValueModule.Definition[Self, Annotations]] { definition =>
@@ -197,7 +197,7 @@ object Encoders {
     }
 
     implicit def valueSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[ValueModule.Specification[Annotations]] = {
       Json.encoder.contramap[ValueModule.Specification[Annotations]] { specification =>
         Json.Obj(
@@ -208,7 +208,7 @@ object Encoders {
     }
 
     implicit def valueEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[Value[Annotations]] = {
       Json.encoder.contramap[Value[Annotations]] { value =>
         value.foldAnnotated[Json] {
@@ -295,10 +295,10 @@ object Encoders {
     // }
 
     implicit def typeEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[Type[Annotations]] =
       Json.encoder.contramap[Type[Annotations]] { tpe =>
-        tpe.foldAnnotated[Json] {
+        tpe.foldAttributed[Json] {
           case (TypeCase.ExtensibleRecordCase(name, fields), annotations) =>
             Json.Arr(
               Json.Str("extensible_record"),
@@ -332,7 +332,7 @@ object Encoders {
     }
 
     implicit def moduleSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[ModuleModule.Specification[Annotations]] = {
       Json.encoder.contramap[ModuleModule.Specification[Annotations]] { specification =>
         Json.Obj(
@@ -343,7 +343,7 @@ object Encoders {
     }
 
     implicit def moduleDefinitionEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[ModuleModule.Definition[Annotations]] = {
       Json.encoder.contramap[ModuleModule.Definition[Annotations]] { definition =>
         Json.Obj(
@@ -354,7 +354,7 @@ object Encoders {
     }
 
     implicit def packageSpecificationEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[PackageModule.Specification[Annotations]] = {
       Json.encoder.contramap[PackageModule.Specification[Annotations]] { specification =>
         Json.Obj(
@@ -369,7 +369,7 @@ object Encoders {
     }
 
     implicit def packageDefinitionEncoder[Annotations](implicit
-        annotationsEncoder: JsonEncoder[ZEnvironment[Annotations]]
+        annotationsEncoder: JsonEncoder[Annotations]
     ): JsonEncoder[PackageModule.Definition[Annotations]] = {
       Json.encoder.contramap[PackageModule.Definition[Annotations]] { definition =>
         Json.Obj(

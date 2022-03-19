@@ -18,6 +18,9 @@ object Literal {
   def string(value: java.lang.String): String               = Literal.String(value)
   def wholeNumber(value: java.math.BigInteger): WholeNumber = WholeNumber(value)
 
+  val False: Bool = Bool(false)
+  val True: Bool  = boolean(true)
+
   implicit def literalToIRValue[A](literal: Literal[A]): Value[Any] = literal.toIRValue
 
   final case class Bool(value: scala.Boolean)               extends Literal[scala.Boolean]

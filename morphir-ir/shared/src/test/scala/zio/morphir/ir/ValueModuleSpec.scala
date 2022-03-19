@@ -1,14 +1,21 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.test.*
+import zio.test._
+import zio.test.TestAspect.{ignore, tag}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.syntax.ValueSyntax
 import ValueModule.Value
-import ValueModule.ValueCase.*
-import zio.ZEnvironment
+import ValueModule.ValueCase._
+import zio.morphir.ir.TypeModule.Type
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
+
+  val boolType: UType                  = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
+  val intType: UType                   = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
+  def listType(itemType: UType): UType = Type.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
+  val stringType: UType                = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
+
   def spec = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
@@ -460,10 +467,10 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
     ),
     suite("toRawValue should return as expected for:")(
       test("Apply") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
-        val in: Value[String]          = Value(ApplyCase(value, Chunk(value)), zenv)
+        val attribs                  = "prod"
+        val lit: LiteralCase[String] = LiteralCase(Literal.string("timeout"))
+        val value                    = Value(lit, attribs)
+        val in: Value[String]        = Value(ApplyCase(value, Chunk(value)), attribs)
 
         assertTrue(in.toRawValue == apply(string("timeout"), Chunk(string("timeout"))))
       },
@@ -473,94 +480,90 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-
-        val constr: Value[String] = Value(ConstructorCase(fqName), zenv)
+        val typeRef = Type.ref(fqName)
+        val constr  = Value(ConstructorCase(fqName), typeRef)
         assertTrue(constr.toRawValue == constructor(fqName))
       },
       test("Destructure") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val lit2: LiteralCase[String]  = LiteralCase(Literal.string("username"))
-        val value                      = Value(lit, zenv)
-        val value2                     = Value(lit2, zenv)
+        val lit: LiteralCase[String]  = LiteralCase(Literal.string("timeout"))
+        val lit2: LiteralCase[String] = LiteralCase(Literal.string("username"))
+        val value                     = Value(lit, stringType)
+        val value2                    = Value(lit2, stringType)
 
-        val des: Value[String] = Value(
+        val des: Value[UType] = Value(
           DestructureCase(
-            Pattern.WildcardPattern[String](zenv),
+            Pattern.WildcardPattern(stringType),
             value,
             value2
           ),
-          zenv
+          stringType
         )
         assertTrue(
           des.toRawValue == destructure(
-            Pattern.WildcardPattern[String](zenv),
+            Pattern.WildcardPattern(stringType),
             string("timeout"),
             string("username")
           )
         )
       },
       test("Field") {
-        val name                       = Name.fromString("Name")
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val name  = Name.fromString("Name")
+        val lit   = LiteralCase(Literal.int(42))
+        val value = Value(lit, intType)
 
-        val fi: Value[String] = Value(FieldCase(value, name), zenv)
+        val actual = Value(FieldCase(value, name), intType)
 
         assertTrue(
-          fi.toRawValue == field(string("timeout"), name)
+          actual.toRawValue == field(int(42), name)
         )
       },
       test("FieldFunction") {
-        val name                       = Name.fromString("Name")
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val ff: Value[String]          = Value(FieldFunctionCase(name), zenv)
+        val age = Name.fromString("age")
+        val ff  = Value(FieldFunctionCase(age), intType)
 
-        assertTrue(ff.toRawValue == fieldFunction(name))
+        assertTrue(ff.toRawValue == fieldFunction(age))
       },
       test("IfThenElse") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val gt: Value[UType] = reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:greaterThan"), intType)
+        val x: Value[UType]  = variable("x", intType)
+        val y: Value[UType]  = variable("y", intType)
+        val condition: Value[UType] = applyStrict(gt, x, y)
 
-        val ife: Value[String] = Value(IfThenElseCase(value, value, value), zenv)
-        val to                 = string("timeout")
-        assertTrue(ife.toRawValue == ifThenElse(to, to, to))
+        val ife = Value(IfThenElseCase(condition, x, y), intType)
+        assertTrue(ife.toRawValue == Value(IfThenElseCase(condition.toRawValue, x.toRawValue, y.toRawValue)))
       },
       test("Lambda") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
 
-        val lam: Value[String] = Value(LambdaCase(Pattern.WildcardPattern(zenv), value), zenv)
+        val actual = Value(
+          LambdaCase(Pattern.asPattern(intType, wildcardPattern, Name.fromString("x")), variable(Name.fromString("x"))),
+          intType
+        )
 
         assertTrue(
-          lam.toRawValue == lambda(Pattern.WildcardPattern(zenv), string("timeout"))
+          actual.toRawValue == lambda(
+            pattern = Pattern.asPattern(intType, wildcardPattern, Name.fromString("x")),
+            body = variable(Name.fromString("x"))
+          )
         )
       },
       test("LetDefinition") {
         import ValueModule.ValueDefinition
+        val varNameFlag = Name.fromString("flag")
+        val value       = Value(LiteralCase(Literal.False), boolType)
 
-        val name                       = Name("y")
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
-
-        val ld = Value(LetDefinitionCase(name, ValueDefinition.fromLiteral(value), value), zenv)
+        val ld = Value(
+          LetDefinitionCase(Name("flag"), ValueDefinition.fromTypedValue(value, boolType), variable("flag", boolType)),
+          boolType
+        )
         assertTrue(
           ld.toRawValue == letDefinition(
-            name,
-            ValueDefinition.fromLiteral(string("timeout")),
-            string("timeout")
+            varNameFlag,
+            ValueDefinition.fromTypedValue(value, boolType),
+            variable("flag").toRawValue
           )
         )
-      },
+      } @@ ignore @@ tag("TODO: LetDefinition"),
       test("LetRecursion") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
         val map = Map(
           Name.fromString("x") -> ifThenElse(
             condition = literal(false),
@@ -569,46 +572,45 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           ).toDefinition
         )
 
-        val lr = Value(LetRecursionCase(map, value), zenv)
+        val lr = Value(LetRecursionCase(map, variable("x")), intType)
 
-        assertTrue(lr.toRawValue == letRecursion(map, string("timeout")))
+        assertTrue(lr.toRawValue == letRecursion(map, variable("x")))
       },
       test("List") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
 
-        val l1 = Value(ListCase(Chunk(value)), zenv)
+        val l1 = Value(
+          ListCase(Chunk(Value(LiteralCase(Literal.True), boolType), Value(LiteralCase(Literal.False), boolType))),
+          listType(boolType)
+        )
 
         assertTrue(
-          l1.toRawValue == list(Chunk(string("timeout")))
+          l1.toRawValue == list(boolean(true), boolean(false))
         )
       },
       test("Literal") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val lit   = LiteralCase(Literal.True)
+        val value = Value(lit, boolType)
 
-        assertTrue(value.toRawValue == string("timeout"))
+        assertTrue(value.toRawValue == boolean(true))
       },
       test("NativeApply") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val x      = LiteralCase(Literal.int(42))
+        val y      = LiteralCase(Literal.int(58))
+        val xValue = Value(x, intType)
+        val yValue = Value(y, intType)
 
-        val nat = Value(
-          NativeApplyCase(NativeFunction.Addition, Chunk(value)),
-          zenv
+        val actual = Value(
+          NativeApplyCase(NativeFunction.Addition, Chunk(xValue, yValue)),
+          intType
         )
-        assertTrue(nat.toRawValue == nativeApply(NativeFunction.Addition, Chunk(string("timeout"))))
+        assertTrue(actual.toRawValue == nativeApply(NativeFunction.Addition, xValue.toRawValue, yValue.toRawValue))
       },
       test("PatternMatch") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val lit   = LiteralCase(Literal.string("timeout"))
+        val value = Value(lit, stringType)
 
         val cases = Chunk(
-          (Pattern.WildcardPattern(zenv), value)
+          (Pattern.WildcardPattern(stringType), value)
         )
 
         val pm = Value(
@@ -616,49 +618,46 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
             value,
             cases
           ),
-          zenv
+          stringType
         )
         assertTrue(
           pm.toRawValue == patternMatch(
             string("timeout"),
-            Chunk((Pattern.WildcardPattern(zenv), string("timeout")))
+            Chunk((Pattern.WildcardPattern(stringType), string("timeout")))
           )
         )
       },
       test("Reference") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
 
         val fqName = zio.morphir.ir.FQName(
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
-        val ref = Value(ReferenceCase(fqName), zenv)
+        val ref = Value(ReferenceCase(fqName), Type.ref(fqName))
         assertTrue(ref.toRawValue == reference(fqName))
       },
       test("Record") {
-        val name                       = Name.fromString("hello")
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val name  = Name.fromString("hello")
+        val lit   = LiteralCase(Literal.string("timeout"))
+        val value = Value(lit, stringType)
 
-        val rec = Value(RecordCase(Chunk((name, value))), zenv)
+        val rec = Value(RecordCase(Chunk((name, value))), Type.record(Type.field("hello", stringType)))
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
       },
       test("Tuple") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        val lit: LiteralCase[String]   = LiteralCase(Literal.string("timeout"))
-        val value                      = Value(lit, zenv)
+        val lit   = LiteralCase(Literal.string("timeout"))
+        val value = Value(lit, stringType)
 
-        val t1 = Value(TupleCase(Chunk(value)), zenv)
+        val t1 = Value(TupleCase(Chunk(value)), Type.tuple(Chunk(stringType)))
 
         assertTrue(
           t1.toRawValue == tuple(Chunk(string("timeout")))
         )
       },
       test("UpdateRecord") {
-//        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
+//        val attribs: ZEnvironment[String] = ZEnvironment.apply("prod")
 //
         // todo revisit this because Value can't be resolved
 //        val ur = Value(
@@ -666,7 +665,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 //            "hello",
 //            Chunk(Name("fieldB") -> "world")
 //          ),
-//          zenv
+//          attribs
 //        )
 
         //        assertTrue(
@@ -678,15 +677,12 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(1 == 1)
       },
       test("Variable") {
-        val name                       = Name("ha")
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-
-        val value = Value(VariableCase(name), zenv)
+        val name  = Name("ha")
+        val value = Value(VariableCase(name), stringType)
         assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {
-        val zenv: ZEnvironment[String] = ZEnvironment.apply("prod")
-        assertTrue(Value(UnitCase, zenv).toRawValue == unit)
+        assertTrue(Value(UnitCase, Type.unit).toRawValue == unit)
       }
     )
   )

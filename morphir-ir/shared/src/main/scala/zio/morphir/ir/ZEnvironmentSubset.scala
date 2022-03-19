@@ -197,6 +197,13 @@ object ZEnvironmentSubset {
   ): ZEnvironmentSubset[Subset, A with B with C with D with E] =
     ZEnvironmentSubset[Subset, A](a).add(b).add(c).add(d).add[E](e)
 
+  def make[Subset[_]]: MakePartiallyApplied[Subset] = new MakePartiallyApplied[Subset]
+
+  final class MakePartiallyApplied[Subset[_]](private val dummy: Boolean = true) extends AnyVal {
+    def apply[A: Tag: Subset](a: A): ZEnvironmentSubset[Subset, A] =
+      ZEnvironmentSubset[Subset, A](a)
+  }
+
   /**
    * The empty environment containing no services.
    */
