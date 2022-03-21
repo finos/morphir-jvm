@@ -2,9 +2,11 @@ package zio.morphir.json
 
 import zio.json._
 import zio.morphir.ir._
+import zio.morphir.ir.TypeModule._
 import zio.morphir.json.Encoders.MorphirJsonCodecV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
+import zio.Chunk
 
 object EncodingSpec extends DefaultRunnableSpec {
   def spec = suite("encoding")(
@@ -195,6 +197,31 @@ object EncodingSpec extends DefaultRunnableSpec {
       test("will encode an Literal.WholeNumber") {
         val actual   = Literal.WholeNumber(new java.math.BigInteger("321321"))
         val expected = """["int_literal",321321]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("Type")(
+      test("will encode TypeCase.UnitCase") {
+        val actual   = Type.unit[Int](1234)
+        val expected = """["unit",1234]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TypeCase.VariableCase") {
+        val actual   = Type.variable[Int]("x", 1234)
+        val expected = """["variable",1234,["x"]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode Field") {
+        val actual   = Field(Name("someField"), Type.variable[Int]("x", 1234))
+        val expected = """[["some","field"],["variable",1234,["x"]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TypeCase.RecordCase") {
+        val var1: Field[Type[Int]]         = Field(Name("first"), variable[Int]("f", 123))
+        val var2: Field[Type[Int]]         = Field(Name("second"), variable[Int]("g", 345))
+        val chunk: Chunk[Field[Type[Int]]] = zio.Chunk(var1, var2)
+        val actual                         = record(1, chunk)
+        val expected = """["record",1,[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
         assertTrue(actual.toJson == expected)
       }
     )

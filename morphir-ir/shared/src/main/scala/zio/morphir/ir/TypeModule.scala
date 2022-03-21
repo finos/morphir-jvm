@@ -300,7 +300,7 @@ object TypeModule extends TypeModuleSyntax {
   object Type extends TypeModuleSyntax {
     import TypeCase._
 
-    lazy val emptyAttributes: Any = ()
+    lazy val emptyAttributes: Unit = ()
 
     def apply(caseValue: TypeCase[UType]): UType = Type(caseValue, emptyAttributes)
 
@@ -363,6 +363,6 @@ object TypeModule extends TypeModuleSyntax {
   val UConstructors: Constructors.type = Constructors
 
   /** Represents an un-annotated type. */
-  type UType = Type[Any]
+  type UType = Type[Unit]
   val UType = Type
 }
