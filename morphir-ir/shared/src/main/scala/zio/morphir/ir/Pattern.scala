@@ -5,30 +5,30 @@ import zio.Chunk
 sealed trait Pattern[+Attributes] { self =>
   import Pattern._
 
-  def annotations: Attributes
+  def attributes: Attributes
   final def mapAttributes[B](f: Attributes => B): Pattern[B] = self match {
-    case AsPattern(pattern, name, annotations) => AsPattern(pattern.mapAttributes(f), name, f(annotations))
-    case ConstructorPattern(constructorName, argumentPatterns, annotations) =>
-      ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(annotations))
-    case EmptyListPattern(annotations) => EmptyListPattern(f(annotations))
-    case HeadTailPattern(headPattern, tailPattern, annotations) =>
-      HeadTailPattern(headPattern.mapAttributes(f), tailPattern.mapAttributes(f), f(annotations))
-    case LiteralPattern(literal, annotations) => LiteralPattern(literal, f(annotations))
-    case TuplePattern(elementPatterns, annotations) =>
-      TuplePattern(elementPatterns.map(_.mapAttributes(f)), f(annotations))
-    case UnitPattern(annotations)     => UnitPattern(f(annotations))
-    case WildcardPattern(annotations) => WildcardPattern(f(annotations))
+    case AsPattern(pattern, name, attributes) => AsPattern(pattern.mapAttributes(f), name, f(attributes))
+    case ConstructorPattern(constructorName, argumentPatterns, attributes) =>
+      ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(attributes))
+    case EmptyListPattern(attributes) => EmptyListPattern(f(attributes))
+    case HeadTailPattern(headPattern, tailPattern, attributes) =>
+      HeadTailPattern(headPattern.mapAttributes(f), tailPattern.mapAttributes(f), f(attributes))
+    case LiteralPattern(literal, attributes) => LiteralPattern(literal, f(attributes))
+    case TuplePattern(elementPatterns, attributes) =>
+      TuplePattern(elementPatterns.map(_.mapAttributes(f)), f(attributes))
+    case UnitPattern(attributes)     => UnitPattern(f(attributes))
+    case WildcardPattern(attributes) => WildcardPattern(f(attributes))
   }
 }
 
 object Pattern {
 
   def asPattern[Attributes](
-      annotations: Attributes,
+      attributes: Attributes,
       pattern: Pattern[Attributes],
       name: Name
   ): AsPattern[Attributes] =
-    AsPattern(pattern, name, annotations)
+    AsPattern(pattern, name, attributes)
 
   def asPattern(pattern: Pattern[Any], name: Name): AsPattern[Any] =
     AsPattern(pattern, name, ())
@@ -38,49 +38,49 @@ object Pattern {
 
   lazy val wildcardPattern: WildcardPattern[Any] = WildcardPattern[Any](())
 
-  def wildcardPattern[Attributes](annotations: Attributes): WildcardPattern[Attributes] =
-    WildcardPattern(annotations)
+  def wildcardPattern[Attributes](attributes: Attributes): WildcardPattern[Attributes] =
+    WildcardPattern(attributes)
 
   // val unit: UnitPattern[Any] = UnitPattern(ZEnvironment.empty)
-  // def unit[Attributes](annotations: ZEnvironment[Attributes]): UnitPattern[Attributes] = UnitPattern(annotations)
+  // def unit[Attributes](attributes: ZEnvironment[Attributes]): UnitPattern[Attributes] = UnitPattern(attributes)
   // val wildcard: Wildcard[Any] = Wildcard(ZEnvironment.empty)
-  // def wildcard[Attributes](annotations: ZEnvironment[Attributes]): Wildcard[Attributes] = Wildcard(annotations)
+  // def wildcard[Attributes](attributes: ZEnvironment[Attributes]): Wildcard[Attributes] = Wildcard(attributes)
 
-  // final case class LiteralPattern[+Attributes, +Value](value: Lit[Value], annotations: ZEnvironment[Attributes])
+  // final case class LiteralPattern[+Attributes, +Value](value: Lit[Value], attributes: ZEnvironment[Attributes])
   //     extends Pattern[Attributes]
 
   final case class AsPattern[+Attributes](
       pattern: Pattern[Attributes],
       name: Name,
-      annotations: Attributes
+      attributes: Attributes
   ) extends Pattern[Attributes]
 
   final case class ConstructorPattern[+Attributes](
       constructorName: FQName,
       argumentPatterns: Chunk[Pattern[Attributes]],
-      annotations: Attributes
+      attributes: Attributes
   ) extends Pattern[Attributes]
 
-  final case class EmptyListPattern[+Attributes](annotations: Attributes) extends Pattern[Attributes]
+  final case class EmptyListPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
 
   final case class HeadTailPattern[+Attributes](
       headPattern: Pattern[Attributes],
       tailPattern: Pattern[Attributes],
-      annotations: Attributes
+      attributes: Attributes
   ) extends Pattern[Attributes]
 
   final case class LiteralPattern[+A, +Attributes](
       literal: Literal[A],
-      annotations: Attributes
+      attributes: Attributes
   ) extends Pattern[Attributes]
 
   final case class TuplePattern[+Attributes](
       elementPatterns: Chunk[Pattern[Attributes]],
-      annotations: Attributes
+      attributes: Attributes
   ) extends Pattern[Attributes]
 
-  final case class UnitPattern[+Attributes](annotations: Attributes) extends Pattern[Attributes]
+  final case class UnitPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
 
-  final case class WildcardPattern[+Attributes](annotations: Attributes) extends Pattern[Attributes]
+  final case class WildcardPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
 
 }

@@ -5,20 +5,20 @@ import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.ir.TypeModule
 import zio.morphir.IR
 import zio.morphir.ir.LiteralValue
-import zio.morphir.ir.ValueModule.ValueCase.*
+import zio.morphir.ir.ValueModule.ValueCase._
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.FQName
 import zio.morphir.ir.Pattern
-import zio.morphir.ir.NativeFunction.*
-
+import zio.morphir.ir.NativeFunction._
 import zio.Chunk
 import zio.prelude._
 
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
+import IR._
 
-import IR.*
+import java.math.BigInteger
 object Interpreter {
 
   sealed trait Result
@@ -74,7 +74,7 @@ object Interpreter {
           val dealiased = ir.resolveAliases(fqName)
           def getRecordConstructor(name: FQName): Option[Any] =
             ir.typeSpecifications.get(name).collect {
-              case TypeAliasSpecification(_, TypeModule.Type(TypeModule.TypeCase.RecordCase(fields), _)) =>
+              case TypeAliasSpecification(_, TypeModule.Type.Record(_, fields)) =>
                 constructFunction(fqName, fields)
             }
 
@@ -89,7 +89,7 @@ object Interpreter {
           getRecordConstructor(dealiased) orElse getTypeConstructor(dealiased) match {
             case Some(fn) => fn
             case None =>
-              throw new InterpretationError.TypeNotFound(dealiased.toString)
+              throw InterpretationError.TypeNotFound(dealiased.toString)
           }
 
         // case class Constructor(name FQName)
@@ -115,7 +115,7 @@ object Interpreter {
           record.get(name) match {
             case Some(value) => value
             case None =>
-              throw new InterpretationError.FieldNotFound(name, s"Field $name not found in $record")
+              throw InterpretationError.FieldNotFound(name, s"Field $name not found in $record")
           }
 
         case FieldFunctionCase(name) =>
@@ -126,7 +126,7 @@ object Interpreter {
                   case Some(fieldValue) => fieldValue
                   case None             => InterpretationError.FieldNotFound(name, s"Field $name not found in $input")
                 }
-              case _ => throw new InterpretationError.RecordExpected(s"Record expected but got $input")
+              case _ => throw InterpretationError.RecordExpected(s"Record expected but got $input")
             }
 
         case IfThenElseCase(condition, thenBranch, elseBranch) =>
@@ -160,7 +160,7 @@ object Interpreter {
             }
           }
 
-          if (rightHandSide eq null) throw new InterpretationError.MatchError(s"could not match $evaluatedBody")
+          if (rightHandSide eq null) throw InterpretationError.MatchError(s"could not match $evaluatedBody")
           else loop(rightHandSide, variables ++ newVariables, references)
 
         case RecordCase(fields) =>
@@ -173,7 +173,7 @@ object Interpreter {
           references.get(name) match {
             case Some(value) => value
 
-            case None => throw new InterpretationError.ReferenceNotFound(name, s"Reference $name not found")
+            case None => throw InterpretationError.ReferenceNotFound(name, s"Reference $name not found")
           }
 
         case TupleCase(elements) =>
@@ -185,13 +185,12 @@ object Interpreter {
         case VariableCase(name) =>
           variables.get(name) match {
             case Some(Result.Strict(value)) => value
-            case Some(Result.Lazy(value, variables, references, definitions)) => {
+            case Some(Result.Lazy(value, variables, references, definitions)) =>
               def shallow = definitions.map { case (key, value) =>
                 key -> Result.Lazy(value, variables, references, definitions)
               }
               loop(value, variables ++ shallow, references)
-            }
-            case None => throw new InterpretationError.VariableNotFound(name, s"Variable $name not found")
+            case None => throw InterpretationError.VariableNotFound(name, s"Variable $name not found")
           }
 
         case LetDefinitionCase(name, value, body) =>
@@ -227,7 +226,7 @@ object Interpreter {
               val newRecord = record.asInstanceOf[ListMap[Name, Any]] ++ evaluatedFieldsToUpdate.toMap
               newRecord
             case _ =>
-              throw new InterpretationError.RecordExpected(
+              throw InterpretationError.RecordExpected(
                 s"Record expected but got $evaluatedValueToUpdate"
               )
           }
@@ -242,7 +241,7 @@ object Interpreter {
                   references
                 )
               case Left(MatchFailure(pattern, input)) =>
-                throw new InterpretationError.MatchError(
+                throw InterpretationError.MatchError(
                   s"Pattern $pattern didn't match input $input"
                 )
             }
@@ -257,7 +256,7 @@ object Interpreter {
                 references
               )
             case Left(MatchFailure(pattern, input)) =>
-              throw new InterpretationError.MatchError(
+              throw InterpretationError.MatchError(
                 s"Pattern $pattern didn't match input $input"
               )
           }
@@ -353,8 +352,8 @@ object Interpreter {
     }
 
   private def evalAddition(args: Chunk[Any]): Any =
-    if (args.length == 0)
-      throw new InterpretationError.InvalidArguments(args, s"Addition expected at least two argument but got none.")
+    if (args.isEmpty)
+      throw InterpretationError.InvalidArguments(args, s"Addition expected at least two argument but got none.")
     else if (args(0).isInstanceOf[java.math.BigInteger])
       args.asInstanceOf[Chunk[java.math.BigInteger]].reduce(_ add _)
     else
@@ -362,11 +361,12 @@ object Interpreter {
 
   private def evalSubtraction(args: Chunk[Any]): Any =
     if (args.length != 2)
-      throw new InterpretationError.InvalidArguments(args, s"Subtraction expected exactly two arguments.")
-    else if (args(0).isInstanceOf[java.math.BigInteger])
-      args(0).asInstanceOf[java.math.BigInteger] subtract args(1).asInstanceOf[java.math.BigInteger]
+      throw InterpretationError.InvalidArguments(args, s"Subtraction expected exactly two arguments.")
     else
-      args(0).asInstanceOf[java.math.BigDecimal] subtract args(1).asInstanceOf[java.math.BigDecimal]
+      args(0) match {
+        case integer: BigInteger => integer subtract args(1).asInstanceOf[BigInteger]
+        case _ => args(0).asInstanceOf[java.math.BigDecimal] subtract args(1).asInstanceOf[java.math.BigDecimal]
+      }
 
   // format: off
   private def evalTuple(value: Chunk[Any]): Any =
@@ -393,7 +393,7 @@ object Interpreter {
       case a :: b :: c :: d :: e :: f :: g :: h :: i :: j :: k :: l :: m :: n :: o :: p :: q :: r :: s :: t :: Nil => (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t)
       case a :: b :: c :: d :: e :: f :: g :: h :: i :: j :: k :: l :: m :: n :: o :: p :: q :: r :: s :: t :: u :: Nil => (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u)
       case a :: b :: c :: d :: e :: f :: g :: h :: i :: j :: k :: l :: m :: n :: o :: p :: q :: r :: s :: t :: u :: v :: Nil => (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v)
-      case _ => throw new InterpretationError.TupleTooLong(value.length)
+      case _ => throw InterpretationError.TupleTooLong(value.length)
     }
     // format: on
 
@@ -427,7 +427,7 @@ object Interpreter {
         Chunk(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u)
       case (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) =>
         Chunk(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v)
-      case _ => throw new InterpretationError.MatchError("value was not a tuple")
+      case _ => throw InterpretationError.MatchError("value was not a tuple")
     }
 
   def applyFunction(function: Any, arguments: Chunk[Any]): Any =
@@ -540,7 +540,7 @@ object GenericCaseClass {
   def nameToFieldName(name: Name): String =
     name.toString
 
-  def named(name: FQName) = ???
+  // def named(name: FQName) = ???
 }
 
 // To Do List:

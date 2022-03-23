@@ -1,9 +1,9 @@
 package zio.morphir.syntax
 
 import zio.Chunk
-import zio.morphir.ir.TypeModule.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
-import zio.morphir.ir.TypeModule.TypeCase._
-import zio.morphir.ir.TypeModule.{Field, Type}
+import zio.morphir.ir.types.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
+import zio.morphir.ir.types.Type._
+import zio.morphir.ir.types.{Field, Type}
 import zio.morphir.ir.{FQName, Name, TypeConstructors, UType}
 
 trait TypeSyntax {
@@ -22,52 +22,49 @@ trait TypeSyntax {
   ): CustomTypeSpecification[Attributes] =
     CustomTypeSpecification(Chunk.empty, TypeConstructors(Map(ctors)))
 
-  def defineVariable(name: String): UType = Type(VariableCase(Name.fromString(name)), Type.emptyAttributes)
-  def defineVariable(name: Name): UType   = Type(VariableCase(name), Type.emptyAttributes)
+  def defineVariable(name: String): UType = Variable((), Name.fromString(name))
+  def defineVariable(name: Name): UType   = Variable((), name)
 
   def defineField(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
   def defineField(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
   def defineRecord(fields: Chunk[Field[UType]]): UType =
-    Type(RecordCase(fields), Type.emptyAttributes)
+    Record((), fields)
   def defineRecord(fields: Field[UType]*): UType =
-    Type(RecordCase(Chunk.fromIterable(fields)), Type.emptyAttributes)
+    Record((), Chunk.fromIterable(fields))
 
   def defineTuple(elementTypes: Chunk[UType]): UType =
-    Type(TupleCase(elementTypes), Type.emptyAttributes)
+    Tuple((), elementTypes)
   def defineTuple(first: UType, second: UType, rest: UType*): UType =
-    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), Type.emptyAttributes)
+    Tuple((), Chunk(first, second) ++ Chunk.fromIterable(rest))
 
   def defineFunction(paramTypes: Chunk[UType], returnType: UType): UType =
-    Type(FunctionCase(paramTypes, returnType), Type.emptyAttributes)
+    Function((), paramTypes, returnType)
   def defineFunction[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
   def defineExtensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
-    Type(ExtensibleRecordCase(name, fields), Type.emptyAttributes)
+    ExtensibleRecord((), name, fields)
   def defineExtensibleRecord(name: Name, fields: Field[UType]*): UType =
-    Type(ExtensibleRecordCase(name, Chunk.fromIterable(fields)), Type.emptyAttributes)
+    ExtensibleRecord((), name, Chunk.fromIterable(fields))
   def defineExtensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
-    Type(ExtensibleRecordCase(Name.fromString(name), fields), Type.emptyAttributes)
+    ExtensibleRecord((), Name.fromString(name), fields)
   def defineExtensibleRecord(name: String, fields: Field[UType]*): UType =
-    Type(ExtensibleRecordCase(Name.fromString(name), Chunk.fromIterable(fields)), Type.emptyAttributes)
+    ExtensibleRecord((), Name.fromString(name), Chunk.fromIterable(fields))
 
   def defineReference(name: FQName, typeParams: Chunk[UType]): UType =
-    Type(ReferenceCase(name, typeParams), Type.emptyAttributes)
+    Reference((), name, typeParams)
   def defineReference(name: FQName, typeParams: UType*): UType =
-    Type(ReferenceCase(name, Chunk.fromIterable(typeParams)), Type.emptyAttributes)
+    Reference((), name, Chunk.fromIterable(typeParams))
   def defineReference(
       packageName: String,
       moduleName: String,
       localName: String,
       typeParams: Chunk[UType]
   ): UType =
-    Type(ReferenceCase(FQName.fqn(packageName, moduleName, localName), typeParams), Type.emptyAttributes)
+    Reference((), FQName.fqn(packageName, moduleName, localName), typeParams)
   def defineReference(packageName: String, moduleName: String, localName: String, typeParams: UType*): UType =
-    Type(
-      ReferenceCase(FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams)),
-      Type.emptyAttributes
-    )
+    Reference((), FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
 
   def enumType(case1: String, otherCases: String*): UCustomTypeSpecification =
     UCustomTypeSpecification.mkEnum(case1, otherCases: _*)
@@ -86,44 +83,44 @@ trait TypeSyntax {
 }
 
 trait TypeModuleSyntax {
-  val unit: UType                                                          = Type(UnitCase, ())
-  final def unit[Annotations](annotations: Annotations): Type[Annotations] = Type(UnitCase, annotations)
+  val unit: UType                                                      = Unit(())
+  final def unit[Attributes](attributes: Attributes): Type[Attributes] = Unit(attributes)
 
   /**
    * Creates a type variable with the given `name`.
    */
-  final def variable[Attributes](name: String, attributes: Attributes): Type[Attributes] =
-    Type(VariableCase(Name.fromString(name)), attributes)
-  final def variable[Attributes](name: Name, attributes: Attributes): Type[Attributes] =
-    Type(VariableCase(name), attributes)
-  final def variable(name: String): UType = Type(VariableCase(Name.fromString(name)))
-  final def variable(name: Name): UType   = Type(VariableCase(name))
+  final def variable[Attributes](name: String, attributes: Attributes): Variable[Attributes] =
+    Variable(attributes, Name.fromString(name))
+  final def variable[Attributes](name: Name, attributes: Attributes): Variable[Attributes] =
+    Variable(attributes, name)
+  final def variable(name: String): Variable[scala.Unit] = Variable(Name.fromString(name))
+  final def variable(name: Name): Variable[scala.Unit]   = Variable(name)
 
   final def field(name: Name, fieldType: UType): Field[UType]   = Field(name, fieldType)
   final def field(name: String, fieldType: UType): Field[UType] = Field(Name.fromString(name), fieldType)
 
   final def record(fields: Chunk[Field[UType]]): UType =
-    Type(RecordCase(fields), Type.emptyAttributes)
+    Record((), fields)
   final def record(fields: Field[UType]*): UType =
-    Type(RecordCase(Chunk.fromIterable(fields)), Type.emptyAttributes)
+    Record((), Chunk.fromIterable(fields))
   final def record[Attributes](attributes: Attributes, fields: Chunk[Field[Type[Attributes]]]): Type[Attributes] =
-    Type(RecordCase(fields), attributes)
+    Record(attributes, fields)
   final def record[Attributes](attributes: Attributes, fields: Field[Type[Attributes]]*): Type[Attributes] =
-    Type(RecordCase(Chunk.fromIterable(fields)), attributes)
+    Record(attributes, Chunk.fromIterable(fields))
 
   final def tuple(elementTypes: Chunk[UType]): UType =
-    Type(TupleCase(elementTypes), Type.emptyAttributes)
+    Tuple((), elementTypes)
   final def tuple(first: UType, second: UType, rest: UType*): UType =
-    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), Type.emptyAttributes)
+    Tuple((), Chunk(first, second) ++ Chunk.fromIterable(rest))
   final def tuple[Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]]): Type[Attributes] =
-    Type(TupleCase(elementTypes), attributes)
+    Tuple(attributes, elementTypes)
   final def tuple[Attributes](
       attributes: Attributes,
       first: Type[Attributes],
       second: Type[Attributes],
       rest: Type[Attributes]*
   ): Type[Attributes] =
-    Type(TupleCase(Chunk(first, second) ++ Chunk.fromIterable(rest)), attributes)
+    Tuple(attributes, Chunk(first, second) ++ Chunk.fromIterable(rest))
 
   def curriedFunction(paramTypes: List[UType], returnType: UType): UType = {
     def curry(args: List[UType]): UType = args match {
@@ -134,33 +131,33 @@ trait TypeModuleSyntax {
   }
 
   final def function1(paramType: UType, returnType: UType): UType =
-    Type(FunctionCase(Chunk.single(paramType), returnType), Type.emptyAttributes)
+    Function((), Chunk.single(paramType), returnType)
 
   final def function(paramTypes: Chunk[UType], returnType: UType): UType =
-    Type(FunctionCase(paramTypes, returnType), Type.emptyAttributes)
+    Function((), paramTypes, returnType)
 
   final def function[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
   final def extensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
-    Type(ExtensibleRecordCase(name, fields), Type.emptyAttributes)
+    ExtensibleRecord((), name, fields)
   final def extensibleRecord(name: Name, fields: Field[UType]*): UType =
-    Type(ExtensibleRecordCase(name, Chunk.fromIterable(fields)), Type.emptyAttributes)
+    ExtensibleRecord((), name, Chunk.fromIterable(fields))
   final def extensibleRecord(name: String, fields: Chunk[Field[UType]]): UType =
-    Type(ExtensibleRecordCase(Name.fromString(name), fields), Type.emptyAttributes)
+    ExtensibleRecord((), Name.fromString(name), fields)
   final def extensibleRecord(name: String, fields: Field[UType]*): UType =
-    Type(ExtensibleRecordCase(Name.fromString(name), Chunk.fromIterable(fields)), Type.emptyAttributes)
+    ExtensibleRecord((), Name.fromString(name), Chunk.fromIterable(fields))
 
   final def reference[Attributes](
       attributes: Attributes
   )(fqName: FQName, typeParams: Type[Attributes]*): Type[Attributes] =
-    Type(ReferenceCase(fqName, Chunk.fromIterable(typeParams)), attributes)
+    Reference(attributes, fqName, Chunk.fromIterable(typeParams))
 
   final def reference(name: FQName, typeParams: Chunk[UType]): UType =
-    Type(ReferenceCase(name, typeParams), Type.emptyAttributes)
+    Reference((), name, typeParams)
 
   final def reference(name: FQName, typeParams: UType*): UType =
-    Type(ReferenceCase(name, Chunk.fromIterable(typeParams)), Type.emptyAttributes)
+    Reference((), name, Chunk.fromIterable(typeParams))
 
   final def reference(
       packageName: String,
@@ -168,21 +165,18 @@ trait TypeModuleSyntax {
       localName: String,
       typeParams: Chunk[UType]
   ): UType =
-    Type(ReferenceCase(FQName.fqn(packageName, moduleName, localName), typeParams), Type.emptyAttributes)
+    Reference((), FQName.fqn(packageName, moduleName, localName), typeParams)
 
   def reference(packageName: String, moduleName: String, localName: String, typeParams: UType*): UType =
-    Type(
-      ReferenceCase(FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams)),
-      Type.emptyAttributes
-    )
+    Reference((), FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
 
   @inline final def ref(name: FQName): UType = reference(name, Chunk.empty)
 }
 
 object SyntaxHelper {
-  final class DefineFunction[Annotations](val paramTypes: () => Chunk[Type[Annotations]]) extends AnyVal {
-    def apply(returnType: Type[Annotations], annotations: Annotations): Type[Annotations] =
-      Type(FunctionCase(paramTypes(), returnType), annotations)
+  final class DefineFunction[Attributes](val paramTypes: () => Chunk[Type[Attributes]]) extends AnyVal {
+    def apply(returnType: Type[Attributes], attributes: Attributes): Type[Attributes] =
+      Function(attributes, paramTypes(), returnType)
   }
 
 }

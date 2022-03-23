@@ -3,7 +3,7 @@ package zio.morphir.json
 import zio.json._
 import zio.morphir.ir._
 import zio.morphir.ir.TypeModule._
-import zio.morphir.json.Encoders.MorphirJsonCodecV1._
+import zio.morphir.json.MorphirJsonEncodingSupportV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
 import zio.Chunk

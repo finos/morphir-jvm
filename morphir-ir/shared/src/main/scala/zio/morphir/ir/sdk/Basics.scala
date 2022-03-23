@@ -98,6 +98,6 @@ object Basics {
   lazy val floatType: UType                = reference((toFQName(moduleName, "Float")))
   lazy val intType: UType                  = reference((toFQName(moduleName, "Int")))
   lazy val neverType: UType                = reference((toFQName(moduleName, "Never")))
-  lazy val orderType: UType                = orderType(UType.emptyAttributes)
+  lazy val orderType: UType                = orderType(())
   def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
 }

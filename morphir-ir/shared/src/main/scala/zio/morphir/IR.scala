@@ -23,8 +23,8 @@ final case class IR(
       case Some(typeSpecification) =>
         typeSpecification match {
           case TypeModule.Specification.TypeAliasSpecification(_, underlyingType) =>
-            underlyingType.caseValue match {
-              case TypeModule.TypeCase.ReferenceCase(fqName, _) =>
+            underlyingType match {
+              case TypeModule.Type.Reference(_, fqName, _) =>
                 fqName
               case _ => fqName
             }
