@@ -136,7 +136,14 @@ trait TypeModuleSyntax {
   final def function(paramTypes: Chunk[UType], returnType: UType): UType =
     Function((), paramTypes, returnType)
 
-  final def function[Annotations](paramTypes: Type[Annotations]*): SyntaxHelper.DefineFunction[Annotations] =
+  final def function[Attributes](
+      attributes: Attributes,
+      paramTypes: Chunk[Type[Attributes]],
+      returnType: Type[Attributes]
+  ): Type[Attributes] =
+    Function(attributes, paramTypes, returnType)
+
+  final def function[Attributes](paramTypes: Type[Attributes]*): SyntaxHelper.DefineFunction[Attributes] =
     new SyntaxHelper.DefineFunction(() => Chunk.fromIterable(paramTypes))
 
   final def extensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
@@ -148,10 +155,62 @@ trait TypeModuleSyntax {
   final def extensibleRecord(name: String, fields: Field[UType]*): UType =
     ExtensibleRecord((), Name.fromString(name), Chunk.fromIterable(fields))
 
+  final def extensibleRecord[Attributes](
+      attributes: Attributes,
+      name: Name,
+      fields: Chunk[Field[Type[Attributes]]]
+  ): Type[Attributes] =
+    ExtensibleRecord(attributes, name, fields)
+
+  final def extensibleRecord[Attributes](
+      attributes: Attributes,
+      name: Name,
+      fields: Field[Type[Attributes]]*
+  ): Type[Attributes] =
+    ExtensibleRecord(attributes, name, Chunk.fromIterable(fields))
+
+  final def extensibleRecord[Attributes](
+      attributes: Attributes,
+      name: String,
+      fields: Chunk[Field[Type[Attributes]]]
+  ): Type[Attributes] =
+    ExtensibleRecord(attributes, Name.fromString(name), fields)
+  final def extensibleRecord[Attributes](
+      attributes: Attributes,
+      name: String,
+      fields: Field[Type[Attributes]]*
+  ): Type[Attributes] =
+    ExtensibleRecord(attributes, Name.fromString(name), Chunk.fromIterable(fields))
+
   final def reference[Attributes](
       attributes: Attributes
   )(fqName: FQName, typeParams: Type[Attributes]*): Type[Attributes] =
     Reference(attributes, fqName, Chunk.fromIterable(typeParams))
+
+  final def reference[Attributes](
+      attributes: Attributes,
+      fqName: FQName,
+      typeParams: Chunk[Type[Attributes]]
+  ): Type[Attributes] =
+    Reference(attributes, fqName, Chunk.fromIterable(typeParams))
+
+  final def reference[Attributes](
+      attributes: Attributes,
+      packageName: String,
+      moduleName: String,
+      localName: String,
+      typeParams: Chunk[Type[Attributes]]
+  ): Type[Attributes] =
+    Reference(attributes, FQName.fqn(packageName, moduleName, localName), typeParams)
+
+  def reference[Attributes](
+      attributes: Attributes,
+      packageName: String,
+      moduleName: String,
+      localName: String,
+      typeParams: Type[Attributes]*
+  ): Type[Attributes] =
+    Reference(attributes, FQName.fqn(packageName, moduleName, localName), Chunk.fromIterable(typeParams))
 
   final def reference(name: FQName, typeParams: Chunk[UType]): UType =
     Reference((), name, typeParams)
@@ -178,5 +237,4 @@ object SyntaxHelper {
     def apply(returnType: Type[Attributes], attributes: Attributes): Type[Attributes] =
       Function(attributes, paramTypes(), returnType)
   }
-
 }

@@ -6,7 +6,6 @@ import zio.morphir.ir.TypeModule._
 import zio.morphir.json.MorphirJsonEncodingSupportV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
-import zio.Chunk
 
 object EncodingSpec extends DefaultRunnableSpec {
   def spec = suite("encoding")(
@@ -217,11 +216,211 @@ object EncodingSpec extends DefaultRunnableSpec {
         assertTrue(actual.toJson == expected)
       },
       test("will encode TypeCase.RecordCase") {
-        val var1: Field[Type[Int]]         = Field(Name("first"), variable[Int]("f", 123))
-        val var2: Field[Type[Int]]         = Field(Name("second"), variable[Int]("g", 345))
-        val chunk: Chunk[Field[Type[Int]]] = zio.Chunk(var1, var2)
-        val actual                         = record(1, chunk)
+        val var1     = Field(Name("first"), variable[Int]("f", 123))
+        val var2     = Field(Name("second"), variable[Int]("g", 345))
+        val actual   = record(1, zio.Chunk(var1, var2))
         val expected = """["record",1,[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TypeCase.ExtensibleRecordCase") {
+        val var1   = Field(Name("first"), variable[Int]("f", 123))
+        val var2   = Field(Name("second"), variable[Int]("g", 345))
+        val actual = extensibleRecord(1, Name.fromString("someName"), zio.Chunk(var1, var2))
+        val expected =
+          """["extensible_record",1,["some","name"],[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TypeCase.TupleCase") {
+        val var1     = variable[Int]("f", 123)
+        val var2     = variable[Int]("g", 345)
+        val actual   = tuple(1, var1, var2)
+        val expected = """["tuple",1,[["variable",123,["f"]],["variable",345,["g"]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TypeCase.ReferenceCase") {
+        val var1   = variable[Int]("f", 123)
+        val var2   = variable[Int]("g", 345)
+        val actual = reference(1, FQName.fromString("test:JavaHome:morphir"), zio.Chunk(var1, var2))
+        val expected =
+          """["reference",1,[[["test"]],[["java","home"]],["morphir"]],[["variable",123,["f"]],["variable",345,["g"]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TypeCase.FunctionCase") {
+        val var1   = variable[Int]("f", 123)
+        val var2   = variable[Int]("g", 345)
+        val actual = function(1, zio.Chunk(var1, var2), var2)
+        val expected =
+          """["function",1,[["variable",123,["f"]],["variable",345,["g"]]],["variable",345,["g"]]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("Constructors")(
+      test("will encode empty Constructor") {
+        val actual   = TypeModule.Constructors[Int](Map.empty)
+        val expected = """[[]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode Constructors") {
+        val name1 = Name.fromString("name1")
+        val name2 = Name.fromString("name2")
+        val name3 = Name.fromString("name3")
+        val name4 = Name.fromString("name4")
+        val actual = TypeModule.Constructors[Int](
+          Map(
+            (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
+            (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
+          )
+        )
+        val expected =
+          """[[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("TypeModule.Definition")(
+      test("will encode TypeAlias") {
+        val name1    = Name.fromString("name1")
+        val name2    = Name.fromString("name2")
+        val actual   = TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+        val expected = """["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode CustomType") {
+        val name1 = Name.fromString("name1")
+        val name2 = Name.fromString("name2")
+        val name3 = Name.fromString("name3")
+        val name4 = Name.fromString("name4")
+        val ctors = AccessControlled(
+          AccessControlled.Access.Public,
+          TypeModule.Constructors[Int](
+            Map(
+              (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
+              (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
+            )
+          )
+        )
+        val actual = TypeModule.Definition.CustomType[Int](zio.Chunk(name1, name2), ctors)
+        val expected =
+          """["custom_type_definition",[["name","1"],["name","2"]],["public",[[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("TypeModule.Specification")(
+      test("will encode TypeAliasSpecification") {
+        val name1 = Name.fromString("name1")
+        val name2 = Name.fromString("name2")
+        val actual =
+          TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+        val expected = """["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode CustomTypeSpecification") {
+        val name1 = Name.fromString("name1")
+        val name2 = Name.fromString("name2")
+        val name3 = Name.fromString("name3")
+        val name4 = Name.fromString("name4")
+        val ctors = TypeModule.Constructors[Int](
+          Map(
+            (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
+            (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
+          )
+        )
+        val actual = TypeModule.Specification.CustomTypeSpecification[Int](zio.Chunk(name1, name2), ctors)
+        val expected =
+          """["custom_type_specification",[["name","1"],["name","2"]],[[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode OpaqueTypeSpecification") {
+        val name1  = Name.fromString("name1")
+        val name2  = Name.fromString("name2")
+        val actual = TypeModule.Specification.OpaqueTypeSpecification(zio.Chunk(name1, name2))
+        val expected =
+          """["opaque_type_specification",[["name","1"],["name","2"]]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("ValueModule.InputParameter")(
+      test("will encode InputParameter") {
+        val actual   = ValueModule.InputParameter[Int](Name.fromString("name1"), variable[Int]("g", 345), 1)
+        val expected = """[["name","1"],1,["variable",345,["g"]]]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("Pattern")(
+      test("will encode AsPattern") {
+        val actual   = Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
+        val expected = """["as_pattern",1,["wildcard_pattern",1],["wild","card"]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode ConstructorPattern") {
+        val patterns = zio.Chunk(
+          Pattern.WildcardPattern[Int](1),
+          Pattern.EmptyListPattern[Int](2),
+          Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
+        )
+        val actual = Pattern.ConstructorPattern[Int](FQName.fromString("test:JavaHome:morphir"), patterns, 1)
+        val expected =
+          """["constructor_pattern",1,[[["test"]],[["java","home"]],["morphir"]],[["wildcard_pattern",1],["empty_list_pattern",2],["as_pattern",1,["wildcard_pattern",1],["wild","card"]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode EmptyListPattern") {
+        val actual   = Pattern.EmptyListPattern[Int](1)
+        val expected = """["empty_list_pattern",1]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode LiteralPattern") {
+        val actual   = Pattern.LiteralPattern[String, Int](Literal.String("hello"), 1)
+        val expected = """["literal_pattern",1,["string_literal","hello"]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode HeadTailPattern") {
+        val actual = Pattern.HeadTailPattern[Int](Pattern.WildcardPattern[Int](1), Pattern.EmptyListPattern[Int](2), 1)
+        val expected = """["head_tail_pattern",1,["wildcard_pattern",1],["empty_list_pattern",2]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode TuplePattern") {
+        val patterns = zio.Chunk(
+          Pattern.WildcardPattern[Int](1),
+          Pattern.UnitPattern[Int](2),
+          Pattern.AsPattern[Int](Pattern.WildcardPattern[Int](1), Name.fromString("wildCard"), 1)
+        )
+        val actual = Pattern.TuplePattern[Int](patterns, 1)
+        val expected =
+          """["tuple_pattern",1,[["wildcard_pattern",1],["unit_pattern",2],["as_pattern",1,["wildcard_pattern",1],["wild","card"]]]]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode UnitPattern") {
+        val actual   = Pattern.UnitPattern[Int](1)
+        val expected = """["unit_pattern",1]"""
+        assertTrue(actual.toJson == expected)
+      },
+      test("will encode WildcardPattern") {
+        val actual   = Pattern.WildcardPattern[Int](1)
+        val expected = """["wildcard_pattern",1]"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("ValueModule.Definition")(
+      test("will encode ValueModule.Definition") {
+        val inputParams = zio.Chunk(
+          ValueModule.InputParameter[Int](Name.fromString("name1"), variable[Int]("g", 345), 1),
+          ValueModule.InputParameter[Int](Name.fromString("name2"), variable[Int]("h", 678), 2)
+        )
+        val actual = ValueModule
+          .Definition[Pattern[Int], Int](inputParams, variable[Int]("g", 345), Pattern.WildcardPattern[Int](1))
+        val expected =
+          """{"inputTypes":[[["name","1"],1,["variable",345,["g"]]],[["name","2"],2,["variable",678,["h"]]]],"outputType":["variable",345,["g"]],"body":["wildcard_pattern",1]}"""
+        assertTrue(actual.toJson == expected)
+      }
+    ),
+    suite("ValueModule.Specification")(
+      test("will encode ValueModule.Specification") {
+        val inputs = zio.Chunk(
+          (Name.fromString("name1"), variable[Int]("g", 345)),
+          (Name.fromString("name2"), variable[Int]("h", 678))
+        )
+        val actual = ValueModule.Specification[Int](inputs, variable[Int]("f", 111))
+        val expected =
+          """{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}"""
         assertTrue(actual.toJson == expected)
       }
     )
