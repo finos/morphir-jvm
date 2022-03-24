@@ -31,7 +31,7 @@ object ModuleExample {
 
   val definitionValues = Map {
     Name("val") -> AccessControlled.publicAccess(
-      ValueModule.Definition.fromLiteral(string("string"))
+      Documented("type", ValueModule.Definition.fromLiteral(string("string")))
     )
   }
 
@@ -49,12 +49,15 @@ object ModuleExample {
   }
 
   val specValues = Map {
-    Name("spec1") -> ValueModule.Specification(
-      Chunk(
-        (Name("type1"), defineVariable("Float")),
-        (Name("type2"), defineVariable("Decimal"))
-      ),
-      defineVariable("WholeNumbers")
+    Name("spec1") -> Documented(
+      "types",
+      ValueModule.Specification(
+        Chunk(
+          (Name("type1"), defineVariable("Float")),
+          (Name("type2"), defineVariable("Decimal"))
+        ),
+        defineVariable("WholeNumbers")
+      )
     )
   }
 

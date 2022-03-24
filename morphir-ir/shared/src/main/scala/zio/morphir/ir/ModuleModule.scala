@@ -7,7 +7,7 @@ object ModuleModule {
 
   final case class Definition[+Annotations](
       types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Annotations]]]],
-      values: Map[Name, AccessControlled[ValueModule.ValueDefinition[Annotations]]]
+      values: Map[Name, AccessControlled[Documented[ValueModule.ValueDefinition[Annotations]]]]
   ) { self =>
     def toSpecification: Specification[Annotations] = {
       Specification(
@@ -15,7 +15,7 @@ object ModuleModule {
           name -> documented.map(_.toSpecification)
         },
         values = self.values.collect { case (name, AccessControlled.WithPublicAccess(definition)) =>
-          name -> definition.toSpecification
+          name -> definition.map(_.toSpecification)
         }
       )
     }
@@ -25,14 +25,14 @@ object ModuleModule {
         types = self.types.collect { case (name, AccessControlled.WithPrivateAccess(documented)) =>
           name -> documented.map(_.toSpecification)
         },
-        values = self.values.collect { case (name, AccessControlled.WithPrivateAccess(definition)) =>
-          name -> definition.toSpecification
+        values = self.values.collect { case (name, AccessControlled.WithPrivateAccess(documented)) =>
+          name -> documented.map(_.toSpecification)
         }
       )
     }
 
     def lookupValue(localName: Name): Option[ValueModule.ValueDefinition[Annotations]] = {
-      values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x))
+      values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x).map(_.value))
     }
 
     def eraseAttributes: Definition[Annotations] = Definition.empty
@@ -55,10 +55,10 @@ object ModuleModule {
     }.toSet
 
     def collectValueReferences: Set[FQName] = self.values.flatMap {
-      case (_, AccessControlled.WithPrivateAccess(definition)) =>
-        definition.body.collectReferences
-      case (_, AccessControlled.WithPublicAccess(definition)) =>
-        definition.body.collectReferences
+      case (_, AccessControlled.WithPrivateAccess(documented)) =>
+        documented.value.body.collectReferences
+      case (_, AccessControlled.WithPublicAccess(documented)) =>
+        documented.value.body.collectReferences
       case _ => Nil
     }.toSet
 
@@ -77,9 +77,10 @@ object ModuleModule {
 
   final case class Specification[+Annotations](
       types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
-      values: Map[Name, ValueModule.Specification[Annotations]]
+      values: Map[Name, Documented[ValueModule.Specification[Annotations]]]
   ) {
-    def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] = values.get(localName)
+    def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] =
+      values.get(localName).map(_.value)
     def lookupType(localName: Name): Option[TypeModule.Specification[Annotations]] =
       types.get(localName).map(doc => doc.value)
 

@@ -26,6 +26,8 @@ trait ValueSyntax {
   ): Value[Any] = literal(Lit.boolean(value), attributes)
 
   def constructor(name: FQName): Value[Any] = Value(ConstructorCase(name))
+  def constructor[Attributes](name: FQName, attributes: Attributes): Value[Attributes] =
+    Value(ConstructorCase(name), attributes)
 
   final def boolean(value: Boolean): Value[Any] = literal(Lit.boolean(value))
 
@@ -74,6 +76,8 @@ trait ValueSyntax {
   def record(fields: Chunk[(Name, Value[Any])]): Value[Any] =
     Value(RecordCase(fields))
 
+  def reference[Attributes](name: FQName, attributes: Attributes): Value[Attributes] =
+    Value(ReferenceCase(name), attributes)
   def reference(name: FQName): Value[Any]               = Value(ReferenceCase(name))
   def reference(name: FQName, tpe: UType): Value[UType] = Value(ReferenceCase(name), tpe)
 

@@ -18,15 +18,18 @@ object Common {
   def vSpec(name: String, inputs: (String, UType)*) = new VSpec(() => (name, Chunk.fromIterable(inputs)))
 
   final class VSpec(private val data: () => (String, Chunk[(String, UType)])) extends AnyVal {
-    def apply(outputType: UType): (Name, ValueModule.Specification[Any]) = {
+    def apply(outputType: UType): (Name, Documented[ValueModule.Specification[Any]]) = {
       val (name, inputs) = data()
       (
         Name.fromString(name),
-        ValueModule.Specification(inputs.map { case (name, tpe) => (Name.fromString(name), tpe) }, outputType)
+        Documented(
+          "documentation",
+          ValueModule.Specification(inputs.map { case (name, tpe) => (Name.fromString(name), tpe) }, outputType)
+        )
       )
     }
 
-    @inline def returning(outputType: UType): (Name, ValueModule.Specification[Any]) = apply(outputType)
+    @inline def returning(outputType: UType): (Name, Documented[ValueModule.Specification[Any]]) = apply(outputType)
   }
 
 }
