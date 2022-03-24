@@ -1,10 +1,10 @@
 package zio.morphir.ir.types
 
-import zio.Chunk
+import zio.{Chunk, ZIO}
 import zio.morphir.ir.{Documented, FQName, Name}
 import zio.morphir.syntax.TypeModuleSyntax
 import zio.prelude._
-
+import zio.prelude.fx._
 import scala.annotation.tailrec
 
 sealed trait Type[+Attributes] { self =>
@@ -21,22 +21,81 @@ sealed trait Type[+Attributes] { self =>
       else acc
     }
 
-  def fold[Z: Associative](f: Type[Attributes] => Z): Z = {
-    @tailrec
-    def loop(types: List[Type[Attributes]], acc: Z): Z = types match {
-      case (tpe @ Type.ExtensibleRecord(_, _, _)) :: tail =>
-        loop(tpe.fields.map(_.fieldType).toList ++ tail, f(tpe) <> acc)
-      case (tpe @ Type.Function(_, _, _)) :: tail =>
-        loop(tpe.paramTypes.toList ++ (tpe.returnType :: tail), f(tpe) <> acc)
-      case (tpe @ Type.Record(_, _)) :: tail       => loop(tpe.fields.map(_.fieldType).toList ++ tail, f(tpe) <> acc)
-      case (tpe @ Type.Reference(_, _, _)) :: tail => loop(tpe.typeParams.toList ++ tail, f(tpe) <> acc)
-      case (tpe @ Type.Tuple(_, elements)) :: tail => loop(elements.toList ++ tail, f(tpe) <> acc)
-      case Type.Variable(_, _) :: tail             => loop(tail, acc)
-      case Type.Unit(_) :: tail                    => loop(tail, acc)
-      case Nil                                     => acc
+  // TODO: See if we can refactor to be stack safe/ tail recursive
+  def fold[Z](
+      extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) => Z,
+      functionCase: (Attributes, Chunk[Z], Z) => Z,
+      recordCase: (Attributes, Chunk[Field[Z]]) => Z,
+      referenceCase: (Attributes, FQName, Chunk[Z]) => Z,
+      tupleCase: (Attributes, Chunk[Z]) => Z,
+      variableCase: (Attributes, Name) => Z,
+      unitCase: Attributes => Z
+  ): Z =
+    self match {
+      case Type.ExtensibleRecord(attributes, name, fields) =>
+        extensibleRecordCase(
+          attributes,
+          name,
+          fields.map(
+            _.map(
+              _.fold(extensibleRecordCase, functionCase, recordCase, referenceCase, tupleCase, variableCase, unitCase)
+            )
+          )
+        )
+      case Type.Function(attributes, paramTypes, returnType) =>
+        functionCase(
+          attributes,
+          paramTypes.map(
+            _.fold(extensibleRecordCase, functionCase, recordCase, referenceCase, tupleCase, variableCase, unitCase)
+          ),
+          returnType.fold(
+            extensibleRecordCase,
+            functionCase,
+            recordCase,
+            referenceCase,
+            tupleCase,
+            variableCase,
+            unitCase
+          )
+        )
+      case Type.Record(attributes, fields) =>
+        recordCase(
+          attributes,
+          fields.map(
+            _.map(
+              _.fold(extensibleRecordCase, functionCase, recordCase, referenceCase, tupleCase, variableCase, unitCase)
+            )
+          )
+        )
+      case Type.Reference(attributes, typeName, typeParams) =>
+        referenceCase(
+          attributes,
+          typeName,
+          typeParams.map(
+            _.fold(extensibleRecordCase, functionCase, recordCase, referenceCase, tupleCase, variableCase, unitCase)
+          )
+        )
+      case Type.Tuple(attributes, elementTypes) =>
+        tupleCase(
+          attributes,
+          elementTypes.map(
+            _.fold(extensibleRecordCase, functionCase, recordCase, referenceCase, tupleCase, variableCase, unitCase)
+          )
+        )
+      case Type.Unit(attributes)           => unitCase(attributes)
+      case Type.Variable(attributes, name) => variableCase(attributes, name)
     }
-    loop(List(self), f(self))
-  }
+
+//  def identity: Type[Attributes] =
+//    self.fold[Type[Attributes]](
+//      (attributes, name, fields) => Type.ExtensibleRecord(attributes, name, fields),
+//      (attributes, paramTypes, returnType) => Type.Function(attributes, paramTypes, returnType),
+//      (attributes, fields) => Type.Record(attributes, fields),
+//      (attributes, typeName, typeParams) => Type.Reference(attributes, typeName, typeParams),
+//      (attributes, elements) => Type.Tuple(attributes, elements),
+//      (attributes, name) => Type.Variable(attributes, name),
+//      attributes => Type.Unit(attributes)
+//    )
 
   def foldLeft[Z](zero: Z)(f: (Z, Type[Attributes]) => Z): Z = {
     @tailrec
@@ -63,46 +122,108 @@ sealed trait Type[+Attributes] { self =>
 
   def foldDownSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
     foldDown(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
+
+  def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](
+      extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) => F[Z],
+      functionCase: (Attributes, Chunk[Z], Z) => F[Z],
+      recordCase: (Attributes, Chunk[Field[Z]]) => F[Z],
+      referenceCase: (Attributes, FQName, Chunk[Z]) => F[Z],
+      tupleCase: (Attributes, Chunk[Z]) => F[Z],
+      variableCase: (Attributes, Name) => F[Z],
+      unitCase: Attributes => F[Z]
+  ): F[Z] =
+    fold[F[Z]](
+      (
+          attributes,
+          name,
+          fields
+      ) => fields.forEach(_.forEach(a => a)).flatMap(extensibleRecordCase(attributes, name, _)),
+      (attributes, paramTypes, returnType) =>
+        for {
+          paramTypes <- paramTypes.flip
+          returnType <- returnType
+          z          <- functionCase(attributes, paramTypes, returnType)
+        } yield z,
+      (attributes, fields) => fields.forEach(_.forEach(a => a)).flatMap(recordCase(attributes, _)),
+      (attributes, typeName, typeParams) => typeParams.flip.flatMap(referenceCase(attributes, typeName, _)),
+      (attributes, elements) => elements.flip.flatMap(tupleCase(attributes, _)),
+      (attributes, name) => variableCase(attributes, name),
+      attributes => unitCase(attributes)
+    )
+
+  def foldPure[W, S, R, E, Z](
+      extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) => ZPure[W, S, S, R, E, Z],
+      functionCase: (Attributes, Chunk[Z], Z) => ZPure[W, S, S, R, E, Z],
+      recordCase: (Attributes, Chunk[Field[Z]]) => ZPure[W, S, S, R, E, Z],
+      referenceCase: (Attributes, FQName, Chunk[Z]) => ZPure[W, S, S, R, E, Z],
+      tupleCase: (Attributes, Chunk[Z]) => ZPure[W, S, S, R, E, Z],
+      variableCase: (Attributes, Name) => ZPure[W, S, S, R, E, Z],
+      unitCase: Attributes => ZPure[W, S, S, R, E, Z]
+  ): ZPure[W, S, S, R, E, Z] = foldM(
+    extensibleRecordCase,
+    functionCase,
+    recordCase,
+    referenceCase,
+    tupleCase,
+    variableCase,
+    unitCase
+  )
   //
-  //    def foldM[F[+_]: AssociativeFlatten: Covariant: IdentityBoth, Z](f: TypeCase[Z] => F[Z]): F[Z] =
-  //      fold[F[Z]](_.flip.flatMap(f))
+//      def transformDown[Attributes1 >: Attributes](
+//          f: Type[Attributes1] => Type[Attributes1]
+//      ): Type[Attributes1] =
+//        f(self) match {
+//          case Type.ExtensibleRecord(attributes, name, fields) => Type.ExtensibleRecord(attributes, name, fields.map(_.map(_.transformDown(f))))
+//          case Type.Function(attributes, paramTypes, returnType) => Type.Function(attributes, paramTypes.map(_.transformDown(f)), returnType.transformDown(f))
+//          case Type.Record(attributes, fields) => Type.Record(attributes, fields.map(_.map(_.transformDown(f))))
+//          case Type.Reference(attributes, typeName, typeParams) =>
+//            Type.Reference(attributes, typeName, typeParams.map(_.transformDown(f)))
+//          case Type.Tuple(attributes, elementTypes) => Type.Tuple(attributes, elementTypes.map(_.transformDown(f)))
+//          case Type.Unit(attributes) => Type.Unit(attributes)
+//          case Type.Variable(attributes, name) => Type.Variable(attributes, name)
+//        }
+
+  def transform[Attributes1 >: Attributes](f: Type[Attributes1] => Type[Attributes1]): Type[Attributes1] =
+    fold[Type[Attributes1]](
+      (attributes, name, fields) => f(Type.ExtensibleRecord(attributes, name, fields)),
+      (attributes, paramTypes, returnType) => f(Type.Function(attributes, paramTypes, returnType)),
+      (attributes, fields) => f(Type.Record(attributes, fields)),
+      (attributes, typeName, typeParams) => f(Type.Reference(attributes, typeName, typeParams)),
+      (attributes, elements) => f(Type.Tuple(attributes, elements)),
+      (attributes, name) => f(Type.Variable(attributes, name)),
+      attributes => f(Type.Unit(attributes))
+    )
+
+  def rewrite[Attributes1 >: Attributes](pf: PartialFunction[Type[Attributes1], Type[Attributes1]]): Type[Attributes1] =
+    transform[Attributes1](in => pf.lift(in).getOrElse(in))
   //
-  //    def foldPure[W, S, R, E, Z](f: TypeCase[Z] => ZPure[W, S, S, R, E, Z]): ZPure[W, S, S, R, E, Z] =
-  //      foldM(f)
-  //
-  //    def transformDown[Annotations0 >: Attributes](
-  //        f: Type[Annotations0] => Type[Annotations0]
-  //    ): Type[Annotations0] = {
-  //      def loop(recursive: Type[Annotations0]): Type[Attributes] =
-  //        Type(f(recursive).caseValue.map(loop), attributes)
-  //      loop(self)
-  //    }
-  //
-  //    def foldZIO[R, E, Z](f: TypeCase[Z] => ZIO[R, E, Z]): ZIO[R, E, Z] =
-  //      foldM(f)
-  //
-  //    def foldRecursive[Z](f: TypeCase[(Type[Attributes], Z)] => Z): Z =
-  //      f(caseValue.map(recursive => recursive -> recursive.foldRecursive(f)))
-  //
+  def foldZIO[R, E, Z](
+      extensibleRecordCase: (Attributes, Name, Chunk[Field[Z]]) => ZIO[R, E, Z],
+      functionCase: (Attributes, Chunk[Z], Z) => ZIO[R, E, Z],
+      recordCase: (Attributes, Chunk[Field[Z]]) => ZIO[R, E, Z],
+      referenceCase: (Attributes, FQName, Chunk[Z]) => ZIO[R, E, Z],
+      tupleCase: (Attributes, Chunk[Z]) => ZIO[R, E, Z],
+      variableCase: (Attributes, Name) => ZIO[R, E, Z],
+      unitCase: Attributes => ZIO[R, E, Z]
+  ): ZIO[R, E, Z] =
+    foldM(extensibleRecordCase, functionCase, recordCase, referenceCase, tupleCase, variableCase, unitCase)
+
   def foldUp[Z](z: Z)(f: (Z, Type[Attributes]) => Z): Z =
     f(self.foldLeft(z)((z, recursive) => recursive.foldUp(z)(f)), self)
 
   def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
     foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
-  // TODO: See if we can refactor to be stack safe/ tail recursive
-  def mapAttributes[Attributes2](f: Attributes => Attributes2): Type[Attributes2] = self match {
-    case Type.ExtensibleRecord(attributes, name, fields) =>
-      Type.ExtensibleRecord(f(attributes), name, fields.map(_.mapAttributes(f)))
-    case Type.Function(attributes, paramTypes, returnType) =>
-      Type.Function(f(attributes), paramTypes.map(_.mapAttributes(f)), returnType.mapAttributes(f))
-    case Type.Record(attributes, fields) => Type.Record(f(attributes), fields.map(_.mapAttributes(f)))
-    case Type.Reference(attributes, typeName, typeParams) =>
-      Type.Reference(f(attributes), typeName, typeParams.map(_.mapAttributes(f)))
-    case Type.Tuple(attributes, elementTypes) => Type.Tuple(f(attributes), elementTypes.map(_.mapAttributes(f)))
-    case Type.Unit(attributes)                => Type.Unit(f(attributes))
-    case Type.Variable(attributes, name)      => Type.Variable(f(attributes), name)
-  }
+  def mapAttributes[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
+    fold[Type[Attributes2]](
+      (attributes, name, fields) => Type.ExtensibleRecord(f(attributes), name, fields),
+      (attributes, paramTypes, returnType) => Type.Function(f(attributes), paramTypes, returnType),
+      (attributes, fields) => Type.Record(f(attributes), fields),
+      (attributes, typeName, typeParams) => Type.Reference(f(attributes), typeName, typeParams),
+      (attributes, elements) => Type.Tuple(f(attributes), elements),
+      (attributes, name) => Type.Variable(f(attributes), name),
+      attributes => Type.Unit(f(attributes))
+    )
 
   def collectReferences: Set[FQName] = foldLeft(Set.empty[FQName]) { case (acc, tpe) =>
     tpe match {
