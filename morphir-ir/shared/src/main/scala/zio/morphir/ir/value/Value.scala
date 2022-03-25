@@ -76,13 +76,595 @@ sealed trait Value[+TA, +VA] { self =>
     case (acc, _)                  => acc
   }
 
-  def indexedMapValue[VB](initial: Int)(f: (Int, VA) => VB): (Value[TA, VB], Int)                          = ???
-  def rewrite[TA0 >: TA, VA0 >: VA](f: PartialFunction[Value[TA0, VA0], Value[TA0, VA0]]): Value[TA0, VA0] = ???
+  // def indexedMapValue[VB](initial: Int)(f: (Int, VA) => VB): (Value[TA, VB], Int) = ???
+  def rewrite[TB >: TA, VB >: VA](pf: PartialFunction[Value[TB, VB], Value[TB, VB]]): Value[TB, VB] =
+    transform[TB, VB](v => pf.lift(v).getOrElse(v))
 
-  def transform[TB, VB](f: Value[TA, VA] => Value[TB, VB]): Value[TB, VB] = ???
+  def transform[TB >: TA, VB >: VA](f: Value[TB, VB] => Value[TB, VB]): Value[TB, VB] = fold[Value[TB, VB]](
+    applyCase = (attributes, function, arguments) => f(Apply(attributes, function, arguments)),
+    constructorCase = (attributes, name) => f(Constructor(attributes, name)),
+    destructureCase =
+      (attributes, pattern, valueToDestruct, inValue) => f(Destructure(attributes, pattern, valueToDestruct, inValue)),
+    fieldCase = (attributes, target, name) => f(Field(attributes, target, name)),
+    fieldFunctionCase = (attributes, name) => f(FieldFunction(attributes, name)),
+    ifThenElseCase =
+      (attributes, condition, thenBranch, elseBranch) => f(IfThenElse(attributes, condition, thenBranch, elseBranch)),
+    lambdaCase = (attributes, argumentPattern, body) => f(Lambda(attributes, argumentPattern, body)),
+    letDefinitionCase = (attributes, valueName, valueDefinition, inValue) =>
+      f(LetDefinition(attributes, valueName, valueDefinition.toDefinition, inValue)),
+    letRecursionCase = (attributes, valueDefinitions, inValue) =>
+      f(LetRecursion(attributes, valueDefinitions.map { case (n, d) => (n, d.toDefinition) }, inValue)),
+    listCase = (attributes, elements) => f(ListType(attributes, elements)),
+    literalCase = (attributes, literal) => f(Literal(attributes, literal)),
+    nativeApplyCase = (attributes, function, arguments) => f(NativeApply(attributes, function, arguments)),
+    patternMatchCase = (attributes, branchOutOn, cases) => f(PatternMatch(attributes, branchOutOn, cases)),
+    recordCase = (attributes, fields) => f(Record(attributes, fields)),
+    referenceCase = (attributes, name) => f(Reference(attributes, name)),
+    tupleCase = (attributes, elements) => f(Tuple(attributes, elements)),
+    unitCase = (attributes) => f(UnitType(attributes)),
+    updateRecordCase =
+      (attributes, valueToUpdate, fieldsToUpdate) => f(UpdateRecord(attributes, valueToUpdate, fieldsToUpdate)),
+    variableCase = (attributes, name) => f(Variable(attributes, name))
+  )
 
   def fold[Z](
-  ) = ???
+      applyCase: (VA, Z, Chunk[Z]) => Z,
+      constructorCase: (VA, FQName) => Z,
+      destructureCase: (VA, Pattern[VA], Z, Z) => Z,
+      fieldCase: (VA, Z, Name) => Z,
+      fieldFunctionCase: (VA, Name) => Z,
+      ifThenElseCase: (VA, Z, Z, Z) => Z,
+      lambdaCase: (VA, Pattern[VA], Z) => Z,
+      letDefinitionCase: (VA, Name, Definition.Case[TA, VA, Z], Z) => Z,
+      letRecursionCase: (VA, Map[Name, Definition.Case[TA, VA, Z]], Z) => Z,
+      listCase: (VA, Chunk[Z]) => Z,
+      literalCase: (VA, Lit[_]) => Z,
+      nativeApplyCase: (VA, NativeFunction, Chunk[Z]) => Z,
+      patternMatchCase: (VA, Z, Chunk[(Pattern[VA], Z)]) => Z,
+      recordCase: (VA, Chunk[(Name, Z)]) => Z,
+      referenceCase: (VA, FQName) => Z,
+      tupleCase: (VA, Chunk[Z]) => Z,
+      unitCase: VA => Z,
+      updateRecordCase: (VA, Z, Chunk[(Name, Z)]) => Z,
+      variableCase: (VA, Name) => Z
+  ): Z = self match {
+    case Apply(attributes, function, arguments) =>
+      applyCase(
+        attributes,
+        function.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        arguments.map(
+          _.fold(
+            applyCase,
+            constructorCase,
+            destructureCase,
+            fieldCase,
+            fieldFunctionCase,
+            ifThenElseCase,
+            lambdaCase,
+            letDefinitionCase,
+            letRecursionCase,
+            listCase,
+            literalCase,
+            nativeApplyCase,
+            patternMatchCase,
+            recordCase,
+            referenceCase,
+            tupleCase,
+            unitCase,
+            updateRecordCase,
+            variableCase
+          )
+        )
+      )
+    case Constructor(attributes, name) => constructorCase(attributes, name)
+    case Destructure(attributes, pattern, valueToDestruct, inValue) =>
+      destructureCase(
+        attributes,
+        pattern,
+        valueToDestruct.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        inValue.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        )
+      )
+    case Field(attributes, target, name) =>
+      fieldCase(
+        attributes,
+        target.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        name
+      )
+    case FieldFunction(attributes, name) => fieldFunctionCase(attributes, name)
+    case IfThenElse(attributes, condition, thenBranch, elseBranch) =>
+      ifThenElseCase(
+        attributes,
+        condition.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        thenBranch.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        elseBranch.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        )
+      )
+    case Lambda(attributes, argumentPattern, body) =>
+      lambdaCase(
+        attributes,
+        argumentPattern,
+        body.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        )
+      )
+    case LetDefinition(attributes, valueName, valueDefinition, inValue) =>
+      letDefinitionCase(
+        attributes,
+        valueName,
+        valueDefinition.toCase.map(
+          _.fold(
+            applyCase,
+            constructorCase,
+            destructureCase,
+            fieldCase,
+            fieldFunctionCase,
+            ifThenElseCase,
+            lambdaCase,
+            letDefinitionCase,
+            letRecursionCase,
+            listCase,
+            literalCase,
+            nativeApplyCase,
+            patternMatchCase,
+            recordCase,
+            referenceCase,
+            tupleCase,
+            unitCase,
+            updateRecordCase,
+            variableCase
+          )
+        ),
+        inValue.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        )
+      )
+    case LetRecursion(attributes, valueDefinitions, inValue) =>
+      letRecursionCase(
+        attributes,
+        valueDefinitions.map { case (n, d) =>
+          (
+            n,
+            d.toCase.map(
+              _.fold(
+                applyCase,
+                constructorCase,
+                destructureCase,
+                fieldCase,
+                fieldFunctionCase,
+                ifThenElseCase,
+                lambdaCase,
+                letDefinitionCase,
+                letRecursionCase,
+                listCase,
+                literalCase,
+                nativeApplyCase,
+                patternMatchCase,
+                recordCase,
+                referenceCase,
+                tupleCase,
+                unitCase,
+                updateRecordCase,
+                variableCase
+              )
+            )
+          )
+        },
+        inValue.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        )
+      )
+    case ListType(attributes, elements) =>
+      listCase(
+        attributes,
+        elements.map(
+          _.fold(
+            applyCase,
+            constructorCase,
+            destructureCase,
+            fieldCase,
+            fieldFunctionCase,
+            ifThenElseCase,
+            lambdaCase,
+            letDefinitionCase,
+            letRecursionCase,
+            listCase,
+            literalCase,
+            nativeApplyCase,
+            patternMatchCase,
+            recordCase,
+            referenceCase,
+            tupleCase,
+            unitCase,
+            updateRecordCase,
+            variableCase
+          )
+        )
+      )
+    case Literal(attributes, literal) => literalCase(attributes, literal)
+    case NativeApply(attributes, function, arguments) =>
+      nativeApplyCase(
+        attributes,
+        function,
+        arguments.map(
+          _.fold(
+            applyCase,
+            constructorCase,
+            destructureCase,
+            fieldCase,
+            fieldFunctionCase,
+            ifThenElseCase,
+            lambdaCase,
+            letDefinitionCase,
+            letRecursionCase,
+            listCase,
+            literalCase,
+            nativeApplyCase,
+            patternMatchCase,
+            recordCase,
+            referenceCase,
+            tupleCase,
+            unitCase,
+            updateRecordCase,
+            variableCase
+          )
+        )
+      )
+    case PatternMatch(attributes, branchOutOn, cases) =>
+      patternMatchCase(
+        attributes,
+        branchOutOn.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        cases.map { case (p, v) =>
+          (
+            p,
+            v.fold(
+              applyCase,
+              constructorCase,
+              destructureCase,
+              fieldCase,
+              fieldFunctionCase,
+              ifThenElseCase,
+              lambdaCase,
+              letDefinitionCase,
+              letRecursionCase,
+              listCase,
+              literalCase,
+              nativeApplyCase,
+              patternMatchCase,
+              recordCase,
+              referenceCase,
+              tupleCase,
+              unitCase,
+              updateRecordCase,
+              variableCase
+            )
+          )
+        }
+      )
+    case Record(attributes, fields) =>
+      recordCase(
+        attributes,
+        fields.map { case (n, v) =>
+          (
+            n,
+            v.fold(
+              applyCase,
+              constructorCase,
+              destructureCase,
+              fieldCase,
+              fieldFunctionCase,
+              ifThenElseCase,
+              lambdaCase,
+              letDefinitionCase,
+              letRecursionCase,
+              listCase,
+              literalCase,
+              nativeApplyCase,
+              patternMatchCase,
+              recordCase,
+              referenceCase,
+              tupleCase,
+              unitCase,
+              updateRecordCase,
+              variableCase
+            )
+          )
+        }
+      )
+    case Reference(attributes, name) => referenceCase(attributes, name)
+    case Tuple(attributes, elements) =>
+      tupleCase(
+        attributes,
+        elements.map(
+          _.fold(
+            applyCase,
+            constructorCase,
+            destructureCase,
+            fieldCase,
+            fieldFunctionCase,
+            ifThenElseCase,
+            lambdaCase,
+            letDefinitionCase,
+            letRecursionCase,
+            listCase,
+            literalCase,
+            nativeApplyCase,
+            patternMatchCase,
+            recordCase,
+            referenceCase,
+            tupleCase,
+            unitCase,
+            updateRecordCase,
+            variableCase
+          )
+        )
+      )
+    case UnitType(attributes) => unitCase(attributes)
+    case UpdateRecord(attributes, valueToUpdate, fieldsToUpdate) =>
+      updateRecordCase(
+        attributes,
+        valueToUpdate.fold(
+          applyCase,
+          constructorCase,
+          destructureCase,
+          fieldCase,
+          fieldFunctionCase,
+          ifThenElseCase,
+          lambdaCase,
+          letDefinitionCase,
+          letRecursionCase,
+          listCase,
+          literalCase,
+          nativeApplyCase,
+          patternMatchCase,
+          recordCase,
+          referenceCase,
+          tupleCase,
+          unitCase,
+          updateRecordCase,
+          variableCase
+        ),
+        fieldsToUpdate.map { case (n, v) =>
+          (
+            n,
+            v.fold(
+              applyCase,
+              constructorCase,
+              destructureCase,
+              fieldCase,
+              fieldFunctionCase,
+              ifThenElseCase,
+              lambdaCase,
+              letDefinitionCase,
+              letRecursionCase,
+              listCase,
+              literalCase,
+              nativeApplyCase,
+              patternMatchCase,
+              recordCase,
+              referenceCase,
+              tupleCase,
+              unitCase,
+              updateRecordCase,
+              variableCase
+            )
+          )
+        }
+      )
+    case Variable(attributes, name) => variableCase(attributes, name)
+  }
 
   def foldLeft[Z](initial: Z)(f: (Z, Value[TA, VA]) => Z): Z = {
     @tailrec

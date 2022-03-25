@@ -12,6 +12,8 @@ final case class Definition[+TA, +VA](
     body: Value[TA, VA]
 ) { self =>
 
+  import Definition._
+
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Definition[TB, VB] =
     Definition(
       inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
@@ -30,6 +32,8 @@ final case class Definition[+TA, +VA](
       )
   }
 
+  def toCase: Case[TA, VA, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
+
   def toSpecification: Specification[TA] = {
     Specification(
       inputTypes.map { case (n, _, t) => (n, t) },
@@ -37,4 +41,28 @@ final case class Definition[+TA, +VA](
     )
   }
 
+}
+
+object Definition {
+  final case class Case[+TA, +VA, +Z](
+      inputTypes: Chunk[(Name, VA, Type[TA])],
+      outputType: Type[TA],
+      body: Z
+  ) { self =>
+    def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Case[TB, VB, Z] =
+      Case(
+        inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
+        outputType.mapAttributes(f),
+        body
+      )
+
+    def map[Z2](f: Z => Z2): Case[TA, VA, Z2] =
+      Case(inputTypes, outputType, f(body))
+  }
+
+  object Case {
+    implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Value[TA, VA]]) extends AnyVal {
+      def toDefinition: Definition[TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
+    }
+  }
 }
