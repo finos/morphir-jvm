@@ -8,8 +8,8 @@ import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.{FQName, Path, TypeModule}
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.Dsl
+import zio.morphir.ir.types.TypeSyntax
 import zio.morphir.syntax.ValueSyntax
-import zio.morphir.syntax.TypeSyntax
 
 object CaseExample extends ValueSyntax with TypeSyntax {
 

@@ -3,7 +3,8 @@ package zio.morphir.ir.sdk
 import zio.Chunk
 import zio.morphir.ir.Module
 import zio.morphir.ir.ModuleModule.ModuleName
-import zio.morphir.ir.TypeModule.{Constructors, Type, UType, reference, variable}
+import zio.morphir.ir.TypeModule.{Constructors, Type, UType}
+import zio.morphir.ir.types.Type._
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.ValueModule.Value.constructor
 import zio.morphir.ir.ValueModule.ValueCase.ApplyCase
