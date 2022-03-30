@@ -14,7 +14,7 @@ object TypeInferenceExample {
     def setType[TA](uType: UType): Value[TA, UType] = ???
   }
 
-  import zio.morphir.ir.TypeModule.Type
+  import zio.morphir.ir.types.Type
 
   val intType: UType    = Type.Reference((), FQName.fromString("Package:Module:Int"), Chunk.empty)
   val stringType: UType = Type.Reference((), FQName.fromString("Package:Module:String"), Chunk.empty)

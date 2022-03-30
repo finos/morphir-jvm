@@ -5,7 +5,7 @@ import zio.morphir.ir.{Documented, Module, Name}
 import zio.morphir.ir.ModuleModule.ModuleName
 import zio.morphir.ir.ValueModule.Specification
 import zio.morphir.syntax.NamingSyntax._
-import zio.morphir.ir.TypeModule.Type.unit
+import zio.morphir.ir.Type.Type.unit
 
 object Regex {
   val moduleName: ModuleName = ModuleName.fromString("Regex")

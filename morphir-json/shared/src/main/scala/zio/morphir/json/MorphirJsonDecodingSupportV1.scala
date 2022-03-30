@@ -5,7 +5,7 @@ import zio.json._
 import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
-import zio.morphir.ir.TypeModule._
+import zio.morphir.ir.Type.{Constructors, Field, Type}
 import zio.morphir.ir.ValueModule._
 
 trait MorphirJsonDecodingSupportV1 {
@@ -174,62 +174,65 @@ trait MorphirJsonDecodingSupportV1 {
 
   implicit def typeDefinitionTypeAliasDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[TypeModule.Definition.TypeAlias[Attributes]] =
+  ): JsonDecoder[zio.morphir.ir.Type.Definition.TypeAlias[Attributes]] =
     JsonDecoder.tuple3[String, Chunk[Name], Type[Attributes]].mapOrFail {
-      case ("type_alias_definition", typeParams, typeExp) => Right(TypeModule.Definition.TypeAlias(typeParams, typeExp))
+      case ("type_alias_definition", typeParams, typeExp) =>
+        Right(zio.morphir.ir.Type.Definition.TypeAlias(typeParams, typeExp))
       case (other, typeParams, typeExp) =>
         Left(s"Expected type_alias_definition, got $other with typeParams: $typeParams and typeExp: $typeExp")
     }
 
   implicit def typeDefinitionCustomTypeDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[TypeModule.Definition.CustomType[Attributes]] =
+  ): JsonDecoder[zio.morphir.ir.Type.Definition.CustomType[Attributes]] =
     JsonDecoder.tuple3[String, Chunk[Name], AccessControlled[Constructors[Attributes]]].mapOrFail {
-      case ("custom_type_definition", typeParams, ctors) => Right(TypeModule.Definition.CustomType(typeParams, ctors))
+      case ("custom_type_definition", typeParams, ctors) =>
+        Right(zio.morphir.ir.Type.Definition.CustomType(typeParams, ctors))
       case (other, typeParams, ctors) =>
         Left(s"Expected type_alias_definition, got $other with typeParams: $typeParams and ctors: $ctors")
     }
 
   implicit def typeDefinitionDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[TypeModule.Definition[Attributes]] =
-    typeDefinitionTypeAliasDecoder[Attributes].widen[TypeModule.Definition[Attributes]] orElse
-      typeDefinitionCustomTypeDecoder[Attributes].widen[TypeModule.Definition[Attributes]]
+  ): JsonDecoder[zio.morphir.ir.Type.Definition[Attributes]] =
+    typeDefinitionTypeAliasDecoder[Attributes].widen[zio.morphir.ir.Type.Definition[Attributes]] orElse
+      typeDefinitionCustomTypeDecoder[Attributes].widen[zio.morphir.ir.Type.Definition[Attributes]]
 
   implicit def typeSpecificationTypeAliasDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[TypeModule.Specification.TypeAliasSpecification[Attributes]] =
+  ): JsonDecoder[zio.morphir.ir.Type.Specification.TypeAliasSpecification[Attributes]] =
     JsonDecoder.tuple3[String, Chunk[Name], Type[Attributes]].mapOrFail {
       case ("type_alias_specification", typeParams, expr) =>
-        Right(TypeModule.Specification.TypeAliasSpecification(typeParams, expr))
+        Right(zio.morphir.ir.Type.Specification.TypeAliasSpecification(typeParams, expr))
       case (other, typeParams, expr) =>
         Left(s"Expected type_alias_specification, got $other with typeParams: $typeParams and expr: $expr")
     }
 
-  implicit def typeSpecificationOpaqueTypeDecoder: JsonDecoder[TypeModule.Specification.OpaqueTypeSpecification] =
+  implicit def typeSpecificationOpaqueTypeDecoder
+      : JsonDecoder[zio.morphir.ir.Type.Specification.OpaqueTypeSpecification] =
     JsonDecoder.tuple2[String, Chunk[Name]].mapOrFail {
       case ("opaque_type_specification", typeParams) =>
-        Right(TypeModule.Specification.OpaqueTypeSpecification(typeParams))
+        Right(zio.morphir.ir.Type.Specification.OpaqueTypeSpecification(typeParams))
       case (other, typeParams) =>
         Left(s"Expected opaque_type_specification, got $other with typeParams: $typeParams")
     }
 
   implicit def typeSpecificationCustomTypeDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[TypeModule.Specification.CustomTypeSpecification[Attributes]] =
+  ): JsonDecoder[zio.morphir.ir.Type.Specification.CustomTypeSpecification[Attributes]] =
     JsonDecoder.tuple3[String, Chunk[Name], Constructors[Attributes]].mapOrFail {
       case ("custom_type_specification", typeParams, ctors) =>
-        Right(TypeModule.Specification.CustomTypeSpecification(typeParams, ctors))
+        Right(zio.morphir.ir.Type.Specification.CustomTypeSpecification(typeParams, ctors))
       case (other, typeParams, ctors) =>
         Left(s"Expected custom_type_specification, got $other with typeParams: $typeParams and ctors: $ctors")
     }
 
   implicit def typeSpecificationDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
-  ): JsonDecoder[TypeModule.Specification[Attributes]] =
-    typeSpecificationTypeAliasDecoder[Attributes].widen[TypeModule.Specification[Attributes]] orElse
-      typeSpecificationCustomTypeDecoder[Attributes].widen[TypeModule.Specification[Attributes]] orElse
-      typeSpecificationOpaqueTypeDecoder.widen[TypeModule.Specification[Attributes]]
+  ): JsonDecoder[zio.morphir.ir.Type.Specification[Attributes]] =
+    typeSpecificationTypeAliasDecoder[Attributes].widen[zio.morphir.ir.Type.Specification[Attributes]] orElse
+      typeSpecificationCustomTypeDecoder[Attributes].widen[zio.morphir.ir.Type.Specification[Attributes]] orElse
+      typeSpecificationOpaqueTypeDecoder.widen[zio.morphir.ir.Type.Specification[Attributes]]
 
   implicit def inputParameterDecoder[Attributes](implicit
       decoder: JsonDecoder[Attributes]
@@ -353,7 +356,7 @@ trait MorphirJsonDecodingSupportV1 {
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[ModuleModule.Specification[Attributes]] = {
     final case class Spec[Attributes](
-        types: List[(Name, Documented[TypeModule.Specification[Attributes]])],
+        types: List[(Name, Documented[zio.morphir.ir.Type.Specification[Attributes]])],
         values: List[(Name, Documented[ValueModule.Specification[Attributes]])]
     )
     lazy val dec: JsonDecoder[Spec[Attributes]] = DeriveJsonDecoder.gen
@@ -364,7 +367,7 @@ trait MorphirJsonDecodingSupportV1 {
       decoder: JsonDecoder[Attributes]
   ): JsonDecoder[ModuleModule.Definition[Attributes]] = {
     final case class Def[Attributes](
-        types: List[(Name, AccessControlled[Documented[TypeModule.Definition[Attributes]]])],
+        types: List[(Name, AccessControlled[Documented[zio.morphir.ir.Type.Definition[Attributes]]])],
         values: List[(Name, AccessControlled[Documented[ValueModule.ValueDefinition[Attributes]]])]
     )
     lazy val dec1: JsonDecoder[Def[Attributes]] = DeriveJsonDecoder.gen

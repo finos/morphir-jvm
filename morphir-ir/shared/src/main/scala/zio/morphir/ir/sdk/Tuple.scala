@@ -3,7 +3,7 @@ package zio.morphir.ir.sdk
 import zio.Chunk
 import zio.morphir.ir.Module
 import zio.morphir.ir.ModuleModule.ModuleName
-import zio.morphir.ir.TypeModule.Type._
+import zio.morphir.ir.Type.Type._
 import zio.morphir.ir.sdk.Common._
 
 object Tuple {

@@ -2,7 +2,8 @@ package zio.morphir.json
 
 import zio.json._
 import zio.morphir.ir._
-import zio.morphir.ir.TypeModule._
+import zio.morphir.ir.Type.{Field, Type}
+import zio.morphir.ir.Type.Type.variable
 import zio.morphir.json.MorphirJsonDecodingSupportV1._
 import zio.test._
 import zio.test.DefaultRunnableSpec
@@ -167,13 +168,13 @@ object DecodingSpec extends DefaultRunnableSpec {
     suite("Field")(
       test("will decode Field for private Integer") {
         val actual   = """[["name"],10]"""
-        val expected = TypeModule.Field(Name.fromString("Name"), 10)
+        val expected = Field(Name.fromString("Name"), 10)
         assertTrue(actual.fromJson[Field[Int]] == Right(expected))
       },
       test("will decode Field for public String") {
         val actual = """[["string"],["public","Hello"]]"""
         val expected =
-          TypeModule.Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
+          Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
         assertTrue(actual.fromJson[Field[AccessControlled[String]]] == Right(expected))
       }
     ),
@@ -278,14 +279,14 @@ object DecodingSpec extends DefaultRunnableSpec {
     suite("Constructors")(
       test("will decode empty Constructor") {
         val actual   = """[]"""
-        val expected = TypeModule.Constructors[Int](Map.empty)
-        assertTrue(actual.fromJson[TypeModule.Constructors[Int]] == Right(expected))
+        val expected = zio.morphir.ir.Type.Constructors[Int](Map.empty)
+        assertTrue(actual.fromJson[zio.morphir.ir.Type.Constructors[Int]] == Right(expected))
       },
       test("will decode Constructors with one constructor") {
         val name     = Name.fromString("name")
         val actual   = """[[["name"],[[["name"],["variable",123,["f"]]]]]]"""
-        val expected = TypeModule.Constructors[Int](Map((name, zio.Chunk((name, variable[Int]("f", 123))))))
-        assertTrue(actual.fromJson[TypeModule.Constructors[Int]] == Right(expected))
+        val expected = zio.morphir.ir.Type.Constructors[Int](Map((name, zio.Chunk((name, variable[Int]("f", 123))))))
+        assertTrue(actual.fromJson[zio.morphir.ir.Type.Constructors[Int]] == Right(expected))
       },
       test("will decode Constructors") {
         val name1 = Name.fromString("name1")
@@ -294,24 +295,24 @@ object DecodingSpec extends DefaultRunnableSpec {
         val name4 = Name.fromString("name4")
         val actual =
           """[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]"""
-        val expected = TypeModule.Constructors[Int](
+        val expected = zio.morphir.ir.Type.Constructors[Int](
           Map(
             (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
             (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
           )
         )
-        assertTrue(actual.fromJson[TypeModule.Constructors[Int]] == Right(expected))
+        assertTrue(actual.fromJson[zio.morphir.ir.Type.Constructors[Int]] == Right(expected))
       }
     ),
-    suite("TypeModule.Definition")(
+    suite("zio.morphir.ir.Type.Definition")(
       test("will decode TypeAlias") {
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
         val actual   = """["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
-        val expected = TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+        val expected = zio.morphir.ir.Type.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
         assertTrue(
-          actual.fromJson[TypeModule.Definition.TypeAlias[Int]] == Right(expected),
-          actual.fromJson[TypeModule.Definition[Int]] == Right(expected)
+          actual.fromJson[zio.morphir.ir.Type.Definition.TypeAlias[Int]] == Right(expected),
+          actual.fromJson[zio.morphir.ir.Type.Definition[Int]] == Right(expected)
         )
       },
       test("will decode CustomType") {
@@ -321,7 +322,7 @@ object DecodingSpec extends DefaultRunnableSpec {
         val name4 = Name.fromString("name4")
         val ctors = AccessControlled(
           AccessControlled.Access.Public,
-          TypeModule.Constructors[Int](
+          zio.morphir.ir.Type.Constructors[Int](
             Map(
               (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
               (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
@@ -330,23 +331,24 @@ object DecodingSpec extends DefaultRunnableSpec {
         )
         val actual =
           """["custom_type_definition",[["name","1"],["name","2"]],["public",[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]]"""
-        val expected = TypeModule.Definition.CustomType[Int](zio.Chunk(name1, name2), ctors)
+        val expected = zio.morphir.ir.Type.Definition.CustomType[Int](zio.Chunk(name1, name2), ctors)
         assertTrue(
-          actual.fromJson[TypeModule.Definition.CustomType[Int]] == Right(expected),
-          actual.fromJson[TypeModule.Definition[Int]] == Right(expected)
+          actual.fromJson[zio.morphir.ir.Type.Definition.CustomType[Int]] == Right(expected),
+          actual.fromJson[zio.morphir.ir.Type.Definition[Int]] == Right(expected)
         )
       }
     ),
-    suite("TypeModule.Specification")(
+    suite("zio.morphir.ir.Type.Specification")(
       test("will decode TypeAliasSpecification") {
         val name1  = Name.fromString("name1")
         val name2  = Name.fromString("name2")
         val actual = """["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
         val expected =
-          TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+          zio.morphir.ir.Type.Specification
+            .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
         assertTrue(
-          actual.fromJson[TypeModule.Specification.TypeAliasSpecification[Int]] == Right(expected),
-          actual.fromJson[TypeModule.Specification[Int]] == Right(expected)
+          actual.fromJson[zio.morphir.ir.Type.Specification.TypeAliasSpecification[Int]] == Right(expected),
+          actual.fromJson[zio.morphir.ir.Type.Specification[Int]] == Right(expected)
         )
       },
       test("will decode CustomTypeSpecification") {
@@ -354,7 +356,7 @@ object DecodingSpec extends DefaultRunnableSpec {
         val name2 = Name.fromString("name2")
         val name3 = Name.fromString("name3")
         val name4 = Name.fromString("name4")
-        val ctors = TypeModule.Constructors[Int](
+        val ctors = zio.morphir.ir.Type.Constructors[Int](
           Map(
             (name1, zio.Chunk((name1, variable[Int]("f", 123)), (name2, variable[Int]("g", 345)))),
             (name2, zio.Chunk((name3, variable[Int]("h", 678)), (name4, variable[Int]("i", 789))))
@@ -362,20 +364,20 @@ object DecodingSpec extends DefaultRunnableSpec {
         )
         val actual =
           """["custom_type_specification",[["name","1"],["name","2"]],[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]"""
-        val expected = TypeModule.Specification.CustomTypeSpecification[Int](zio.Chunk(name1, name2), ctors)
+        val expected = zio.morphir.ir.Type.Specification.CustomTypeSpecification[Int](zio.Chunk(name1, name2), ctors)
         assertTrue(
-          actual.fromJson[TypeModule.Specification.CustomTypeSpecification[Int]] == Right(expected),
-          actual.fromJson[TypeModule.Specification[Int]] == Right(expected)
+          actual.fromJson[zio.morphir.ir.Type.Specification.CustomTypeSpecification[Int]] == Right(expected),
+          actual.fromJson[zio.morphir.ir.Type.Specification[Int]] == Right(expected)
         )
       },
       test("will decode OpaqueTypeSpecification") {
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
         val actual   = """["opaque_type_specification",[["name","1"],["name","2"]]]"""
-        val expected = TypeModule.Specification.OpaqueTypeSpecification(zio.Chunk(name1, name2))
+        val expected = zio.morphir.ir.Type.Specification.OpaqueTypeSpecification(zio.Chunk(name1, name2))
         assertTrue(
-          actual.fromJson[TypeModule.Specification.OpaqueTypeSpecification] == Right(expected),
-          actual.fromJson[TypeModule.Specification[Int]] == Right(expected)
+          actual.fromJson[zio.morphir.ir.Type.Specification.OpaqueTypeSpecification] == Right(expected),
+          actual.fromJson[zio.morphir.ir.Type.Specification[Int]] == Right(expected)
         )
       }
     ),
@@ -496,7 +498,8 @@ object DecodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification
+              .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))
@@ -520,7 +523,8 @@ object DecodingSpec extends DefaultRunnableSpec {
         val typeMap = Map(
           name -> Documented(
             "typeDoc1",
-            TypeModule.Specification.TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+            zio.morphir.ir.Type.Specification
+              .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
           )
         )
         val inputs = zio.Chunk((name1, variable[Int]("g", 345)), (name2, variable[Int]("h", 678)))
@@ -555,7 +559,7 @@ object DecodingSpec extends DefaultRunnableSpec {
       //       AccessControlled.Access.Private,
       //       Documented(
       //         "typeDoc1",
-      //         TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+      //         zio.morphir.ir.Type.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
       //       )
       //     )
       //   )
@@ -590,7 +594,7 @@ object DecodingSpec extends DefaultRunnableSpec {
       //       AccessControlled.Access.Private,
       //       Documented(
       //         "typeDoc1",
-      //         TypeModule.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
+      //         zio.morphir.ir.Type.Definition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int]("g", 345))
       //       )
       //     )
       //   )

@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
 import zio.morphir.ir.{Literal => Lit}
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.Type.Type.{unit => UnitType}
 import zio.{Chunk, ZIO}
 import zio.prelude._
 import zio.prelude.fx.ZPure
@@ -10,7 +10,7 @@ import zio.morphir.syntax.ValueSyntax
 object ValueModule {
 
   def mapDefinition[Annotations, Err](definition: ValueDefinition[Annotations])(
-      tryMapType: Type[Annotations] => Validation[Err, Type[Annotations]],
+      tryMapType: zio.morphir.ir.Type.Type[Annotations] => Validation[Err, zio.morphir.ir.Type.Type[Annotations]],
       tryMapValue: Value[Annotations] => Validation[Err, Value[Annotations]]
   ): Validation[Err, ValueDefinition[Annotations]] = ???
 
@@ -54,7 +54,7 @@ object ValueModule {
 
   final case class Definition[+Self, +Annotations](
       inputTypes: Chunk[InputParameter[Annotations]],
-      outputType: Type[Annotations],
+      outputType: zio.morphir.ir.Type.Type[Annotations],
       body: Self
   ) { self =>
     final def toSpecification: Specification[Annotations] =
@@ -71,7 +71,7 @@ object ValueModule {
     def collectAttributes: List[Annotations] = ???
 
     def transform[Annotations2 >: Annotations, Err](
-        tryMapType: Type[Annotations2] => Validation[Err, Type[Annotations2]],
+        tryMapType: zio.morphir.ir.Type.Type[Annotations2] => Validation[Err, zio.morphir.ir.Type.Type[Annotations2]],
         tryMapValue: Value[Annotations2] => Validation[Err, Value[Annotations2]]
     ): Validation[Err, Definition[Self, Annotations2]] = {
       ???
@@ -89,7 +89,7 @@ object ValueModule {
 
   object Definition {
     def fromLiteral[A](value: Value[Any]): Definition[Value[Any], Any] =
-      Definition(Chunk.empty, TypeModule.Type.unit, value)
+      Definition(Chunk.empty, UnitType, value)
 
     def fromTypedValue(value: TypedValue): ValueDefinition[Any] = {
       val typeAttrib = value.annotations
@@ -103,7 +103,7 @@ object ValueModule {
 
   final case class InputParameter[+Annotations](
       name: Name,
-      tpe: Type[Annotations],
+      tpe: zio.morphir.ir.Type.Type[Annotations],
       annotations: Annotations
   ) {
     def toValue[A >: Annotations](body: Value[A]): Value[A] =
@@ -120,18 +120,22 @@ object ValueModule {
   final type RawValue = Value[Any]
   final val RawValue = Value
 
-  final case class Specification[+Attributes](inputs: Chunk[(Name, Type[Attributes])], output: Type[Attributes]) {
+  final case class Specification[+Attributes](
+      inputs: Chunk[(Name, zio.morphir.ir.Type.Type[Attributes])],
+      output: zio.morphir.ir.Type.Type[Attributes]
+  ) {
     self =>
     def map[B](f: Attributes => B): Specification[B] =
       Specification(inputs.map { case (name, tpe) => (name, tpe.mapAttributes(f)) }, output.mapAttributes(f))
   }
 
   object Specification {
-    def create[Annotations](inputs: (Name, Type[Annotations])*): Inputs[Annotations] =
+    def create[Annotations](inputs: (Name, zio.morphir.ir.Type.Type[Annotations])*): Inputs[Annotations] =
       new Inputs(() => Chunk.fromIterable(inputs))
 
-    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, Type[Annotations])]) extends AnyVal {
-      def apply(output: Type[Annotations]): Specification[Annotations] =
+    final class Inputs[Annotations](private val inputs: () => Chunk[(Name, zio.morphir.ir.Type.Type[Annotations])])
+        extends AnyVal {
+      def apply(output: zio.morphir.ir.Type.Type[Annotations]): Specification[Annotations] =
         Specification(inputs(), output)
     }
   }
@@ -385,7 +389,7 @@ object ValueModule {
 
     def toDefinition: ValueDefinition[Annotations] = {
       // HACK: This is not correct it needs to be made correct
-      ValueDefinition(Chunk.empty, Type.unit[Annotations](annotations), self)
+      ValueDefinition(Chunk.empty, UnitType[Annotations](annotations), self)
     }
   }
 

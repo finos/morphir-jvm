@@ -3,7 +3,7 @@ package zio.morphir.syntax
 import zio.Chunk
 import zio.morphir.ir.{Literal => Lit, _}
 import ValueModule.{RawValue, Value, ValueCase, ValueDefinition}
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.types.Type
 import zio.morphir.ir.ValueModule.ValueCase._
 
 trait ValueSyntax {

@@ -1,12 +1,12 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
+import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 
 object ModuleModule {
 
   final case class Definition[+Annotations](
-      types: Map[Name, AccessControlled[Documented[TypeModule.Definition[Annotations]]]],
+      types: Map[Name, AccessControlled[Documented[zio.morphir.ir.Type.Definition[Annotations]]]],
       values: Map[Name, AccessControlled[Documented[ValueModule.ValueDefinition[Annotations]]]]
   ) { self =>
     def toSpecification: Specification[Annotations] = {
@@ -76,12 +76,12 @@ object ModuleModule {
   val USpecification = Specification
 
   final case class Specification[+Annotations](
-      types: Map[Name, Documented[TypeModule.Specification[Annotations]]],
+      types: Map[Name, Documented[zio.morphir.ir.types.Specification[Annotations]]],
       values: Map[Name, Documented[ValueModule.Specification[Annotations]]]
   ) {
     def lookupValue(localName: Name): Option[ValueModule.Specification[Annotations]] =
       values.get(localName).map(_.value)
-    def lookupType(localName: Name): Option[TypeModule.Specification[Annotations]] =
+    def lookupType(localName: Name): Option[zio.morphir.ir.types.Specification[Annotations]] =
       types.get(localName).map(doc => doc.value)
 
     def eraseAttributes: Specification[Annotations] = Specification.empty

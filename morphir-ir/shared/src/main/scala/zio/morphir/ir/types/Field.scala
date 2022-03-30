@@ -3,7 +3,7 @@ package zio.morphir.ir.types
 import zio.morphir.ir.Name
 import zio.prelude._
 
-final case class Field[+T](name: Name, fieldType: T) { self =>
+private[ir] final case class Field[+T](name: Name, fieldType: T) { self =>
 
   /**
    * An alias for `attributeTypeWith`.

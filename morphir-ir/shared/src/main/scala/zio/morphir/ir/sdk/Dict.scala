@@ -3,9 +3,10 @@ package zio.morphir.ir.sdk
 import zio.Chunk
 import zio.morphir.ir.{FQName, Module, Name, Path}
 import zio.morphir.ir.ModuleModule.ModuleName
-import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.TypeModule.{Type, UType}
-import zio.morphir.ir.TypeModule.Type._
+import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
+import zio.morphir.ir.Type.Type
+import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.Type._
 import zio.morphir.ir.ValueModule.Value
 import zio.morphir.ir.ValueModule.ValueCase.{ApplyCase, ReferenceCase}
 import zio.morphir.ir.sdk.Common._

@@ -7,9 +7,11 @@ import zio.morphir.ir._
 import zio.morphir.ir.AccessControlled.Access._
 import zio.morphir.ir.Literal
 import zio.morphir.ir.ValueModule.{Value, ValueCase}
-import zio.morphir.ir.TypeModule._
 import zio.json.internal.Write
-import zio.morphir.ir.TypeModule.Type.{Record, Reference, ExtensibleRecord, Variable, Tuple}
+import zio.morphir.ir.Type.Field
+import zio.morphir.ir.Type.{Definition => TypeDefinition, Specification => TypeSpecification}
+import zio.morphir.ir.Type.{Constructors, Type}
+import zio.morphir.ir.Type.Type.{ExtensibleRecord, Record, Reference, Tuple, Variable}
 
 trait MorphirJsonEncodingSupportV1 {
   // NOTE: We will want to create JSON encoders which follow the format in the morphir-elm project
@@ -170,58 +172,57 @@ trait MorphirJsonEncodingSupportV1 {
 
   implicit def typeDefinitionTypeAliasEncoder[Attributes](implicit
       attributesEncoder: JsonEncoder[Attributes]
-  ): JsonEncoder[TypeModule.Definition.TypeAlias[Attributes]] =
-    Json.encoder.contramap[TypeModule.Definition.TypeAlias[Attributes]] { alias =>
+  ): JsonEncoder[TypeDefinition.TypeAlias[Attributes]] =
+    Json.encoder.contramap[TypeDefinition.TypeAlias[Attributes]] { alias =>
       Json.Arr(Json.Str("type_alias_definition"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.typeExp))
     }
 
   implicit def typeDefinitionCustomTypeEncoder[Attributes](implicit
       attributesEncoder: JsonEncoder[Attributes]
-  ): JsonEncoder[TypeModule.Definition.CustomType[Attributes]] =
-    Json.encoder.contramap[TypeModule.Definition.CustomType[Attributes]] { tpe =>
+  ): JsonEncoder[TypeDefinition.CustomType[Attributes]] =
+    Json.encoder.contramap[TypeDefinition.CustomType[Attributes]] { tpe =>
       Json.Arr(Json.Str("custom_type_definition"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
     }
 
-  implicit def typeDefinitionEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeModule.Definition[Attributes]] =
-    new JsonEncoder[TypeModule.Definition[Attributes]] {
-      def unsafeEncode(d: TypeModule.Definition[Attributes], indent: Option[Int], out: Write): Unit = d match {
-        case d @ TypeModule.Definition.TypeAlias(_, _) =>
-          JsonEncoder[TypeModule.Definition.TypeAlias[Attributes]].unsafeEncode(d, indent, out)
-        case d @ TypeModule.Definition.CustomType(_, _) =>
-          JsonEncoder[TypeModule.Definition.CustomType[Attributes]].unsafeEncode(d, indent, out)
+  implicit def typeDefinitionEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeDefinition[Attributes]] =
+    new JsonEncoder[TypeDefinition[Attributes]] {
+      def unsafeEncode(d: TypeDefinition[Attributes], indent: Option[Int], out: Write): Unit = d match {
+        case d @ TypeDefinition.TypeAlias(_, _) =>
+          JsonEncoder[TypeDefinition.TypeAlias[Attributes]].unsafeEncode(d, indent, out)
+        case d @ TypeDefinition.CustomType(_, _) =>
+          JsonEncoder[TypeDefinition.CustomType[Attributes]].unsafeEncode(d, indent, out)
       }
     }
 
   implicit def typeSpecificationTypeAliasEncoder[Attributes](implicit
       attributesEncoder: JsonEncoder[Attributes]
-  ): JsonEncoder[TypeModule.Specification.TypeAliasSpecification[Attributes]] =
-    Json.encoder.contramap[TypeModule.Specification.TypeAliasSpecification[Attributes]] { alias =>
+  ): JsonEncoder[TypeSpecification.TypeAliasSpecification[Attributes]] =
+    Json.encoder.contramap[TypeSpecification.TypeAliasSpecification[Attributes]] { alias =>
       Json.Arr(Json.Str("type_alias_specification"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.expr))
     }
 
   implicit def typeSpecificationEncoderCustomTypeEncoder[Attributes](implicit
       attributesEncoder: JsonEncoder[Attributes]
-  ): JsonEncoder[TypeModule.Specification.CustomTypeSpecification[Attributes]] =
-    Json.encoder.contramap[TypeModule.Specification.CustomTypeSpecification[Attributes]] { tpe =>
+  ): JsonEncoder[TypeSpecification.CustomTypeSpecification[Attributes]] =
+    Json.encoder.contramap[TypeSpecification.CustomTypeSpecification[Attributes]] { tpe =>
       Json.Arr(Json.Str("custom_type_specification"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
     }
 
-  implicit def typeSpecificationEncoderOpaqueTypeEncoder
-      : JsonEncoder[TypeModule.Specification.OpaqueTypeSpecification] =
-    Json.encoder.contramap[TypeModule.Specification.OpaqueTypeSpecification] { tpe =>
+  implicit def typeSpecificationEncoderOpaqueTypeEncoder: JsonEncoder[TypeSpecification.OpaqueTypeSpecification] =
+    Json.encoder.contramap[TypeSpecification.OpaqueTypeSpecification] { tpe =>
       Json.Arr(Json.Str("opaque_type_specification"), toJsonAstOrThrow(tpe.typeParams))
     }
 
-  implicit def typeSpecificationEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeModule.Specification[Attributes]] =
-    new JsonEncoder[TypeModule.Specification[Attributes]] {
-      def unsafeEncode(spec: TypeModule.Specification[Attributes], indent: Option[Int], out: Write): Unit =
+  implicit def typeSpecificationEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeSpecification[Attributes]] =
+    new JsonEncoder[TypeSpecification[Attributes]] {
+      def unsafeEncode(spec: TypeSpecification[Attributes], indent: Option[Int], out: Write): Unit =
         spec match {
-          case spec @ TypeModule.Specification.TypeAliasSpecification(_, _) =>
-            JsonEncoder[TypeModule.Specification.TypeAliasSpecification[Attributes]].unsafeEncode(spec, indent, out)
-          case spec @ TypeModule.Specification.CustomTypeSpecification(_, _) =>
-            JsonEncoder[TypeModule.Specification.CustomTypeSpecification[Attributes]].unsafeEncode(spec, indent, out)
-          case spec @ TypeModule.Specification.OpaqueTypeSpecification(_) =>
-            JsonEncoder[TypeModule.Specification.OpaqueTypeSpecification].unsafeEncode(spec, indent, out)
+          case spec @ TypeSpecification.TypeAliasSpecification(_, _) =>
+            JsonEncoder[TypeSpecification.TypeAliasSpecification[Attributes]].unsafeEncode(spec, indent, out)
+          case spec @ TypeSpecification.CustomTypeSpecification(_, _) =>
+            JsonEncoder[TypeSpecification.CustomTypeSpecification[Attributes]].unsafeEncode(spec, indent, out)
+          case spec @ TypeSpecification.OpaqueTypeSpecification(_) =>
+            JsonEncoder[TypeSpecification.OpaqueTypeSpecification].unsafeEncode(spec, indent, out)
         }
     }
 

@@ -9,14 +9,15 @@ sealed trait Specification[+Attributes] { self =>
   def ??(doc: String): Documented[Specification[Attributes]] =
     Documented(doc, self)
 
-  // def map[Annotations0 >: Annotations](f: Annotations => Annotations0): Specification[Annotations0] = self match {
-  //   case c @ TypeAliasSpecification(_, _, _) =>
-  //     TypeAliasSpecification[Annotations0](c.typeParams, c.expr.map(f), c.annotations.map(f))
-  //   case c @ OpaqueTypeSpecification(_, _) =>
-  //     OpaqueTypeSpecification[Annotations0](c.typeParams, c.annotations.map(f))
-  //   case c @ CustomTypeSpecification(_, _, _) =>
-  //     CustomTypeSpecification[Annotations0](c.typeParams, c.ctors.map(f), c.annotations.map(f))
-  // }
+//   def map[Attributes0 >: Attributes](f: Attributes => Attributes0): Specification[Attributes0] = self match {
+//     case c @ TypeAliasSpecification(_, _) =>
+//       TypeAliasSpecification[Attributes0](c.typeParams, c.expr.map(f))
+//     case c @ OpaqueTypeSpecification(_) =>
+//       OpaqueTypeSpecification[Attributes0](c.typeParams)
+//     case c @ CustomTypeSpecification(_, _) =>
+//       CustomTypeSpecification[Attributes0](c.typeParams, c.ctors.map(f))
+//   }
+
   def eraseAttributes: Specification[Any] = self match {
     case c @ TypeAliasSpecification(_, _) =>
       TypeAliasSpecification(c.typeParams, c.expr.eraseAttributes)
@@ -27,7 +28,7 @@ sealed trait Specification[+Attributes] { self =>
   }
 }
 
-object Specification {
+private[ir] object Specification {
   final case class TypeAliasSpecification[+Attributes](
       typeParams: Chunk[Name],
       expr: Type[Attributes]

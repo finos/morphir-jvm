@@ -2,7 +2,6 @@ package zio.morphir.value
 
 import zio.morphir.ir.Name
 import zio.morphir.ir.ValueModule.RawValue
-import zio.morphir.ir.TypeModule
 import zio.morphir.IR
 import zio.morphir.ir.LiteralValue
 import zio.morphir.ir.ValueModule.ValueCase._
@@ -12,11 +11,12 @@ import zio.morphir.ir.Pattern
 import zio.morphir.ir.NativeFunction._
 import zio.Chunk
 import zio.prelude._
+import zio.morphir.IR.TypeConstructorInfo
 
 import scala.collection.immutable.ListMap
 import zio.morphir.ir.ValueModule.Value
-import zio.morphir.ir.TypeModule.Specification.TypeAliasSpecification
-import IR._
+import zio.morphir.ir.Type.Specification.TypeAliasSpecification
+import zio.morphir.ir.Type.{Field, Type}
 
 import java.math.BigInteger
 object Interpreter {
@@ -73,9 +73,8 @@ object Interpreter {
           println(s"evaluating: ConstructorCase($fqName)")
           val dealiased = ir.resolveAliases(fqName)
           def getRecordConstructor(name: FQName): Option[Any] =
-            ir.typeSpecifications.get(name).collect {
-              case TypeAliasSpecification(_, TypeModule.Type.Record(_, fields)) =>
-                constructFunction(fqName, fields)
+            ir.typeSpecifications.get(name).collect { case TypeAliasSpecification(_, Type.Record(_, fields)) =>
+              constructFunction(fqName, fields)
             }
 
           def getTypeConstructor(name: FQName): Option[Any] =
@@ -477,7 +476,7 @@ object Interpreter {
     }
   }
 
-  private def constructFunction(name: FQName, fields: Chunk[TypeModule.Field[TypeModule.Type[Any]]]): Any =
+  private def constructFunction(name: FQName, fields: Chunk[Field[Type[Any]]]): Any =
     fields.length match {
       case 1 =>
         new Function1[Any, Any] {

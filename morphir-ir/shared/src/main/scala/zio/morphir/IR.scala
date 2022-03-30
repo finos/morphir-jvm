@@ -1,18 +1,19 @@
 package zio.morphir
 
 import zio.Chunk
-import zio.morphir.ir.{DistributionModule, FQName, Name, PackageModule, TypeModule, ValueModule}
-import zio.morphir.ir.TypeModule.UType
+import zio.morphir.ir.{DistributionModule, FQName, Name, PackageModule, ValueModule}
+import zio.morphir.ir.types.UType
 import zio.morphir.IR.TypeConstructorInfo
+import zio.morphir.ir.Type.{Type, Specification}
 
 final case class IR(
     valueSpecifications: Map[FQName, ValueModule.Specification[Any]],
     valueDefinitions: Map[FQName, ValueModule.ValueDefinition[UType]],
-    typeSpecifications: Map[FQName, TypeModule.Specification[Any]],
+    typeSpecifications: Map[FQName, Specification[Any]],
     typeConstructors: Map[FQName, TypeConstructorInfo]
 ) { self =>
 
-  @inline final def lookupTypeSpecification(fqName: FQName): Option[TypeModule.Specification[Any]] =
+  @inline final def lookupTypeSpecification(fqName: FQName): Option[Specification[Any]] =
     typeSpecifications.get(fqName)
 
   @inline final def lookupTypeConstructor(fqName: FQName): Option[TypeConstructorInfo] =
@@ -22,9 +23,9 @@ final case class IR(
     typeSpecifications.get(fqName) match {
       case Some(typeSpecification) =>
         typeSpecification match {
-          case TypeModule.Specification.TypeAliasSpecification(_, underlyingType) =>
+          case Specification.TypeAliasSpecification(_, underlyingType) =>
             underlyingType match {
-              case TypeModule.Type.Reference(_, fqName, _) =>
+              case Type.Reference(_, fqName, _) =>
                 fqName
               case _ => fqName
             }
@@ -53,7 +54,7 @@ object IR {
   )
 
   final class LookupTypeSpecification(val fqName: () => FQName) extends AnyVal {
-    def apply(ir: IR): Option[TypeModule.Specification[Any]] =
+    def apply(ir: IR): Option[Specification[Any]] =
       ir.lookupTypeSpecification(fqName())
   }
 

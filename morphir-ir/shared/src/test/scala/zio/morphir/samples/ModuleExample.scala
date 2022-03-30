@@ -3,9 +3,9 @@ package zio.morphir.samples
 import zio.Chunk
 import zio.morphir.ir.ModuleModule.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.{defineVariable, string}
-import zio.morphir.ir.TypeModule.Constructors
-import zio.morphir.ir.TypeModule.Definition.{CustomType, TypeAlias}
-import zio.morphir.ir.TypeModule.Specification.OpaqueTypeSpecification
+import zio.morphir.ir.Type.Constructors
+import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
+import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.{AccessControlled, Documented, Name, UType, ValueModule}
 
 object ModuleExample {

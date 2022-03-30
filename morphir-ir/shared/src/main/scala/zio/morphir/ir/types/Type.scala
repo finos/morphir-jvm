@@ -284,7 +284,7 @@ sealed trait Type[+Attributes] { self =>
   //    }
 }
 
-object Type extends TypeModuleSyntax {
+private[ir] object Type extends TypeModuleSyntax {
 
   final case class ExtensibleRecord[+Attributes](
       attributes: Attributes,

@@ -3,7 +3,7 @@ package zio.morphir.value
 import java.math.BigInteger
 import zio.test._
 import zio.morphir.ir.Name
-import zio.morphir.ir.testing.CaseExample._
+import zio.morphir.testing.CaseExample._
 import zio.morphir.ir.ValueModule.RawValue
 import zio.morphir.IR
 import zio.morphir.testing.MorphirBaseSpec

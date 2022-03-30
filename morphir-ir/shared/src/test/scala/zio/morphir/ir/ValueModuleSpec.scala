@@ -7,14 +7,14 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.syntax.ValueSyntax
 import ValueModule.Value
 import ValueModule.ValueCase._
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.Type.{Type => IrType}
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 
-  val boolType: UType                  = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
-  val intType: UType                   = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
-  def listType(itemType: UType): UType = Type.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
-  val stringType: UType                = Type.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
+  val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
+  val intType: UType                   = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int"))
+  def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
+  val stringType: UType                = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.String:String"))
 
   def spec = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
@@ -480,7 +480,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
-        val typeRef = Type.ref(fqName)
+        val typeRef = IrType.ref(fqName)
         val constr  = Value(ConstructorCase(fqName), typeRef)
         assertTrue(constr.toRawValue == constructor(fqName))
       },
@@ -634,7 +634,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
-        val ref = Value(ReferenceCase(fqName), Type.ref(fqName))
+        val ref = Value(ReferenceCase(fqName), IrType.ref(fqName))
         assertTrue(ref.toRawValue == reference(fqName))
       },
       test("Record") {
@@ -642,7 +642,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val lit   = LiteralCase(Literal.string("timeout"))
         val value = Value(lit, stringType)
 
-        val rec = Value(RecordCase(Chunk((name, value))), Type.record(Type.field("hello", stringType)))
+        val rec = Value(RecordCase(Chunk((name, value))), IrType.record(IrType.field("hello", stringType)))
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
       },
@@ -650,7 +650,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         val lit   = LiteralCase(Literal.string("timeout"))
         val value = Value(lit, stringType)
 
-        val t1 = Value(TupleCase(Chunk(value)), Type.tuple(Chunk(stringType)))
+        val t1 = Value(TupleCase(Chunk(value)), IrType.tuple(Chunk(stringType)))
 
         assertTrue(
           t1.toRawValue == tuple(Chunk(string("timeout")))
@@ -682,7 +682,7 @@ object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
         assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {
-        assertTrue(Value(UnitCase, Type.unit).toRawValue == unit)
+        assertTrue(Value(UnitCase, IrType.unit).toRawValue == unit)
       }
     )
   )
