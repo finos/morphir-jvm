@@ -141,25 +141,21 @@ trait MorphirJsonEncodingSupportV1 {
       }
     }
 
-  implicit def constructorsEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[Constructors[Annotations]] = {
-    Json.encoder.contramap[Constructors[Annotations]] { ctors =>
-      Json.Arr(
-        (
-          toJsonAstOrThrow(
-            ctors.toMap.toList.map { case (ctorName: Name, ctorArgs: Chunk[(Name, Type[Annotations])]) =>
-              (
-                toJsonAstOrThrow(ctorName),
-                toJsonAstOrThrow(
-                  ctorArgs.map { case (argName: Name, argType: Type[Annotations]) =>
-                    Json.Arr(toJsonAstOrThrow(argName), toJsonAstOrThrow(argType))
-                  }
-                )
-              )
-            }
+  implicit def constructorsEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[Constructors[Attributes]] = {
+    Json.encoder.contramap[Constructors[Attributes]] { ctors =>
+      toJsonAstOrThrow(
+        ctors.toMap.toList.map { case (ctorName: Name, ctorArgs: Chunk[(Name, Type[Attributes])]) =>
+          (
+            toJsonAstOrThrow(ctorName),
+            toJsonAstOrThrow(
+              ctorArgs.map { case (argName: Name, argType: Type[Attributes]) =>
+                Json.Arr(toJsonAstOrThrow(argName), toJsonAstOrThrow(argType))
+              }
+            )
           )
-        )
+        }
       )
     }
   }
@@ -229,18 +225,18 @@ trait MorphirJsonEncodingSupportV1 {
         }
     }
 
-  implicit def inputParameterEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[ValueModule.InputParameter[Annotations]] =
-    Json.encoder.contramap[ValueModule.InputParameter[Annotations]](ip =>
+  implicit def inputParameterEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[ValueModule.InputParameter[Attributes]] =
+    Json.encoder.contramap[ValueModule.InputParameter[Attributes]](ip =>
       Json.Arr(toJsonAstOrThrow(ip.name), toJsonAstOrThrow(ip.annotations), toJsonAstOrThrow(ip.tpe))
     )
 
-  implicit def valueDefinitionEncoder[Self, Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations],
+  implicit def valueDefinitionEncoder[Self, Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes],
       bodyEncoder: JsonEncoder[Self]
-  ): JsonEncoder[ValueModule.Definition[Self, Annotations]] = {
-    Json.encoder.contramap[ValueModule.Definition[Self, Annotations]] { definition =>
+  ): JsonEncoder[ValueModule.Definition[Self, Attributes]] = {
+    Json.encoder.contramap[ValueModule.Definition[Self, Attributes]] { definition =>
       Json.Obj(
         "inputTypes" -> toJsonAstOrThrow(definition.inputTypes),
         "outputType" -> toJsonAstOrThrow(definition.outputType),
@@ -249,10 +245,10 @@ trait MorphirJsonEncodingSupportV1 {
     }
   }
 
-  implicit def valueSpecificationEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[ValueModule.Specification[Annotations]] = {
-    Json.encoder.contramap[ValueModule.Specification[Annotations]] { specification =>
+  implicit def valueSpecificationEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[ValueModule.Specification[Attributes]] = {
+    Json.encoder.contramap[ValueModule.Specification[Attributes]] { specification =>
       Json.Obj(
         "inputs"  -> toJsonAstOrThrow(specification.inputs),
         "outputs" -> toJsonAstOrThrow(specification.output)
@@ -366,6 +362,7 @@ trait MorphirJsonEncodingSupportV1 {
     JsonEncoder.tuple3[String, Attributes, Name].contramap[Type.Variable[Attributes]] {
       case Type.Variable(attributes, name) => ("variable", attributes, name)
     }
+
   implicit def typeEncoder[Attributes: JsonEncoder]: JsonEncoder[Type[Attributes]] =
     new JsonEncoder[Type[Attributes]] {
       def unsafeEncode(tpe: Type[Attributes], indent: Option[Int], out: Write): Unit = tpe match {
@@ -389,10 +386,10 @@ trait MorphirJsonEncodingSupportV1 {
     }
   }
 
-  implicit def moduleSpecificationEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[ModuleModule.Specification[Annotations]] = {
-    Json.encoder.contramap[ModuleModule.Specification[Annotations]] { specification =>
+  implicit def moduleSpecificationEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[ModuleModule.Specification[Attributes]] = {
+    Json.encoder.contramap[ModuleModule.Specification[Attributes]] { specification =>
       Json.Obj(
         "types"  -> toJsonAstOrThrow(specification.types.toList),
         "values" -> toJsonAstOrThrow(specification.values.toList)
@@ -400,10 +397,10 @@ trait MorphirJsonEncodingSupportV1 {
     }
   }
 
-  implicit def moduleDefinitionEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[ModuleModule.Definition[Annotations]] = {
-    Json.encoder.contramap[ModuleModule.Definition[Annotations]] { definition =>
+  implicit def moduleDefinitionEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[ModuleModule.Definition[Attributes]] = {
+    Json.encoder.contramap[ModuleModule.Definition[Attributes]] { definition =>
       Json.Obj(
         "types"  -> toJsonAstOrThrow(definition.types.toList),
         "values" -> toJsonAstOrThrow(definition.values.toList)
@@ -411,10 +408,10 @@ trait MorphirJsonEncodingSupportV1 {
     }
   }
 
-  implicit def packageSpecificationEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[PackageModule.Specification[Annotations]] = {
-    Json.encoder.contramap[PackageModule.Specification[Annotations]] { specification =>
+  implicit def packageSpecificationEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[PackageModule.Specification[Attributes]] = {
+    Json.encoder.contramap[PackageModule.Specification[Attributes]] { specification =>
       Json.Obj(
         "modules" -> toJsonAstOrThrow(specification.modules.toList.map { case (name, moduleSpecification) =>
           Json.Obj(
@@ -426,10 +423,10 @@ trait MorphirJsonEncodingSupportV1 {
     }
   }
 
-  implicit def packageDefinitionEncoder[Annotations](implicit
-      annotationsEncoder: JsonEncoder[Annotations]
-  ): JsonEncoder[PackageModule.Definition[Annotations]] = {
-    Json.encoder.contramap[PackageModule.Definition[Annotations]] { definition =>
+  implicit def packageDefinitionEncoder[Attributes](implicit
+      attributesEncoder: JsonEncoder[Attributes]
+  ): JsonEncoder[PackageModule.Definition[Attributes]] = {
+    Json.encoder.contramap[PackageModule.Definition[Attributes]] { definition =>
       Json.Obj(
         "modules" -> toJsonAstOrThrow(definition.modules.toList.map { case (name, moduleSpecification) =>
           Json.Obj(
