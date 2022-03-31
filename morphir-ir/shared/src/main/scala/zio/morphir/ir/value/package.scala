@@ -1,5 +1,7 @@
 package zio.morphir.ir
 
+import zio.morphir.ir.types.UType
+
 package object value {
 
   type RawValue = Value[Unit, Unit]

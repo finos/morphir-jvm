@@ -8,6 +8,7 @@ import zio.morphir.syntax.ValueSyntax
 import ValueModule.Value
 import ValueModule.ValueCase._
 import zio.morphir.ir.Type.{Type => IrType}
+import zio.morphir.ir.types.UType
 
 object ValueModuleSpec extends MorphirBaseSpec with ValueSyntax {
 

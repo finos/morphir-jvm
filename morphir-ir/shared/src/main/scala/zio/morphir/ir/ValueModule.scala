@@ -6,6 +6,7 @@ import zio.{Chunk, ZIO}
 import zio.prelude._
 import zio.prelude.fx.ZPure
 import zio.morphir.syntax.ValueSyntax
+import zio.morphir.ir.types.UType
 
 object ValueModule {
 

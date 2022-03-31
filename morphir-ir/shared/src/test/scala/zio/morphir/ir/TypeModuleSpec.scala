@@ -1,5 +1,6 @@
 package zio.morphir.ir
 
+import zio.morphir.ir.Type.Constructors
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.ir.Type.Type._
 import zio.test._
@@ -218,7 +219,7 @@ object TypeModuleSpec extends MorphirBaseSpec with TypeModuleSyntax {
     ),
     suite("Constructors")(
       test("Can make type constructors for an enum") {
-        val actual        = TypeConstructors.forEnum("Red", "Yellow", "Green")
+        val actual        = Constructors.forEnum("Red", "Yellow", "Green")
         val expectedNames = Set("Red", "Yellow", "Green").map(Name.fromString)
         assertTrue(
           actual.ctorNames == expectedNames,

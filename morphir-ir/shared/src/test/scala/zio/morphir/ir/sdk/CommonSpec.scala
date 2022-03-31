@@ -1,7 +1,7 @@
 package zio.morphir.ir.sdk
 
 import zio.morphir.ir.{Gens, Name, Path}
-import zio.morphir.ir.TypeModule.Type
+import zio.morphir.ir.Type.Type
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 

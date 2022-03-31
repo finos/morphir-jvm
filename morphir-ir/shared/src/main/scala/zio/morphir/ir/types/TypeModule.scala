@@ -1,6 +1,6 @@
 package zio.morphir.ir.types
 
-trait TypeModule extends TypeSyntax {
+trait TypeModule extends TypeModuleSyntax {
   final type Type[+A] = zio.morphir.ir.types.Type[A]
   val Type: zio.morphir.ir.types.Type.type = zio.morphir.ir.types.Type
 

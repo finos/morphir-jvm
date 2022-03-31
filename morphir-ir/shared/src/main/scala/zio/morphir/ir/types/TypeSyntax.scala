@@ -3,23 +3,23 @@ package zio.morphir.ir.types
 import zio.Chunk
 import zio.morphir.ir.types.Specification.{CustomTypeSpecification, UCustomTypeSpecification}
 import zio.morphir.ir.types.Type._
-import zio.morphir.ir.{FQName, Name, TypeConstructors}
+import zio.morphir.ir.{FQName, Name}
 
 trait TypeSyntax {
   final def customType[Attributes](typeParams: String*)(
-      ctors: TypeConstructors[Attributes]
+      ctors: Constructors[Attributes]
   ): CustomTypeSpecification[Attributes] =
     CustomTypeSpecification(Chunk.fromIterable(typeParams.map(Name.fromString)), ctors)
 
   final def customType[Attributes](typeParams: String*)(
       ctors: (Name, Chunk[(Name, Type[Attributes])])
   ): CustomTypeSpecification[Attributes] =
-    CustomTypeSpecification(Chunk.fromIterable(typeParams.map(Name.fromString)), TypeConstructors(Map(ctors)))
+    CustomTypeSpecification(Chunk.fromIterable(typeParams.map(Name.fromString)), Constructors[Attributes](Map(ctors)))
 
   final def customType[Attributes](
       ctors: (Name, Chunk[(Name, Type[Attributes])])
   ): CustomTypeSpecification[Attributes] =
-    CustomTypeSpecification(Chunk.empty, TypeConstructors(Map(ctors)))
+    CustomTypeSpecification(Chunk.empty, Constructors[Attributes](Map(ctors)))
 
   final def defineVariable(name: String): UType = Variable((), Name.fromString(name))
   final def defineVariable(name: Name): UType   = Variable((), name)

@@ -1,6 +1,7 @@
 package zio.morphir.ir.examples
 
-import zio.morphir.ir.{FQName, UType}
+import zio.morphir.ir.FQName
+import zio.morphir.ir.types.UType
 import zio.morphir.ir.value.{RawValue, Value}
 
 object TypeInferenceExample {

@@ -2,10 +2,10 @@ package zio.morphir.ir.sdk
 
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.types.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.UType.{reference, tuple}
+import zio.morphir.ir.Type.{Type, reference, tuple}
+import zio.morphir.ir.types.UType
 import zio.morphir.ir.sdk.Common._
-import zio.morphir.ir.{Module, UType}
+import zio.morphir.ir.Module
 import zio.morphir.syntax.NamingSyntax._
 
 object Basics {

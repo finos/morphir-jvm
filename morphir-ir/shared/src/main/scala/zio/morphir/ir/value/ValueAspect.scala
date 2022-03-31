@@ -1,6 +1,6 @@
 package zio.morphir.ir.value
 
-import zio.morphir.ir.UType
+import zio.morphir.ir.types.UType
 
 trait ValueAspect[+LowerTA, -UpperTA, +LowerVA, -UpperVA] {
   def apply[TA >: LowerTA <: UpperTA, VA >: LowerVA <: UpperVA](value: Value[TA, VA]): Value[TA, VA]
