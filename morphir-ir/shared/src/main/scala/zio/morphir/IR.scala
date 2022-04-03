@@ -1,14 +1,14 @@
 package zio.morphir
 
 import zio.Chunk
-import zio.morphir.ir.{DistributionModule, FQName, Name, PackageModule, ValueModule}
+import zio.morphir.ir.{Distribution, FQName, Name, PackageModule, Value}
 import zio.morphir.ir.types.UType
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.ir.Type.{Type, Specification}
 
 final case class IR(
-    valueSpecifications: Map[FQName, ValueModule.Specification[Any]],
-    valueDefinitions: Map[FQName, ValueModule.ValueDefinition[UType]],
+    valueSpecifications: Map[FQName, Value.Specification.Raw],
+    valueDefinitions: Map[FQName, Value.Definition.Typed],
     typeSpecifications: Map[FQName, Specification[Any]],
     typeConstructors: Map[FQName, TypeConstructorInfo]
 ) { self =>
@@ -36,7 +36,7 @@ final case class IR(
 }
 object IR {
 
-  @inline final def fromDistribution(distribution: DistributionModule.Distribution): IR = ???
+  @inline final def fromDistribution(distribution: Distribution.Distribution): IR = ???
 
   @inline final def fromPackageSpecifications(specs: Map[FQName, PackageModule.Specification[Any]]): IR = ???
 

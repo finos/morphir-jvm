@@ -1,5 +1,6 @@
 package zio.morphir.ir
 
+import zio.morphir.ir.Module.{ModulePath}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
 import zio.test.Assertion.*

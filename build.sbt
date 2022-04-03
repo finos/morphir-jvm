@@ -340,7 +340,7 @@ def stdCrossProjectSettings(prjName: String) = stdSettings(prjName) ++ Seq(
   },
   scalacOptions ++= {
     if (scalaVersion.value == Scala3)
-      Seq("-noindent")
+      Seq() // Seq("-noindent")
     else
       Seq()
   },
@@ -393,7 +393,7 @@ def stdProjectSettings(prjName: String, givenScalaVersion: String = Scala213) = 
   ThisBuild / scalaVersion := givenScalaVersion,
   scalacOptions ++= {
     if (scalaVersion.value == Scala3)
-      Seq("-noindent")
+      Seq() // Seq("-noindent")
     else
       Seq()
   },

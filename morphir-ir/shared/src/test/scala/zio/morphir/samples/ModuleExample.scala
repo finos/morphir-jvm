@@ -1,12 +1,12 @@
 package zio.morphir.samples
 
 import zio.Chunk
-import zio.morphir.ir.ModuleModule.{Definition, Specification}
-import zio.morphir.ir.ModuleModuleSpec.{defineVariable, string}
+import zio.morphir.ir.Module.{Definition, Specification}
+import zio.morphir.ir.ModuleModuleSpec.defineVariable
 import zio.morphir.ir.Type.Constructors
 import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.{AccessControlled, Documented, Name, ValueModule}
+import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value}
 import zio.morphir.ir.types.UType
 
 object ModuleExample {
@@ -32,7 +32,7 @@ object ModuleExample {
 
   val definitionValues = Map {
     Name("val") -> AccessControlled.publicAccess(
-      Documented("type", ValueModule.Definition.fromLiteral(string("string")))
+      Documented("type", Value.Definition.fromLiteral(Lit.string("string")))
     )
   }
 
@@ -52,7 +52,7 @@ object ModuleExample {
   val specValues = Map {
     Name("spec1") -> Documented(
       "types",
-      ValueModule.Specification(
+      Value.Specification(
         Chunk(
           (Name("type1"), defineVariable("Float")),
           (Name("type2"), defineVariable("Decimal"))

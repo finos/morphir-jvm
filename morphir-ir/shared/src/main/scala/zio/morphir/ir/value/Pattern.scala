@@ -1,12 +1,13 @@
-package zio.morphir.ir
+package zio.morphir.ir.value
 
 import zio.Chunk
-
-sealed trait Pattern[+Attributes] { self =>
+import zio.morphir.ir.{FQName, Literal, Name}
+import zio.morphir.ir.types.UType
+sealed trait Pattern[+A] { self =>
   import Pattern._
 
-  def attributes: Attributes
-  final def mapAttributes[B](f: Attributes => B): Pattern[B] = self match {
+  def attributes: A
+  final def mapAttributes[B](f: A => B): Pattern[B] = self match {
     case AsPattern(pattern, name, attributes) => AsPattern(pattern.mapAttributes(f), name, f(attributes))
     case ConstructorPattern(constructorName, argumentPatterns, attributes) =>
       ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(attributes))
@@ -19,9 +20,14 @@ sealed trait Pattern[+Attributes] { self =>
     case UnitPattern(attributes)     => UnitPattern(f(attributes))
     case WildcardPattern(attributes) => WildcardPattern(f(attributes))
   }
+
+  def withAttributes[B >: A](attributes: => B): Pattern[B] =
+    self.mapAttributes(_ => attributes)
 }
 
 object Pattern {
+  type DefaultAttributes = scala.Unit
+  val DefaultAttributes: DefaultAttributes = ()
 
   def asPattern[Attributes](
       attributes: Attributes,
@@ -30,13 +36,13 @@ object Pattern {
   ): AsPattern[Attributes] =
     AsPattern(pattern, name, attributes)
 
-  def asPattern(pattern: Pattern[Any], name: Name): AsPattern[Any] =
-    AsPattern(pattern, name, ())
+  def asPattern(pattern: UPattern, name: Name): UPattern =
+    AsPattern(pattern, name, DefaultAttributes)
 
-  def asPattern(name: Name): AsPattern[Any] =
-    AsPattern(wildcardPattern, name, ())
+  def asPattern(name: Name): UPattern =
+    AsPattern(wildcardPattern, name, DefaultAttributes)
 
-  lazy val wildcardPattern: WildcardPattern[Any] = WildcardPattern[Any](())
+  lazy val wildcardPattern: WildcardPattern[scala.Unit] = WildcardPattern(DefaultAttributes)
 
   def wildcardPattern[Attributes](attributes: Attributes): WildcardPattern[Attributes] =
     WildcardPattern(attributes)
@@ -74,6 +80,18 @@ object Pattern {
       attributes: Attributes
   ) extends Pattern[Attributes]
 
+  object LiteralPattern {
+    type Raw[+A] = LiteralPattern[A, DefaultAttributes]
+    object Raw {
+      def apply[A](value: Literal[A]): Raw[A] = LiteralPattern(value, DefaultAttributes)
+    }
+    type Typed[+A] = LiteralPattern[A, UType]
+    object Typed {
+      def apply[A](literal: Literal[A])(ascribedType: UType): LiteralPattern[A, UType] =
+        LiteralPattern(literal, ascribedType)
+    }
+  }
+
   final case class TuplePattern[+Attributes](
       elementPatterns: Chunk[Pattern[Attributes]],
       attributes: Attributes
@@ -82,5 +100,14 @@ object Pattern {
   final case class UnitPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
 
   final case class WildcardPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
+  object WildcardPattern {
+    type Raw = WildcardPattern[DefaultAttributes]
+    object Raw {
+      def apply(): Raw = WildcardPattern(DefaultAttributes)
+    }
+  }
 
+  final implicit class UPatternExtensions(val self: Pattern[Unit]) extends AnyVal {
+    def :@(ascribedType: UType): Pattern[UType] = self.mapAttributes((_ => ascribedType))
+  }
 }

@@ -2,13 +2,12 @@ package zio.morphir.ir.sdk
 
 import zio.Chunk
 import zio.morphir.ir.Module
-import zio.morphir.ir.ModuleModule.ModuleName
+import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.{Constructors, Type}
 import zio.morphir.ir.types.UType
 import zio.morphir.ir.types.Type._
-import zio.morphir.ir.ValueModule.Value
-import zio.morphir.ir.ValueModule.Value.constructor
-import zio.morphir.ir.ValueModule.ValueCase.ApplyCase
+import zio.morphir.ir.Value.Value
+import zio.morphir.ir.Value.Value.{Apply, Constructor}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Maybe.maybeType
 import zio.morphir.ir.types.Specification.CustomTypeSpecification
@@ -84,17 +83,10 @@ object Result {
   def resultType[A](attributes: A)(errorType: Type[A], itemType: Type[A]): Type[A] =
     reference(attributes)(toFQName(moduleName, "result"), errorType, itemType)
 
-  def ok(value: Value[Any]): Value[Any] =
-    Value(ApplyCase(constructor(toFQName(moduleName, "Ok")), Chunk(value)))
+  def ok[TA, VA](va: VA)(value: Value[TA, VA]): Value[TA, VA] =
+    Apply(va, Constructor(va, toFQName(moduleName, "Ok")), (value))
 
-  def ok[A](va: A)(value: Value[A]): Value[A] =
-    Value(ApplyCase(constructor(toFQName(moduleName, "Ok"), va), Chunk(value)), va)
-
-  def err(error: Value[Any]): Value[Any] =
-    Value(ApplyCase(constructor(toFQName(moduleName, "Err")), Chunk(error)))
-
-  def err[A](va: A)(error: Value[A]): Value[A] =
-    Value(ApplyCase(constructor(toFQName(moduleName, "Err"), va), Chunk(error)), va)
-
+  def err[TA, VA](va: VA)(error: Value[TA, VA]): Value[TA, VA] =
+    Apply(va, Constructor(va, toFQName(moduleName, "Err")), error)
   // todo add nativefunctions
 }

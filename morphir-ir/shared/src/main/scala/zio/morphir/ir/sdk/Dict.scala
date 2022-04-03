@@ -2,13 +2,13 @@ package zio.morphir.ir.sdk
 
 import zio.Chunk
 import zio.morphir.ir.{FQName, Module, Name, Path}
-import zio.morphir.ir.ModuleModule.ModuleName
+import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.Type.Type
 import zio.morphir.ir.types.UType
 import zio.morphir.ir.Type.Type._
-import zio.morphir.ir.ValueModule.Value
-import zio.morphir.ir.ValueModule.ValueCase.{ApplyCase, ReferenceCase}
+import zio.morphir.ir.Value.Value
+import zio.morphir.ir.Value.Value.{Apply, Reference}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Basics._
 import zio.morphir.ir.sdk.List.listType
@@ -110,46 +110,17 @@ object Dict {
   def dictType[A](attributes: A)(keyType: Type[A], valueType: Type[A]): Type[A] =
     reference(attributes)(toFQName(moduleName, "dict"), keyType, valueType)
 
-  def fromListValue(list: Value[Any]): Value[Any] =
-    Value(
-      ApplyCase(
-        Value(ReferenceCase(FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("from", "list")))),
-        Chunk(list)
-      )
+  def fromListValue[TA, VA](attributes: VA)(list: Value[TA, VA]): Value[TA, VA] =
+    Apply(
+      attributes,
+      Reference(attributes, FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("from", "list"))),
+      list
     )
 
-  def fromListValue[A](attributes: A)(list: Value[A]): Value[A] =
-    Value(
-      ApplyCase(
-        Value(ReferenceCase(FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("from", "list"))), attributes),
-        Chunk(list)
-      ),
-      attributes
-    )
-
-  def toListValue(list: Value[Any]): Value[Any] =
-    Value(
-      ApplyCase(
-        Value(
-          ReferenceCase(
-            FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("to", "list"))
-          )
-        ),
-        Chunk(list)
-      )
-    )
-
-  def toListValue[A](attributes: A)(list: Value[A]): Value[A] =
-    Value(
-      ApplyCase(
-        Value(
-          ReferenceCase(
-            FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("to", "list"))
-          ),
-          attributes
-        ),
-        Chunk(list)
-      ),
-      attributes
+  def toListValue[TA, VA](attributes: VA)(list: Value[TA, VA]): Value[TA, VA] =
+    Apply(
+      attributes,
+      Reference(attributes, FQName(Path("morphir", "s", "d", "k"), Path("dict"), Name("to", "list"))),
+      list
     )
 }

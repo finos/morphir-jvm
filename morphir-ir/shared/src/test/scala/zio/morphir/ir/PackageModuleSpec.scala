@@ -1,5 +1,6 @@
 package zio.morphir.ir
 
+import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.PackageModule.{Definition, Specification}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.morphir.samples.ModuleExample.*

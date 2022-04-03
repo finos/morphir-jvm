@@ -8,18 +8,18 @@ object ModuleSpec extends MorphirBaseSpec {
     suite("Definition")(
       test("It can be empty") {
         assertTrue(
-          ModuleModule.emptyDefinition == ModuleModule.Definition.empty,
-          ModuleModule.emptyDefinition.types.isEmpty,
-          ModuleModule.emptyDefinition.values.isEmpty
+          Module.emptyDefinition == Module.Definition.empty,
+          Module.emptyDefinition.types.isEmpty,
+          Module.emptyDefinition.values.isEmpty
         )
       }
     ),
     suite("Specification")(
       test("It can be empty") {
         assertTrue(
-          ModuleModule.emptySpecification == ModuleModule.Specification.empty,
-          ModuleModule.emptySpecification.types.isEmpty,
-          ModuleModule.emptySpecification.values.isEmpty
+          Module.emptySpecification == Module.Specification.empty,
+          Module.emptySpecification.types.isEmpty,
+          Module.emptySpecification.values.isEmpty
         )
       }
     )

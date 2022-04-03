@@ -3,21 +3,22 @@ package zio.morphir.testing
 import zio.morphir.ir.Name
 import zio.Chunk
 import zio.morphir.ir.Type.Type
-import zio.morphir.ir.ValueModule.{Value, ValueDefinition}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue}
 import zio.morphir.ir.NativeFunction
 import zio.morphir.ir.{FQName, Path}
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.Dsl
 import zio.morphir.syntax.AllSyntax
+import zio.morphir.ir.sdk.{Basics, String => StringModule}
 
 object CaseExample extends AllSyntax {
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
-  val letIntroduceMultipleExample: Value[Any] = letRecursion(
+  val letIntroduceMultipleExample: RawValue = letRecursion(
     Map(
-      Name.fromString("x") -> ValueDefinition.fromLiteral(int(20)), // lit(20)
-      Name.fromString("y") -> ValueDefinition.fromLiteral(int(22))
+      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20) -> Basics.intType), // lit(20)
+      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22) -> Basics.intType)  // lit(22)
     ),
     nativeApply(
       NativeFunction.Addition,
@@ -25,7 +26,7 @@ object CaseExample extends AllSyntax {
     )
   )
 
-  val letIntroduceOutOfOrderExample: Value[Any] = letRecursion(
+  val letIntroduceOutOfOrderExample: RawValue = letRecursion(
     Map(
       Name.fromString("x") ->
         nativeApply(
@@ -34,22 +35,22 @@ object CaseExample extends AllSyntax {
             variable("y"),
             int(22)
           )
-        ).toDefinition,
-      Name.fromString("y") -> ValueDefinition.fromLiteral(int(22))
+        ).toDefinition(Basics.intType),
+      Name.fromString("y") -> int(22).toDefinition(Basics.intType)
     ),
     variable("x")
   )
 
-  val applyFieldFunction: Value[Any] =
+  val applyFieldFunction: RawValue =
     Dsl.apply(fieldFunction(Name.fromString("fieldA")), recordCaseExample)
 
-  val additionExample: Value[Any] =
+  val additionExample: RawValue =
     letDefinition(
       Name("x"),
-      ValueDefinition.fromLiteral(int(1)),
+      int(1).toDefinition(Basics.intType),
       letDefinition(
         Name("y"),
-        ValueDefinition.fromLiteral(int(2)),
+        int(2).toDefinition(Basics.intType),
         nativeApply(
           NativeFunction.Addition,
           Chunk(variable("x"), variable("y"))
@@ -57,13 +58,13 @@ object CaseExample extends AllSyntax {
       )
     )
 
-  val subtractionExample: Value[Any] =
+  val subtractionExample: RawValue =
     letDefinition(
       Name("x"),
-      ValueDefinition.fromLiteral(int(1)),
+      int(1).toDefinition(Basics.intType),
       letDefinition(
         Name("y"),
-        ValueDefinition.fromLiteral(int(2)),
+        int(2).toDefinition(Basics.intType),
         nativeApply(
           NativeFunction.Subtraction,
           Chunk(variable(Name("x")), variable(Name("y")))
@@ -71,24 +72,22 @@ object CaseExample extends AllSyntax {
       )
     )
 
-  val tupleCaseExample: Value[Any] =
+  val tupleCaseExample =
     tuple(
       literal(1),
       literal(2)
     )
 
-  val listCaseExample: Value[Any] =
+  val listCaseExample =
     list(
-      Chunk(
-        literal("hello"),
-        literal("world")
-      )
+      string("hello"),
+      string("world")
     )
-  val ifThenElseCaseExample: Value[Any] =
+  val ifThenElseCaseExample: RawValue =
     ifThenElse(
       condition = literal(false),
-      thenBranch = literal("yes"),
-      elseBranch = literal("no")
+      thenBranch = string("yes"),
+      elseBranch = string("no")
     )
 
   lazy val recordCaseExample = {
@@ -128,8 +127,8 @@ object CaseExample extends AllSyntax {
 
   val patternMatchEmptyListCaseExample =
     Dsl.patternMatch(
-      list(Chunk()),
-      emptyListPattern -> literal("empty list")
+      list(),
+      emptyListPattern -> string("empty list")
     )
 
   val patternHeadTailCaseExample =
@@ -143,15 +142,15 @@ object CaseExample extends AllSyntax {
 
   val patternTupleOneCaseExample =
     Dsl.patternMatch(
-      tuple(literal("singleton tuple")),
+      tuple(string("singleton tuple")),
       tuplePattern(asPattern(wildcardPattern, Name("x"))) -> variable(Name("x"))
     )
 
   val patternTupleOneCaseCounterExample =
     Dsl.patternMatch(
-      literal("singleton tuple"),
-      tuplePattern(wildcardPattern) -> literal("wrong"),
-      wildcardPattern               -> literal("right")
+      string("singleton tuple"),
+      tuplePattern(wildcardPattern) -> string("wrong"),
+      wildcardPattern               -> string("right")
     )
 
   val patternTupleCaseExample =
@@ -175,8 +174,8 @@ object CaseExample extends AllSyntax {
   val patternUnitCaseExample =
     Dsl.patternMatch(
       unit,
-      emptyListPattern -> literal("wrong"),
-      unitPattern      -> literal("right")
+      emptyListPattern -> string("wrong"),
+      unitPattern      -> string("right")
     )
 
   val letDestructExample =
@@ -188,10 +187,10 @@ object CaseExample extends AllSyntax {
   val staticScopingExample =
     letDefinition(
       Name("x"),
-      ValueDefinition.fromLiteral(string("static")),
+      string("static").toDefinition(StringModule.stringType),
       letRecursion(
-        Map(Name("y") -> variable(Name("x")).toDefinition),
-        letDefinition(Name("x"), ValueDefinition.fromLiteral(string(("dynamic"))), variable(Name("y")))
+        Map(Name("y") -> variable(Name("x")).toDefinition(StringModule.stringType)),
+        letDefinition(Name("x"), string(("dynamic")).toDefinition(StringModule.stringType), variable(Name("y")))
       )
     )
   val letRecExample =
@@ -201,13 +200,13 @@ object CaseExample extends AllSyntax {
           condition = literal(false),
           thenBranch = variable("y"),
           elseBranch = literal(3)
-        ).toDefinition,
+        ).toDefinition(Basics.intType),
         Name.fromString("y") ->
           ifThenElse(
             condition = literal(false),
             thenBranch = literal(2),
             elseBranch = variable("x")
-          ).toDefinition
+          ).toDefinition(Basics.intType)
       ),
       nativeApply(
         NativeFunction.Addition,
@@ -269,7 +268,7 @@ object CaseExample extends AllSyntax {
           variable("x")
         )
       )
-    ).toDefinition,
+    ).toDefinition(Basics.intType),
     Dsl.apply(variable("foo"), literal(33))
   )
 
@@ -326,19 +325,21 @@ object CaseExample extends AllSyntax {
   val constructorExample =
     apply(
       constructor(recordTypeName),
-      Chunk(literal("Adam"), literal(42))
+      literal("Adam").toRawValue,
+      literal(42)
     )
 
   val savingsAccountConstructorExample =
     apply(
       constructor(savingsAccountTypeName),
-      Chunk(literal("Adam"))
+      literal("Adam").toRawValue
     )
 
   val checkingAccountConstructorExample =
     apply(
       constructor(checkingAccountTypeName),
-      Chunk(literal("Brad"), literal(10000))
+      literal("Brad").toRawValue,
+      literal(10000)
     )
 
   // tuple ("Adam", 42)

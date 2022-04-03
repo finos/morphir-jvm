@@ -2,8 +2,9 @@ package zio.morphir.ir.sdk
 
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.types.Specification.{CustomTypeSpecification, OpaqueTypeSpecification}
-import zio.morphir.ir.Type.{Type, reference, tuple}
-import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.Type
+import zio.morphir.ir.Type.{UType, reference, tuple}
+import zio.morphir.ir.Value.Value
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.Module
 import zio.morphir.syntax.NamingSyntax._
@@ -96,8 +97,11 @@ object Basics {
   lazy val boolType: UType                 = reference((toFQName(moduleName, "Bool")))
   def boolType[A](attributes: A): Type[A]  = reference(attributes)((toFQName(moduleName, "Bool")))
   lazy val floatType: UType                = reference((toFQName(moduleName, "Float")))
-  lazy val intType: UType                  = reference((toFQName(moduleName, "Int")))
+  lazy val intType: UType                  = reference(toFQName(moduleName, "Int"))
   lazy val neverType: UType                = reference((toFQName(moduleName, "Never")))
   lazy val orderType: UType                = orderType(())
   def orderType[A](attributes: A): Type[A] = reference(attributes)((toFQName(moduleName, "Order")))
+
+  def add[A](attributes: A): Value[Nothing, A] =
+    Value.Reference(attributes, toFQName(moduleName, "add"))
 }

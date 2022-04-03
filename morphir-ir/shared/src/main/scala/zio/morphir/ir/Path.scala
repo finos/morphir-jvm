@@ -3,6 +3,7 @@ import zio.Chunk
 import zio.morphir.ir.PackageModule.PackageAndModulePath
 
 import scala.annotation.tailrec
+import Module.{ModuleName, ModulePath}
 
 final case class Path(segments: Chunk[Name]) { self =>
 

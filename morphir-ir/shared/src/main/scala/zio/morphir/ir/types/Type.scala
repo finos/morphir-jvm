@@ -8,7 +8,7 @@ import zio.prelude.fx._
 import scala.annotation.tailrec
 
 sealed trait Type[+Attributes] { self =>
-  def @@[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
+  def >@[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
     mapAttributes(f)
 
   def ??(doc: String): Documented[Type[Attributes]] = Documented(doc, self)
@@ -303,9 +303,32 @@ private[ir] object Type extends TypeModuleSyntax {
       typeName: FQName,
       typeParams: Chunk[Type[Attributes]]
   ) extends Type[Attributes]
+  object Reference {
+    type Raw = Reference[scala.Unit]
+    object Raw {
+      def apply(typeName: FQName, typeParams: Chunk[UType]): Raw =
+        Reference((), typeName, typeParams)
+      def apply(typeName: FQName, typeParams: UType*): Raw =
+        Reference((), typeName, Chunk.fromIterable(typeParams))
+    }
+  }
   final case class Tuple[+Attributes](attributes: Attributes, elementTypes: Chunk[Type[Attributes]])
       extends Type[Attributes]
+  object Tuple {
+    type Raw = Tuple[scala.Unit]
+    object Raw {
+      def apply(elementTypes: UType*): Raw =
+        Tuple((), Chunk.fromIterable(elementTypes))
+    }
+
+  }
   final case class Unit[+Attributes](attributes: Attributes) extends Type[Attributes]
+  object Unit {
+    type Raw = Unit[scala.Unit]
+    object Raw {
+      def apply: Raw = Unit(())
+    }
+  }
 
   final case class Variable[+Attributes](attributes: Attributes, name: Name) extends Type[Attributes]
   object Variable {

@@ -1,7 +1,7 @@
 package zio.morphir.ir.sdk
 
 import zio.morphir.ir.Module
-import zio.morphir.ir.ModuleModule.ModuleName
+import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.Type.Type
 import zio.morphir.ir.types.UType

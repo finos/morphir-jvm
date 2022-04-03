@@ -2,8 +2,8 @@ package zio.morphir.ir.sdk
 
 import zio.Chunk
 import zio.morphir.ir.{Documented, Module, Name}
-import zio.morphir.ir.ModuleModule.ModuleName
-import zio.morphir.ir.ValueModule.Specification
+import zio.morphir.ir.Module.ModuleName
+import zio.morphir.ir.Value.Specification
 import zio.morphir.syntax.NamingSyntax._
 import zio.morphir.ir.Type.Type.unit
 

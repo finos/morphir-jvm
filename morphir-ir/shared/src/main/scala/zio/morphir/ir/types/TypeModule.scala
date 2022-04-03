@@ -19,6 +19,9 @@ trait TypeModule extends TypeModuleSyntax {
   final type Specification[+A] = zio.morphir.ir.types.Specification[A]
   val Specification: zio.morphir.ir.types.Specification.type = zio.morphir.ir.types.Specification
 
+  final type UType = zio.morphir.ir.types.UType
+  val UType: zio.morphir.ir.types.UType.type = zio.morphir.ir.types.UType
+
   final def definitionToSpecification[A](definition: Definition[A]): Specification[A] =
     definition.toSpecification
 

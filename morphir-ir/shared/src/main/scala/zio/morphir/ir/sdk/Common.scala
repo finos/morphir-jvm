@@ -3,8 +3,9 @@ package zio.morphir.ir.sdk
 import zio.Chunk
 import zio.morphir.ir.PackageModule.PackageName
 import zio.morphir.ir._
-import zio.morphir.ir.types.UType
-
+import zio.morphir.ir.Module.ModuleName
+import zio.morphir.ir.Type.UType
+import zio.morphir.ir.Value
 object Common {
   val packageName: PackageName = PackageName.fromString("Morphir.SDK")
 
@@ -19,18 +20,18 @@ object Common {
   def vSpec(name: String, inputs: (String, UType)*) = new VSpec(() => (name, Chunk.fromIterable(inputs)))
 
   final class VSpec(private val data: () => (String, Chunk[(String, UType)])) extends AnyVal {
-    def apply(outputType: UType): (Name, Documented[ValueModule.Specification[Any]]) = {
+    def apply(outputType: UType): (Name, Documented[Value.Specification[Any]]) = {
       val (name, inputs) = data()
       (
         Name.fromString(name),
         Documented(
           "documentation",
-          ValueModule.Specification(inputs.map { case (name, tpe) => (Name.fromString(name), tpe) }, outputType)
+          Value.Specification(inputs.map { case (name, tpe) => (Name.fromString(name), tpe) }, outputType)
         )
       )
     }
 
-    @inline def returning(outputType: UType): (Name, Documented[ValueModule.Specification[Any]]) = apply(outputType)
+    @inline def returning(outputType: UType): (Name, Documented[Value.Specification[Any]]) = apply(outputType)
   }
 
 }

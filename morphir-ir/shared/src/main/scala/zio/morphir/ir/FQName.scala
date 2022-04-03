@@ -1,5 +1,5 @@
 package zio.morphir.ir
-
+import Module.ModulePath
 final case class FQName(packagePath: PackageName, modulePath: ModulePath, localName: Name) {
   def getPackagePath: Path = packagePath.toPath
   def getModulePath: Path  = modulePath.toPath
