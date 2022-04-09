@@ -1,8 +1,8 @@
 package zio.morphir.sexpr.ast
 
 import zio.Chunk
-import zio.morphir.sexpr.{SExprDecoder, SExprEncoder, SExprError, SExprParser}
 import zio.morphir.sexpr.internal._
+import zio.morphir.sexpr.{SExprDecoder, SExprEncoder, SExprError, SExprParser}
 
 sealed trait SExpr {
   self =>

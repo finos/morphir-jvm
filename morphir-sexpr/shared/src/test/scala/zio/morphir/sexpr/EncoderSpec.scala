@@ -1,7 +1,7 @@
 package zio.morphir.sexpr
 
-import zio.morphir.testing.ZioBaseSpec
 import zio.morphir.sexpr.ast.SExpr
+import zio.morphir.testing.ZioBaseSpec
 import zio.test._
 import zio.{Chunk, NonEmptyChunk}
 

@@ -1,10 +1,10 @@
 package zio.morphir.ir
+import zio.morphir.ir.Type.UType
 import zio.morphir.ir.Value.TypedValue
-
-import scala.language.implicitConversions
 import zio.morphir.ir.value.RawValue
 import zio.morphir.ir.{Value => _}
-import zio.morphir.ir.Type.UType
+
+import scala.language.implicitConversions
 
 sealed trait Literal[+A] { self =>
   def value: A
@@ -42,7 +42,7 @@ object Literal {
     }
   }
 
-  implicit class LiteralOps[A](val self: Literal[A]) extends AnyVal {
+  implicit class LiteralOps[A](private val self: Literal[A]) extends AnyVal {
     def inferredType: UType = InferredTypeOf[Literal[A]].inferredType(self)
     def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue = {
       val tpe = ev.inferredType(self)

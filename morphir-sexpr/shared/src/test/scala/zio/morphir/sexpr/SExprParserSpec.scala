@@ -1,15 +1,13 @@
 package zio.morphir.sexpr
 
 import zio.Chunk
-import zio.test.DefaultRunnableSpec
-import zio.test.*
 import zio.morphir.sexpr.SExprParser.*
 import zio.morphir.sexpr.SExprParser.grammar.*
-import zio.morphir.sexpr.ast.SExpr
-import zio.morphir.sexpr.ast.SymbolKind
+import zio.morphir.sexpr.ast.{SExpr, SymbolKind}
+import zio.test.{DefaultRunnableSpec, _}
 
 object SExprParserSpec extends DefaultRunnableSpec {
-  def spec = suite("SExpr Parser Spec")(
+  def spec: ZSpec[Environment, Failure] = suite("SExpr Parser Spec")(
     test("Bool") {
       assertTrue(
         sexpr.parseString("true") == Right(SExpr.Bool.True),

@@ -1,16 +1,15 @@
 package zio.morphir.ir
 
 import zio.Chunk
-import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, TypedValue}
-import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
-import zio.morphir.ir.sdk.Basics.floatType
-import zio.morphir.ir.{Literal => Lit}
-import zio.morphir.ir.value.Pattern.LiteralPattern
-import zio.morphir.testing.MorphirBaseSpec
-// import zio.test.TestAspect.{ignore, tag}
-import zio.test._
+import zio.morphir.ir.Type.Field.defineField
 import zio.morphir.ir.Type.{Type => IrType, UType}
-import scala.annotation.nowarn
+import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, TypedValue}
+import zio.morphir.ir.sdk.Basics.floatType
+import zio.morphir.ir.value.Pattern.LiteralPattern
+import zio.morphir.ir.{Literal => Lit}
+import zio.morphir.testing.MorphirBaseSpec
+import zio.test._
 
 object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
@@ -19,7 +18,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
   def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
   val stringType: UType                = sdk.String.stringType
 
-  def spec = suite("Value Module")(
+  def spec: ZSpec[Environment, Failure] = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
         val ff  = fieldFunction("age")
@@ -462,7 +461,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
           )
         assertTrue(
           des.toRawValue == destructure(
-            Pattern.WildcardPattern(stringType: @nowarn),
+            Pattern.WildcardPattern.raw,
             string("timeout"),
             string("username")
           )
@@ -502,7 +501,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
         assertTrue(
           actual.toRawValue == lambda(
-            pattern = Pattern.asPattern(intType: @nowarn, wildcardPattern, Name.fromString("x")),
+            pattern = Pattern.AsPattern.Raw(wildcardPattern, "x"),
             body = variable(Name.fromString("x"))
           )
         )
@@ -586,7 +585,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Record") {
         val name       = Name.fromString("hello")
         val lit        = string("timeout") :@ stringType
-        val recordType = Type.record(Type.field("hello", stringType))
+        val recordType = Type.record(defineField("hello", stringType))
         val rec        = Record(recordType, Chunk(name -> lit))
 
         assertTrue(rec.toRawValue == record(Chunk((name, string("timeout")))))
@@ -600,7 +599,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("UpdateRecord") {
 
-        val greeter = variable("greeter") :@ Type.record(Type.field("greeting", stringType))
+        val greeter = variable("greeter") :@ Type.record(defineField("greeting", stringType))
         val actual  = UpdateRecord.Typed(greeter, ("greeting", string("world") :@ stringType))
 
         assertTrue(

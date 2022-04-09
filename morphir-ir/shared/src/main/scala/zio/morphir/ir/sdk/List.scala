@@ -1,17 +1,14 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.types.UType
-import zio.morphir.ir.types.Type.{tuple, reference => typeRef}
-import zio.morphir.ir.Value.Value
-import zio.morphir.ir.Value.{reference => valRef}
+import zio.morphir.ir.Type.{Type, UType, reference => typeRef, tuple}
+import zio.morphir.ir.Value.{Value, reference => valRef}
 import zio.morphir.ir.sdk.Basics.{boolType, intType, orderType}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Maybe.maybeType
+import zio.morphir.ir.{Module, NeedsAttributes}
 import zio.morphir.syntax.NamingSyntax._
 
 object List {
@@ -106,7 +103,7 @@ object List {
   def listType(itemType: UType): UType =
     typeRef(toFQName(moduleName, "List"), Chunk(itemType))
 
-  def listType[A](attributes: A)(itemType: Type[A]): Type[A] =
+  def listType[A](attributes: A)(itemType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
     typeRef(attributes)(toFQName(moduleName, "List"), itemType)
 
   def construct[VA](attributes: VA): Value[Nothing, VA] =

@@ -1,12 +1,12 @@
 package zio.morphir.ir.sdk
 
-import zio.morphir.ir.{Gens, Name, Path}
 import zio.morphir.ir.Type.Type
+import zio.morphir.ir.{Gens, Name, Path}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
 object CommonSpec extends MorphirBaseSpec {
-  def spec =
+  def spec: ZSpec[Environment, Failure] =
     suite("Common Spec")(
       suite("packageName")(
         test("should return the expected value") {

@@ -3,7 +3,7 @@ package zio.morphir.trees
 import zio.test.*
 
 object AnnotationMapSpec extends DefaultRunnableSpec {
-  def spec = suite("AnnotationMap")(
+  def spec: ZSpec[Environment, Failure] = suite("AnnotationMap")(
     test("Should support combining annotations") {
       val sut = AnnotationMap.empty.annotate(total, 10).annotate(total, 20).annotate(total, 30)
       assertTrue(sut.get(total) == 60)
@@ -16,6 +16,6 @@ object AnnotationMapSpec extends DefaultRunnableSpec {
     }
   )
 
-  val total = Annotation[Int]("total", 0, _ + _)
-  val names = Annotation[List[String]]("names", List.empty[String], _ ++ _)
+  val total: Annotation[Int]          = Annotation[Int]("total", 0, _ + _)
+  val names: Annotation[List[String]] = Annotation[List[String]]("names", List.empty[String], _ ++ _)
 }

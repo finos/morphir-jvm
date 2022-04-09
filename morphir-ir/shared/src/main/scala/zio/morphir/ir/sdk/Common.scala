@@ -1,19 +1,18 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.PackageModule.PackageName
-import zio.morphir.ir._
 import zio.morphir.ir.Module.ModuleName
+import zio.morphir.ir.PackageModule.PackageName
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.Value
+import zio.morphir.ir.{Value, _}
 object Common {
   val packageName: PackageName = PackageName.fromString("Morphir.SDK")
 
   def toFQName(moduleName: ModuleName, localName: String): FQName =
     FQName(packageName, moduleName.toModulePath, Name.fromString(localName))
 
-  def tFun(argTypes: UType*)(returnType: UType): UType      = tFun(argTypes.toList, returnType)
-  def tFun(argTypes: List[UType], returnType: UType): UType = UType.curriedFunction(argTypes, returnType)
+  def tFun(firstArgType: UType, rest: UType*)(returnType: UType): UType = tFun(firstArgType :: rest.toList, returnType)
+  def tFun(argTypes: List[UType], returnType: UType): UType             = UType.curriedFunction(argTypes, returnType)
 
   def tVar(varName: String): UType = UType.variable(varName)
 

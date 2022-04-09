@@ -1,7 +1,7 @@
 package zio.morphir.samples
 
-import zio.morphir.ir.types.UType
 import zio.ZEnvironment
+import zio.morphir.ir.Type.UType
 
 object AttributionExample {
 
@@ -15,9 +15,8 @@ object AttributionExample {
 
     def mapAttributes(environment: ZEnvironment[ValueAttribute])(
         f: ValueAttribute => ValueAttribute
-    ): ZEnvironment[ValueAttribute] = {
+    ): ZEnvironment[ValueAttribute] =
       environment.update(f)
-    }
 
   }
 }

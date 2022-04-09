@@ -1,8 +1,8 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.types.{Type, UType}
-import zio.morphir.ir.{FQName, InferredTypeOf, Name, NativeFunction, Literal => Lit}
+import zio.morphir.ir.Type.{Type, UType}
+import zio.morphir.ir.{FQName, InferredTypeOf, Literal => Lit, Name, NativeFunction}
 
 import scala.annotation.tailrec
 
@@ -118,8 +118,8 @@ sealed trait Value[+TA, +VA] { self =>
       fieldFunctionCase: (VA, Name) => Z,
       ifThenElseCase: (VA, Z, Z, Z) => Z,
       lambdaCase: (VA, Pattern[VA], Z) => Z,
-      letDefinitionCase: (VA, Name, Definition.Case[TA, VA, Z], Z) => Z,
-      letRecursionCase: (VA, Map[Name, Definition.Case[TA, VA, Z]], Z) => Z,
+      letDefinitionCase: (VA, Name, Definition.Case[TA, VA, Type, Z], Z) => Z,
+      letRecursionCase: (VA, Map[Name, Definition.Case[TA, VA, Type, Z]], Z) => Z,
       listCase: (VA, Chunk[Z]) => Z,
       literalCase: (VA, Lit[_]) => Z,
       nativeApplyCase: (VA, NativeFunction, Chunk[Z]) => Z,
@@ -718,7 +718,7 @@ object Value {
         Apply(acc.attributes, acc, arg)
       }
 
-    type Raw = Apply[scala.Unit, scala.Unit]
+    type Raw = Apply[Any, Any]
 
     object Raw {
       // foo: A -> B -> C
@@ -728,7 +728,7 @@ object Value {
 
     }
 
-    type Typed = Apply[scala.Unit, UType]
+    type Typed = Apply[Any, UType]
     object Typed {
       def apply(function: TypedValue, argument: TypedValue, rest: TypedValue*): Typed =
         rest.foldLeft(Apply(function.attributes, function, argument)) { case (acc, next) =>
@@ -739,7 +739,7 @@ object Value {
 
   final case class Constructor[+VA](attributes: VA, name: FQName) extends Value[Nothing, VA]
   object Constructor {
-    type Raw = Constructor[scala.Unit]
+    type Raw = Constructor[Any]
     object Raw {
       def apply(name: FQName): Raw = Constructor((), name)
     }
@@ -758,13 +758,13 @@ object Value {
   ) extends Value[TA, VA]
 
   object Destructure {
-    type Raw = Destructure[scala.Unit, scala.Unit]
+    type Raw = Destructure[Any, Any]
     object Raw {
-      def apply(pattern: Pattern[scala.Unit], valueToDestruct: RawValue, inValue: RawValue): Raw =
+      def apply(pattern: Pattern[Any], valueToDestruct: RawValue, inValue: RawValue): Raw =
         Destructure((), pattern, valueToDestruct, inValue)
     }
 
-    type Typed = Destructure[scala.Unit, UType]
+    type Typed = Destructure[Any, UType]
     object Typed {
       def apply(pattern: Pattern[UType], valueToDestruct: TypedValue, inValue: TypedValue): Typed =
         Destructure(valueToDestruct.attributes, pattern, valueToDestruct, inValue)
@@ -774,12 +774,12 @@ object Value {
   final case class Field[+TA, +VA](attributes: VA, target: Value[TA, VA], name: Name) extends Value[TA, VA]
 
   object Field {
-    type Raw = Field[scala.Unit, scala.Unit]
+    type Raw = Field[Any, Any]
     object Raw {
       def apply(target: RawValue, name: Name): Raw   = Field((), target, name)
       def apply(target: RawValue, name: String): Raw = Field((), target, Name.fromString(name))
     }
-    type Typed = Field[scala.Unit, UType]
+    type Typed = Field[Any, UType]
     object Typed {
       def apply(target: TypedValue, name: Name)(ascribedType: UType): Typed = Field(ascribedType, target, name)
       def apply(fieldType: UType, target: TypedValue, name: Name): Typed    = Field(fieldType, target, name)
@@ -792,7 +792,7 @@ object Value {
   final case class FieldFunction[+VA](attributes: VA, name: Name) extends Value[Nothing, VA]
 
   object FieldFunction {
-    type Raw = FieldFunction[scala.Unit]
+    type Raw = FieldFunction[Any]
     object Raw {
       def apply(name: Name): Raw   = FieldFunction((), name)
       def apply(name: String): Raw = FieldFunction((), Name.fromString(name))
@@ -812,13 +812,13 @@ object Value {
   ) extends Value[TA, VA]
 
   object IfThenElse {
-    type Raw = IfThenElse[scala.Unit, scala.Unit]
+    type Raw = IfThenElse[Any, Any]
     object Raw {
       def apply(condition: RawValue, thenBranch: RawValue, elseBranch: RawValue): Raw =
         IfThenElse((), condition, thenBranch, elseBranch)
     }
 
-    type Typed = IfThenElse[scala.Unit, UType]
+    type Typed = IfThenElse[Any, UType]
     object Typed {
       def apply(condition: TypedValue, thenBranch: TypedValue, elseBranch: TypedValue): Typed =
         IfThenElse(condition.attributes, condition, thenBranch, elseBranch)
@@ -829,12 +829,12 @@ object Value {
       extends Value[TA, VA]
 
   object Lambda {
-    type Raw = Lambda[scala.Unit, scala.Unit]
+    type Raw = Lambda[Any, Any]
     object Raw {
-      def apply(argumentPattern: Pattern[scala.Unit], body: RawValue): Raw =
+      def apply(argumentPattern: Pattern[Any], body: RawValue): Raw =
         Lambda((), argumentPattern, body)
     }
-    type Typed = Lambda[scala.Unit, UType]
+    type Typed = Lambda[Any, UType]
     object Typed {
       def apply(argumentPattern: Pattern[UType], body: TypedValue): Typed =
         Lambda(body.attributes, argumentPattern, body)
@@ -849,16 +849,16 @@ object Value {
   ) extends Value[TA, VA]
 
   object LetDefinition {
-    type Raw = LetDefinition[scala.Unit, scala.Unit]
+    type Raw = LetDefinition[Any, Any]
     object Raw {
-      def apply(valueName: Name, valueDefinition: Definition[scala.Unit, scala.Unit], inValue: RawValue): Raw =
+      def apply(valueName: Name, valueDefinition: Definition[Any, Any], inValue: RawValue): Raw =
         LetDefinition((), valueName, valueDefinition, inValue)
 
-      def apply(valueName: String, valueDefinition: Definition[scala.Unit, scala.Unit], inValue: RawValue): Raw =
+      def apply(valueName: String, valueDefinition: Definition[Any, Any], inValue: RawValue): Raw =
         LetDefinition((), Name.fromString(valueName), valueDefinition, inValue)
     }
 
-    type Typed = LetDefinition[scala.Unit, UType]
+    type Typed = LetDefinition[Any, UType]
     object Typed {
       def apply(valueName: Name, valueDefinition: Definition.Typed, inValue: TypedValue): Typed =
         LetDefinition(inValue.attributes, valueName, valueDefinition, inValue)
@@ -881,19 +881,19 @@ object Value {
     ): LetRecursion[TA, VA] =
       LetRecursion(attributes, defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
 
-    type Raw = LetRecursion[scala.Unit, scala.Unit]
+    type Raw = LetRecursion[Any, Any]
     object Raw {
-      def apply(valueDefinitions: Map[Name, Definition[scala.Unit, scala.Unit]], inValue: RawValue): Raw =
+      def apply(valueDefinitions: Map[Name, Definition[Any, Any]], inValue: RawValue): Raw =
         LetRecursion((), valueDefinitions, inValue)
 
-      def apply(defs: (String, Definition[scala.Unit, scala.Unit])*)(inValue: RawValue): Raw =
+      def apply(defs: (String, Definition[Any, Any])*)(inValue: RawValue): Raw =
         LetRecursion((), defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
     }
-    type Typed = LetRecursion[scala.Unit, UType]
+    type Typed = LetRecursion[Any, UType]
     object Typed {
-      def apply(valueDefinitions: Map[Name, Definition[scala.Unit, UType]], inValue: TypedValue): Typed =
+      def apply(valueDefinitions: Map[Name, Definition[Any, UType]], inValue: TypedValue): Typed =
         LetRecursion(inValue.attributes, valueDefinitions, inValue)
-      def apply[VA](defs: (String, Definition[scala.Unit, UType])*)(inValue: TypedValue): Typed =
+      def apply[VA](defs: (String, Definition[Any, UType])*)(inValue: TypedValue): Typed =
         LetRecursion(inValue.attributes, defs.map { case (n, v) => (Name.fromString(n), v) }.toMap, inValue)
     }
   }
@@ -903,13 +903,13 @@ object Value {
   object List {
     def nonEmpty[TA, VA](first: Value[TA, VA], rest: Value[TA, VA]*): List[TA, VA] =
       List(first.attributes, first +: Chunk.fromIterable(rest))
-    type Raw = List[scala.Unit, scala.Unit]
+    type Raw = List[Any, Any]
     object Raw {
       def apply(elements: RawValue*): Raw       = List((), Chunk.fromArray(elements.toArray))
       def apply(elements: Chunk[RawValue]): Raw = List((), elements)
     }
 
-    type Typed = List[scala.Unit, UType]
+    type Typed = List[Any, UType]
     object Typed {
       def empty(ascribedType: UType): Typed                              = List(ascribedType, Chunk.empty)
       def apply(elements: Chunk[TypedValue])(ascribedType: UType): Typed = List(ascribedType, elements)
@@ -922,7 +922,7 @@ object Value {
   object Literal {
     def apply[A](literal: Lit[A])(implicit ev: InferredTypeOf[Lit[A]]): Typed[A] =
       Literal(ev.inferredType(literal), literal)
-    type Raw[+A] = Literal[scala.Unit, A]
+    type Raw[+A] = Literal[Any, A]
     object Raw {
       def apply[A](literal: Lit[A]): Raw[A] = Literal((), literal)
     }
@@ -937,12 +937,12 @@ object Value {
       extends Value[TA, VA]
 
   object NativeApply {
-    type Raw = NativeApply[scala.Unit, scala.Unit]
+    type Raw = NativeApply[Any, Any]
     object Raw {
       def apply(function: NativeFunction, arguments: Chunk[RawValue]): Raw =
         NativeApply((), function, arguments)
     }
-    type Typed = NativeApply[scala.Unit, UType]
+    type Typed = NativeApply[Any, UType]
     object Typed {
       def apply(function: NativeFunction, arguments: Chunk[TypedValue])(returnType: UType): Typed =
         NativeApply(returnType, function, arguments)
@@ -956,16 +956,16 @@ object Value {
   ) extends Value[TA, VA]
 
   object PatternMatch {
-    type Raw = PatternMatch[scala.Unit, scala.Unit]
+    type Raw = PatternMatch[Any, Any]
     object Raw {
-      def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[scala.Unit], RawValue)]): Raw =
+      def apply(branchOutOn: RawValue, cases: Chunk[(Pattern[Any], RawValue)]): Raw =
         PatternMatch((), branchOutOn, cases)
 
-      def apply(branchOutOn: RawValue, cases: (Pattern[scala.Unit], RawValue)*): Raw =
+      def apply(branchOutOn: RawValue, cases: (Pattern[Any], RawValue)*): Raw =
         PatternMatch((), branchOutOn, Chunk.fromIterable(cases))
     }
 
-    type Typed = PatternMatch[scala.Unit, UType]
+    type Typed = PatternMatch[Any, UType]
     object Typed {
       def apply(branchOutOn: TypedValue, cases: Chunk[(Pattern[UType], TypedValue)]): Typed =
         PatternMatch(branchOutOn.attributes, branchOutOn, cases)
@@ -978,7 +978,8 @@ object Value {
   final case class Record[+TA, +VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]) extends Value[TA, VA]
 
   object Record {
-    type Raw = Record[scala.Unit, scala.Unit]
+    import zio.morphir.ir.Type.Field.defineField
+    type Raw = Record[Any, Any]
 
     object Raw {
       def apply(fields: Chunk[(Name, RawValue)]): Raw = Record((), fields)
@@ -988,7 +989,7 @@ object Value {
       )
     }
 
-    type Typed = Record[scala.Unit, UType]
+    type Typed = Record[Any, UType]
     object Typed {
       def apply(recordType: UType, fields: (String, TypedValue)*): Typed = Record(
         attributes = recordType,
@@ -997,7 +998,7 @@ object Value {
 
       def apply(fields: (String, TypedValue)*): Typed = {
         val allFields  = Chunk.fromIterable(fields.map { case (n, v) => (Name.fromString(n), v) })
-        val recordType = Type.record(allFields.map { case (n, v) => Type.field(n, v.attributes) })
+        val recordType = Type.record(allFields.map { case (n, v) => defineField(n, v.attributes) })
         Record(recordType, allFields)
       }
     }
@@ -1008,7 +1009,7 @@ object Value {
   object Reference {
     def apply(name: FQName): Raw = Reference((), name)
 
-    type Raw = Reference[scala.Unit]
+    type Raw = Reference[Any]
     object Raw {
       def apply(name: FQName): Raw = Reference((), name)
       def apply(name: String): Raw = Reference((), FQName.fromString(name))
@@ -1024,37 +1025,35 @@ object Value {
   final case class Tuple[+TA, +VA](attributes: VA, elements: Chunk[Value[TA, VA]]) extends Value[TA, VA]
 
   object Tuple {
-    def apply(elements: (RawValue, UType)*): Typed = {
+    def apply(elements: (RawValue, UType)*): Typed =
       Tuple(
         Type.Tuple.Raw(elements.map(_._2): _*),
         Chunk(elements: _*).map { case (v, t) => v :@ t }
       )
-    }
 
     val empty: Raw = Tuple((), Chunk.empty)
-    type Raw = Tuple[scala.Unit, scala.Unit]
+    type Raw = Tuple[Any, Any]
 
     object Raw {
       def apply(elements: RawValue*): Raw       = Tuple((), Chunk(elements: _*))
       def apply(elements: Chunk[RawValue]): Raw = Tuple((), elements)
     }
 
-    type Typed = Tuple[scala.Unit, UType]
+    type Typed = Tuple[Any, UType]
     object Typed {
 
       def apply(elements: Chunk[TypedValue]): Typed = Tuple(Type.Tuple.Raw(elements.map(_.attributes): _*), elements)
-      def apply(elements: TypedValue*): Typed = {
+      def apply(elements: TypedValue*): Typed =
         Tuple(
           Type.Tuple.Raw(elements.map(_.attributes): _*),
           Chunk(elements: _*)
         )
-      }
     }
   }
 
   final case class Unit[+VA](attributes: VA) extends Value[Nothing, VA]
   object Unit {
-    type Raw = Unit[scala.Unit]
+    type Raw = Unit[Any]
     def Raw: Raw = Unit(())
 
     type Typed = Unit[UType]
@@ -1070,7 +1069,7 @@ object Value {
   ) extends Value[TA, VA]
 
   object UpdateRecord {
-    type Raw = UpdateRecord[scala.Unit, scala.Unit]
+    type Raw = UpdateRecord[Any, Any]
     object Raw {
       def apply(valueToUpdate: RawValue, fieldsToUpdate: Chunk[(Name, RawValue)]): Raw =
         UpdateRecord((), valueToUpdate, fieldsToUpdate)
@@ -1083,15 +1082,14 @@ object Value {
         )
     }
 
-    type Typed = UpdateRecord[scala.Unit, UType]
+    type Typed = UpdateRecord[Any, UType]
     object Typed {
-      def apply(valueToUpdate: TypedValue, fieldsToUpdate: Chunk[(Name, TypedValue)]): Typed = {
+      def apply(valueToUpdate: TypedValue, fieldsToUpdate: Chunk[(Name, TypedValue)]): Typed =
         UpdateRecord(
           valueToUpdate.attributes,
           valueToUpdate,
           fieldsToUpdate
         )
-      }
 
       def apply(valueToUpdate: TypedValue, fieldsToUpdate: (String, TypedValue)*): Typed =
         UpdateRecord(
@@ -1106,7 +1104,7 @@ object Value {
   object Variable {
     def apply[VA](attributes: VA, name: String): Variable[VA] = Variable(attributes, Name.fromString(name))
 
-    type Raw = Variable[scala.Unit]
+    type Raw = Variable[Any]
     object Raw {
       def apply(name: Name): Raw   = Variable((), name)
       def apply(name: String): Raw = Variable((), Name.fromString(name))
@@ -1118,7 +1116,7 @@ object Value {
     }
   }
 
-  implicit class RawValueExtensions(val self: RawValue) extends AnyVal {
+  implicit class RawValueExtensions(private val self: RawValue) extends AnyVal {
 
     /**
      * Ascribe the given type to this `RawValue` and all its children.
@@ -1134,10 +1132,10 @@ object Value {
      */
     def @:(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
 
-    def toDefinition(returnType: UType) = Definition.fromRawValue(self, returnType)
+    def toDefinition(returnType: UType): Definition.Raw = Definition.fromRawValue(self, returnType)
   }
 
-  implicit class TypedValueExtensions(val self: TypedValue) extends AnyVal {
+  implicit class TypedValueExtensions(private val self: TypedValue) extends AnyVal {
 
     /**
      * Ascribe the given type to the value.

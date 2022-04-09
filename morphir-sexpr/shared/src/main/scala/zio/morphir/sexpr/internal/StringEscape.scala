@@ -12,9 +12,8 @@ final class StringEscape(in: String) {
     pos = 0
     val result = new StringBuilder
     try {
-      while (pos < len) {
+      while (pos < len)
         result += readChar()
-      }
       Right(result.toString)
     } catch {
       case e: Exception => Left(s"[$in] -- has an error in string encoding: ${e.getMessage()}")
@@ -52,9 +51,8 @@ final class StringEscape(in: String) {
   }
 
   // callers expect to get an EOB so this is rare
-  def readChar(): Char = {
+  def readChar(): Char =
     read().toChar
-  }
 
   // consumes 4 hex characters after current
   def nextHex4(): Int = {

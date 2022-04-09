@@ -4,7 +4,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
 
 object AccessControlledSpec extends MorphirBaseSpec {
-  def spec = suite("AccessControlled")(
+  def spec: ZSpec[Environment, Failure] = suite("AccessControlled")(
     // test("Supports for comprehensions") {
     //   val code =
     //     """

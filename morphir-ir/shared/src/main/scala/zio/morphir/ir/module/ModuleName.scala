@@ -7,7 +7,7 @@ final case class ModuleName(namespace: Path, localName: Name) {
 
   def toModulePath: ModulePath = ModulePath(toPath)
 
-  lazy val toPath               = namespace / localName
+  lazy val toPath: Path         = namespace / localName
   override def toString: String = toPath.toString
 }
 

@@ -1,15 +1,13 @@
 package zio.morphir.testing
 
-import zio.morphir.ir.Name
 import zio.Chunk
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue}
-import zio.morphir.ir.NativeFunction
-import zio.morphir.ir.{FQName, Path}
-import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.Dsl
-import zio.morphir.syntax.AllSyntax
+import zio.morphir.IR.TypeConstructorInfo
+import zio.morphir.ir.Type.{Type, UType}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue, Value}
 import zio.morphir.ir.sdk.{Basics, String => StringModule}
+import zio.morphir.ir.{FQName, Name, NativeFunction, Path}
+import zio.morphir.syntax.AllSyntax
 
 object CaseExample extends AllSyntax {
 
@@ -72,13 +70,13 @@ object CaseExample extends AllSyntax {
       )
     )
 
-  val tupleCaseExample =
+  val tupleCaseExample: Value.Tuple.Raw =
     tuple(
       literal(1),
       literal(2)
     )
 
-  val listCaseExample =
+  val listCaseExample: RawValue =
     list(
       string("hello"),
       string("world")
@@ -90,7 +88,7 @@ object CaseExample extends AllSyntax {
       elseBranch = string("no")
     )
 
-  lazy val recordCaseExample = {
+  lazy val recordCaseExample: RawValue = {
     val fieldA = Name.fromString("fieldA")
     val fieldB = Name.fromString("fieldB")
 
@@ -102,16 +100,15 @@ object CaseExample extends AllSyntax {
     Dsl.record(element1, element2)
   }
 
-  val recordCaseUpdateExample = {
+  val recordCaseUpdateExample: RawValue =
     updateRecord(
       recordCaseExample,
       Chunk(
         Name("fieldB") -> Dsl.wholeNumber(new java.math.BigInteger("3"))
       )
     )
-  }
 
-  val patternMatchWildcardCaseExample =
+  val patternMatchWildcardCaseExample: RawValue =
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("42")),
       wildcardPattern -> Dsl.wholeNumber(
@@ -119,19 +116,19 @@ object CaseExample extends AllSyntax {
       )
     )
 
-  val patternMatchAsCaseExample =
+  val patternMatchAsCaseExample: RawValue =
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("42")),
       asPattern(wildcardPattern, Name.fromString("x")) -> Dsl.variable(Name.fromString("x"))
     )
 
-  val patternMatchEmptyListCaseExample =
+  val patternMatchEmptyListCaseExample: RawValue =
     Dsl.patternMatch(
       list(),
       emptyListPattern -> string("empty list")
     )
 
-  val patternHeadTailCaseExample =
+  val patternHeadTailCaseExample: RawValue =
     Dsl.patternMatch(
       listCaseExample,
       headTailPattern(
@@ -140,20 +137,20 @@ object CaseExample extends AllSyntax {
       ) -> variable("tail")
     )
 
-  val patternTupleOneCaseExample =
+  val patternTupleOneCaseExample: RawValue =
     Dsl.patternMatch(
       tuple(string("singleton tuple")),
       tuplePattern(asPattern(wildcardPattern, Name("x"))) -> variable(Name("x"))
     )
 
-  val patternTupleOneCaseCounterExample =
+  val patternTupleOneCaseCounterExample: RawValue =
     Dsl.patternMatch(
       string("singleton tuple"),
       tuplePattern(wildcardPattern) -> string("wrong"),
       wildcardPattern               -> string("right")
     )
 
-  val patternTupleCaseExample =
+  val patternTupleCaseExample: RawValue =
     Dsl.patternMatch(
       tupleCaseExample,
       tuplePattern(
@@ -162,7 +159,7 @@ object CaseExample extends AllSyntax {
       ) -> Dsl.wholeNumber(new java.math.BigInteger("107"))
     )
 
-  lazy val patternConstructorCaseExample =
+  lazy val patternConstructorCaseExample: RawValue =
     Dsl.patternMatch(
       checkingAccountConstructorExample,
       constructorPattern(
@@ -171,20 +168,20 @@ object CaseExample extends AllSyntax {
       ) -> variable(Name("x"))
     )
 
-  val patternUnitCaseExample =
+  val patternUnitCaseExample: RawValue =
     Dsl.patternMatch(
       unit,
       emptyListPattern -> string("wrong"),
       unitPattern      -> string("right")
     )
 
-  val letDestructExample =
+  val letDestructExample: RawValue =
     destructure(
       tuplePattern(asPattern(wildcardPattern, Name("x")), asPattern(wildcardPattern, Name("y"))),
       tuple(string("red"), string("blue")),
       variable("x")
     )
-  val staticScopingExample =
+  val staticScopingExample: RawValue =
     letDefinition(
       Name("x"),
       string("static").toDefinition(StringModule.stringType),
@@ -193,7 +190,7 @@ object CaseExample extends AllSyntax {
         letDefinition(Name("x"), string(("dynamic")).toDefinition(StringModule.stringType), variable(Name("y")))
       )
     )
-  val letRecExample =
+  val letRecExample: RawValue =
     letRecursion(
       Map(
         Name.fromString("x") -> ifThenElse(
@@ -225,7 +222,7 @@ object CaseExample extends AllSyntax {
    * letRec x -> 3 y -> 4 x + y
    */
 
-  val patternMatchAsCaseComplexExample =
+  val patternMatchAsCaseComplexExample: RawValue =
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("7")),
       asPattern(
@@ -254,10 +251,10 @@ object CaseExample extends AllSyntax {
 
   // { case _ => 42}()
 
-  val applyWithWildCard =
+  val applyWithWildCard: RawValue =
     Dsl.apply(lambda(wildcardPattern, wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
 
-  val lambdaExample = letDefinition(
+  val lambdaExample: RawValue = letDefinition(
     Name("foo"),
     lambda(
       asPattern(wildcardPattern, Name("x")),
@@ -272,48 +269,50 @@ object CaseExample extends AllSyntax {
     Dsl.apply(variable("foo"), literal(33))
   )
 
-  val personName = zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
-  lazy val recordTypeName =
+  val personName: FQName =
+    zio.morphir.ir.FQName(zio.morphir.ir.Path(Name("")), zio.morphir.ir.Path(Name("")), Name("Person"))
+  lazy val recordTypeName: FQName =
     zio.morphir.ir.FQName(
       zio.morphir.ir.Path(Name("Morphir.SDK")),
       zio.morphir.ir.Path(Name("Morphir.SDK")),
       Name("RecordType")
     )
 
-  lazy val recordType = defineRecord(
+  lazy val recordType: UType = defineRecord(
     defineField(Name("name"), Type.unit),
     defineField(Name("age"), Type.unit)
   )
 
-  lazy val recordTypeAliasSpecification = zio.morphir.ir.Type.Specification.TypeAliasSpecification[Any](
-    typeParams = Chunk.empty,
-    expr = recordType
-  )
+  lazy val recordTypeAliasSpecification: zio.morphir.ir.Type.Specification.TypeAliasSpecification[Any] =
+    zio.morphir.ir.Type.Specification.TypeAliasSpecification[Any](
+      typeParams = Chunk.empty,
+      expr = recordType
+    )
 
-  lazy val accountTypeName = FQName(
+  lazy val accountTypeName: FQName = FQName(
     Path(Name("Morphir.SDK")),
     Path(Name("Morphir.SDK.Account")),
     Name("Account")
   )
 
-  lazy val savingsAccountTypeName = FQName(
+  lazy val savingsAccountTypeName: FQName = FQName(
     Path(Name("Morphir.SDK")),
     Path(Name("Morphir.SDK.Account")),
     Name("SavingsAccount")
   )
-  lazy val checkingAccountTypeName = FQName(
+  lazy val checkingAccountTypeName: FQName = FQName(
     Path(Name("Morphir.SDK")),
     Path(Name("Morphir.SDK.Account")),
     Name("CheckingAccount")
   )
 
-  lazy val savingsAccountTypeConstructor = TypeConstructorInfo(
+  lazy val savingsAccountTypeConstructor: TypeConstructorInfo = TypeConstructorInfo(
     containingType = accountTypeName,
     typeParams = Chunk.empty,
     typeArgs = Chunk(Name.fromString("arg1") -> defineReference(FQName.fromString("Morphir.SDK.String"), Chunk.empty))
   )
 
-  lazy val checkingAccountTypeConstructor = TypeConstructorInfo(
+  lazy val checkingAccountTypeConstructor: TypeConstructorInfo = TypeConstructorInfo(
     containingType = accountTypeName,
     typeParams = Chunk.empty,
     typeArgs = Chunk(
@@ -322,20 +321,20 @@ object CaseExample extends AllSyntax {
     )
   )
 
-  val constructorExample =
+  val constructorExample: RawValue =
     apply(
       constructor(recordTypeName),
       literal("Adam").toRawValue,
       literal(42)
     )
 
-  val savingsAccountConstructorExample =
+  val savingsAccountConstructorExample: RawValue =
     apply(
       constructor(savingsAccountTypeName),
       literal("Adam").toRawValue
     )
 
-  val checkingAccountConstructorExample =
+  val checkingAccountConstructorExample: RawValue =
     apply(
       constructor(checkingAccountTypeName),
       literal("Brad").toRawValue,

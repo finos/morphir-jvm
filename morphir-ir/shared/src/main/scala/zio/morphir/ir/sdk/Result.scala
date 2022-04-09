@@ -3,16 +3,13 @@ package zio.morphir.ir.sdk
 import zio.Chunk
 import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
-import zio.morphir.ir.Type.{Constructors, Type}
-import zio.morphir.ir.types.UType
-import zio.morphir.ir.types.Type._
+import zio.morphir.ir.Type.Specification.CustomTypeSpecification
+import zio.morphir.ir.Type.{Constructors, Type, UType, reference, variable}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.Value.Value.{Apply, Constructor}
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Maybe.maybeType
-import zio.morphir.ir.types.Specification.CustomTypeSpecification
 import zio.morphir.syntax.NamingSyntax._
-
 object Result {
   val moduleName: ModuleName = ModuleName.fromString("Result")
 

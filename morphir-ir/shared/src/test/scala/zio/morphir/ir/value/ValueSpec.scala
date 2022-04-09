@@ -1,15 +1,15 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.{Name, NativeFunction}
 import zio.morphir.ir.Source.Location
+import zio.morphir.ir.{Name, NativeFunction}
 import zio.morphir.testing.MorphirBaseSpec
-import zio.test._
-import zio.test.Assertion.equalTo
 import zio.prelude._
+import zio.test.Assertion.equalTo
+import zio.test._
 
 object ValueSpec extends MorphirBaseSpec {
-  def spec = suite("ValueSpec") {
+  def spec: ZSpec[Environment, Failure] = suite("ValueSpec") {
     suite("NativeApply")(
       test("foldLeft should work as expected with a native function application") {
         val a   = Value.Variable.Raw(Name("a"))

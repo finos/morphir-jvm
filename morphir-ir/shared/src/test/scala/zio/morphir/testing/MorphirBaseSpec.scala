@@ -1,8 +1,7 @@
 package zio.morphir.testing
 
-import zio.test.DefaultRunnableSpec
-import zio.test.TestAspect
 import zio.*
+import zio.test.{DefaultRunnableSpec, TestAspect}
 
 abstract class MorphirBaseSpec extends DefaultRunnableSpec {
   override def aspects = List(TestAspect.timeout(60.seconds))

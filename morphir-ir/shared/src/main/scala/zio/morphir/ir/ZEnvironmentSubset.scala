@@ -16,10 +16,9 @@
 
 package zio.morphir.ir
 
+import izumi.reflect.macrortti.LightTypeTag
 import zio._
 import zio.prelude.AnyType
-
-import izumi.reflect.macrortti.LightTypeTag
 
 final class ZEnvironmentSubset[Subset[_], +R] private (
     private val map: Map[LightTypeTag, (Any, Any, Int)],

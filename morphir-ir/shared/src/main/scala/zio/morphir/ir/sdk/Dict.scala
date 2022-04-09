@@ -1,18 +1,17 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.{FQName, Module, Name, Path}
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.types.UType
 import zio.morphir.ir.Type.Type._
+import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.Value.Value
 import zio.morphir.ir.Value.Value.{Apply, Reference}
-import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.Basics._
+import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.List.listType
 import zio.morphir.ir.sdk.Maybe.maybeType
+import zio.morphir.ir.{FQName, Module, Name, Path}
 import zio.morphir.syntax.NamingSyntax._
 
 object Dict {

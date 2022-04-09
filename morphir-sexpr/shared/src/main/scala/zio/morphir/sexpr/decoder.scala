@@ -144,12 +144,11 @@ trait SExprDecoder[A] {
 
   implicit def tuple2[A1, A2](implicit A1: SExprDecoder[A1], A2: SExprDecoder[A2]): SExprDecoder[(A1, A2)] =
     new SExprDecoder[Tuple2[A1, A2]] {
-      override def decode(in: String): Either[SExprError, (A1, A2)] = {
+      override def decode(in: String): Either[SExprError, (A1, A2)] =
         for {
           a1 <- A1.decode(in)
           a2 <- A2.decode(in)
         } yield (a1, a2)
-      }
     }
 }
 

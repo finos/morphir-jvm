@@ -19,11 +19,10 @@ object QName {
 
   def toString(qName: QName): String = qName.toString
 
-  def fromString(str: String): Option[QName] = {
+  def fromString(str: String): Option[QName] =
     str.split(":") match {
       case Array(packageNameString, localNameString) =>
         Some(QName(Path.fromString(packageNameString), Name.fromString(localNameString)))
       case _ => None
     }
-  }
 }

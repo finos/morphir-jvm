@@ -3,11 +3,10 @@ package zio.morphir.samples
 import zio.Chunk
 import zio.morphir.ir.Module.{Definition, Specification}
 import zio.morphir.ir.ModuleModuleSpec.defineVariable
-import zio.morphir.ir.Type.Constructors
 import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value}
-import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.{Constructors, UType}
+import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value, value}
 
 object ModuleExample {
   val items: Map[Name, Chunk[(Name, UType)]] = Map {
@@ -15,30 +14,30 @@ object ModuleExample {
     Name("rainbow") -> Chunk((Name("red"), defineVariable("red")))
   }
 
-  val typeAlias = Documented(
+  val typeAlias: Documented[TypeAlias[Any]] = Documented(
     "doc",
     TypeAlias(Chunk(Name.fromString("hello")), defineVariable("type1"))
   )
 
-  val customType = Documented(
+  val customType: Documented[CustomType[Any]] = Documented(
     "doc",
     CustomType[Any](Chunk(Name.fromString("world")), AccessControlled.publicAccess(Constructors(items)))
   )
 
-  val definitionTypes = Map {
+  val definitionTypes: Map[Name, AccessControlled[Documented[CustomType[Any]]]] = Map {
     Name("hello") -> AccessControlled.publicAccess(typeAlias)
     Name("world") -> AccessControlled.publicAccess(customType)
   }
 
-  val definitionValues = Map {
+  val definitionValues: Map[Name, AccessControlled[Documented[value.Definition.Typed]]] = Map {
     Name("val") -> AccessControlled.publicAccess(
       Documented("type", Value.Definition.fromLiteral(Lit.string("string")))
     )
   }
 
-  val moduleDef = Definition(definitionTypes, definitionValues)
+  val moduleDef: Definition[Any, UType] = Definition(definitionTypes, definitionValues)
 
-  val specTypes = Map {
+  val specTypes: Map[Name, Documented[OpaqueTypeSpecification]] = Map {
     Name("hello") -> Documented(
       "doc",
       OpaqueTypeSpecification(Chunk(Name("name1")))
@@ -49,7 +48,7 @@ object ModuleExample {
     )
   }
 
-  val specValues = Map {
+  val specValues: Map[Name, Documented[value.Specification[Any]]] = Map {
     Name("spec1") -> Documented(
       "types",
       Value.Specification(
@@ -62,6 +61,6 @@ object ModuleExample {
     )
   }
 
-  val moduleSpec = Specification(specTypes, specValues)
+  val moduleSpec: Specification[Any] = Specification(specTypes, specValues)
 
 }

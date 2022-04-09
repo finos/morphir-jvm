@@ -1,16 +1,15 @@
 package zio.morphir.sexpr
 
-import zio.{Chunk, NonEmptyChunk}
-
-import scala.annotation._
 import zio.morphir.sexpr.ast.SExpr
 import zio.morphir.sexpr.internal._
+import zio.{Chunk, NonEmptyChunk}
 
 import java.math.{BigDecimal, BigInteger}
 import java.util.UUID
+import scala.annotation._
+import scala.collection.{immutable, mutable}
 import scala.math.{BigDecimal => ScalaBigDecimal, BigInt => ScalaBigInt}
 import scala.reflect.ClassTag
-import scala.collection.{immutable, mutable}
 
 trait SExprEncoder[A] {
   self =>

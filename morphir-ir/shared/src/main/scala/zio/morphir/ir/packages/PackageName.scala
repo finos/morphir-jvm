@@ -1,6 +1,6 @@
 package zio.morphir.ir.packages
-import zio.morphir.ir.{FQName, Path}
 import zio.morphir.ir.module._
+import zio.morphir.ir.{FQName, Path}
 
 final case class PackageName(toPath: Path) { self =>
   def %(modulePath: ModulePath): PackageAndModulePath = PackageAndModulePath(self, modulePath)

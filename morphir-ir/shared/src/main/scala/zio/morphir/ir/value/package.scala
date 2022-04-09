@@ -1,22 +1,22 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.types.UType
+import zio.morphir.ir.Type.UType
 
 package object value {
 
-  type RawValue = Value[Unit, Unit]
+  type RawValue = Value[Any, Any]
   val RawValue: Value.type = Value
 
-  type TypedValue = Value[Unit, UType]
+  type TypedValue = Value[Any, UType]
   val TypedValue: Value.type = Value
 
-  type UDefinition = Definition[Unit, Unit]
+  type UDefinition = Definition[Any, Any]
   val UDefinition: Definition.type = Definition
 
-  type UPattern = Pattern[Unit]
+  type UPattern = Pattern[Any]
   val UPattern: Pattern.type = Pattern
 
-  type USpecification = Value[Unit, Unit]
+  type USpecification = Specification[Any]
   val USpecification: Specification.type = Specification
 
 }

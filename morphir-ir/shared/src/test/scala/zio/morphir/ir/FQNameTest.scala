@@ -1,9 +1,9 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.Module.{ModulePath}
+import zio.morphir.ir.Module.ModulePath
 import zio.morphir.testing.MorphirBaseSpec
-import zio.test.*
 import zio.test.Assertion.*
+import zio.test.*
 
 object FQNameTest extends MorphirBaseSpec {
   def spec = suite("FQName")(

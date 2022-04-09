@@ -1,17 +1,16 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.types.UType
 import zio.morphir.ir.Type.Type._
+import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.sdk.Basics.{boolType, floatType, intType}
 import zio.morphir.ir.sdk.Char.charType
 import zio.morphir.ir.sdk.Common._
 import zio.morphir.ir.sdk.List.listType
 import zio.morphir.ir.sdk.Maybe.maybeType
+import zio.morphir.ir.{Module, NeedsAttributes}
 import zio.morphir.syntax.NamingSyntax._
 
 object String {
@@ -67,8 +66,9 @@ object String {
     )
   )
 
-  lazy val stringType: UType                = reference(toFQName(moduleName, "String"))
-  def stringType[A](attributes: A): Type[A] = reference(attributes)(toFQName(moduleName, "String"))
+  lazy val stringType: UType = reference(toFQName(moduleName, "String"))
+  def stringType[A](attributes: A)(implicit ev: NeedsAttributes[A]): Type[A] =
+    reference(attributes)(toFQName(moduleName, "String"))
 
   // todo nativeFunctions
 }

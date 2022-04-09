@@ -1,16 +1,16 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.ir.Module.{Definition, Specification}
+import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.syntax.AllSyntax
 import zio.morphir.testing.MorphirBaseSpec
-import zio.test.*
 import zio.test.TestAspect.{ignore, tag}
+import zio.test.*
 
 object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
 
-  def spec = suite("Type")(
+  def spec: ZSpec[Environment, Failure] = suite("Type")(
     suite("Module Definition")(
       test("Can be turned to Specification") {
 //        val expected = Specification(types = Map{

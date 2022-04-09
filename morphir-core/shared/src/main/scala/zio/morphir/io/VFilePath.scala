@@ -11,7 +11,7 @@ sealed trait VFilePath { self =>
       case _                                                => ???
     }
 
-  def dirname: VFilePath = {
+  def dirname: VFilePath =
     // val separator: String = fileSeparator
     self match {
       case root @ Root(_)                                      => root
@@ -27,7 +27,6 @@ sealed trait VFilePath { self =>
           case Some(lst) => RelativePath(lst, fileSeparator)
         }
     }
-  }
 
   def fileSeparator: FileSeparator
 
@@ -69,7 +68,7 @@ object VFilePath {
   val rootZIO: ZIO[VFileSystem, Nothing, VFilePath] = ZIO.serviceWith { case fs: VFileSystem => Root(fs.fileSeparator) }
 
   def root(implicit fileSeparator: FileSeparator): Root = Root(fileSeparator)
-  def apply(path: String)(implicit fileSeparator: FileSeparator): VFilePath = {
+  def apply(path: String)(implicit fileSeparator: FileSeparator): VFilePath =
     // val separator: String = fileSeparator
     path.split(fileSeparator).map(_.trim()).toList match {
       case Nil                  => Root(fileSeparator)
@@ -80,7 +79,6 @@ object VFilePath {
         AbsolutePath(NonEmptyList(head, tail: _*), fileSeparator)
       case head :: tail => RelativePath(NonEmptyList(head, tail: _*), fileSeparator)
     }
-  }
 
   def fromString(path: String)(implicit fileSeparator: predef.FileSeparator): VFilePath = apply(path)
 

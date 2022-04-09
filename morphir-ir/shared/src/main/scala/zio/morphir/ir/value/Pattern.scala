@@ -1,8 +1,8 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
+import zio.morphir.ir.Type.UType
 import zio.morphir.ir.{FQName, Literal, Name}
-import zio.morphir.ir.types.UType
 sealed trait Pattern[+A] { self =>
   import Pattern._
 
@@ -26,7 +26,7 @@ sealed trait Pattern[+A] { self =>
 }
 
 object Pattern {
-  type DefaultAttributes = scala.Unit
+  type DefaultAttributes = Any
   val DefaultAttributes: DefaultAttributes = ()
 
   def asPattern[Attributes](
@@ -42,7 +42,7 @@ object Pattern {
   def asPattern(name: Name): UPattern =
     AsPattern(wildcardPattern, name, DefaultAttributes)
 
-  lazy val wildcardPattern: WildcardPattern[scala.Unit] = WildcardPattern(DefaultAttributes)
+  lazy val wildcardPattern: WildcardPattern[Any] = WildcardPattern(DefaultAttributes)
 
   def wildcardPattern[Attributes](attributes: Attributes): WildcardPattern[Attributes] =
     WildcardPattern(attributes)
@@ -60,6 +60,14 @@ object Pattern {
       name: Name,
       attributes: Attributes
   ) extends Pattern[Attributes]
+
+  object AsPattern {
+    type Raw = AsPattern[Any]
+    object Raw {
+      def apply(pattern: UPattern, name: Name): Raw   = AsPattern(pattern, name, DefaultAttributes)
+      def apply(pattern: UPattern, name: String): Raw = AsPattern(pattern, Name.fromString(name), DefaultAttributes)
+    }
+  }
 
   final case class ConstructorPattern[+Attributes](
       constructorName: FQName,
@@ -101,13 +109,14 @@ object Pattern {
 
   final case class WildcardPattern[+Attributes](attributes: Attributes) extends Pattern[Attributes]
   object WildcardPattern {
+    val raw: Raw = WildcardPattern.Raw()
     type Raw = WildcardPattern[DefaultAttributes]
     object Raw {
       def apply(): Raw = WildcardPattern(DefaultAttributes)
     }
   }
 
-  final implicit class UPatternExtensions(val self: Pattern[Unit]) extends AnyVal {
+  final implicit class UPatternExtensions(private val self: Pattern[Any]) extends AnyVal {
     def :@(ascribedType: UType): Pattern[UType] = self.mapAttributes((_ => ascribedType))
   }
 }

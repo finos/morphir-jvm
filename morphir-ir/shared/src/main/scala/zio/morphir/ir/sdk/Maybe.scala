@@ -1,15 +1,14 @@
 package zio.morphir.ir.sdk
 
 import zio.Chunk
-import zio.morphir.ir.Module
 import zio.morphir.ir.Module.ModuleName
 import zio.morphir.ir.Type.Specification.CustomTypeSpecification
-import zio.morphir.ir.Type.Type
-import zio.morphir.ir.types.{UConstructors, UType}
 import zio.morphir.ir.Type.Type._
-import zio.morphir.ir.Value.{RawValue, Value}
+import zio.morphir.ir.Type.{Type, UConstructors, UType}
 import zio.morphir.ir.Value.Value.{Apply, Constructor}
+import zio.morphir.ir.Value.{RawValue, Value}
 import zio.morphir.ir.sdk.Common._
+import zio.morphir.ir.{Module, NeedsAttributes}
 import zio.morphir.syntax.NamingSyntax._
 
 object Maybe {
@@ -66,18 +65,18 @@ object Maybe {
   def maybeType(itemType: UType): UType =
     reference(toFQName(moduleName, "Maybe"), itemType)
 
-  def maybeType[A](attributes: A)(itemType: Type[A]): Type[A] =
+  def maybeType[A](attributes: A)(itemType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
     reference(attributes)(toFQName(moduleName, "Maybe"), itemType)
 
   def just(value: RawValue): RawValue =
     Apply.Raw(Constructor.Raw(toFQName(moduleName, "Just")), value)
 
-  def just[VA](va: VA)(value: Value[Nothing, VA]): Value[Nothing, VA] =
+  def just[VA](va: VA)(value: Value[Nothing, VA])(implicit ev: NeedsAttributes[VA]): Value[Nothing, VA] =
     Apply(va, Constructor(va, toFQName(moduleName, "Just")), value)
 
   lazy val nothing: RawValue =
     Constructor.Raw(toFQName(moduleName, "Nothing"))
-  def nothing[VA](va: VA): Value[Nothing, VA] =
+  def nothing[VA](va: VA)(implicit ev: NeedsAttributes[VA]): Value[Nothing, VA] =
     Constructor(va, toFQName(moduleName, "Nothing"))
 
   // todo add nativeFunctions

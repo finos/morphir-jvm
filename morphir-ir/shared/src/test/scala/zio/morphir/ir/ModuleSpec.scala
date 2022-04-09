@@ -1,10 +1,10 @@
 package zio.morphir.ir
 
-import zio.test.*
 import zio.morphir.testing.MorphirBaseSpec
+import zio.test.*
 
 object ModuleSpec extends MorphirBaseSpec {
-  def spec = suite("Module Spec")(
+  def spec: ZSpec[Environment, Failure] = suite("Module Spec")(
     suite("Definition")(
       test("It can be empty") {
         assertTrue(

@@ -1,5 +1,6 @@
 package zio.morphir.io
 import zio.*
+
 import java.io.IOException
 
 /**
@@ -18,7 +19,7 @@ trait VFileSystemInstances { self: VFileSystem.type =>
 
 final case class LiveVFileSystem(fileSeparator: FileSeparator, cwd: IO[IOException, VFilePath]) extends VFileSystem
 object LiveVFileSystem {
-  val default = {
+  val default: LiveVFileSystem = {
     implicit val fileSeparator = FileSeparator(java.io.File.separator)
     val cwd = IO {
       val cwd = new java.io.File(".").getCanonicalPath

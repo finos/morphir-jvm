@@ -1,12 +1,13 @@
 package zio.morphir.ir.module
-import zio.morphir.ir.{AccessControlled, Documented, FQName, Name, Type, Value}
-import zio.morphir.ir.types.Definition.{CustomType, TypeAlias}
 
+import zio.morphir.ir.{AccessControlled, Documented, FQName, Name, Type, Value}
+
+import Type.Definition.{CustomType, TypeAlias}
 final case class Definition[+TA, +VA](
     types: Map[Name, AccessControlled[Documented[Type.Definition[TA]]]],
     values: Map[Name, AccessControlled[Documented[Value.Definition[TA, VA]]]]
 ) { self =>
-  def toSpecification: Specification[TA] = {
+  def toSpecification: Specification[TA] =
     Specification(
       types = self.types.collect { case (name, AccessControlled.WithPublicAccess(documented)) =>
         name -> documented.map(_.toSpecification)
@@ -15,9 +16,8 @@ final case class Definition[+TA, +VA](
         name -> definition.map(_.toSpecification)
       }
     )
-  }
 
-  def toSpecificationWithPrivate: Specification[TA] = {
+  def toSpecificationWithPrivate: Specification[TA] =
     Specification(
       types = self.types.collect { case (name, AccessControlled.WithPrivateAccess(documented)) =>
         name -> documented.map(_.toSpecification)
@@ -26,11 +26,9 @@ final case class Definition[+TA, +VA](
         name -> documented.map(_.toSpecification)
       }
     )
-  }
 
-  def lookupValueDefinition(localName: Name): Option[Value.Definition[TA, VA]] = {
+  def lookupValueDefinition(localName: Name): Option[Value.Definition[TA, VA]] =
     values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x).map(_.value))
-  }
 
   def eraseAttributes: Definition[Any, Any] = ???
 

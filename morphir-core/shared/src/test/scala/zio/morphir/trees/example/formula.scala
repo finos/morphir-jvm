@@ -1,8 +1,8 @@
 package zio.morphir.trees.example
 
 import zio._
-import zio.prelude._
 import zio.morphir.trees._
+import zio.prelude._
 
 object formula {
 
@@ -86,7 +86,7 @@ object formula {
       }
   }
 
-  implicit class FormulaExtensions[Annotations](val self: Formula[Annotations]) extends AnyVal {
+  implicit class FormulaExtensions[Annotations](private val self: Formula[Annotations]) extends AnyVal {
     def assignVariables: Formula[Annotations] =
       Formula.assignVariables(self)
 
@@ -170,7 +170,7 @@ object formula {
 
 object FormulaExample extends zio.ZIOAppDefault {
   import formula.Formula._
-  def run = {
+  def run: ZIO[Console, Throwable, Any] = {
     val theFormula =
       let("x", int(5))(
         let("y", int(10))(

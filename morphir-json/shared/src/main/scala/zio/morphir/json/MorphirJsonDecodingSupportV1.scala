@@ -2,11 +2,6 @@ package zio.morphir.json
 
 // import zio._
 import zio.json._
-// import zio.morphir.ir._
-// import zio.morphir.ir.AccessControlled.Access._
-// import zio.morphir.ir.Literal
-// import zio.morphir.ir.Module.{ModuleName, ModulePath}
-// import zio.morphir.ir.Type.{Constructors, Field, Type}
 import zio.morphir.ir.Value._
 
 trait MorphirJsonDecodingSupportV1 {

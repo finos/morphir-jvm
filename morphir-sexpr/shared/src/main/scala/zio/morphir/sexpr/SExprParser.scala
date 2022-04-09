@@ -1,30 +1,70 @@
 package zio.morphir.sexpr
 
-import zio.parser.*
 import zio.Chunk
 import zio.morphir.sexpr.ast.*
+import zio.parser.*
 
 object SExprParser {
   type SExprSyntax[-Value, +Result] = Syntax[String, Char, Char, Value, Result]
 
   object grammar {
-    lazy val SPACE = Syntax.char(' ')
-    lazy val COLON = Syntax.char(':')
-    lazy val COMMA = Syntax.char(',')
-    lazy val QUOTE = Syntax.char('\"')
-    lazy val WS    = Syntax.charIn(' ', '\t', '\r', '\n', ',')
-    lazy val WSS   = WS.*.asPrinted((), Chunk(' '))
-    lazy val LF    = Syntax.char('\n', ())
+    lazy val SPACE: Syntax[String, Char, Char, Unit, Unit] = Syntax.char(' ')
+    lazy val COLON: Syntax[String, Char, Char, Unit, Unit] = Syntax.char(':')
+    lazy val COMMA: Syntax[String, Char, Char, Unit, Unit] = Syntax.char(',')
+    lazy val QUOTE: Syntax[String, Char, Char, Unit, Unit] = Syntax.char('\"')
+    lazy val WS: Syntax[String, Char, Char, Char, Char]    = Syntax.charIn(' ', '\t', '\r', '\n', ',')
+    lazy val WSS: Syntax[String, Char, Char, Unit, Unit]   = WS.*.asPrinted((), Chunk(' '))
+    lazy val LF: Syntax[Unit, Char, Char, Unit, Unit]      = Syntax.char('\n', ())
     // lazy val comment = Syntax.char(';') ~> Syntax.anyChar.repeatUntil(LF.unit).unit
 
-    lazy val symbolHead     = Syntax.letter | Syntax.charIn('.', '/', '_', '#')
-    lazy val symbolRest     = symbolHead | Syntax.digit
-    lazy val name           = symbolHead ~ symbolRest.repeat.? ~ (COLON ~> symbolRest.atLeast(1)).?
-    lazy val nsSymbol       = name ~ Syntax.char('/') ~ name
-    lazy val symb           = name | nsSymbol
-    lazy val keywordSimple  = COLON ~ symb
-    lazy val keywordMacro   = COLON ~ keywordSimple
-    lazy val combinedSymbol = symb | keywordSimple | keywordMacro
+    lazy val symbolHead: Syntax[String, Char, Char, Char, Char] = Syntax.letter | Syntax.charIn('.', '/', '_', '#')
+    lazy val symbolRest: Syntax[String, Char, Char, Char, Char] = symbolHead | Syntax.digit
+    lazy val name: Syntax[
+      String,
+      Char,
+      Char,
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]]),
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]])
+    ] = symbolHead ~ symbolRest.repeat.? ~ (COLON ~> symbolRest.atLeast(1)).?
+    lazy val nsSymbol: Syntax[
+      String,
+      Char,
+      Char,
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]], (Char, Option[Chunk[Char]], Option[Chunk[Char]])),
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]], (Char, Option[Chunk[Char]], Option[Chunk[Char]]))
+    ] = name ~ Syntax.char('/') ~ name
+    lazy val symb: Syntax[
+      String,
+      Char,
+      Char,
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]])
+        with (Char, Option[Chunk[Char]], Option[Chunk[Char]], (Char, Option[Chunk[Char]], Option[Chunk[Char]])),
+      Product with Serializable
+    ] = name | nsSymbol
+    lazy val keywordSimple: Syntax[
+      String,
+      Char,
+      Char,
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]])
+        with (Char, Option[Chunk[Char]], Option[Chunk[Char]], (Char, Option[Chunk[Char]], Option[Chunk[Char]])),
+      Product with Serializable
+    ] = COLON ~ symb
+    lazy val keywordMacro: Syntax[
+      String,
+      Char,
+      Char,
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]])
+        with (Char, Option[Chunk[Char]], Option[Chunk[Char]], (Char, Option[Chunk[Char]], Option[Chunk[Char]])),
+      Product with Serializable
+    ] = COLON ~ keywordSimple
+    lazy val combinedSymbol: Syntax[
+      String,
+      Char,
+      Char,
+      (Char, Option[Chunk[Char]], Option[Chunk[Char]])
+        with (Char, Option[Chunk[Char]], Option[Chunk[Char]], (Char, Option[Chunk[Char]], Option[Chunk[Char]])),
+      Product with Serializable
+    ] = symb | keywordSimple | keywordMacro
 
     lazy val symbol: SExprSyntax[SExpr.Symbol, SExpr.Symbol] = combinedSymbol.string
       .transform(SExpr.Symbol.apply, (s: SExpr.Symbol) => s.value)

@@ -6,14 +6,13 @@ import zio.morphir.testing.ZioBaseSpec
 import zio.test.Assertion._
 import zio.test._
 
-import java.time._
+import java.time.{LocalTime, _}
 import java.util.UUID
-import java.time.LocalTime
-import scala.collection.{SortedMap, immutable}
 import scala.collection.immutable.*
+import scala.collection.{SortedMap, immutable}
 
 object DecoderSpec extends ZioBaseSpec {
-  def wrap(s: String) = s""""$s""""
+  def wrap(s: String): String = s""""$s""""
 
   def spec = suite("Decoder")(
     suite("fromSExpr")(

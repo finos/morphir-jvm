@@ -2,7 +2,7 @@ package zio.morphir.ir.module
 import zio.morphir.ir.Path
 
 final case class QualifiedModuleName(packageName: Path, module: Path) {
-  lazy val toPath           = packageName / module
+  lazy val toPath: Path     = packageName / module
   def toTuple: (Path, Path) = (packageName, module)
 }
 

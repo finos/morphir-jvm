@@ -48,7 +48,7 @@ object FQName {
   def toString(fqName: FQName): String = fqName.toString
 
   /** Parse a string into a FQName using splitter as the separator between package, module, and local names */
-  def fromString(fqNameString: String, splitter: String)(implicit options: FQNamingOptions): FQName = {
+  def fromString(fqNameString: String, splitter: String)(implicit options: FQNamingOptions): FQName =
     fqNameString.split(splitter) match {
       case Array(packageNameString, moduleNameString, localNameString) =>
         fqn(packageNameString, moduleNameString, localNameString)
@@ -58,7 +58,6 @@ object FQName {
         fqn(localNameString)
       case _ => throw ParserError(s"Unable to parse: [$fqNameString] into a valid FQName")
     }
-  }
 
   def fromString(fqNameString: String)(implicit options: FQNamingOptions): FQName =
     fromString(fqNameString, options.defaultSeparator)

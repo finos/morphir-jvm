@@ -1,13 +1,12 @@
 package zio.morphir.ir.value
 
 import zio.Chunk
-import zio.morphir.ir.Literal
-import zio.morphir.ir.Name
-import zio.morphir.ir.types.Type
+import zio.morphir.ir.Type.{Type, UType}
 import zio.morphir.ir.value.Value.Lambda
+import zio.morphir.ir.{InferredTypeOf, Literal, Name}
+import zio.prelude._
+
 import Pattern.{AsPattern, WildcardPattern}
-import zio.morphir.ir.types.UType
-import zio.morphir.ir.InferredTypeOf
 
 final case class Definition[+TA, +VA](
     inputTypes: Chunk[(Name, VA, Type[TA])],
@@ -35,14 +34,13 @@ final case class Definition[+TA, +VA](
       )
   }
 
-  def toCase: Case[TA, VA, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
+  def toCase: Case[TA, VA, Type, Value[TA, VA]] = Case(self.inputTypes, self.outputType, self.body)
 
-  def toSpecification: Specification[TA] = {
+  def toSpecification: Specification[TA] =
     Specification(
       inputTypes.map { case (n, _, t) => (n, t) },
       output = self.outputType
     )
-  }
 
 }
 
@@ -56,7 +54,7 @@ object Definition {
 
   def fromLiteral[VA, T](attributes: VA, literal: Literal[T])(implicit
       inferredType: InferredTypeOf[Literal[T]]
-  ): Definition[Unit, VA] =
+  ): Definition[Any, VA] =
     Definition(
       inputTypes = Chunk.empty,
       outputType = literal.inferredType,
@@ -90,29 +88,29 @@ object Definition {
       outputType = value.attributes,
       body = value
     )
-  final case class Case[+TA, +VA, +Z](
-      inputTypes: Chunk[(Name, VA, Type[TA])],
-      outputType: Type[TA],
+  final case class Case[+TA, +VA, +TypeRepr[+_]: Covariant, +Z](
+      inputTypes: Chunk[(Name, VA, TypeRepr[TA])],
+      outputType: TypeRepr[TA],
       body: Z
   ) { self =>
-    def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Case[TB, VB, Z] =
+    def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Case[TB, VB, TypeRepr, Z] =
       Case(
-        inputTypes.map { case (n, va, t) => (n, g(va), t.mapAttributes(f)) },
-        outputType.mapAttributes(f),
+        inputTypes.map { case (n, va, t) => (n, g(va), t.map(f)) },
+        outputType.map(f),
         body
       )
 
-    def map[Z2](f: Z => Z2): Case[TA, VA, Z2] =
+    def map[Z2](f: Z => Z2): Case[TA, VA, TypeRepr, Z2] =
       Case(inputTypes, outputType, f(body))
   }
 
   object Case {
-    implicit class CaseExtension[+TA, +VA](val self: Case[TA, VA, Value[TA, VA]]) extends AnyVal {
+    implicit class CaseExtension[+TA, +VA](private val self: Case[TA, VA, Type, Value[TA, VA]]) extends AnyVal {
       def toDefinition: Definition[TA, VA] = Definition(self.inputTypes, self.outputType, self.body)
     }
   }
 
-  type Raw = Definition[scala.Unit, scala.Unit]
+  type Raw = Definition[Any, Any]
   object Raw {
     def apply(inputTypes: (String, UType)*)(outputType: UType)(body: RawValue): Raw = {
       val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), (), t) })
@@ -120,7 +118,7 @@ object Definition {
     }
   }
 
-  type Typed = Definition[scala.Unit, UType]
+  type Typed = Definition[Any, UType]
   object Typed {
     def apply(inputTypes: (String, UType)*)(outputType: UType)(body: TypedValue): Typed = {
       val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), t, t) })

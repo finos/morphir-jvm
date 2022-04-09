@@ -7,10 +7,10 @@ package zio.morphir.json
 // import zio.morphir.ir.Type.Type.variable
 // import zio.morphir.json.MorphirJsonDecodingSupportV1._
 // import zio.test._
-import zio.test.DefaultRunnableSpec
+import zio.test.{DefaultRunnableSpec, ZSpec}
 
 object DecodingSpec extends DefaultRunnableSpec {
-  def spec = suite("decoding")(
+  def spec: ZSpec[Environment, Failure] = suite("decoding")(
     suite("Unit")(
       // test("will decode a Unit") {
       //   val actual   = """[]"""

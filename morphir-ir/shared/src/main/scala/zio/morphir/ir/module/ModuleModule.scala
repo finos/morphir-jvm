@@ -1,6 +1,5 @@
 package zio.morphir.ir.module
-import zio.morphir.ir.Name
-import zio.morphir.ir.Value
+import zio.morphir.ir.{Name, Value}
 
 trait ModuleModule {
 

@@ -20,4 +20,15 @@ package object ir {
   val UPackageSpecification: PackageModule.Specification.type = PackageModule.Specification
 
   type ??? = Nothing
+
+  final implicit class StringToFieldOps(private val self: String) extends AnyVal {
+    import zio.morphir.ir.types.nonrecursive
+    import zio.morphir.ir.types.recursive
+
+    def as[A](tpe: recursive.Type[A]): recursive.Field[recursive.Type[A]] =
+      recursive.Field(Name.fromString(self), tpe)
+
+    def as[A](tpe: nonrecursive.Type[A]): nonrecursive.Field[nonrecursive.Type[A]] =
+      nonrecursive.Field(Name.fromString(self), tpe)
+  }
 }
