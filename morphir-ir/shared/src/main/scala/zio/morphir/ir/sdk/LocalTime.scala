@@ -30,5 +30,5 @@ object LocalTime {
 
   lazy val localTimeType: UType = reference(toFQName(moduleName, "localTime"))
   def localTimeType[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "localTime"))
+    reference(attributes, toFQName(moduleName, "localTime"))
 }

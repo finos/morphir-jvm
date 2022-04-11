@@ -57,5 +57,5 @@ object Set {
     reference(toFQName(moduleName, "set"), itemType)
 
   def setType[A](attributes: A)(itemType: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "set"), itemType)
+    reference(attributes, toFQName(moduleName, "set"), itemType)
 }

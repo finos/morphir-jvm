@@ -7,6 +7,15 @@ trait UnattributedTypeExprConstructors { self =>
 
   import TypeCase._
   import Type.UType
+
+  final def curriedFunction(paramTypes: List[UType], returnType: UType): UType = {
+    def curry(args: List[UType]): UType = args match {
+      case Nil                    => returnType
+      case firstArg :: restOfArgs => function(firstArg, curry(restOfArgs))
+    }
+    curry(paramTypes)
+  }
+
   final def extensibleRecord(name: Name, fields: Chunk[Field[UType]]): UType =
     Type(ExtensibleRecordCase((), name, fields))
 
@@ -27,11 +36,8 @@ trait UnattributedTypeExprConstructors { self =>
   final def extensibleRecordWithFields(name: String, fields: Field[UType]*): UType =
     Type(ExtensibleRecordCase((), Name.fromString(name), Chunk.fromIterable(fields)))
 
-  final def function(paramTypes: UType*)(returnType: UType): UType =
-    Type(FunctionCase((), Chunk.fromIterable(paramTypes), returnType))
-
-  final def function(paramTypes: Chunk[UType], returnType: UType): UType =
-    Type(FunctionCase((), paramTypes, returnType))
+  final def function(argumentType: UType, returnType: UType): UType =
+    Type(FunctionCase((), argumentType, returnType))
 
   final def record(fields: Chunk[Field[UType]]): UType =
     Type(RecordCase((), fields))

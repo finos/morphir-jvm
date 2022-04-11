@@ -1027,7 +1027,7 @@ object Value {
   object Tuple {
     def apply(elements: (RawValue, UType)*): Typed =
       Tuple(
-        Type.Tuple.Raw(elements.map(_._2): _*),
+        Type.tuple(Chunk.fromIterable(elements.map(_._2))),
         Chunk(elements: _*).map { case (v, t) => v :@ t }
       )
 
@@ -1042,12 +1042,16 @@ object Value {
     type Typed = Tuple[Any, UType]
     object Typed {
 
-      def apply(elements: Chunk[TypedValue]): Typed = Tuple(Type.Tuple.Raw(elements.map(_.attributes): _*), elements)
-      def apply(elements: TypedValue*): Typed =
-        Tuple(
-          Type.Tuple.Raw(elements.map(_.attributes): _*),
-          Chunk(elements: _*)
-        )
+      def apply(elements: Chunk[TypedValue]): Typed = {
+        val tupleTypes: Chunk[UType] = elements.map(_.attributes)
+        val tupleType                = Type.tuple(tupleTypes)
+        Tuple(attributes = tupleType, elements = elements)
+      }
+      def apply(elements: TypedValue*): Typed = {
+        val tupleTypes: Chunk[UType] = Chunk.fromIterable(elements.map(_.attributes))
+        val tupleType                = Type.tuple(tupleTypes)
+        Tuple(tupleType, Chunk(elements: _*))
+      }
     }
   }
 

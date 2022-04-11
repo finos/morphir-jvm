@@ -359,19 +359,19 @@ object Key {
     reference(toFQName(moduleName, "Key0"))
 
   def key0Type[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Key0"))
+    reference(attributes, toFQName(moduleName, "Key0"))
 
   def key2Type(itemType1: UType, itemType2: UType): UType =
     reference(toFQName(moduleName, "Key2"), itemType1, itemType2)
 
   def key2Type[A](attributes: A)(itemType1: Type[A], itemType2: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Key2"), itemType1, itemType2)
+    reference(attributes, toFQName(moduleName, "Key2"), itemType1, itemType2)
 
   def key3Type(itemType1: UType, itemType2: UType, itemType3: UType): UType =
     reference(toFQName(moduleName, "Key3"), itemType1, itemType2, itemType3)
 
   def key3Type[A](attributes: A)(itemType1: Type[A], itemType2: Type[A], itemType3: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Key3"), itemType1, itemType2, itemType3)
+    reference(attributes, toFQName(moduleName, "Key3"), itemType1, itemType2, itemType3)
 
   def key4Type(itemType1: UType, itemType2: UType, itemType3: UType, itemType4: UType): UType =
     reference(toFQName(moduleName, "Key4"), itemType1, itemType2, itemType3, itemType4)
@@ -379,7 +379,7 @@ object Key {
   def key4Type[A](
       attributes: A
   )(itemType1: Type[A], itemType2: Type[A], itemType3: Type[A], itemType4: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Key4"), itemType1, itemType2, itemType3, itemType4)
+    reference(attributes, toFQName(moduleName, "Key4"), itemType1, itemType2, itemType3, itemType4)
 
   def key5Type(itemType1: UType, itemType2: UType, itemType3: UType, itemType4: UType, itemType5: UType): UType =
     reference(toFQName(moduleName, "Key5"), itemType1, itemType2, itemType3, itemType4, itemType5)
@@ -387,7 +387,7 @@ object Key {
   def key5Type[A](
       attributes: A
   )(itemType1: Type[A], itemType2: Type[A], itemType3: Type[A], itemType4: Type[A], itemType5: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Key5"), itemType1, itemType2, itemType3, itemType4, itemType5)
+    reference(attributes, toFQName(moduleName, "Key5"), itemType1, itemType2, itemType3, itemType4, itemType5)
 
   def key6Type(
       itemType1: UType,
@@ -407,7 +407,8 @@ object Key {
       itemType5: Type[A],
       itemType6: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key6"),
       itemType1,
       itemType2,
@@ -437,7 +438,8 @@ object Key {
       itemType6: Type[A],
       itemType7: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key7"),
       itemType1,
       itemType2,
@@ -480,7 +482,8 @@ object Key {
       itemType7: Type[A],
       itemType8: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key8"),
       itemType1,
       itemType2,
@@ -527,7 +530,8 @@ object Key {
       itemType8: Type[A],
       itemType9: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key9"),
       itemType1,
       itemType2,
@@ -578,7 +582,8 @@ object Key {
       itemType9: Type[A],
       itemType10: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key10"),
       itemType1,
       itemType2,
@@ -633,7 +638,8 @@ object Key {
       itemType10: Type[A],
       itemType11: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key11"),
       itemType1,
       itemType2,
@@ -692,7 +698,8 @@ object Key {
       itemType11: Type[A],
       itemType12: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key12"),
       itemType1,
       itemType2,
@@ -755,7 +762,8 @@ object Key {
       itemType12: Type[A],
       itemType13: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key13"),
       itemType1,
       itemType2,
@@ -822,7 +830,8 @@ object Key {
       itemType13: Type[A],
       itemType14: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key14"),
       itemType1,
       itemType2,
@@ -893,7 +902,8 @@ object Key {
       itemType14: Type[A],
       itemType15: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key15"),
       itemType1,
       itemType2,
@@ -968,7 +978,8 @@ object Key {
       itemType15: Type[A],
       itemType16: Type[A]
   ): Type[A] =
-    reference(attributes)(
+    reference(
+      attributes,
       toFQName(moduleName, "Key16"),
       itemType1,
       itemType2,

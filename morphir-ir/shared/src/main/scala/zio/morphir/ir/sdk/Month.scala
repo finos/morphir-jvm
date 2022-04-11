@@ -40,5 +40,5 @@ object Month {
   )
 
   lazy val dateType: UType                = reference(toFQName(moduleName, "Month"))
-  def dateType[A](attributes: A): Type[A] = reference(attributes)(toFQName(moduleName, "Month"))
+  def dateType[A](attributes: A): Type[A] = reference(attributes, toFQName(moduleName, "Month"))
 }

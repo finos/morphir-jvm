@@ -65,8 +65,8 @@ object Maybe {
   def maybeType(itemType: UType): UType =
     reference(toFQName(moduleName, "Maybe"), itemType)
 
-  def maybeType[A](attributes: A)(itemType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Maybe"), itemType)
+  def maybeType[A](attributes: A, itemType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
+    reference(attributes, toFQName(moduleName, "Maybe"), itemType)
 
   def just(value: RawValue): RawValue =
     Apply.Raw(Constructor.Raw(toFQName(moduleName, "Just")), value)

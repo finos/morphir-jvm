@@ -6,4 +6,7 @@ package object module {
 
   @nowarn
   final case class ModulePath(toPath: Path) extends AnyVal
+  object ModulePath {
+    def fromString(path: String): ModulePath = ModulePath(Path.fromString(path))
+  }
 }

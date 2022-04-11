@@ -58,10 +58,10 @@ object Decimal {
   lazy val decimalType: UType =
     reference(toFQName(moduleName, "Decimal"))
   def decimalType[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Decimal"))
+    reference(attributes, toFQName(moduleName, "Decimal"))
 
   lazy val roundingModeType: UType =
     reference(toFQName(moduleName, "RoundingMode"))
   def roundingModeType[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "RoundingMode"))
+    reference(attributes, toFQName(moduleName, "RoundingMode"))
 }

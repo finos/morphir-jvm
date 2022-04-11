@@ -107,7 +107,7 @@ object Dict {
     reference(toFQName(moduleName, "dict"), keyType, valueType)
 
   def dictType[A](attributes: A)(keyType: Type[A], valueType: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "dict"), keyType, valueType)
+    reference(attributes, toFQName(moduleName, "dict"), keyType, valueType)
 
   def fromListValue[TA, VA](attributes: VA)(list: Value[TA, VA]): Value[TA, VA] =
     Apply(

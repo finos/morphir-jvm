@@ -35,5 +35,5 @@ object Rule {
     reference(toFQName(moduleName, "Rule"), itemType1, itemType2)
 
   def ruleType[A](attributes: A)(itemType1: Type[A], itemType2: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Rule"), itemType1, itemType2)
+    reference(attributes, toFQName(moduleName, "Rule"), itemType1, itemType2)
 }

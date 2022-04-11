@@ -78,7 +78,7 @@ object Result {
     reference(toFQName(moduleName, "result"), errorType, itemType)
 
   def resultType[A](attributes: A)(errorType: Type[A], itemType: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "result"), errorType, itemType)
+    reference(attributes, toFQName(moduleName, "result"), errorType, itemType)
 
   def ok[TA, VA](va: VA)(value: Value[TA, VA]): Value[TA, VA] =
     Apply(va, Constructor(va, toFQName(moduleName, "Ok")), (value))

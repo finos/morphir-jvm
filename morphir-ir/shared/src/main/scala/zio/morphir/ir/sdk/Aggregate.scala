@@ -59,5 +59,5 @@ object Aggregate {
     reference(toFQName(moduleName, "Aggregation"), aType, keyType)
 
   def aggregationType[A](attributes: A)(aType: Type[A], keyType: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Aggregation"), aType, keyType)
+    reference(attributes, toFQName(moduleName, "Aggregation"), aType, keyType)
 }

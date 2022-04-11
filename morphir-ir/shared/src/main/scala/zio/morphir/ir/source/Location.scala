@@ -1,6 +1,12 @@
 package zio.morphir.ir.source
 import zio.prelude._
-final case class Location(row: Int, column: Int)
+final case class Location(row: Int, column: Int) {
+  def offsetColumnBy(n: Int): Location =
+    copy(column = column + n)
+
+  def offsetRowBy(n: Int): Location =
+    copy(row = row + n)
+}
 object Location {
   val default: Location = Location(0, 0)
   val home: Location    = Location(0, 0)

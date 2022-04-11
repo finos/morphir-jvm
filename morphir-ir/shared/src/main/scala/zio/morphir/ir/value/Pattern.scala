@@ -7,22 +7,24 @@ sealed trait Pattern[+A] { self =>
   import Pattern._
 
   def attributes: A
-  final def mapAttributes[B](f: A => B): Pattern[B] = self match {
-    case AsPattern(pattern, name, attributes) => AsPattern(pattern.mapAttributes(f), name, f(attributes))
+  final def map[B](f: A => B): Pattern[B] = self match {
+    case AsPattern(pattern, name, attributes) => AsPattern(pattern.map(f), name, f(attributes))
     case ConstructorPattern(constructorName, argumentPatterns, attributes) =>
-      ConstructorPattern(constructorName, argumentPatterns.map(_.mapAttributes(f)), f(attributes))
+      ConstructorPattern(constructorName, argumentPatterns.map(_.map(f)), f(attributes))
     case EmptyListPattern(attributes) => EmptyListPattern(f(attributes))
     case HeadTailPattern(headPattern, tailPattern, attributes) =>
-      HeadTailPattern(headPattern.mapAttributes(f), tailPattern.mapAttributes(f), f(attributes))
+      HeadTailPattern(headPattern.map(f), tailPattern.map(f), f(attributes))
     case LiteralPattern(literal, attributes) => LiteralPattern(literal, f(attributes))
     case TuplePattern(elementPatterns, attributes) =>
-      TuplePattern(elementPatterns.map(_.mapAttributes(f)), f(attributes))
+      TuplePattern(elementPatterns.map(_.map(f)), f(attributes))
     case UnitPattern(attributes)     => UnitPattern(f(attributes))
     case WildcardPattern(attributes) => WildcardPattern(f(attributes))
   }
 
+  @inline final def mapAttributes[B](f: A => B): Pattern[B] = map(f)
+
   def withAttributes[B >: A](attributes: => B): Pattern[B] =
-    self.mapAttributes(_ => attributes)
+    self.map(_ => attributes)
 }
 
 object Pattern {

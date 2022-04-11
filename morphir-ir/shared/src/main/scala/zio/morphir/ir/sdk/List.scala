@@ -104,7 +104,7 @@ object List {
     typeRef(toFQName(moduleName, "List"), Chunk(itemType))
 
   def listType[A](attributes: A)(itemType: Type[A])(implicit ev: NeedsAttributes[A]): Type[A] =
-    typeRef(attributes)(toFQName(moduleName, "List"), itemType)
+    typeRef(attributes, toFQName(moduleName, "List"), itemType)
 
   def construct[VA](attributes: VA): Value[Nothing, VA] =
     valRef(toFQName(moduleName, "cons"), attributes)

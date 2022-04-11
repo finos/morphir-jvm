@@ -114,9 +114,9 @@ trait TypeModuleSyntax {
   )(implicit ev: NeedsAttributes[Attributes]): Type[Attributes] =
     ExtensibleRecord(attributes, Name.fromString(name), Chunk.fromIterable(fields))
 
-  final def reference[Attributes](
-      attributes: Attributes
-  )(fqName: FQName, typeParams: Type[Attributes]*)(implicit ev: NeedsAttributes[Attributes]): Type[Attributes] =
+  final def reference[Attributes](attributes: Attributes, fqName: FQName, typeParams: Type[Attributes]*)(implicit
+      ev: NeedsAttributes[Attributes]
+  ): Type[Attributes] =
     Reference(attributes, fqName, Chunk.fromIterable(typeParams))
 
   final def reference[Attributes](

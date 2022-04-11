@@ -32,5 +32,5 @@ object LocalDate {
 
   lazy val localDateType: UType = reference(toFQName(moduleName, "LocalDate"))
   def localDateType[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "LocalDate"))
+    reference(attributes, toFQName(moduleName, "LocalDate"))
 }

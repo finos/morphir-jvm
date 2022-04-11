@@ -35,5 +35,5 @@ object Char {
 
   lazy val charType: UType = reference(toFQName(moduleName, "Char"))
   def charType[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Char"))
+    reference(attributes, toFQName(moduleName, "Char"))
 }

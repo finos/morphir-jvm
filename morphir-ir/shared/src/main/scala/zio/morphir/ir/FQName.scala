@@ -4,6 +4,12 @@ final case class FQName(packagePath: PackageName, modulePath: ModulePath, localN
   def getPackagePath: Path = packagePath.toPath
   def getModulePath: Path  = modulePath.toPath
 
+  def toReferenceName: String = Seq(
+    Path.toString(Name.toTitleCase, ".", packagePath.toPath),
+    Path.toString(Name.toTitleCase, ".", modulePath.toPath),
+    localName.toTitleCase
+  ).mkString(".")
+
   override def toString: String = Array(
     Path.toString(Name.toTitleCase, ".", packagePath.toPath),
     Path.toString(Name.toTitleCase, ".", modulePath.toPath),

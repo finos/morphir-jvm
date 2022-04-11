@@ -35,18 +35,18 @@ object Int {
 
   lazy val int8Type: UType = reference(toFQName(moduleName, "Int8"))
   def int8Type[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Int8"))
+    reference(attributes, toFQName(moduleName, "Int8"))
 
   lazy val int16Type: UType = reference(toFQName(moduleName, "Int16"))
   def int16Type[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Int16"))
+    reference(attributes, toFQName(moduleName, "Int16"))
 
   lazy val int32Type: UType = reference(toFQName(moduleName, "Int32"))
   def int32Type[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Int32"))
+    reference(attributes, toFQName(moduleName, "Int32"))
 
   lazy val int64Type: UType = reference(toFQName(moduleName, "Int64"))
   def int64Type[A](attributes: A): Type[A] =
-    reference(attributes)(toFQName(moduleName, "Int64"))
+    reference(attributes, toFQName(moduleName, "Int64"))
 
 }

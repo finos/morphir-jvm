@@ -44,9 +44,9 @@ object Number {
   )
 
   lazy val numberType: UType                = reference(toFQName(moduleName, "Number"))
-  def numberType[A](attributes: A): Type[A] = reference(attributes)(toFQName(moduleName, "Number"))
+  def numberType[A](attributes: A): Type[A] = reference(attributes, toFQName(moduleName, "Number"))
 
   lazy val divisionByZeroType: UType                = reference(toFQName(moduleName, "DivisionByZero"))
-  def divisionByZeroType[A](attributes: A): Type[A] = reference(attributes)(toFQName(moduleName, "DivisionByZero"))
+  def divisionByZeroType[A](attributes: A): Type[A] = reference(attributes, toFQName(moduleName, "DivisionByZero"))
 
 }

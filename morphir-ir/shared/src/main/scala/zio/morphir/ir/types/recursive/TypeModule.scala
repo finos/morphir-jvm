@@ -19,7 +19,11 @@ trait TypeModule extends AllTypeSyntax {
   final type Specification[+A] = zio.morphir.ir.types.recursive.Specification[A]
   val Specification: zio.morphir.ir.types.recursive.Specification.type = zio.morphir.ir.types.recursive.Specification
 
+  final type UConstructors = zio.morphir.ir.types.recursive.Constructors[Any]
+  val UConstructors: zio.morphir.ir.types.recursive.Constructors.type = zio.morphir.ir.types.recursive.Constructors
+
   final type UDefinition = zio.morphir.ir.types.recursive.Definition[Any]
+  val UDefinition: zio.morphir.ir.types.recursive.Definition.type = zio.morphir.ir.types.recursive.Definition
 
   final type UType = zio.morphir.ir.types.recursive.UType
   val UType: zio.morphir.ir.types.recursive.UType.type = zio.morphir.ir.types.recursive.UType

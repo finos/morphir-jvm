@@ -11,7 +11,7 @@ sealed trait TypeCase[+A, +Self] { self =>
   final def map[Self2](f: Self => Self2): TypeCase[A, Self2] =
     self match {
       case c @ ExtensibleRecordCase(_, _, _) => ExtensibleRecordCase(c.attributes, c.name, c.fields.map(_.map(f)))
-      case c @ FunctionCase(_, _, _)         => FunctionCase(c.attributes, c.paramTypes.map(f), f(c.returnType))
+      case c @ FunctionCase(_, _, _)         => FunctionCase(c.attributes, f(c.argumentType), f(c.returnType))
       case c @ RecordCase(_, _)              => RecordCase(c.attributes, c.fields.map(_.map(f)))
       case c @ ReferenceCase(_, _, _)        => ReferenceCase(c.attributes, c.typeName, c.typeParams.map(f))
       case c @ TupleCase(_, _)               => TupleCase(c.attributes, c.elements.map(f))
@@ -24,7 +24,7 @@ sealed trait TypeCase[+A, +Self] { self =>
 object TypeCase {
   final case class ExtensibleRecordCase[+A, +Self](attributes: A, name: Name, fields: Chunk[Field[Self]])
       extends TypeCase[A, Self]
-  final case class FunctionCase[+A, +Self](attributes: A, paramTypes: Chunk[Self], returnType: Self)
+  final case class FunctionCase[+A, +Self](attributes: A, argumentType: Self, returnType: Self)
       extends TypeCase[A, Self]
   final case class RecordCase[+A, +Self](attributes: A, fields: Chunk[Field[Self]]) extends TypeCase[A, Self]
   final case class ReferenceCase[+A, +Self](attributes: A, typeName: FQName, typeParams: Chunk[Self])
@@ -43,10 +43,10 @@ object TypeCase {
         fa match {
           case ExtensibleRecordCase(attributes, name, fields) =>
             fields.forEach(_.forEach(f)).map(fields => ExtensibleRecordCase(attributes, name, fields))
-          case FunctionCase(attributes, paramTypes, returnType) =>
-            paramTypes
-              .forEach(f)
-              .zipWith(f(returnType))((paramTypes, returnType) => FunctionCase(attributes, paramTypes, returnType))
+          case FunctionCase(attributes, argumentType, returnType) =>
+            f(argumentType).zipWith(f(returnType))((argType, returnType) =>
+              FunctionCase(attributes, argType, returnType)
+            )
           case RecordCase(attributes, fields) =>
             fields.forEach(_.forEach(f)).map(fields => RecordCase(attributes, fields))
           case ReferenceCase(attributes, typeName, typeParams) =>

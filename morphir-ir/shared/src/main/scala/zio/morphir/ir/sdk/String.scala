@@ -68,7 +68,7 @@ object String {
 
   lazy val stringType: UType = reference(toFQName(moduleName, "String"))
   def stringType[A](attributes: A)(implicit ev: NeedsAttributes[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "String"))
+    reference(attributes, toFQName(moduleName, "String"))
 
   // todo nativeFunctions
 }

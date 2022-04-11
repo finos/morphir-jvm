@@ -53,7 +53,7 @@ object ResultList {
     reference(toFQName(moduleName, "ResultList"), errorType, itemType)
 
   def resultListType[A](attributes: A)(errorType: Type[A], itemType: Type[A]): Type[A] =
-    reference(attributes)(toFQName(moduleName, "ResultList"), errorType, itemType)
+    reference(attributes, toFQName(moduleName, "ResultList"), errorType, itemType)
 
   // todo nativefunctions
 }
