@@ -18,7 +18,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
   def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
   val stringType: UType                = sdk.String.stringType
 
-  def spec: ZSpec[Environment, Failure] = suite("Value Module")(
+  def spec: ZSpec[Environment, Any] = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
         val ff  = fieldFunction("age")

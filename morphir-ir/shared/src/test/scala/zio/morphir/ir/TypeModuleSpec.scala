@@ -7,7 +7,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
 object TypeModuleSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("Type")(
+  def spec: ZSpec[Environment, Any] = suite("Type")(
     suite("Operations")(
       test("Can be documented") {
         val actual = variable("a") ?? "Some type variable"

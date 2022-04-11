@@ -3,7 +3,7 @@ package zio.morphir.ir.value.recursive
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test.ZSpec
 object RecursiveValueSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("Value Spec")(
+  def spec: ZSpec[Environment, Any] = suite("Value Spec")(
     suite("Apply")(
       suite("Attributed")(),
       suite("Unattributed")()

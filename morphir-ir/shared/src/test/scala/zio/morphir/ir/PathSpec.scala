@@ -5,7 +5,7 @@ import zio.morphir.testing.MorphirBaseSpec
 import zio.test.*
 
 object PathSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("Path")(
+  def spec: ZSpec[Environment, Any] = suite("Path")(
     suite("Creating a Path from a String")(
       test("It can be constructed from a simple string") {
         assertTrue(Path.fromString("Person") == Path(Chunk(Name.fromString("person"))))

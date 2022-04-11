@@ -5,7 +5,7 @@ import zio.prelude.Debug
 import zio.test._
 
 object ZEnvironmentSubsetSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("ZEnvironmentSubset")(
+  def spec: ZSpec[Environment, Any] = suite("ZEnvironmentSubset")(
     test("It should be possible to add an empty environment") {
       val env = ZEnvironmentSubset.empty
       assertTrue(env.size == 0)

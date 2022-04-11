@@ -10,7 +10,7 @@ import zio.test.{Gen, Sized, _}
 import java.time._
 
 object RoundTripSpec extends ZioBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("RoundTrip")(
+  def spec: ZSpec[Environment, Any] = suite("RoundTrip")(
     suite("primitives")(
       test("bigInt") {
         check(genBigInteger)(assertRoundtrips[java.math.BigInteger])

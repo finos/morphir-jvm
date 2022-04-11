@@ -170,7 +170,7 @@ object formula {
 
 object FormulaExample extends zio.ZIOAppDefault {
   import formula.Formula._
-  def run: ZIO[Console, Throwable, Any] = {
+  def run: ZIO[Any, Throwable, Any] = {
     val theFormula =
       let("x", int(5))(
         let("y", int(10))(

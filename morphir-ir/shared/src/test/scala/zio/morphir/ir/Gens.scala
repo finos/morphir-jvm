@@ -1,10 +1,9 @@
 package zio.morphir.ir
 
-import zio.Random
 import zio.test._
 
 object Gens {
-  val greekLetterNames: Gen[Random, String] = Gen.weighted(
+  val greekLetterNames: Gen[Any, String] = Gen.weighted(
     Seq(
       "alpha",
       "beta",
@@ -33,7 +32,7 @@ object Gens {
     ).map(Gen.const(_) -> 12.0): _*
   )
 
-  val monthNames: Gen[Random, String] = Gen.weighted(
+  val monthNames: Gen[Any, String] = Gen.weighted(
     Seq(
       "January",
       "February",
@@ -50,7 +49,7 @@ object Gens {
     ).map(Gen.const(_) -> 12.0): _*
   )
 
-  val words: Gen[Random, String] = {
+  val words: Gen[Any, String] = {
     val word = {
       val choices =
         Seq(

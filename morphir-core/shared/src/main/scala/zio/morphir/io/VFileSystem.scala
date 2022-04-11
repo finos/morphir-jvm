@@ -21,10 +21,12 @@ final case class LiveVFileSystem(fileSeparator: FileSeparator, cwd: IO[IOExcepti
 object LiveVFileSystem {
   val default: LiveVFileSystem = {
     implicit val fileSeparator = FileSeparator(java.io.File.separator)
-    val cwd = IO {
-      val cwd = new java.io.File(".").getCanonicalPath
-      VFilePath.fromString(cwd)
-    }.refineOrDie { case e: java.io.IOException => e }
+    val cwd = IO
+      .attempt {
+        val cwd = new java.io.File(".").getCanonicalPath
+        VFilePath.fromString(cwd)
+      }
+      .refineOrDie { case e: java.io.IOException => e }
 
     LiveVFileSystem(fileSeparator, cwd)
   }

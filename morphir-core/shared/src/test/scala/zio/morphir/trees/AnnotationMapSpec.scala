@@ -1,9 +1,9 @@
 package zio.morphir.trees
 
-import zio.test.*
+import zio.test._
 
-object AnnotationMapSpec extends DefaultRunnableSpec {
-  def spec: ZSpec[Environment, Failure] = suite("AnnotationMap")(
+object AnnotationMapSpec extends ZIOSpecDefault {
+  def spec: ZSpec[Environment, Any] = suite("AnnotationMap")(
     test("Should support combining annotations") {
       val sut = AnnotationMap.empty.annotate(total, 10).annotate(total, 20).annotate(total, 30)
       assertTrue(sut.get(total) == 60)

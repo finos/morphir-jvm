@@ -4,10 +4,10 @@ import zio.Chunk
 import zio.morphir.sexpr.SExprParser.*
 import zio.morphir.sexpr.SExprParser.grammar.*
 import zio.morphir.sexpr.ast.{SExpr, SymbolKind}
-import zio.test.{DefaultRunnableSpec, _}
+import zio.test.{ZIOSpecDefault, _}
 
-object SExprParserSpec extends DefaultRunnableSpec {
-  def spec: ZSpec[Environment, Failure] = suite("SExpr Parser Spec")(
+object SExprParserSpec extends ZIOSpecDefault {
+  def spec: ZSpec[Environment, Any] = suite("SExpr Parser Spec")(
     test("Bool") {
       assertTrue(
         sexpr.parseString("true") == Right(SExpr.Bool.True),

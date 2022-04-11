@@ -9,7 +9,7 @@ import zio.test.Assertion.equalTo
 import zio.test._
 
 object ValueSpec extends MorphirBaseSpec {
-  def spec: ZSpec[Environment, Failure] = suite("ValueSpec") {
+  def spec: ZSpec[Environment, Any] = suite("ValueSpec") {
     suite("NativeApply")(
       test("foldLeft should work as expected with a native function application") {
         val a   = Value.Variable.Raw(Name("a"))

@@ -28,7 +28,7 @@ object PackageModuleSpec extends MorphirBaseSpec {
 
   val packageSpec: Specification[Any] = Specification(packageSpecModules)
 
-  def spec: ZSpec[Environment, Failure] = suite("Package")(
+  def spec: ZSpec[Environment, Any] = suite("Package")(
     suite("Definitions")(
       test("can convert to Specification") {
         // todo add back when TypeModule.toSpec is implemented

@@ -10,7 +10,7 @@ import TypeCase._
 import Type._
 
 object RecursiveTypeSpec extends MorphirBaseSpec with NamingSyntax {
-  def spec: ZSpec[Environment, Failure] = suite("Type Spec")(
+  def spec: ZSpec[Environment, Any] = suite("Type Spec")(
     suite("Operations")(
       test("Can be documented") {
         val actual = variable("a") ?? "Some type variable"

@@ -1,7 +1,7 @@
 package zio.morphir.io
 
-import zio.test.*
-object VFilePathSpec extends DefaultRunnableSpec {
+import zio.test._
+object VFilePathSpec extends ZIOSpecDefault {
   def spec = suite("VFilePath") {
     implicit val fileSeparator = FileSeparator("/")
     val windowsStyleSeparator  = FileSeparator("\\")
