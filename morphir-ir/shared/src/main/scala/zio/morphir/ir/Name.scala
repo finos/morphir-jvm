@@ -110,4 +110,9 @@ object Name {
 
   @inline def toHumanWords(name: Name): List[String] = name.humanize
 
+  object VariableName {
+    def unapply(name: Name): Option[String] =
+      Some(name.toCamelCase)
+  }
+
 }

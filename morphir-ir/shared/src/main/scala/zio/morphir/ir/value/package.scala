@@ -13,8 +13,8 @@ package object value {
   type UDefinition = Definition[Any, Any]
   val UDefinition: Definition.type = Definition
 
-  type UPattern = Pattern[Any]
-  val UPattern: Pattern.type = Pattern
+  type UPattern = zio.morphir.ir.value.Pattern.UPattern
+  val UPattern: Pattern.type = zio.morphir.ir.value.Pattern.UPattern
 
   type USpecification = Specification[Any]
   val USpecification: Specification.type = Specification

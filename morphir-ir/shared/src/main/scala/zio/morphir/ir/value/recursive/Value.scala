@@ -1,13 +1,14 @@
 package zio.morphir.ir.value.recursive
 
-import zio.ZIO
-import zio.morphir.ir.Type.UType
-import zio.morphir.ir.value.Pattern
-import zio.morphir.ir.{FQName, Literal => Lit, Name}
+import zio.morphir.ir.Type.{Type, UType}
+import zio.morphir.ir.value.{Pattern, PatternConstructors, UPattern}
+import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
 import zio.prelude._
 import zio.prelude.fx.ZPure
+import zio.{Chunk, ZIO}
 
 import scala.annotation.tailrec
+
 final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { self =>
   import ValueCase._
   def attributes: VA = caseValue.attributes
@@ -141,6 +142,21 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
 
   def foldZIO[R, E, Z](f: ValueCase[TA, VA, Z] => ZIO[R, E, Z]): ZIO[R, E, Z] = foldM(f)
 
+  def isData: Boolean = foldLeft[Boolean](true) {
+    case (acc, Value(LiteralCase(_, _)))                => acc && true
+    case (acc, Value(ConstructorCase(_, _)))            => acc && true
+    case (acc, Value(TupleCase(_, elements)))           => acc && elements.forall(_.isData)
+    case (acc, Value(ListCase(_, elements)))            => acc && elements.forall(_.isData)
+    case (acc, Value(RecordCase(_, fields)))            => acc && fields.forall(_._2.isData)
+    case (acc, Value(ApplyCase(_, function, argument))) =>
+      // most Apply nodes will be logic but if it's a Constructor with arguments it is still considered data
+      acc && function.isData && argument.isData
+    case (acc, Value(UnitCase(_))) => acc && true
+    case _                         =>
+      // everything else is considered logic
+      false
+  }
+
   def mapAttributes[TB, VB](f: TA => TB, g: VA => VB): Value[TB, VB] = fold[Value[TB, VB]] {
     case ApplyCase(attributes, function, argument) => Value(ApplyCase(g(attributes), function, argument))
     case ConstructorCase(attributes, name)         => Value(ConstructorCase(g(attributes), name))
@@ -213,9 +229,73 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
   // }
 
   def toRawValue: RawValue = mapAttributes(_ => (), _ => ())
+
+  override def toString: String = foldRecursive[String] {
+    case ApplyCase(attributes, (_, function), (_, argument)) => s"$function $argument"
+    case ConstructorCase(_, name)                            => name.toReferenceName
+    case DestructureCase(_, pattern, (_, valueToDestruct), (_, inValue)) =>
+      s"let $pattern = $valueToDestruct in $inValue"
+    case FieldCase(_, (_, target), name) => s"$target.${name.toCamelCase}"
+    case FieldFunctionCase(_, name)      => s".${name.toCamelCase}"
+    case IfThenElseCase(_, (_, condition), (_, thenBranch), (_, elseBranch)) =>
+      s"if $condition then $thenBranch else $elseBranch"
+    case LambdaCase(_, argumentPattern, (_, body)) => s"(\\$argumentPattern -> $body)"
+    case LetDefinitionCase(_, valueName, valueDefinition, (_, inValue)) =>
+      val args = valueDefinition.inputTypes.map(_._1.toCamelCase).mkString(" ")
+      val body = valueDefinition.body._2
+      s"let ${valueName.toCamelCase}$args = $body in $inValue"
+    case LetRecursionCase(_, valueDefinitions, (_, inValue)) =>
+      val defs = valueDefinitions
+        .map { case (name, defn) =>
+          val args = defn.inputTypes.map(_._1.toCamelCase).mkString(" ")
+          val body = defn.body._2
+          s"${name.toCamelCase}$args = $body"
+        }
+        .mkString("; ")
+      s"let $defs in $inValue"
+    case ListCase(_, elements)   => elements.map(_._2).mkString("[", ", ", "]")
+    case LiteralCase(_, literal) => literal.toString
+    case PatternMatchCase(_, (_, branchOutOn), cases) =>
+      val casesStr = cases.map { case (pattern, (_, value)) => s"$pattern -> $value" }.mkString("; ")
+      s"case $branchOutOn of $casesStr"
+    case RecordCase(_, fields) =>
+      fields
+        .map { case (fieldName, (_, fieldValue)) => s"${fieldName.toCamelCase} = $fieldValue" }
+        .mkString("{", ", ", "}")
+    case ReferenceCase(_, name) =>
+      Seq(
+        Path.toString(Name.toTitleCase, ".", name.packagePath.toPath),
+        Path.toString(Name.toTitleCase, ".", name.modulePath.toPath),
+        name.localName.toCamelCase
+      ).mkString(".")
+    case TupleCase(_, elements) => elements.map(_._2).mkString("(", ", ", ")")
+    case UnitCase(_)            => "()"
+    case UpdateRecordCase(_, (_, valueToUpdate), fieldsToUpdate) =>
+      val fieldsString = fieldsToUpdate
+        .map { case (fieldName, (_, fieldValue)) => s"${fieldName.toCamelCase} = $fieldValue" }
+        .mkString(", ")
+      s"{ $valueToUpdate | $fieldsString }"
+    case VariableCase(_, name) => name.toCamelCase
+  }
+
+  /**
+   * Extract the argument list from a curried apply tree. It takes the two arguments of an apply and returns a tuple of
+   * the function and a list of arguments.
+   *
+   * {{{
+   *  assert(Apply((), f,a).uncurryApply(b) == (f, List(a, b)))
+   * }}}
+   */
+  def uncurryApply[TB >: TA, VB >: VA](lastArg: Value[TB, VB]): (Value[TB, VB], scala.List[Value[TB, VB]]) =
+    self match {
+      case Value(ApplyCase(_, nestedFun, nestedArg)) =>
+        val (f, initArgs) = nestedFun.uncurryApply(nestedArg)
+        (f, initArgs :+ lastArg)
+      case _ => (self, scala.List(lastArg))
+    }
 }
 
-object Value {
+object Value extends ValueConstructors with PatternConstructors {
   import ValueCase._
 
   type RawValue = Value[Any, Any]
@@ -223,17 +303,480 @@ object Value {
 
   type TypedValue = Value[Any, UType]
   val TypedValue: Value.type = Value
+  object Apply {
+    def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
+      Value(ApplyCase(attributes, function, argument))
 
-  def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
-    Value(ApplyCase(attributes, function, argument))
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Value[TA, VA])] = value.caseValue match {
+      case ApplyCase(attributes, function, argument) => Some((attributes, function, argument))
+      case _                                         => None
+    }
 
+    object Raw {
+
+      def apply(function: RawValue, argument: RawValue): RawValue =
+        Value(ApplyCase(function.attributes, function, argument))
+
+      def unapply(value: RawValue): Option[(RawValue, RawValue)] = value.caseValue match {
+        case ApplyCase(attributes, function, argument) => Some((function, argument))
+        case _                                         => None
+      }
+    }
+  }
+
+  object Constructor {
+    def apply[A](attributes: A, name: String): Value[Nothing, A] =
+      Value(ConstructorCase(attributes, FQName.fromString(name)))
+
+    def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ConstructorCase(attributes, name))
+
+    def unapply[A](value: Value[Nothing, A]): Option[(A, FQName)] = value.caseValue match {
+      case ConstructorCase(attributes, name) => Some((attributes, name))
+      case _                                 => None
+    }
+
+    object Raw {
+      @inline def apply(name: String): Value[Nothing, Any] = Constructor((), name)
+      @inline def apply(name: FQName): Value[Nothing, Any] = Constructor((), name)
+      def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
+        case ConstructorCase(_, name) => Some(name)
+        case _                        => None
+      }
+    }
+  }
+
+  object Destructure {
+    def apply[TA, VA](
+        attributes: VA,
+        pattern: Pattern[VA],
+        valueToDestruct: Value[TA, VA],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(DestructureCase(attributes, pattern, valueToDestruct, inValue))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Pattern[VA], Value[TA, VA], Value[TA, VA])] =
+      value.caseValue match {
+        case DestructureCase(attributes, pattern, valueToDestruct, inValue) =>
+          Some((attributes, pattern, valueToDestruct, inValue))
+        case _ => None
+      }
+
+    object Raw {
+      def apply(pattern: UPattern, valueToDestruct: RawValue, inValue: RawValue): RawValue =
+        Value(DestructureCase((), pattern, valueToDestruct, inValue))
+
+      def unapply(value: RawValue): Option[(UPattern, RawValue, RawValue)] =
+        value.caseValue match {
+          case DestructureCase(_, pattern, valueToDestruct, inValue) => Some((pattern, valueToDestruct, inValue))
+          case _                                                     => None
+        }
+    }
+  }
+  object Field {
+    def apply[TA, VA](attributes: VA, target: Value[TA, VA], name: Name): Value[TA, VA] =
+      Value(FieldCase(attributes, target, name))
+
+    def apply[TA, VA](attributes: VA, target: Value[TA, VA], name: String): Value[TA, VA] =
+      Value(FieldCase(attributes, target, Name.fromString(name)))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Name)] = value.caseValue match {
+      case FieldCase(attributes, target, name) => Some((attributes, target, name))
+      case _                                   => None
+    }
+
+    object Raw {
+      def apply(target: RawValue, name: Name): RawValue =
+        Value(FieldCase(target.attributes, target, name))
+
+      def apply(target: RawValue, name: String): RawValue =
+        Value(FieldCase(target.attributes, target, Name.fromString(name)))
+
+      def unapply(value: RawValue): Option[(RawValue, Name)] = value.caseValue match {
+        case FieldCase(attributes, target, name) => Some((target, name))
+        case _                                   => None
+      }
+    }
+  }
+
+  object FieldFunction {
+    def apply[VA](attributes: VA, name: String): Value[Nothing, VA] = Value(
+      FieldFunctionCase(attributes, Name.fromString(name))
+    )
+    def apply[VA](attributes: VA, name: Name): Value[Nothing, VA] = Value(FieldFunctionCase(attributes, name))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[(VA, Name)] = value.caseValue match {
+      case FieldFunctionCase(attributes, name) => Some((attributes, name))
+      case _                                   => None
+    }
+
+    object Raw {
+      @inline def apply(name: String): RawValue = FieldFunction((), name)
+      @inline def apply(name: Name): RawValue   = FieldFunction((), name)
+
+      def unapply(value: RawValue): Option[Name] = value.caseValue match {
+        case FieldFunctionCase(_, name) => Some(name)
+        case _                          => None
+      }
+    }
+  }
+
+  object IfThenElse {
+    def apply[TA, VA](
+        attributes: VA,
+        condition: Value[TA, VA],
+        thenValue: Value[TA, VA],
+        elseValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(IfThenElseCase(attributes, condition, thenValue, elseValue))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Value[TA, VA], Value[TA, VA])] =
+      value.caseValue match {
+        case IfThenElseCase(attributes, condition, thenValue, elseValue) =>
+          Some((attributes, condition, thenValue, elseValue))
+        case _ => None
+      }
+
+    object Raw {
+      def apply(condition: RawValue, thenValue: RawValue, elseValue: RawValue): RawValue =
+        Value(IfThenElseCase((), condition, thenValue, elseValue))
+
+      def unapply(value: RawValue): Option[(RawValue, RawValue, RawValue)] =
+        value.caseValue match {
+          case IfThenElseCase(_, condition, thenValue, elseValue) => Some((condition, thenValue, elseValue))
+          case _                                                  => None
+        }
+    }
+  }
   object Lambda {
     def apply[TA, VA](attributes: VA, argumentPattern: Pattern[VA], body: Value[TA, VA]): Value[TA, VA] =
       Value(LambdaCase(attributes, argumentPattern, body))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Pattern[VA], Value[TA, VA])] = value.caseValue match {
+      case LambdaCase(attributes, argumentPattern, body) => Some((attributes, argumentPattern, body))
+      case _                                             => None
+    }
+
+    object Raw {
+      def apply(argumentPattern: Pattern[Any], body: RawValue): RawValue =
+        Value(LambdaCase(body.attributes, argumentPattern, body))
+
+      def unapply(value: RawValue): Option[(Pattern[Any], RawValue)] = value.caseValue match {
+        case LambdaCase(attributes, argumentPattern, body) => Some((argumentPattern, body))
+        case _                                             => None
+      }
+    }
+  }
+
+  object LetDefinition {
+    def apply[TA, VA](
+        attributes: VA,
+        name: Name,
+        valueDefinition: Definition[TA, VA],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, name, valueDefinition.toCase, inValue))
+
+    def apply[TA, VA](
+        attributes: VA,
+        name: Name,
+        valueDefinition: Definition.Case[TA, VA, Type, Value[TA, VA]],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, name, valueDefinition, inValue))
+
+    def apply[TA, VA](
+        attributes: VA,
+        name: String,
+        valueDefinition: Definition[TA, VA],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, Name.fromString(name), valueDefinition.toCase, inValue))
+
+    def apply[TA, VA](
+        attributes: VA,
+        name: String,
+        valueDefinition: Definition.Case[TA, VA, Type, Value[TA, VA]],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(LetDefinitionCase(attributes, Name.fromString(name), valueDefinition, inValue))
+
+    object Raw {
+      def apply(name: Name, valueDefinition: Definition.Raw, inValue: RawValue): RawValue =
+        Value(LetDefinitionCase(inValue.attributes, name, valueDefinition.toCase, inValue))
+
+      def apply(name: String, valueDefinition: Definition.Raw, inValue: RawValue): RawValue =
+        Value(LetDefinitionCase(inValue.attributes, Name.fromString(name), valueDefinition.toCase, inValue))
+    }
+  }
+
+  object LetRecursion {
+    def apply[TA, VA](
+        attributes: VA,
+        valueDefinitions: Map[Name, Definition[TA, VA]],
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] = Value(
+      LetRecursionCase(attributes, valueDefinitions.map { case (n, d) => (n, d.toCase) }, inValue)
+    )
+
+    def apply[TA, VA](attributes: VA, valueDefinitions: (String, Definition[TA, VA])*)(
+        inValue: Value[TA, VA]
+    ): Value[TA, VA] =
+      Value(
+        LetRecursionCase(
+          attributes,
+          valueDefinitions.map { case (n, d) => (Name.fromString(n), d.toCase) }.toMap,
+          inValue
+        )
+      )
+
+    object Raw {
+      def apply(valueDefinitions: Map[Name, Definition.Raw], inValue: RawValue): RawValue =
+        Value(LetRecursionCase(inValue.attributes, valueDefinitions.map { case (n, d) => (n, d.toCase) }, inValue))
+
+      def apply(valueDefinitions: (String, Definition.Raw)*)(inValue: RawValue): RawValue =
+        Value(
+          LetRecursionCase(
+            inValue.attributes,
+            valueDefinitions.map { case (n, d) => (Name.fromString(n), d.toCase) }.toMap,
+            inValue
+          )
+        )
+    }
+  }
+
+  object List {
+    def apply[TA, VA](attributes: VA, elements: Chunk[Value[TA, VA]]): Value[TA, VA] =
+      Value(ListCase(attributes, elements))
+
+    def apply[TA, VA](attributes: VA, elements: Value[TA, VA]*): Value[TA, VA] =
+      apply(attributes, Chunk.fromIterable(elements))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[Value[TA, VA]])] = value.caseValue match {
+      case ListCase(attributes, elements) => Some((attributes, elements))
+      case _                              => None
+    }
+
+    object Raw {
+      def apply(elements: Chunk[RawValue]): RawValue = Value(ListCase((), elements))
+      def apply(elements: RawValue*): RawValue       = Value(ListCase((), Chunk.fromIterable(elements)))
+
+      def unapply(value: RawValue): Option[Chunk[RawValue]] = value.caseValue match {
+        case ListCase(_, elements) => Some(elements)
+        case _                     => None
+      }
+    }
   }
 
   object Literal {
     def apply[VA, A](attributes: VA, literal: Lit[A]): Value[Nothing, VA] =
       Value(LiteralCase(attributes, literal))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[(VA, Lit[Any])] = value.caseValue match {
+      case LiteralCase(attributes, literal) => Some((attributes, literal))
+      case _                                => None
+    }
+    object Raw {
+      def apply[A](literal: Lit[A]): RawValue = Literal((), literal)
+
+      def unapply(value: RawValue): Option[Lit[Any]] = value.caseValue match {
+        case LiteralCase(_, literal) => Some(literal)
+        case _                       => None
+      }
+    }
+  }
+
+  object PatternMatch {
+    def apply[TA, VA](
+        attributes: VA,
+        target: Value[TA, VA],
+        cases: Chunk[(Pattern[VA], Value[TA, VA])]
+    ): Value[TA, VA] =
+      Value(PatternMatchCase(attributes, target, cases))
+
+    def apply[TA, VA](attributes: VA, target: Value[TA, VA], cases: (Pattern[VA], Value[TA, VA])*): Value[TA, VA] =
+      Value(PatternMatchCase(attributes, target, Chunk.fromIterable(cases)))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Chunk[(Pattern[VA], Value[TA, VA])])] =
+      value.caseValue match {
+        case PatternMatchCase(attributes, target, cases) => Some((attributes, target, cases))
+        case _                                           => None
+      }
+
+    object Raw {
+      def apply(branchOutOn: RawValue, cases: Chunk[(UPattern, RawValue)]): RawValue =
+        Value(PatternMatchCase((), branchOutOn, cases))
+      def apply(target: RawValue, cases: (Pattern[Any], RawValue)*): RawValue =
+        Value(PatternMatchCase((), target, Chunk.fromIterable(cases)))
+
+      def unapply(value: RawValue): Option[(RawValue, Chunk[(Pattern[Any], RawValue)])] =
+        value.caseValue match {
+          case PatternMatchCase(_, target, cases) => Some((target, cases))
+          case _                                  => None
+        }
+    }
+  }
+  object Record {
+    def apply[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
+      Value(RecordCase(attributes, fields))
+
+    def apply[TA, VA](attributes: VA, fields: (String, Value[TA, VA])*): Value[TA, VA] =
+      Value(
+        RecordCase(attributes, Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) }))
+      )
+
+    def apply[TA, VA](
+        attributes: VA,
+        firstField: (Name, Value[TA, VA]),
+        otherFields: (Name, Value[TA, VA])*
+    ): Value[TA, VA] =
+      Value(RecordCase(attributes, firstField +: Chunk.fromIterable(otherFields)))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[(Name, Value[TA, VA])])] = value.caseValue match {
+      case RecordCase(attributes, fields) => Some((attributes, fields))
+      case _                              => None
+    }
+
+    object Raw {
+      def apply(fields: Chunk[(Name, RawValue)]): RawValue = Value(RecordCase((), fields))
+      def apply(firstField: (Name, RawValue), otherFields: (Name, RawValue)*): RawValue =
+        Record((), firstField, otherFields: _*)
+
+      def apply(fields: (String, RawValue)*): RawValue = Record((), fields: _*)
+
+      def unapply(value: RawValue): Option[Chunk[(Name, RawValue)]] = value.caseValue match {
+        case RecordCase(_, fields) => Some(fields)
+        case _                     => None
+      }
+    }
+  }
+
+  object Reference {
+    def apply[A](attributes: A, name: String): Value[Nothing, A] = Value(
+      ReferenceCase(attributes, FQName.fromString(name))
+    )
+    def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ReferenceCase(attributes, name))
+
+    def apply[A](attributes: A, packageName: String, moduleName: String, localName: String): Value[Nothing, A] =
+      Value(ReferenceCase(attributes, FQName.fqn(packageName, moduleName, localName)))
+
+    def unapply[A](value: Value[Nothing, A]): Option[(A, FQName)] = value.caseValue match {
+      case ReferenceCase(attributes, name) => Some((attributes, name))
+      case _                               => None
+    }
+
+    object Raw {
+      @inline def apply(name: String): RawValue = Reference((), name)
+      @inline def apply(name: FQName): RawValue = Reference((), name)
+      @inline def apply(packageName: String, moduleName: String, localName: String): RawValue =
+        Value(ReferenceCase((), FQName.fqn(packageName, moduleName, localName)))
+
+      def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
+        case ReferenceCase(_, name) => Some(name)
+        case _                      => None
+      }
+    }
+  }
+
+  object Tuple {
+    def apply[VA](attributes: VA): Value[Nothing, VA] = Value(TupleCase(attributes, Chunk.empty))
+
+    def apply[TA, VA](attributes: VA, elements: Chunk[Value[TA, VA]]): Value[TA, VA] = Value(
+      TupleCase(attributes, elements)
+    )
+
+    def apply[TA, VA](attributes: VA, element: Value[TA, VA], otherElements: Value[TA, VA]*): Value[TA, VA] =
+      apply(attributes, element +: Chunk.fromIterable(otherElements))
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[Value[TA, VA]])] = value.caseValue match {
+      case TupleCase(attributes, elements) => Some((attributes, elements))
+      case _                               => None
+    }
+
+    object Raw {
+      def apply(elements: Chunk[RawValue]): RawValue = Tuple((), elements)
+      def apply(elements: RawValue*): RawValue       = Tuple((), Chunk.fromIterable(elements))
+
+      def unapply(value: RawValue): Option[Chunk[RawValue]] = value.caseValue match {
+        case TupleCase(_, elements) => Some(elements)
+        case _                      => None
+      }
+    }
+  }
+
+  object Unit {
+    def apply[VA](attributes: VA): Value[Nothing, VA] = Value(UnitCase(attributes))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[VA] = value match {
+      case Value(UnitCase(attributes)) => Some(attributes)
+      case _                           => None
+    }
+
+    object Raw {
+      def apply(): RawValue = Value(UnitCase(()))
+      def unapply(value: RawValue): Option[scala.Unit] = value match {
+        case Value(UnitCase(())) => Some(())
+        case _                   => None
+      }
+    }
+  }
+
+  object UpdateRecord {
+    def apply[TA, VA](
+        attributes: VA,
+        valueToUpdate: Value[TA, VA],
+        fields: Chunk[(Name, Value[TA, VA])]
+    ): Value[TA, VA] =
+      Value(UpdateRecordCase(attributes, valueToUpdate, fields))
+
+    def apply[TA, VA](attributes: VA, valueToUpdate: Value[TA, VA], fields: (String, Value[TA, VA])*): Value[TA, VA] =
+      Value(
+        UpdateRecordCase(
+          attributes,
+          valueToUpdate,
+          Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })
+        )
+      )
+
+    def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Chunk[(Name, Value[TA, VA])])] =
+      value.caseValue match {
+        case UpdateRecordCase(attributes, value, fields) => Some((attributes, value, fields))
+        case _                                           => None
+      }
+
+    object Raw {
+      def apply(record: RawValue, fields: Chunk[(Name, RawValue)]): RawValue =
+        Value(UpdateRecordCase((), record, fields))
+
+      def apply(valueToUpdate: RawValue, fields: (String, RawValue)*): RawValue =
+        Value(
+          UpdateRecordCase(
+            (),
+            valueToUpdate,
+            Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })
+          )
+        )
+
+      def unapply(value: RawValue): Option[(RawValue, Chunk[(Name, RawValue)])] = value.caseValue match {
+        case UpdateRecordCase(_, record, fields) => Some((record, fields))
+        case _                                   => None
+      }
+    }
+  }
+
+  object Variable {
+    def apply[VA](attributes: VA, name: Name): Value[Nothing, VA] =
+      Value(VariableCase(attributes, name))
+    def apply[VA](attributes: VA, name: String): Value[Nothing, VA] =
+      Value(VariableCase(attributes, Name.fromString(name)))
+
+    def unapply[VA](value: Value[Nothing, VA]): Option[(VA, Name)] = value.caseValue match {
+      case VariableCase(attributes, name) => Some((attributes, name))
+      case _                              => None
+    }
+
+    object Raw {
+      @inline def apply(name: Name): RawValue   = Variable((), name)
+      @inline def apply(name: String): RawValue = Variable((), name)
+    }
   }
 }

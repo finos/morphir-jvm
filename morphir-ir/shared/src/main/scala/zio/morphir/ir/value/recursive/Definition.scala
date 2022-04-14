@@ -45,6 +45,9 @@ final case class Definition[+TA, +VA](
 }
 
 object Definition {
+  def apply[TA, VA](outputType: Type[TA], body: Value[TA, VA]): Definition[TA, VA] =
+    Definition(Chunk.empty, outputType, body)
+
   def apply[TA, VA](
       inputTypes: (String, VA, Type[TA])*
   )(outputType: Type[TA])(body: Value[TA, VA]): Definition[TA, VA] = {
@@ -112,6 +115,17 @@ object Definition {
 
   type Raw = Definition[Any, Any]
   object Raw {
+
+    def apply(inputTypes: Chunk[(Name, UType)], outputType: UType, body: RawValue): Raw =
+      Definition(inputTypes.map { case (n, t) => (n, (), t) }, outputType, body)
+
+    def apply(outputType: UType, body: RawValue): Raw =
+      Definition(
+        inputTypes = Chunk.empty,
+        outputType = outputType,
+        body = body
+      )
+
     def apply(inputTypes: (String, UType)*)(outputType: UType)(body: RawValue): Raw = {
       val args = Chunk.fromIterable(inputTypes.map { case (n, t) => (Name.fromString(n), (), t) })
       Definition(args, outputType, body)

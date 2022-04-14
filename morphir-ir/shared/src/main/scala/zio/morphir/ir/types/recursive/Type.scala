@@ -228,6 +228,9 @@ object Type extends TypeExprConstructors with UnattributedTypeExprConstructors w
       case _                              => None
     }
   }
+  implicit val CovariantType: Covariant[Type] = new Covariant[Type] {
+    override def map[A, B](f: A => B): Type[A] => Type[B] = tpe => tpe.mapAttributes(f)
+  }
 
   final class MapTypeAttributes[+A](val input: () => Type[A]) extends AnyVal {
     def apply[B](f: A => B): Type[B] = input().map(f)

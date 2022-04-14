@@ -39,6 +39,11 @@ addCommandAlias(
   Seq("coreJS/test", "irJS/test", "sexprJS/test", "jsonJS/test").mkString(";", ";", ";")
 )
 
+addCommandAlias(
+  "testNative",
+  Seq("coreNative/test", "irNative/test").mkString(";", ";", ";")
+)
+
 lazy val scala213projects = Seq[ProjectReference](
   annotationJS,
   annotationJVM,
