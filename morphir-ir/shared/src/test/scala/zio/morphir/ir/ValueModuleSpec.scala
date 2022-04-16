@@ -3,29 +3,29 @@ package zio.morphir.ir
 import zio.Chunk
 import zio.morphir.ir.Type.Field.defineField
 import zio.morphir.ir.Type.{Type => IrType, UType}
+import zio.morphir.ir.Value.Pattern.LiteralPattern
 import zio.morphir.ir.Value.Value.{Unit => UnitType, _}
 import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, TypedValue}
-import zio.morphir.ir.sdk.Basics.floatType
-import zio.morphir.ir.value.Pattern.LiteralPattern
+import zio.morphir.ir.sdk.Basics.{floatType, intType}
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
-object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
+object ValueModuleSpec extends MorphirBaseSpec {
 
-  val boolType: UType                  = IrType.ref(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
-  val intType: UType                   = sdk.Basics.intType
+  val boolType: UType                  = IrType.reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Bool"))
   def listType(itemType: UType): UType = IrType.reference(FQName.fromString("Morphir.SDK:List:List"), itemType)
   val stringType: UType                = sdk.String.stringType
 
   def spec: ZSpec[Environment, Any] = suite("Value Module")(
     suite("Collect Variables should return as expected for:")(
       test("Apply") {
-        val ff  = fieldFunction("age")
-        val rec = record("age" -> variable("myAge"), "firstName" -> string("John"))
-
+        val ff     = fieldFunction("age")
+        val rec    = record("age" -> variable("myAge"), "firstName" -> string("John"))
+        val actual = apply(ff, rec)
         assertTrue(
-          apply(ff, rec).collectVariables == Set(Name("myAge"))
+          actual.collectVariables == Set(Name("myAge")),
+          actual.toString == ".age {age = myAge, firstName = \"John\"}"
         )
       },
       test("Constructor") {
@@ -58,9 +58,9 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("IfThenElse") {
         val ife = ifThenElse(
-          condition = literal(false),
+          condition = boolean(false),
           thenBranch = variable("y"),
-          elseBranch = literal(3)
+          elseBranch = int(3)
         )
         assertTrue(ife.collectVariables == Set(Name.fromString("y")))
       },
@@ -81,44 +81,44 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         )
       },
       test("LetDefinition") {
-        val yDef = definition()(intType)(int(42) :@ intType)
-
-        val ld = letDefinition(
+        val ld = let(
           "y",
-          yDef,
-          applyStrict(sdk.Basics.add(intType), variable("y", intType), int(42) :@ intType)
+          int(intType, 42).toValDef,
+          apply(intType --> intType, sdk.Basics.add(intType), variable("y", intType), int(intType, 42))
         )
         assertTrue(ld.collectVariables == Set(Name("y")))
       },
       test("LetRecursion") {
         val lr = LetRecursion.Typed(
-          "x" -> IfThenElse
-            .Typed(
-              condition = Lit.False.toTypedValue,
-              thenBranch = variable("y", intType),
-              elseBranch = literal(3) :@ intType
-            )
-            .toDefinition,
-          "y" ->
+          "x" -> valueDef(intType)(
             IfThenElse
               .Typed(
-                condition = literal(false) :@ boolType,
-                thenBranch = literal(2) :@ intType,
-                elseBranch = variable("z") :@ intType
+                condition = literal(false),
+                thenBranch = variable("y", intType),
+                elseBranch = literal(3)
               )
-              .toDefinition
+          ),
+          "y" ->
+            valueDef(intType)(
+              IfThenElse
+                .Typed(
+                  condition = literal(false) :> boolType,
+                  thenBranch = literal(2) :> intType,
+                  elseBranch = variable("z") :> intType
+                )
+            )
         )(
           apply(
-            FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:add"),
+            reference(intType, FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:add")),
             variable("x", intType),
             variable("y", intType)
-          )(intType)
+          )
         )
 
         assertTrue(lr.collectVariables == Set(Name("x"), Name("y"), Name("z")))
       },
       test("List") {
-        val list1 = listOf(stringType)(literal("hello"), literal("world"))
+        val list1 = listOf(literal("hello"), literal("world"))(stringType)
         val list2 = list(
           Chunk(
             variable(Name("hello")),
@@ -133,13 +133,6 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Literal") {
         val in = int(123)
         assertTrue(in.collectVariables == Set[Name]())
-      },
-      test("NativeApply") {
-        val nat = nativeApply(
-          NativeFunction.Addition,
-          Chunk(variable("x"), variable("y"))
-        )
-        assertTrue(nat.collectVariables == Set(Name("x"), Name("y")))
       },
       test("PatternMatch") {
         val cases = Chunk(
@@ -186,10 +179,11 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         )
       },
       test("Unit") {
-        assertTrue(unit.collectVariables == Set[Name]())
+        val actual = unit
+        assertTrue(actual.collectVariables == Set[Name]())
       },
       test("UpdateRecord") {
-        val ur = updateRecord(
+        val ur = update(
           string("hello world"),
           Chunk(
             Name("fieldB") -> wholeNumber(new java.math.BigInteger("3")),
@@ -209,7 +203,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         val name2 = Name.fromString("wonderful")
         val ff    = reference(name)
         val str   = string("string2")
-        val rec   = record((name2, str))
+        val rec   = record(Map((name2, str)))
 
         assertTrue(
           apply(ff, rec).collectReferences == Set(name)
@@ -302,7 +296,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         val fqName  = FQName.fromString("Morphir:SDK:valueType")
         val fqName2 = FQName.fromString("Morphir:SDK:typed")
 
-        val ld = letDefinition(
+        val ld = letDef(
           Name("y"),
           ValueDefinition()(intType)(reference(fqName)),
           tuple(
@@ -315,27 +309,29 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("LetRecursion") {
         val fqName = FQName.fromString("Zio:Morphir.Basics:constInt")
         val lr = LetRecursion.Typed(
-          "x" -> IfThenElse
-            .Typed(
-              condition = Lit.False.toTypedValue,
-              thenBranch = reference(fqName, intType),
-              elseBranch = Lit.int(42).toTypedValue
-            )
-            .toDefinition,
-          "y" ->
+          "x" -> valueDef(intType)(
             IfThenElse
               .Typed(
-                condition = Lit.False.toTypedValue,
-                thenBranch = Lit.int(2).toTypedValue,
+                condition = literal(false),
+                thenBranch = reference(fqName, intType),
                 elseBranch = Lit.int(42).toTypedValue
               )
-              .toDefinition
+          ),
+          "y" ->
+            valueDef(intType)(
+              IfThenElse
+                .Typed(
+                  condition = Lit.False.toTypedValue,
+                  thenBranch = Lit.int(2).toTypedValue,
+                  elseBranch = Lit.int(42).toTypedValue
+                )
+            )
         )(variable("y", intType))
 
         assertTrue(lr.collectReferences == Set(fqName))
       },
       test("List") {
-        val list1 = listOf(stringType)(literal("hello"), literal("world"))
+        val list1 = listOf(stringType, literal("hello"), literal("world"))
         val fq    = FQName.fromString("hello:world:star")
         val list2 = list(
           Chunk(
@@ -351,13 +347,6 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Literal") {
         val in = int(123)
         assertTrue(in.collectReferences == Set[FQName]())
-      },
-      test("NativeApply") {
-        val nat = nativeApply(
-          NativeFunction.Addition,
-          Chunk(variable("x"), variable("y"))
-        )
-        assertTrue(nat.collectReferences == Set[FQName]())
       },
       test("PatternMatch") {
         val fq  = FQName.fromString("hello:world:star", ":")
@@ -412,11 +401,12 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         )
       },
       test("Unit") {
-        assertTrue(unit.collectReferences == Set[FQName]())
+        val actual = unit
+        assertTrue(actual.collectReferences == Set[FQName]())
       },
       test("UpdateRecord") {
         val fq = FQName.fromString("hello:world:string", ":")
-        val ur = updateRecord(
+        val ur = update(
           string("hello world"),
           Chunk(
             Name("fieldB") -> wholeNumber(new java.math.BigInteger("3")),
@@ -431,7 +421,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
     ),
     suite("toRawValue should return as expected for:")(
       test("Apply") {
-        val function = Reference.Typed("Test:Test:square")(floatType)
+        val function = reference("Test:Test:square", floatType)
         val in       = Apply.Typed(function, Lit.float(2.0f).toTypedValue)
 
         assertTrue(in.toRawValue == Apply.Raw(function.toRawValue, Lit.float(2.0f).toRawValue))
@@ -442,8 +432,8 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
           zio.morphir.ir.Path(Name("Morphir.SDK")),
           Name("RecordType")
         )
-        val typeRef = IrType.ref(fqName)
-        val constr  = Constructor.Typed(fqName)(typeRef)
+        val typeRef = IrType.reference(fqName)
+        val constr  = constructor(fqName, typeRef)
         assertTrue(constr.toRawValue == constructor(fqName))
       },
       test("Destructure") {
@@ -469,7 +459,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("Field") {
         val name  = Name.fromString("Name")
-        val value = Value.Value.Literal.Typed(Lit.int(42))(intType)
+        val value = literal(42)
 
         val actual = Field.Typed(intType, value, name)
 
@@ -479,7 +469,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("FieldFunction") {
         val age = Name.fromString("age")
-        val ff  = FieldFunction.Typed(age)(intType)
+        val ff  = fieldFunction(age, intType)
 
         assertTrue(ff.toRawValue == fieldFunction(age))
       },
@@ -487,7 +477,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
         val gt: TypedValue        = reference(FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:greaterThan"), intType)
         val x: TypedValue         = variable("x", intType)
         val y: TypedValue         = variable("y", intType)
-        val condition: TypedValue = applyStrict(gt, x, y)
+        val condition: TypedValue = Apply.Typed(gt, x, y)
 
         val ife = IfThenElse.Typed(condition, x, y)
         assertTrue(ife.toRawValue == IfThenElse.Raw(condition.toRawValue, x.toRawValue, y.toRawValue))
@@ -495,22 +485,23 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Lambda") {
 
         val actual = Lambda.Typed(
+          Type.reference("Morphir.SDK", "Basics", "power"),
           Pattern.asPattern(intType, wildcardPattern(intType), Name.fromString("x")),
           variable(Name.fromString("x"), intType)
         )
 
         assertTrue(
-          actual.toRawValue == lambda(
-            pattern = Pattern.AsPattern.Raw(wildcardPattern, "x"),
-            body = variable(Name.fromString("x"))
+          actual.toRawValue == Lambda.Raw(
+            Pattern.AsPattern.Raw(wildcardPattern, "x"),
+            variable(Name.fromString("x"))
           )
         )
       },
       test("LetDefinition") {
         val value   = Lit.False.toTypedValue
-        val flagDef = definition()(boolType)(value)
+        val flagDef = ValueDefinition()(boolType)(value)
 
-        val ld = LetDefinition.Typed("flag", flagDef, variable("flag", boolType))
+        val ld = LetDefinition.Typed(boolType, "flag", flagDef, variable("flag", boolType))
         assertTrue(
           ld.toRawValue == LetDefinition.Raw(
             "flag",
@@ -539,7 +530,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("List") {
 
-        val l1 = List.Typed(Lit.True.toTypedValue, Lit.False.toTypedValue)(listType(boolType))
+        val l1 = listOf(boolType, Lit.True.toTypedValue, Lit.False.toTypedValue)
 
         assertTrue(
           l1.toRawValue == list(boolean(true), boolean(false))
@@ -550,18 +541,18 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
 
         assertTrue(value.toRawValue == boolean(true))
       },
-      test("NativeApply") {
+      test("Apply - typed with multiple arguments") {
         val x      = Lit.int(42).toTypedValue
         val y      = Lit.int(58).toTypedValue
         val addRef = sdk.Basics.add(x.attributes)
 
         val actual = Apply.Typed(addRef, x, y)
-        assertTrue(actual.toRawValue == apply(addRef.toRawValue, x.toRawValue, y.toRawValue))
+        assertTrue(actual.toRawValue == apply(apply(addRef.toRawValue, x.toRawValue), y.toRawValue))
       },
       test("PatternMatch") {
-        val input = Variable.Typed("magicNumber")(intType)
-        val yes   = string("yes") :@ stringType
-        val no    = string("no") :@ stringType
+        val input = variable("magicNumber", intType)
+        val yes   = string("yes") :> stringType
+        val no    = string("no") :> stringType
         val n42   = Lit.int(42)
 
         val pm = caseOf(input)(
@@ -579,12 +570,12 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       test("Reference") {
 
         val intTypeName = FQName.fromString("Morphir.SDK:Morphir.SDK.Basics:Int")
-        val ref         = Reference.Typed(intTypeName)(zio.morphir.ir.sdk.Basics.intType)
+        val ref         = Reference(zio.morphir.ir.sdk.Basics.intType, intTypeName)
         assertTrue(ref.toRawValue == Reference.Raw(intTypeName))
       },
       test("Record") {
         val name       = Name.fromString("hello")
-        val lit        = string("timeout") :@ stringType
+        val lit        = string("timeout") :> stringType
         val recordType = Type.record(defineField("hello", stringType))
         val rec        = Record(recordType, Chunk(name -> lit))
 
@@ -592,15 +583,16 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("Tuple") {
 
-        val t1 = Tuple(string("shimmy") -> stringType)
+        val t1 = tuple(string("shimmy") -> stringType)
         assertTrue(
           t1.toRawValue == Tuple.Raw(string("shimmy"))
         )
       },
       test("UpdateRecord") {
 
-        val greeter = variable("greeter") :@ Type.record(defineField("greeting", stringType))
-        val actual  = UpdateRecord.Typed(greeter, ("greeting", string("world") :@ stringType))
+        val recordType = Type.record(defineField("greeting", stringType))
+        val greeter    = variable(recordType, "greeter")
+        val actual     = UpdateRecord.Typed(recordType, greeter, ("greeting", string("world") :> stringType))
 
         assertTrue(
           actual.toRawValue == UpdateRecord.Raw(Variable.Raw("greeter"), "greeting" -> string("world"))
@@ -608,7 +600,7 @@ object ValueModuleSpec extends MorphirBaseSpec with value.ValueSyntax {
       },
       test("Variable") {
         val name  = Name("ha")
-        val value = Variable(stringType, name)
+        val value = variable(stringType, name)
         assertTrue(value.toRawValue == variable(name))
       },
       test("Unit") {

@@ -63,8 +63,12 @@ trait ValueSyntax {
 
   def literal[T](literal: Lit[T]): RawValue = Literal.Raw(literal)
   def literal(int: Int): RawValue           = Literal.Raw(Lit.int(int))
-  def literal(string: String): TypedValue   = Lit.string(string).toTypedValue
-  def literal(boolean: Boolean): RawValue   = Literal.Raw(Lit.boolean(boolean))
+  def literal(string: String): TypedValue = {
+    val literalValue = Lit.string(string)
+    val literalType  = literalValue.inferredType
+    Literal(literalType, literalValue)
+  }
+  def literal(boolean: Boolean): RawValue = Literal.Raw(Lit.boolean(boolean))
 
   final def literal[VA, V](value: Lit[V])(attributes: VA): Value[Nothing, VA] =
     Literal(attributes, value)

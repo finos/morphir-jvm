@@ -5,7 +5,7 @@ import zio.morphir.ir.value.{Pattern, PatternConstructors, UPattern}
 import zio.morphir.ir.{FQName, Literal => Lit, Name, Path}
 import zio.prelude._
 import zio.prelude.fx.ZPure
-import zio.{Chunk, ZIO}
+import zio.{Chunk, NonEmptyChunk, ZIO}
 
 import scala.annotation.tailrec
 
@@ -38,7 +38,6 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     case c @ ApplyCase(_, _, _)            => c.function ++ c.argument
     case c @ DestructureCase(_, _, _, _)   => c.valueToDestruct ++ c.inValue
     case c @ FieldCase(_, _, _)            => c.target
-    case c @ FieldFunctionCase(_, _)       => Set(c.name)
     case c @ IfThenElseCase(_, _, _, _)    => c.condition ++ c.thenBranch ++ c.elseBranch
     case c @ LambdaCase(_, _, _)           => c.body
     case c @ LetDefinitionCase(_, _, _, _) => c.valueDefinition.body ++ c.inValue + c.valueName
@@ -295,7 +294,7 @@ final case class Value[+TA, +VA](caseValue: ValueCase[TA, VA, Value[TA, VA]]) { 
     }
 }
 
-object Value extends ValueConstructors with PatternConstructors {
+object Value extends ValueConstructors with PatternConstructors with DefinitionConstructors {
   import ValueCase._
 
   type RawValue = Value[Any, Any]
@@ -304,8 +303,15 @@ object Value extends ValueConstructors with PatternConstructors {
   type TypedValue = Value[Any, UType]
   val TypedValue: Value.type = Value
   object Apply {
-    def apply[TA, VA](attributes: VA, function: Value[TA, VA], argument: Value[TA, VA]): Value[TA, VA] =
-      Value(ApplyCase(attributes, function, argument))
+    def apply[TA, VA](
+        attributes: VA,
+        function: Value[TA, VA],
+        argument: Value[TA, VA],
+        arguments: Value[TA, VA]*
+    ): Value[TA, VA] =
+      arguments.foldLeft(Value(ApplyCase(attributes, function, argument))) { case (acc, arg) =>
+        Value(ApplyCase(acc.attributes, acc, arg))
+      }
 
     def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Value[TA, VA])] = value.caseValue match {
       case ApplyCase(attributes, function, argument) => Some((attributes, function, argument))
@@ -314,11 +320,29 @@ object Value extends ValueConstructors with PatternConstructors {
 
     object Raw {
 
-      def apply(function: RawValue, argument: RawValue): RawValue =
-        Value(ApplyCase(function.attributes, function, argument))
+      def apply(function: RawValue, argument: RawValue, arguments: RawValue*): RawValue =
+        arguments.foldLeft(Value(ApplyCase(function.attributes, function, argument))) { case (acc, arg) =>
+          Value(ApplyCase(acc.attributes, acc, arg))
+        }
 
       def unapply(value: RawValue): Option[(RawValue, RawValue)] = value.caseValue match {
         case ApplyCase(attributes, function, argument) => Some((function, argument))
+        case _                                         => None
+      }
+    }
+
+    object Typed {
+
+      def apply(tpe: UType, function: TypedValue, argument: TypedValue, arguments: TypedValue*): TypedValue =
+        arguments.foldLeft(Value(ApplyCase(tpe, function, argument))) { case (acc, arg) =>
+          Value(ApplyCase(acc.attributes, acc, arg))
+        }
+
+      def apply(function: TypedValue, argument: TypedValue, arguments: TypedValue*): TypedValue =
+        Typed(function.attributes, function, argument, arguments: _*)
+
+      def unapply(value: TypedValue): Option[(UType, TypedValue, TypedValue)] = value.caseValue match {
+        case ApplyCase(attributes, function, argument) => Some((attributes, function, argument))
         case _                                         => None
       }
     }
@@ -341,6 +365,17 @@ object Value extends ValueConstructors with PatternConstructors {
       def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
         case ConstructorCase(_, name) => Some(name)
         case _                        => None
+      }
+    }
+    object Typed {
+      def apply(name: FQName, ascribedType: UType): TypedValue   = Constructor(ascribedType, name)
+      def apply(fqName: String, ascribedType: UType): TypedValue = Constructor(ascribedType, FQName.fromString(fqName))
+      def apply(ascribedType: UType, name: FQName): TypedValue   = Constructor(ascribedType, name)
+      def apply(ascribedType: UType, fqName: String): TypedValue = Constructor(ascribedType, FQName.fromString(fqName))
+
+      def unapply(value: TypedValue): Option[(UType, FQName)] = value.caseValue match {
+        case ConstructorCase(attributes, name) => Some((attributes, name))
+        case _                                 => None
       }
     }
   }
@@ -371,6 +406,21 @@ object Value extends ValueConstructors with PatternConstructors {
           case _                                                     => None
         }
     }
+
+    object Typed {
+      def apply(tpe: UType, pattern: Pattern[UType], valueToDestruct: TypedValue, inValue: TypedValue): TypedValue =
+        Value(DestructureCase(tpe, pattern, valueToDestruct, inValue))
+
+      def apply(pattern: Pattern[UType], valueToDestruct: TypedValue, inValue: TypedValue): TypedValue =
+        Value(DestructureCase(inValue.attributes, pattern, valueToDestruct, inValue))
+
+      def unapply(value: TypedValue): Option[(UType, Pattern[UType], TypedValue, TypedValue)] =
+        value.caseValue match {
+          case DestructureCase(attributes, pattern, valueToDestruct, inValue) =>
+            Some((attributes, pattern, valueToDestruct, inValue))
+          case _ => None
+        }
+    }
   }
   object Field {
     def apply[TA, VA](attributes: VA, target: Value[TA, VA], name: Name): Value[TA, VA] =
@@ -396,6 +446,19 @@ object Value extends ValueConstructors with PatternConstructors {
         case _                                   => None
       }
     }
+
+    object Typed {
+      def apply(tpe: UType, target: TypedValue, name: Name): TypedValue =
+        Value(FieldCase(tpe, target, name))
+
+      def apply(tpe: UType, target: TypedValue, name: String): TypedValue =
+        Value(FieldCase(tpe, target, Name.fromString(name)))
+
+      def unapply(value: TypedValue): Option[(UType, TypedValue, Name)] = value.caseValue match {
+        case FieldCase(attributes, target, name) => Some((attributes, target, name))
+        case _                                   => None
+      }
+    }
   }
 
   object FieldFunction {
@@ -418,16 +481,26 @@ object Value extends ValueConstructors with PatternConstructors {
         case _                          => None
       }
     }
+
+    object Typed {
+      def apply(tpe: UType, name: String): TypedValue = FieldFunction(tpe, name)
+      def apply(tpe: UType, name: Name): TypedValue   = FieldFunction(tpe, name)
+
+      def unapply(value: TypedValue): Option[(UType, Name)] = value.caseValue match {
+        case FieldFunctionCase(attributes, name) => Some((attributes, name))
+        case _                                   => None
+      }
+    }
   }
 
   object IfThenElse {
     def apply[TA, VA](
         attributes: VA,
         condition: Value[TA, VA],
-        thenValue: Value[TA, VA],
-        elseValue: Value[TA, VA]
+        thenBranch: Value[TA, VA],
+        elseBranch: Value[TA, VA]
     ): Value[TA, VA] =
-      Value(IfThenElseCase(attributes, condition, thenValue, elseValue))
+      Value(IfThenElseCase(attributes, condition, thenBranch, elseBranch))
 
     def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Value[TA, VA], Value[TA, VA], Value[TA, VA])] =
       value.caseValue match {
@@ -444,6 +517,26 @@ object Value extends ValueConstructors with PatternConstructors {
         value.caseValue match {
           case IfThenElseCase(_, condition, thenValue, elseValue) => Some((condition, thenValue, elseValue))
           case _                                                  => None
+        }
+    }
+
+    object Typed {
+      def apply(
+          tpe: UType,
+          condition: TypedValue,
+          thenBranch: TypedValue,
+          elseBranch: TypedValue
+      ): TypedValue =
+        Value(IfThenElseCase(tpe, condition, thenBranch, elseBranch))
+
+      def apply(condition: TypedValue, thenBranch: TypedValue, elseBranch: TypedValue): TypedValue =
+        Value(IfThenElseCase(thenBranch.attributes, condition, thenBranch, elseBranch))
+
+      def unapply(value: TypedValue): Option[(UType, TypedValue, TypedValue, TypedValue)] =
+        value.caseValue match {
+          case IfThenElseCase(attributes, condition, thenValue, elseValue) =>
+            Some((attributes, condition, thenValue, elseValue))
+          case _ => None
         }
     }
   }
@@ -464,6 +557,21 @@ object Value extends ValueConstructors with PatternConstructors {
         case LambdaCase(attributes, argumentPattern, body) => Some((argumentPattern, body))
         case _                                             => None
       }
+    }
+
+    object Typed {
+      def apply(
+          tpe: UType,
+          argumentPattern: Pattern[UType],
+          body: TypedValue
+      ): TypedValue =
+        Value(LambdaCase(tpe, argumentPattern, body))
+
+      def unapply(value: TypedValue): Option[(UType, Pattern[Any], TypedValue)] =
+        value.caseValue match {
+          case LambdaCase(attributes, argumentPattern, body) => Some((attributes, argumentPattern, body))
+          case _                                             => None
+        }
     }
   }
 
@@ -507,6 +615,44 @@ object Value extends ValueConstructors with PatternConstructors {
       def apply(name: String, valueDefinition: Definition.Raw, inValue: RawValue): RawValue =
         Value(LetDefinitionCase(inValue.attributes, Name.fromString(name), valueDefinition.toCase, inValue))
     }
+
+    object Typed {
+      def apply(
+          tpe: UType,
+          name: Name,
+          valueDefinition: Definition.Typed,
+          inValue: TypedValue
+      ): TypedValue =
+        Value(LetDefinitionCase(tpe, name, valueDefinition.toCase, inValue))
+
+      def apply(tpe: UType, name: String, valueDefinition: Definition.Typed, inValue: TypedValue): TypedValue =
+        Value(LetDefinitionCase(tpe, Name.fromString(name), valueDefinition.toCase, inValue))
+
+      def apply(
+          name: Name,
+          valueDefinition: Definition.Typed,
+          inValue: TypedValue
+      ): TypedValue =
+        Value(LetDefinitionCase(inValue.attributes, name, valueDefinition.toCase, inValue))
+
+      def apply(name: String, valueDefinition: Definition.Typed, inValue: TypedValue): TypedValue =
+        Value(LetDefinitionCase(inValue.attributes, Name.fromString(name), valueDefinition.toCase, inValue))
+
+    }
+
+    final case class Unbound[+TA, +VA](name: Name, valueDefinition: Definition[TA, VA]) {
+      def bind[TB >: TA, VB >: VA](value: Value[TB, VB]): Value[TB, VB] =
+        LetDefinition(value.attributes, name, valueDefinition, value)
+
+      def in[TB >: TA, VB >: VA](value: Value[TB, VB]): Value[TB, VB] =
+        LetDefinition(value.attributes, name, valueDefinition, value)
+
+      override def toString(): String = {
+        val args = valueDefinition.inputTypes.map(_._1.toCamelCase).mkString(" ")
+        val body = valueDefinition.body.toString()
+        s"let ${name.toCamelCase}$args = $body"
+      }
+    }
   }
 
   object LetRecursion {
@@ -542,6 +688,55 @@ object Value extends ValueConstructors with PatternConstructors {
           )
         )
     }
+
+    object Typed {
+      def apply(
+          tpe: UType,
+          valueDefinitions: Map[Name, Definition.Typed],
+          inValue: TypedValue
+      ): TypedValue =
+        Value(
+          LetRecursionCase(
+            tpe,
+            valueDefinitions.map { case (n, d) => (n, d.toCase) },
+            inValue
+          )
+        )
+
+      def apply(tpe: UType, valueDefinitions: (String, Definition[Any, UType])*)(
+          inValue: TypedValue
+      ): TypedValue =
+        Value(
+          LetRecursionCase(
+            tpe,
+            valueDefinitions.map { case (n, d) => (Name.fromString(n), d.toCase) }.toMap,
+            inValue
+          )
+        )
+
+      def apply(
+          valueDefinitions: Map[Name, Definition.Typed],
+          inValue: TypedValue
+      ): TypedValue =
+        Value(
+          LetRecursionCase(
+            inValue.attributes,
+            valueDefinitions.map { case (n, d) => (n, d.toCase) },
+            inValue
+          )
+        )
+
+      def apply(valueDefinitions: (String, Definition[Any, UType])*)(
+          inValue: TypedValue
+      ): TypedValue =
+        Value(
+          LetRecursionCase(
+            inValue.attributes,
+            valueDefinitions.map { case (n, d) => (Name.fromString(n), d.toCase) }.toMap,
+            inValue
+          )
+        )
+    }
   }
 
   object List {
@@ -565,6 +760,26 @@ object Value extends ValueConstructors with PatternConstructors {
         case _                     => None
       }
     }
+
+    object Typed {
+      def apply(tpe: UType, elements: Chunk[TypedValue]): TypedValue = Value(ListCase(tpe, elements))
+
+      def apply(elements: NonEmptyChunk[TypedValue]): TypedValue = {
+        val tpe = zio.morphir.ir.sdk.List.listType(elements.head.attributes)
+        Value(ListCase(tpe, elements))
+      }
+
+      def apply(tpe: UType, elements: TypedValue*): TypedValue =
+        Value(ListCase(tpe, Chunk.fromIterable(elements)))
+
+      def apply(head: TypedValue, tail: TypedValue*): TypedValue =
+        Value(ListCase(head.attributes, Chunk.fromIterable(head +: tail)))
+
+      def unapply(value: TypedValue): Option[(UType, Chunk[TypedValue])] = value.caseValue match {
+        case ListCase(tpe, elements) => Some((tpe, elements))
+        case _                       => None
+      }
+    }
   }
 
   object Literal {
@@ -579,6 +794,15 @@ object Value extends ValueConstructors with PatternConstructors {
       def apply[A](literal: Lit[A]): RawValue = Literal((), literal)
 
       def unapply(value: RawValue): Option[Lit[Any]] = value.caseValue match {
+        case LiteralCase(_, literal) => Some(literal)
+        case _                       => None
+      }
+    }
+
+    object Typed {
+      def apply[A](value: Lit[A]): TypedValue = Literal(value.inferredType, value)
+
+      def unapply(value: TypedValue): Option[Lit[Any]] = value.caseValue match {
         case LiteralCase(_, literal) => Some(literal)
         case _                       => None
       }
@@ -614,6 +838,17 @@ object Value extends ValueConstructors with PatternConstructors {
           case _                                  => None
         }
     }
+
+    object Typed {
+      def apply(tpe: UType, target: TypedValue, cases: Chunk[(Pattern[UType], TypedValue)]): TypedValue =
+        Value(PatternMatchCase(tpe, target, cases))
+
+      def unapply(value: TypedValue): Option[(UType, TypedValue, Chunk[(Pattern[UType], TypedValue)])] =
+        value.caseValue match {
+          case PatternMatchCase(tpe, target, cases) => Some((tpe, target, cases))
+          case _                                    => None
+        }
+    }
   }
   object Record {
     def apply[TA, VA](attributes: VA, fields: Chunk[(Name, Value[TA, VA])]): Value[TA, VA] =
@@ -631,6 +866,14 @@ object Value extends ValueConstructors with PatternConstructors {
     ): Value[TA, VA] =
       Value(RecordCase(attributes, firstField +: Chunk.fromIterable(otherFields)))
 
+    def apply[TA, VA](attributes: VA, fields: Map[String, Value[TA, VA]]): Value[TA, VA] = {
+      val fieldsChunk = Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })
+      Value(RecordCase(attributes, fieldsChunk))
+    }
+
+    def fromMap[TA, VA](attributes: VA, fields: Map[Name, Value[TA, VA]]): Value[TA, VA] =
+      Value(RecordCase(attributes, Chunk.fromIterable(fields.map { case (name, value) => (name, value) })))
+
     def unapply[TA, VA](value: Value[TA, VA]): Option[(VA, Chunk[(Name, Value[TA, VA])])] = value.caseValue match {
       case RecordCase(attributes, fields) => Some((attributes, fields))
       case _                              => None
@@ -643,17 +886,41 @@ object Value extends ValueConstructors with PatternConstructors {
 
       def apply(fields: (String, RawValue)*): RawValue = Record((), fields: _*)
 
+      def apply(fields: Map[String, RawValue]): RawValue = Record((), fields)
+
       def unapply(value: RawValue): Option[Chunk[(Name, RawValue)]] = value.caseValue match {
         case RecordCase(_, fields) => Some(fields)
         case _                     => None
       }
     }
+
+    object Typed {
+      def apply(tpe: UType, fields: Chunk[(Name, TypedValue)]): TypedValue =
+        Value(RecordCase(tpe, fields))
+
+      def apply(tpe: UType, fields: (String, TypedValue)*): TypedValue =
+        Value(RecordCase(tpe, Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })))
+
+      def apply(tpe: UType, fields: Map[String, TypedValue]): TypedValue =
+        Value(RecordCase(tpe, Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })))
+
+      def apply(fields: (String, TypedValue)*): TypedValue = {
+        val fieldTypes = Chunk.fromIterable(fields.map { case (name, value) => Type.field(name, value.attributes) })
+        val tpe        = Type.record(fieldTypes)
+        Value(RecordCase(tpe, Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })))
+      }
+
+      def unapply(value: TypedValue): Option[(UType, Chunk[(Name, TypedValue)])] = value.caseValue match {
+        case RecordCase(tpe, fields) => Some((tpe, fields))
+        case _                       => None
+      }
+    }
   }
 
   object Reference {
-    def apply[A](attributes: A, name: String): Value[Nothing, A] = Value(
-      ReferenceCase(attributes, FQName.fromString(name))
-    )
+    def apply[A](attributes: A, name: String): Value[Nothing, A] =
+      Value(ReferenceCase(attributes, FQName.fromString(name)))
+
     def apply[A](attributes: A, name: FQName): Value[Nothing, A] = Value(ReferenceCase(attributes, name))
 
     def apply[A](attributes: A, packageName: String, moduleName: String, localName: String): Value[Nothing, A] =
@@ -673,6 +940,18 @@ object Value extends ValueConstructors with PatternConstructors {
       def unapply(value: Value[Nothing, Any]): Option[FQName] = value.caseValue match {
         case ReferenceCase(_, name) => Some(name)
         case _                      => None
+      }
+    }
+
+    object Typed {
+      @inline def apply(tpe: UType, name: String): TypedValue = Reference(tpe, name)
+      @inline def apply(tpe: UType, name: FQName): TypedValue = Reference(tpe, name)
+      @inline def apply(tpe: UType, packageName: String, moduleName: String, localName: String): TypedValue =
+        Reference(tpe, FQName.fqn(packageName, moduleName, localName))
+
+      def unapply(value: TypedValue): Option[(UType, FQName)] = value.caseValue match {
+        case ReferenceCase(tpe, name) => Some((tpe, name))
+        case _                        => None
       }
     }
   }
@@ -701,6 +980,20 @@ object Value extends ValueConstructors with PatternConstructors {
         case _                      => None
       }
     }
+
+    object Typed {
+      def apply(elements: Chunk[TypedValue]): TypedValue = {
+        val tupleType = Type.tuple(elements.map(_.attributes))
+        Value(TupleCase(tupleType, elements))
+      }
+
+      def apply(elements: TypedValue*): TypedValue = apply(Chunk.fromIterable(elements))
+
+      def unapply(value: TypedValue): Option[(UType, Chunk[TypedValue])] = value.caseValue match {
+        case TupleCase(attributes, elements) => Some((attributes, elements))
+        case _                               => None
+      }
+    }
   }
 
   object Unit {
@@ -716,6 +1009,16 @@ object Value extends ValueConstructors with PatternConstructors {
       def unapply(value: RawValue): Option[scala.Unit] = value match {
         case Value(UnitCase(())) => Some(())
         case _                   => None
+      }
+    }
+
+    object Typed {
+      def apply: TypedValue             = Value(UnitCase(Type.unit))
+      def apply(tpe: UType): TypedValue = Value(UnitCase(tpe))
+
+      def unapply(value: TypedValue): Option[UType] = value match {
+        case Value(UnitCase(attributes)) => Some(attributes)
+        case _                           => None
       }
     }
   }
@@ -761,6 +1064,26 @@ object Value extends ValueConstructors with PatternConstructors {
         case _                                   => None
       }
     }
+
+    object Typed {
+      def apply(tpe: UType, valueToUpdate: TypedValue, fields: Chunk[(Name, TypedValue)]): TypedValue =
+        Value(UpdateRecordCase(tpe, valueToUpdate, fields))
+
+      def apply(tpe: UType, valueToUpdate: TypedValue, fields: (String, TypedValue)*): TypedValue =
+        Value(
+          UpdateRecordCase(
+            tpe,
+            valueToUpdate,
+            Chunk.fromIterable(fields.map { case (name, value) => (Name.fromString(name), value) })
+          )
+        )
+
+      def unapply(value: TypedValue): Option[(UType, TypedValue, Chunk[(Name, TypedValue)])] =
+        value.caseValue match {
+          case UpdateRecordCase(tpe, value, fields) => Some((tpe, value, fields))
+          case _                                    => None
+        }
+    }
   }
 
   object Variable {
@@ -778,5 +1101,86 @@ object Value extends ValueConstructors with PatternConstructors {
       @inline def apply(name: Name): RawValue   = Variable((), name)
       @inline def apply(name: String): RawValue = Variable((), name)
     }
+
+    object Typed {
+      @inline def apply(tpe: UType, name: Name): TypedValue   = Variable(tpe, name)
+      @inline def apply(tpe: UType, name: String): TypedValue = Variable(tpe, name)
+      @inline def apply(name: String, tpe: UType): TypedValue = Variable(tpe, name)
+      @inline def apply(name: Name, tpe: UType): TypedValue   = Variable(tpe, name)
+
+      def unapply(value: TypedValue): Option[(UType, Name)] = value.caseValue match {
+        case VariableCase(tpe, name) => Some((tpe, name))
+        case _                       => None
+      }
+    }
+  }
+
+  implicit class StringExtensions(private val self: String) extends AnyVal {
+    def as(tpe: Type.UType): TypedValue = Variable.Typed(self, tpe)
+    def :=(value: TypedValue): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromTypedValue(value))
+
+    def :=(value: Int): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.int(value)))
+
+    def :=(value: Long): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.long(value)))
+
+    def :=(value: Float): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.float(value)))
+
+    def :=(value: Double): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.double(value)))
+
+    def :=(value: Boolean): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.boolean(value)))
+
+    def :=(value: String): LetDefinition.Unbound[Any, UType] =
+      LetDefinition.Unbound(Name.fromString(self), Definition.fromLiteral(Lit.string(value)))
+
+  }
+
+  implicit class RawValueExtensions(private val self: RawValue) extends AnyVal {
+
+    /**
+     * Ascribe the given type to this `RawValue` and all its children.
+     * ===NOTE===
+     * This is a recursive operation and all children of this `RawValue` will also be ascribed with the given value.
+     */
+    def :>(ascribedType: UType): TypedValue = self.mapAttributes(identity, _ => ascribedType)
+
+    def toValDef(returnType: UType): Definition[Any, UType] = Definition(returnType, self :> returnType)
+  }
+
+  implicit class TypedValueExtensions(private val self: TypedValue) extends AnyVal {
+
+    /**
+     * Ascribe the given type of this `TypedValue` and all its children.
+     * ===NOTE===
+     * This is NOT a recursive operation and it will only ascribe the type of this value and not its children.
+     */
+    def :>(ascribedType: UType): TypedValue = self.caseValue match {
+      case c @ ApplyCase(_, _, _)            => Value(c.copy(attributes = ascribedType))
+      case c @ ConstructorCase(_, _)         => Value(c.copy(attributes = ascribedType))
+      case c @ DestructureCase(_, _, _, _)   => Value(c.copy(attributes = ascribedType))
+      case c @ FieldCase(_, _, _)            => Value(c.copy(attributes = ascribedType))
+      case c @ FieldFunctionCase(_, _)       => Value(c.copy(attributes = ascribedType))
+      case c @ IfThenElseCase(_, _, _, _)    => Value(c.copy(attributes = ascribedType))
+      case c @ LambdaCase(_, _, _)           => Value(c.copy(attributes = ascribedType))
+      case c @ LetDefinitionCase(_, _, _, _) => Value(c.copy(attributes = ascribedType))
+      case c @ LetRecursionCase(_, _, _)     => Value(c.copy(attributes = ascribedType))
+      case c @ ListCase(_, _)                => Value(c.copy(attributes = ascribedType))
+      case c @ LiteralCase(_, _)             => Value(c.copy(attributes = ascribedType))
+      case c @ PatternMatchCase(_, _, _)     => Value(c.copy(attributes = ascribedType))
+      case c @ RecordCase(_, _)              => Value(c.copy(attributes = ascribedType))
+      case c @ ReferenceCase(_, _)           => Value(c.copy(attributes = ascribedType))
+      case c @ TupleCase(_, _)               => Value(c.copy(attributes = ascribedType))
+      case c @ UnitCase(_)                   => Value(c.copy(attributes = ascribedType))
+      case c @ UpdateRecordCase(_, _, _)     => Value(c.copy(attributes = ascribedType))
+      case c @ VariableCase(_, _)            => Value(c.copy(attributes = ascribedType))
+    }
+
+    def toValDef(returnType: UType): Definition[Any, UType] = Definition(returnType, self)
+    def toValDef: Definition[Any, UType]                    = Definition(self.attributes, self)
   }
 }

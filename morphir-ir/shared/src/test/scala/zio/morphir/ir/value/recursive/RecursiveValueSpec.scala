@@ -3,7 +3,7 @@ package zio.morphir.ir.value.recursive
 import zio.Chunk
 import zio.morphir.ir.sdk.Basics.{boolType, floatType, intType}
 import zio.morphir.ir.sdk.String.stringType
-import zio.morphir.ir.{FQName, Gens, Name, Type}
+import zio.morphir.ir.{FQName, Gens, Literal => Lit, Name, Type}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
@@ -329,6 +329,39 @@ object RecursiveValueSpec extends MorphirBaseSpec {
             actual.isData == false
           )
         }
+      ),
+      suite("Typed")(
+        test("It should be possible to use a convenient let constructor for int values") {
+          val actual = let("n", 42, variable(intType, "n"))
+          assertTrue(
+            actual == LetDefinition(intType, "n", Definition.fromLiteral(Lit.int(42)), variable(intType, "n")),
+            actual.attributes == intType,
+            actual.toString == "let n = 42 in n",
+            actual.isData == false
+          )
+        }
+      ),
+      suite("Using StringExtensions")(
+        test("It should be possible to define a let using := on a int") {
+          val varName    = "n"
+          val unboundLet = varName := 42
+          val actual     = unboundLet.bind(variable(varName, unboundLet.valueDefinition.body.attributes))
+          assertTrue(
+            unboundLet.toString() == "let n = 42",
+            actual.toString() == "let n = 42 in n"
+          )
+        },
+        test("It should be possible to define a let using := on a string") {
+          val varName    = "name"
+          val unboundLet = varName := "Frank"
+          val actual     = unboundLet.bind(variable(varName, unboundLet.valueDefinition.body.attributes))
+          assertTrue(
+            unboundLet.toString() == "let name = \"Frank\"",
+            actual.toString() == "let name = \"Frank\" in name",
+            actual == (unboundLet in variable(varName, unboundLet.valueDefinition.body.attributes)),
+            actual == ((varName := "Frank") in variable(varName, stringType))
+          )
+        }
       )
     ),
     suite("LetRecursion")(
@@ -512,9 +545,8 @@ object RecursiveValueSpec extends MorphirBaseSpec {
           val lastNameField  = "lastName"  -> string("Doe")
           val ageField       = "age"       -> int(21)
           val fields = Chunk(firstNameField, lastNameField, ageField).map { case (n, v) => Name.fromString(n) -> v }
-          val recordFields = Chunk("firstName" -> stringType, "lastName" -> stringType, "age" -> intType).map {
-            case (n, t) => Name.fromString(n) -> t
-          }
+          val recordFields =
+            Chunk("firstName" -> stringType, "lastName" -> stringType, "age" -> intType).map(Type.field(_))
           val recordType = Type.record(recordFields)
           val actual     = record(recordType, firstNameField, lastNameField, ageField)
           assertTrue(

@@ -1,14 +1,17 @@
 package zio.morphir.ir
 import zio.morphir.ir.Type.UType
-import zio.morphir.ir.Value.TypedValue
-import zio.morphir.ir.value.RawValue
-import zio.morphir.ir.{Value => _}
+import zio.morphir.ir.Value.{RawValue, TypedValue}
 
 import scala.language.implicitConversions
 
 sealed trait Literal[+A] { self =>
   def value: A
-  def toRawValue: RawValue = Value.Value.Literal.Raw(self)
+  final def toRawValue: RawValue = Value.literal(self)
+  final def inferredType: UType  = InferredTypeOf[Literal[A]].inferredType(self)
+  final def toTypedValue[A0 >: A](implicit ev: InferredTypeOf[Literal[A0]]): TypedValue = {
+    val tpe = ev.inferredType(self)
+    Value.literal(tpe, self)
+  }
 
   final override def toString: java.lang.String = Literal.toString(self)
 }
@@ -54,14 +57,6 @@ object Literal {
       case String(_)      => sdk.String.stringType
       case WholeNumber(_) => sdk.Basics.intType
       case Float(_)       => sdk.Basics.floatType
-    }
-  }
-
-  implicit class LiteralOps[A](private val self: Literal[A]) extends AnyVal {
-    def inferredType: UType = InferredTypeOf[Literal[A]].inferredType(self)
-    def toTypedValue(implicit ev: InferredTypeOf[Literal[A]]): TypedValue = {
-      val tpe = ev.inferredType(self)
-      Value.Value.Literal(tpe, self)
     }
   }
 }

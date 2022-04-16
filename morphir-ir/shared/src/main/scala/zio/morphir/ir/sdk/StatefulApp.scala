@@ -21,9 +21,9 @@ object StatefulApp {
             name("StatefulApp") -> Chunk(
               (
                 name("logic"),
-                function1(
+                function(
                   maybeType(variable(name("s"))),
-                  function1(
+                  function(
                     variable(name("c")),
                     tuple(
                       Chunk(

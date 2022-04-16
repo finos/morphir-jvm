@@ -65,7 +65,7 @@ object Definition {
     Definition(
       inputTypes = Chunk.empty,
       outputType = literal.inferredType,
-      body = literal.toTypedValue
+      body = Value.Literal.Typed(literal)
     )
 
   def fromRawValue(value: (RawValue, UType)): Definition.Raw =

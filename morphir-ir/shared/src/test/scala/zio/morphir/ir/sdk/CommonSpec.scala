@@ -2,7 +2,7 @@ package zio.morphir.ir.sdk
 
 import zio.Scope
 import zio.morphir.ir.Type.Type
-import zio.morphir.ir.{Gens, Name, Path}
+import zio.morphir.ir.{Gens, Path}
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
 
@@ -17,9 +17,9 @@ object CommonSpec extends MorphirBaseSpec {
       test("should work as expected") {
         check(Gens.words) { s =>
           val actual = Common.tVar(s)
-          assertTrue(actual.satisfiesCaseOf { case Type.Variable(_, name) =>
-            name == Name.fromString(s)
-          })
+          assertTrue(
+            actual == Type.variable(s)
+          )
         }
       }
     )

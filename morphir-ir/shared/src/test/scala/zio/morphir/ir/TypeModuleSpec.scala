@@ -1,7 +1,7 @@
 package zio.morphir.ir
 
+import zio.Chunk
 import zio.morphir.ir.Type.Constructors
-import zio.morphir.ir.Type.Field._
 import zio.morphir.ir.Type.Type._
 import zio.morphir.testing.MorphirBaseSpec
 import zio.test._
@@ -17,16 +17,20 @@ object TypeModuleSpec extends MorphirBaseSpec {
     suite("Variable")(
       test("testing first variable constructor") {
         val actual = variable("FizzBuzz")
-        assertTrue(actual.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" }) &&
-        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+        assertTrue(
+          actual == Variable((), "FizzBuzz"),
+          actual.collectVariables == Set(Name.fromString("FizzBuzz"))
+        )
       },
       test("testing second variable constructor") {
         val actual = variable(Name("FizzBuzz"))
-        assertTrue(actual.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" }) &&
-        assertTrue(actual.collectVariables == Set(Name.fromString("FizzBuzz")))
+        assertTrue(
+          actual == Variable((), "FizzBuzz"),
+          actual.collectVariables == Set(Name.fromString("FizzBuzz"))
+        )
       },
       test("eraseAttributes should clear out the Attributes") {
-        val actual   = variable("foo", (0, 0))
+        val actual   = variable((0, 0), "foo")
         val expected = variable("foo")
         assertTrue(
           actual != expected,
@@ -41,7 +45,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val actual = field(Name("field1"), variable("FizzBuzz"))
         assertTrue(
           actual.name == Name("field1"),
-          actual.fieldType.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" },
+          actual.fieldType == variable("FizzBuzz"),
           actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
         )
       },
@@ -49,7 +53,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val actual = field("field1", variable("FizzBuzz"))
         assertTrue(
           actual.name == Name("field1"),
-          actual.fieldType.satisfiesCaseOf { case Variable(_, name) => name.toString == "[fizz,buzz]" },
+          actual.fieldType == variable("FizzBuzz"),
           actual.fieldType.collectVariables == Set(Name.fromString("FizzBuzz"))
         )
       }
@@ -61,7 +65,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val chunk  = zio.Chunk(var1, var2)
         val actual = record(chunk)
         assertTrue(
-          actual.satisfiesCaseOf { case Record(_, fields) => fields.contains(var1) && fields.contains(var2) }
+          actual == Record(Chunk(var1, var2))
         )
       },
       test("testing second record constructor") {
@@ -69,7 +73,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val var2   = field("second", variable("there"))
         val actual = record(var1, var2)
         assertTrue(
-          actual.satisfiesCaseOf { case Record(_, fields) => fields.contains(var1) && fields.contains(var2) }
+          actual == Record(var1, var2)
         )
       }
     ),
@@ -80,42 +84,34 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val chunk  = zio.Chunk(var1, var2)
         val actual = tuple(chunk)
         assertTrue(
-          actual.satisfiesCaseOf { case Tuple(_, elements) => elements.contains(var1) && elements.contains(var2) }
+          actual == Tuple.withElements(var1, var2),
+          actual.attributes == ()
         )
       },
       test("testing second tuple constructor") {
         val var1   = variable("hello")
         val var2   = variable("there")
-        val var3   = variable("notThere")
         val actual = tuple(var1, var2)
         assertTrue(
-          actual.satisfiesCaseOf { case Tuple(_, elements) =>
-            elements.contains(var1) && elements.contains(var2) && !elements.contains(var3)
-          }
+          actual == Tuple.withElements(var1, var2)
         )
       }
     ),
     suite("Function")(
       test("testing first function constructor") {
         val param1  = variable("v1")
-        val param2  = variable("v2")
         val retType = tuple(variable("v3"), variable("v4"))
-        val actual  = function(zio.Chunk(param1, param2), retType)
+        val actual  = function(param1, retType)
         assertTrue(
-          actual.satisfiesCaseOf { case Function(_, params, returnType) =>
-            params.contains(param1) && params.contains(param2) && returnType == retType
-          }
+          actual == Function(param1, retType)
         )
       },
       test("testing second function constructor") {
         val param1  = variable("v1")
-        val param2  = variable("v2")
         val retType = tuple(variable("v3"), variable("v4"))
-        val actual  = function(param1, param2)(retType, ())
+        val actual  = function("Hello", param1, retType)
         assertTrue(
-          actual.satisfiesCaseOf { case Function(_, params, returnType) =>
-            params.contains(param1) && params.contains(param2) && returnType == retType
-          }
+          actual == Function("Hello", param1, retType)
         )
       }
     ),
@@ -127,9 +123,8 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val n1     = Name("SomeName")
         val actual = extensibleRecord(n1, zio.Chunk(f1, f2, f3))
         assertTrue(
-          actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-            name == n1 && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-          }
+          actual == ExtensibleRecord(n1, Chunk(f1, f2, f3)),
+          actual == ExtensibleRecord("SomeName", f1, f2, f3)
         )
       },
       test("testing second extensible record constructor") {
@@ -137,11 +132,9 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
         val n1     = Name("SomeName")
-        val actual = extensibleRecord(n1, f1, f2, f3)
+        val actual = extensibleRecordWithFields(n1, f1, f2, f3)
         assertTrue(
-          actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-            name == n1 && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-          }
+          actual == ExtensibleRecord(n1, Chunk(f1, f2, f3))
         )
       },
       test("testing third extensible record constructor") {
@@ -150,20 +143,16 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
         val actual = extensibleRecord("SomeName", zio.Chunk(f1, f2, f3))
         assertTrue(
-          actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-            name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-          }
+          actual == ExtensibleRecord(Name.fromString("SomeName"), Chunk(f1, f2, f3))
         )
       },
       test("testing fourth extensible record constructor") {
         val f1     = field("first", variable("hello"))
         val f2     = field("second", variable("there"))
         val f3     = field("third", tuple(variable("v3"), variable("v4")))
-        val actual = extensibleRecord("SomeName", f1, f2, f3)
+        val actual = extensibleRecordWithFields("SomeName", f1, f2, f3)
         assertTrue(
-          actual.satisfiesCaseOf { case ExtensibleRecord(_, name, fields) =>
-            name.toString == "[some,name]" && fields.contains(f1) && fields.contains(f2) && fields.contains(f3)
-          }
+          actual == ExtensibleRecord(Name.fromString("SomeName"), Chunk(f1, f2, f3))
         )
       }
     ),
@@ -175,9 +164,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
         val actual = reference(fqn1, zio.Chunk(v1, v2, v3))
         assertTrue(
-          actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
+          actual == Reference(fqn1)(v1, v2, v3)
         )
       },
       test("testing second reference constructor") {
@@ -187,9 +174,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
         val actual = reference(fqn1, v1, v2, v3)
         assertTrue(
-          actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
+          actual == Reference(fqn1)(v1, v2, v3)
         )
       },
       test("testing third reference constructor") {
@@ -199,9 +184,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
         val actual = reference("packageName", "moduleName", "localName", zio.Chunk(v1, v2, v3))
         assertTrue(
-          actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
+          actual == Reference(fqn1)(v1, v2, v3)
         )
       },
       test("testing fourth reference constructor") {
@@ -211,9 +194,7 @@ object TypeModuleSpec extends MorphirBaseSpec {
         val fqn1   = FQName.fqn("packageName", "moduleName", "localName")
         val actual = reference("packageName", "moduleName", "localName", v1, v2, v3)
         assertTrue(
-          actual.satisfiesCaseOf { case Reference(_, fqName, typeParams) =>
-            fqName == fqn1 && typeParams.contains(v1) && typeParams.contains(v2) && typeParams.contains(v3)
-          }
+          actual == Reference(fqn1)(v1, v2, v3)
         )
       }
     ),

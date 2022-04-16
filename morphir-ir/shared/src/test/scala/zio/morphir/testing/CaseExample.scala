@@ -4,86 +4,85 @@ import zio.Chunk
 import zio.morphir.Dsl
 import zio.morphir.IR.TypeConstructorInfo
 import zio.morphir.ir.Type.{Type, UType}
-import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue, Value}
-import zio.morphir.ir.sdk.{Basics, String => StringModule}
-import zio.morphir.ir.{FQName, Name, NativeFunction, Path}
+import zio.morphir.ir.Value.{Definition => ValueDefinition, RawValue}
+import zio.morphir.ir.sdk.Basics.{add, intType, subtract}
+import zio.morphir.ir.sdk.{String => StringModule}
+import zio.morphir.ir.{FQName, Name, Path}
 import zio.morphir.syntax.AllSyntax
 
 object CaseExample extends AllSyntax {
+  private val intValueDef = valueDef(intType)
 
   // /x = if (foo) y else 0
   // y = if (!foo) x else 0
-  val letIntroduceMultipleExample: RawValue = letRecursion(
+  val letIntroduceMultipleExample: RawValue = letRec(
     Map(
-      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20) -> Basics.intType), // lit(20)
-      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22) -> Basics.intType)  // lit(22)
+      Name.fromString("x") -> ValueDefinition.fromRawValue(int(20), intType), // lit(20)
+      Name.fromString("y") -> ValueDefinition.fromRawValue(int(22), intType)  // lit(22)
     ),
-    nativeApply(
-      NativeFunction.Addition,
-      Chunk(variable("x"), variable("y"))
-    )
+    apply(apply(add, variable("x")), variable("y"))
+    // nativeApply(
+    //   NativeFunction.Addition,
+    //   Chunk(variable("x"), variable("y"))
+    // )
   )
 
-  val letIntroduceOutOfOrderExample: RawValue = letRecursion(
+  val letIntroduceOutOfOrderExample: RawValue = letRec(
     Map(
-      Name.fromString("x") ->
-        nativeApply(
-          NativeFunction.Addition,
-          Chunk(
-            variable("y"),
-            int(22)
-          )
-        ).toDefinition(Basics.intType),
-      Name.fromString("y") -> int(22).toDefinition(Basics.intType)
+      Name.fromString("x") -> intValueDef(apply(apply(add, variable("y")), int(22))),
+      // nativeApply(
+      //   NativeFunction.Addition,
+      //   Chunk(
+      //     variable("y"),
+      //     int(22)
+      //   )
+      // ).toDefinition(Basics.intType),
+      Name.fromString("y") -> intValueDef(int(22))
     ),
-    variable("x")
+    inValue = variable("x")
   )
 
   val applyFieldFunction: RawValue =
     Dsl.apply(fieldFunction(Name.fromString("fieldA")), recordCaseExample)
 
   val additionExample: RawValue =
-    letDefinition(
-      Name("x"),
-      int(1).toDefinition(Basics.intType),
-      letDefinition(
-        Name("y"),
-        int(2).toDefinition(Basics.intType),
-        nativeApply(
-          NativeFunction.Addition,
-          Chunk(variable("x"), variable("y"))
-        )
+    let(
+      "x",
+      intValueDef(int(1)),
+      let(
+        "y",
+        intValueDef(int(2)),
+        apply(apply(add, variable("x")), variable("y"))
+        // nativeApply(
+        //   NativeFunction.Addition,
+        //   Chunk(variable("x"), variable("y"))
+        // )
       )
     )
 
   val subtractionExample: RawValue =
-    letDefinition(
-      Name("x"),
-      int(1).toDefinition(Basics.intType),
-      letDefinition(
+    let(
+      "x",
+      intValueDef(int(1)),
+      let(
         Name("y"),
-        int(2).toDefinition(Basics.intType),
-        nativeApply(
-          NativeFunction.Subtraction,
-          Chunk(variable(Name("x")), variable(Name("y")))
-        )
+        intValueDef(int(2)),
+        apply(apply(subtract, variable("x")), variable("y"))
+        // nativeApply(
+        //   NativeFunction.Subtraction,
+        //   Chunk(variable(Name("x")), variable(Name("y")))
+        // )
       )
     )
 
-  val tupleCaseExample: Value.Tuple.Raw =
-    tuple(
-      literal(1),
-      literal(2)
-    )
+  val tupleCaseExample: RawValue = tuple(int(1), int(2))
 
   val listCaseExample: RawValue =
-    list(
-      string("hello"),
-      string("world")
-    )
+    list(string("hello"), string("world"))
+
   val ifThenElseCaseExample: RawValue =
     ifThenElse(
-      condition = literal(false),
+      condition = boolean(false),
       thenBranch = string("yes"),
       elseBranch = string("no")
     )
@@ -93,7 +92,7 @@ object CaseExample extends AllSyntax {
     val fieldB = Name.fromString("fieldB")
 
     val value1 = Dsl.string("hello")
-    val value2 = Dsl.wholeNumber(new java.math.BigInteger("2"))
+    val value2 = int(2)
 
     val element1 = fieldA -> value1
     val element2 = fieldB -> value2
@@ -101,10 +100,10 @@ object CaseExample extends AllSyntax {
   }
 
   val recordCaseUpdateExample: RawValue =
-    updateRecord(
+    update(
       recordCaseExample,
       Chunk(
-        Name("fieldB") -> Dsl.wholeNumber(new java.math.BigInteger("3"))
+        Name("fieldB") -> int(3)
       )
     )
 
@@ -132,7 +131,7 @@ object CaseExample extends AllSyntax {
     Dsl.patternMatch(
       listCaseExample,
       headTailPattern(
-        literalPattern("hello"),
+        stringPattern("hello"),
         asPattern(wildcardPattern, Name("tail"))
       ) -> variable("tail")
     )
@@ -182,36 +181,41 @@ object CaseExample extends AllSyntax {
       variable("x")
     )
   val staticScopingExample: RawValue =
-    letDefinition(
+    letDef(
       Name("x"),
-      string("static").toDefinition(StringModule.stringType),
-      letRecursion(
-        Map(Name("y") -> variable(Name("x")).toDefinition(StringModule.stringType)),
-        letDefinition(Name("x"), string(("dynamic")).toDefinition(StringModule.stringType), variable(Name("y")))
+      valueDef(StringModule.stringType)(string("static")),
+      letRec(
+        Map(Name("y") -> valueDef(StringModule.stringType)(variable("x"))),
+        let(Name("x"), valueDef(StringModule.stringType)(string("dynamic")), variable(Name("y")))
       )
     )
   val letRecExample: RawValue =
-    letRecursion(
+    letRec(
       Map(
-        Name.fromString("x") -> ifThenElse(
-          condition = literal(false),
-          thenBranch = variable("y"),
-          elseBranch = literal(3)
-        ).toDefinition(Basics.intType),
-        Name.fromString("y") ->
+        Name.fromString("x") -> intValueDef(
           ifThenElse(
-            condition = literal(false),
-            thenBranch = literal(2),
-            elseBranch = variable("x")
-          ).toDefinition(Basics.intType)
+            condition = boolean(false),
+            thenBranch = variable("y"),
+            elseBranch = int(3)
+          )
+        ),
+        Name.fromString("y") ->
+          intValueDef(
+            ifThenElse(
+              condition = boolean(false),
+              thenBranch = int(2),
+              elseBranch = variable("x")
+            )
+          )
       ),
-      nativeApply(
-        NativeFunction.Addition,
-        Chunk(
-          variable("x"),
-          variable("y")
-        )
-      )
+      apply(apply(add, variable("x")), variable("y"))
+      // nativeApply(
+      //   NativeFunction.Addition,
+      //   Chunk(
+      //     variable("x"),
+      //     variable("y")
+      //   )
+      // )
     )
 
   // (valueDefinitions: Map[Name, Self], inValue: Self)
@@ -226,27 +230,25 @@ object CaseExample extends AllSyntax {
     Dsl.patternMatch(
       Dsl.wholeNumber(new java.math.BigInteger("7")),
       asPattern(
-        literalPattern(8),
+        intPattern(8),
         Name.fromString("x")
-      ) ->
-        nativeApply(
-          NativeFunction.Subtraction,
-          Chunk(
-            variable(Name.fromString("x")),
-            variable(Name.fromString("x"))
-          )
-        ),
-      asPattern(
-        literalPattern(7),
-        Name.fromString("x")
-      ) ->
-        nativeApply(
-          NativeFunction.Addition,
-          Chunk(
-            variable(Name.fromString("x")),
-            variable(Name.fromString("x"))
-          )
-        )
+      ) -> apply(apply(subtract, variable("x")), variable("y")),
+      // nativeApply(
+      //   NativeFunction.Subtraction,
+      //   Chunk(
+      //     variable(Name.fromString("x")),
+      //     variable(Name.fromString("x"))
+      //   )
+      // ),
+      asPattern(intPattern(7), Name.fromString("x")) ->
+        apply(apply(add, variable("x")), variable("x"))
+      // nativeApply(
+      //   NativeFunction.Addition,
+      //   Chunk(
+      //     variable(Name.fromString("x")),
+      //     variable(Name.fromString("x"))
+      //   )
+      // )
     )
 
   // { case _ => 42}()
@@ -254,19 +256,22 @@ object CaseExample extends AllSyntax {
   val applyWithWildCard: RawValue =
     Dsl.apply(lambda(wildcardPattern, wholeNumber(new java.math.BigInteger("42"))), Dsl.unit)
 
-  val lambdaExample: RawValue = letDefinition(
+  val lambdaExample: RawValue = let(
     Name("foo"),
-    lambda(
-      asPattern(wildcardPattern, Name("x")),
-      nativeApply(
-        NativeFunction.Addition,
-        Chunk(
-          variable("x"),
-          variable("x")
-        )
+    intValueDef(
+      lambda(
+        asPattern(wildcardPattern, Name("x")),
+        apply(apply(add, variable("x")), variable("x"))
+        // nativeApply(
+        //   NativeFunction.Addition,
+        //   Chunk(
+        //     variable("x"),
+        //     variable("x")
+        //   )
+        // )
       )
-    ).toDefinition(Basics.intType),
-    Dsl.apply(variable("foo"), literal(33))
+    ),
+    Dsl.apply(variable("foo"), int(33))
   )
 
   val personName: FQName =
@@ -278,9 +283,9 @@ object CaseExample extends AllSyntax {
       Name("RecordType")
     )
 
-  lazy val recordType: UType = defineRecord(
-    defineField(Name("name"), Type.unit),
-    defineField(Name("age"), Type.unit)
+  lazy val recordType: UType = define.record(
+    define.field(Name("name"), Type.unit),
+    define.field(Name("age"), Type.unit)
   )
 
   lazy val recordTypeAliasSpecification: zio.morphir.ir.Type.Specification.TypeAliasSpecification[Any] =
@@ -309,36 +314,36 @@ object CaseExample extends AllSyntax {
   lazy val savingsAccountTypeConstructor: TypeConstructorInfo = TypeConstructorInfo(
     containingType = accountTypeName,
     typeParams = Chunk.empty,
-    typeArgs = Chunk(Name.fromString("arg1") -> defineReference(FQName.fromString("Morphir.SDK.String"), Chunk.empty))
+    typeArgs = Chunk(Name.fromString("arg1") -> define.reference(FQName.fromString("Morphir.SDK.String"), Chunk.empty))
   )
 
   lazy val checkingAccountTypeConstructor: TypeConstructorInfo = TypeConstructorInfo(
     containingType = accountTypeName,
     typeParams = Chunk.empty,
     typeArgs = Chunk(
-      Name.fromString("arg1") -> defineReference(FQName.fromString(":Morphir.SDK:String"), Chunk.empty),
-      Name.fromString("arg2") -> defineReference(FQName.fromString(":Morphir.SDK:Int"), Chunk.empty)
+      Name.fromString("arg1") -> define.reference(FQName.fromString(":Morphir.SDK:String"), Chunk.empty),
+      Name.fromString("arg2") -> define.reference(FQName.fromString(":Morphir.SDK:Int"), Chunk.empty)
     )
   )
 
   val constructorExample: RawValue =
     apply(
       constructor(recordTypeName),
-      literal("Adam").toRawValue,
-      literal(42)
+      string("Adam").toRawValue,
+      int(42)
     )
 
   val savingsAccountConstructorExample: RawValue =
     apply(
       constructor(savingsAccountTypeName),
-      literal("Adam").toRawValue
+      string("Adam")
     )
 
   val checkingAccountConstructorExample: RawValue =
     apply(
       constructor(checkingAccountTypeName),
-      literal("Brad").toRawValue,
-      literal(10000)
+      string("Brad"),
+      int(10000)
     )
 
   // tuple ("Adam", 42)

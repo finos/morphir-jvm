@@ -88,6 +88,26 @@ trait PatternConstructors { self =>
       argumentPatterns = argumentPatterns
     )
 
+  final def constructorPattern(
+      constructorName: String,
+      argumentPatterns: Chunk[UPattern]
+  ): UPattern =
+    Pattern.ConstructorPattern(
+      attributes = (),
+      constructorName = FQName.fromString(constructorName),
+      argumentPatterns = argumentPatterns
+    )
+
+  final def constructorPattern(
+      constructorName: FQName,
+      argumentPatterns: Chunk[UPattern]
+  ): UPattern =
+    Pattern.ConstructorPattern(
+      attributes = (),
+      constructorName = constructorName,
+      argumentPatterns = argumentPatterns
+    )
+
   final def decimalPattern[A](attributes: A, value: BigDecimal): Pattern[A] =
     Pattern.LiteralPattern(attributes = attributes, literal = Literal.decimal(value))
 
@@ -153,6 +173,9 @@ trait PatternConstructors { self =>
 
   final def tuplePattern(patterns: UPattern*): UPattern =
     Pattern.TuplePattern(attributes = DefaultAttributes, elementPatterns = Chunk.fromIterable(patterns))
+
+  final def unitPattern: UPattern                     = Pattern.UnitPattern(DefaultAttributes)
+  final def unitPattern[A](attributes: A): Pattern[A] = Pattern.UnitPattern(attributes)
 
   final def wildcardPattern[A](attributes: A): Pattern[A] = Pattern.WildcardPattern(attributes)
 

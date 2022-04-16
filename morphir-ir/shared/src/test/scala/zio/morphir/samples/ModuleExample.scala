@@ -1,22 +1,23 @@
 package zio.morphir.samples
 
 import zio.Chunk
+import zio.morphir.Dsl.define
 import zio.morphir.ir.Module.{Definition, Specification}
-import zio.morphir.ir.ModuleModuleSpec.defineVariable
 import zio.morphir.ir.Type.Definition.{CustomType, TypeAlias}
 import zio.morphir.ir.Type.Specification.OpaqueTypeSpecification
 import zio.morphir.ir.Type.{Constructors, UType}
+import zio.morphir.ir.Value.ValueDefinition
 import zio.morphir.ir.{AccessControlled, Documented, Literal => Lit, Name, Value, value}
 
 object ModuleExample {
   val items: Map[Name, Chunk[(Name, UType)]] = Map {
-    Name("type")    -> Chunk((Name("var"), defineVariable("var1")))
-    Name("rainbow") -> Chunk((Name("red"), defineVariable("red")))
+    Name("type")    -> Chunk((Name("var"), define variable ("var1")))
+    Name("rainbow") -> Chunk((Name("red"), define variable ("red")))
   }
 
   val typeAlias: Documented[TypeAlias[Any]] = Documented(
     "doc",
-    TypeAlias(Chunk(Name.fromString("hello")), defineVariable("type1"))
+    TypeAlias(Chunk(Name.fromString("hello")), define.variable("type1"))
   )
 
   val customType: Documented[CustomType[Any]] = Documented(
@@ -29,9 +30,9 @@ object ModuleExample {
     Name("world") -> AccessControlled.publicAccess(customType)
   }
 
-  val definitionValues: Map[Name, AccessControlled[Documented[value.Definition.Typed]]] = Map {
+  val definitionValues: Map[Name, AccessControlled[Documented[ValueDefinition.Typed]]] = Map {
     Name("val") -> AccessControlled.publicAccess(
-      Documented("type", Value.Definition.fromLiteral(Lit.string("string")))
+      Documented("type", ValueDefinition.fromLiteral(Lit.string("string")))
     )
   }
 
@@ -53,10 +54,10 @@ object ModuleExample {
       "types",
       Value.Specification(
         Chunk(
-          (Name("type1"), defineVariable("Float")),
-          (Name("type2"), defineVariable("Decimal"))
+          (Name("type1"), define.variable("Float")),
+          (Name("type2"), define.variable("Decimal"))
         ),
-        defineVariable("WholeNumbers")
+        define.variable("WholeNumbers")
       )
     )
   }

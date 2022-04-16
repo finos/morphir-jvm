@@ -929,6 +929,7 @@ object Value {
 
     type Typed[+A] = Literal[UType, A]
     object Typed {
+      def apply[A](literal: Lit[A]): Typed[A]                      = Literal(literal.inferredType, literal)
       def apply[A](literal: Lit[A])(ascribedType: UType): Typed[A] = Literal(ascribedType, literal)
     }
   }
@@ -1115,8 +1116,8 @@ object Value {
     }
     type Typed = Variable[UType]
     object Typed {
-      def apply(name: Name)(variableType: UType): Typed   = Variable(variableType, name)
-      def apply(name: String)(variableType: UType): Typed = Variable(variableType, Name.fromString(name))
+      def apply(name: Name, variableType: UType): Typed   = Variable(variableType, name)
+      def apply(name: String, variableType: UType): Typed = Variable(variableType, Name.fromString(name))
     }
   }
 

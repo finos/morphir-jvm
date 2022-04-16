@@ -34,4 +34,4 @@ package zio.morphir.ir
  * (WholeNumberLiteral 2))
  * }}}
  */
-object Value extends value.ValueModule
+object Value extends value.recursive.ValueModule
