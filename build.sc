@@ -265,6 +265,38 @@ object morphir extends Module {
       }
     }
 
+    object json extends Module {
+      object jvm
+        extends Cross[JvmMorphirSdkJson](
+          Versions.scala212
+        )
+      class JvmMorphirSdkJson(val crossScalaVersion: String)
+        extends CrossScalaModule
+          with CommonJvmModule
+          with MorphirPublishModule { self =>
+
+        def artifactName = "morphir-sdk-json"
+        def compileIvyDeps = Agg(
+          ivy"io.circe::circe-core:0.14.1",
+          ivy"io.circe::circe-generic:0.14.1",
+          ivy"io.circe::circe-parser:0.14.1"
+        )
+        def moduleDeps          = Seq(morphir.sdk.core.jvm(crossScalaVersion))
+
+        object test extends Tests {
+          def platformSegment: String = self.platformSegment
+          def crossScalaVersion       = JvmMorphirSdkJson.this.crossScalaVersion
+
+          override def ivyDeps = super.ivyDeps() ++
+            Agg(
+              ivy"io.circe::circe-core:0.14.1",
+              ivy"io.circe::circe-generic:0.14.1",
+              ivy"io.circe::circe-parser:0.14.1"
+            )
+        }
+      }
+    }
+
     object spark extends Module {
       object jvm
           extends Cross[JvmMorphirSdkSpark](
