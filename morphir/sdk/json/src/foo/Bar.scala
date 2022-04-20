@@ -1,12 +1,9 @@
 package foo
 
-sealed trait Bar {
+sealed trait Bar {}
 
-}
-
-case class Baz(arg1 : String) extends Bar
-case class Bat(arg1 : String, arg2 : Int) extends Bar
-
+case class Baz(arg1: String)            extends Bar
+case class Bat(arg1: String, arg2: Int) extends Bar
 
 // type Bar = Baz String | Bat String Int
 
