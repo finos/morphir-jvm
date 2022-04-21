@@ -1,3 +1,4 @@
+// format: off
 import $ivy.`com.goyeau::mill-git:0.2.0`
 import $ivy.`com.goyeau::mill-scalafix:0.2.0`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
@@ -8,6 +9,7 @@ import mill.scalajslib._
 import mill.scalalib._
 import mill.scalalib.publish._
 import mill.scalalib.scalafmt._
+// format: on
 
 object Deps {
   object Versions {
