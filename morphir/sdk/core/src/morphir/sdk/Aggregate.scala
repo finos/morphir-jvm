@@ -39,15 +39,15 @@ object Aggregate {
   def weightedAverageOf[A](getWeight: A => Double, getValue: A => Double): Aggregation[A, Unit] =
     operatorToAggregation(Operator.WAvg(getWeight, getValue))
 
-  case class Aggregation[A, Key](key: A => Key, filter: A => Boolean, operator: Operator[A])
+  case class Aggregation[A, K](key: A => K, filter: A => Boolean, operator: Operator[A])
 
   def operatorToAggregation[A](op: Operator[A]): Aggregation[A, Unit] =
     Aggregation(_ => (), _ => true, op)
 
-  def byKey[A, Key](k: A => Key)(agg: Aggregation[A, _]): Aggregation[A, Key] =
+  def byKey[A, K](k: A => K)(agg: Aggregation[A, _]): Aggregation[A, K] =
     agg.copy(key = k)
 
-  def withFilter[A, Key](f: A => Basics.Bool)(agg: Aggregation[A, Key]): Aggregation[A, Key] =
+  def withFilter[A, K](f: A => Basics.Bool)(agg: Aggregation[A, K]): Aggregation[A, K] =
     agg.copy(filter = f)
 
   def aggregateMap[A, B, Key1](
@@ -87,9 +87,9 @@ object Aggregate {
       )(a)
   }
 
-  def aggregateHelp[A, Key](getKey: A => Key, op: Operator[A], list: List[A]): Map[Key, Double] = {
-    def aggregate(getValue: A => Double, o: (Double, Double) => Double, sourceList: List[A]): Map[Key, Double] =
-      sourceList.foldLeft(HashMap[Key, Double]()) { (soFar: HashMap[Key, Double], nextA: A) =>
+  def aggregateHelp[A, K](getKey: A => K, op: Operator[A], list: List[A]): Map[K, Double] = {
+    def aggregate(getValue: A => Double, o: (Double, Double) => Double, sourceList: List[A]): Map[K, Double] =
+      sourceList.foldLeft(HashMap[K, Double]()) { (soFar: HashMap[K, Double], nextA: A) =>
         val key = getKey(nextA)
         soFar.get(key) match {
           case Some(value) =>
@@ -99,12 +99,12 @@ object Aggregate {
         }
       }
 
-    def combine(f: (Double, Double) => Double, dictA: Map[Key, Double], dictB: Map[Key, Double]): Map[Key, Double] =
+    def combine(f: (Double, Double) => Double, dictA: Map[K, Double], dictB: Map[K, Double]): Map[K, Double] =
       dictA.map { case (key, a) =>
         (key, f(a, dictB.getOrElse(key, 0)))
       }
 
-    def sum(getValue: A => Double, sourceList: List[A]): Map[Key, Double] =
+    def sum(getValue: A => Double, sourceList: List[A]): Map[K, Double] =
       aggregate(getValue, _ + _, sourceList)
 
     op match {
