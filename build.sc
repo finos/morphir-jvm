@@ -1,15 +1,18 @@
-// format: off
 import $ivy.`com.goyeau::mill-git:0.2.0`
 import $ivy.`com.goyeau::mill-scalafix:0.2.0`
-import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
 import $ivy.`io.github.davidgregory084::mill-tpolecat:0.2.0`
-import coursier.maven.MavenRepository
+import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
+import com.goyeau.mill.git._
+import com.goyeau.mill.scalafix.ScalafixModule
+import io.github.davidgregory084._
 import mill._
-import mill.scalajslib._
 import mill.scalalib._
-import mill.scalalib.publish._
+import mill.scalajslib._
+import publish._
 import mill.scalalib.scalafmt._
-// format: on
+import coursier.maven.MavenRepository
+import ammonite.ops._, ImplicitWd._
+
 
 object Deps {
   object Versions {
