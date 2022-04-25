@@ -259,6 +259,9 @@ object morphir extends Module {
           with MorphirPublishModule { self =>
 
         def artifactName = "morphir-sdk-core"
+        def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+        def compileIvyDeps = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
+        def ivyDeps = Agg(ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}")
         object test extends Tests {
           def platformSegment: String = self.platformSegment
           def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
