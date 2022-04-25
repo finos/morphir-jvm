@@ -1,5 +1,7 @@
 package morphir.sdk
 
+import scala.annotation.nowarn
+
 /**
  * This class is mostly generated. The code to generate it is in the comments below.
  */
@@ -41,7 +43,7 @@ class Key {
   def noKey[A](a: A): Key0 =
     key0(a)
 
-  def key0[A](a: A): Key0 =
+  def key0[A](@nowarn a: A): Key0 =
     0
 
   type Key2[K1, K2] = (K1, K2)

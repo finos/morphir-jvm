@@ -1,17 +1,13 @@
 import $ivy.`com.goyeau::mill-git:0.2.0`
 import $ivy.`com.goyeau::mill-scalafix:0.2.0`
-import $ivy.`io.github.davidgregory084::mill-tpolecat:0.2.0`
 import $ivy.`com.lihaoyi::mill-contrib-bloop:$MILL_VERSION`
-import com.goyeau.mill.git._
-import com.goyeau.mill.scalafix.ScalafixModule
-import io.github.davidgregory084._
-import mill._
-import mill.scalalib._
-import mill.scalajslib._
-import publish._
-import mill.scalalib.scalafmt._
+import $ivy.`io.github.davidgregory084::mill-tpolecat:0.2.0`
 import coursier.maven.MavenRepository
-import ammonite.ops._, ImplicitWd._
+import mill._
+import mill.scalajslib._
+import mill.scalalib._
+import mill.scalalib.publish._
+import mill.scalalib.scalafmt._
 
 
 object Deps {
@@ -259,6 +255,9 @@ object morphir extends Module {
           with MorphirPublishModule { self =>
 
         def artifactName = "morphir-sdk-core"
+        def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+        def compileIvyDeps = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
+        def ivyDeps = Agg(ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}")
         object test extends Tests {
           def platformSegment: String = self.platformSegment
           def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
