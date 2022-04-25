@@ -7,8 +7,8 @@ output/
 .ionide
 .vscode
 out/
-/.bloop/
-/.metals/
+.bloop/
+.metals/
 contrib/bsp/mill-external-bs
 contrib/bsp/mill-out-bs
 mill.iml
@@ -22,3 +22,7 @@ models/shared-domain/elm.json
 elm-stuff/
 .tmp/
 null/
+
+metals.sbt
+
+metals.sbt
