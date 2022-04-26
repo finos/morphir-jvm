@@ -60,6 +60,14 @@ object Dict {
       case xs  => DictImpl(xs.toMap)
     }
 
+  def toList[K, V](dict: Dict[K, V]): List[(K, V)] =
+    dict match {
+      case EmptyDict =>
+        List()
+      case DictImpl(map) =>
+        map.toList
+    }
+
   object tupled {
 
     @inline def get[K, V](targetKey: K, dict: Dict[K, V]): Maybe[V] =
