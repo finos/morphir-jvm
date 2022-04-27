@@ -19,7 +19,7 @@ import zio.morphir.ir.types.recursive.TypeCase
 import zio.morphir.ir.value.recursive.ValueCase
 import zio.morphir.ir.{Literal, _}
 
-trait MorphirJsonEncodingSupportV1 {
+trait MorphirJsonEncodingSupport {
   implicit val unitEncoder: JsonEncoder[Unit] = JsonEncoder.list[String].contramap(_ => List.empty[String])
   implicit val nameEncoder: JsonEncoder[Name] = JsonEncoder.list[String].contramap(name => name.toList)
   implicit val pathEncoder: JsonEncoder[Path] = JsonEncoder.list[Name].contramap(path => path.segments.toList)
@@ -45,27 +45,32 @@ trait MorphirJsonEncodingSupportV1 {
     )
 
   implicit def fieldEncoder[A: JsonEncoder]: JsonEncoder[Field[A]] =
-    Json.encoder.contramap[Field[A]](field => Json.Arr(toJsonAstOrThrow(field.name), toJsonAstOrThrow(field.data)))
+    Json.encoder.contramap[Field[A]](field =>
+      Json.Obj(
+        "name" -> toJsonAstOrThrow(field.name),
+        "tpe"  -> toJsonAstOrThrow(field.data)
+      )
+    )
 
   implicit def literalBoolEncoder: JsonEncoder[Literal.Bool] = Json.encoder.contramap[Literal.Bool] { literal =>
-    Json.Arr(Json.Str("bool_literal"), Json.Bool(literal.value))
+    Json.Arr(Json.Str("BoolLiteral"), Json.Bool(literal.value))
   }
 
   implicit def literalCharEncoder: JsonEncoder[Literal.Char] = Json.encoder.contramap[Literal.Char] { literal =>
-    Json.Arr(Json.Str("char_literal"), Json.Str(literal.value.toString))
+    Json.Arr(Json.Str("CharLiteral"), Json.Str(literal.value.toString))
   }
 
   implicit def literalFloatEncoder: JsonEncoder[Literal.Float] = Json.encoder.contramap[Literal.Float] { literal =>
-    Json.Arr(Json.Str("float_literal"), Json.Num(literal.value))
+    Json.Arr(Json.Str("FloatLiteral"), Json.Num(literal.value))
   }
 
   implicit def literalStringEncoder: JsonEncoder[Literal.String] = Json.encoder.contramap[Literal.String] { literal =>
-    Json.Arr(Json.Str("string_literal"), Json.Str(literal.value))
+    Json.Arr(Json.Str("StringLiteral"), Json.Str(literal.value))
   }
 
   implicit def literalWholeNumberEncoder: JsonEncoder[Literal.WholeNumber] =
     Json.encoder.contramap[Literal.WholeNumber] { literal =>
-      Json.Arr(Json.Str("int_literal"), Json.Num(new java.math.BigDecimal(literal.value)))
+      Json.Arr(Json.Str("WholeNumberLiteral"), Json.Num(new java.math.BigDecimal(literal.value)))
     }
 
   implicit def literalEncoder: JsonEncoder[Literal[Any]] =
@@ -167,22 +172,30 @@ trait MorphirJsonEncodingSupportV1 {
       )
     }
 
+  implicit def accessEncoder: JsonEncoder[AccessControlled.Access] =
+    Json.encoder.contramap[AccessControlled.Access] { access =>
+      access match {
+        case Public  => Json.Str("Public")
+        case Private => Json.Str("Private")
+      }
+    }
+
   implicit def accessControlledEncoder[A: JsonEncoder]: JsonEncoder[AccessControlled[A]] =
     Json.encoder.contramap[AccessControlled[A]] { accessControlled =>
-      accessControlled.access match {
-        case Public  => Json.Arr(Json.Str("public"), toJsonAstOrThrow(accessControlled.value))
-        case Private => Json.Arr(Json.Str("private"), toJsonAstOrThrow(accessControlled.value))
-      }
+      Json.Obj(
+        "access" -> toJsonAstOrThrow(accessControlled.access),
+        "value"  -> toJsonAstOrThrow(accessControlled.value)
+      )
     }
 
   implicit def typeDefinitionTypeAliasEncoder[A: JsonEncoder]: JsonEncoder[TypeDefinition.TypeAlias[A]] =
     Json.encoder.contramap[TypeDefinition.TypeAlias[A]] { alias =>
-      Json.Arr(Json.Str("type_alias_definition"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.typeExp))
+      Json.Arr(Json.Str("TypeAliasDefinition"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.typeExp))
     }
 
   implicit def typeDefinitionCustomTypeEncoder[A: JsonEncoder]: JsonEncoder[TypeDefinition.CustomType[A]] =
     Json.encoder.contramap[TypeDefinition.CustomType[A]] { tpe =>
-      Json.Arr(Json.Str("custom_type_definition"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
+      Json.Arr(Json.Str("CustomTypeDefinition"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
     }
 
   implicit def typeDefinitionEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeDefinition[Attributes]] =
@@ -198,19 +211,19 @@ trait MorphirJsonEncodingSupportV1 {
   implicit def typeSpecificationTypeAliasEncoder[Attributes: JsonEncoder]
       : JsonEncoder[TypeSpecification.TypeAliasSpecification[Attributes]] =
     Json.encoder.contramap[TypeSpecification.TypeAliasSpecification[Attributes]] { alias =>
-      Json.Arr(Json.Str("type_alias_specification"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.expr))
+      Json.Arr(Json.Str("TypeAliasSpecification"), toJsonAstOrThrow(alias.typeParams), toJsonAstOrThrow(alias.expr))
     }
 
   implicit def typeSpecificationEncoderCustomTypeEncoder[Attributes: JsonEncoder]
       : JsonEncoder[TypeSpecification.CustomTypeSpecification[Attributes]] =
     Json.encoder.contramap[TypeSpecification.CustomTypeSpecification[Attributes]] { tpe =>
-      Json.Arr(Json.Str("custom_type_specification"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
+      Json.Arr(Json.Str("CustomTypeSpecification"), toJsonAstOrThrow(tpe.typeParams), toJsonAstOrThrow(tpe.ctors))
     }
 
   implicit def typeSpecificationEncoderOpaqueTypeEncoder2: JsonEncoder[TypeSpecification.OpaqueTypeSpecification] =
     JsonEncoder.tuple2[String, Chunk[Name]].contramap {
       case TypeSpecification.OpaqueTypeSpecification(typeParams: Chunk[Name]) =>
-        ("opaque_type_specification", typeParams)
+        ("OpaqueTypeSpecification", typeParams)
     }
 
   implicit def typeSpecificationEncoder[Attributes: JsonEncoder]: JsonEncoder[TypeSpecification[Attributes]] =
@@ -345,7 +358,7 @@ trait MorphirJsonEncodingSupportV1 {
   implicit def TupleCaseValueJsonEncoder[VA: JsonEncoder, Self: JsonEncoder]
       : JsonEncoder[ValueCase.TupleCase[VA, Self]] =
     JsonEncoder.tuple3[String, VA, Chunk[Self]].contramap { case ValueCase.TupleCase(attributes, elements) =>
-      ("tuple", attributes, elements)
+      ("Tuple", attributes, elements)
     }
 
   //   final case class UpdateRecordCase[+VA, +Self](attributes: VA, valueToUpdate: Self, fieldsToUpdate: Chunk[(Name, Self)]) extends ValueCase[Nothing, VA, Self]
@@ -412,40 +425,40 @@ trait MorphirJsonEncodingSupportV1 {
   implicit def ExtensibleRecordTypeJsonEncoder[A: JsonEncoder, Self: JsonEncoder]
       : JsonEncoder[TypeCase.ExtensibleRecordCase[A, Self]] =
     JsonEncoder.tuple4[String, A, Name, Chunk[Field[Self]]].contramap {
-      case TypeCase.ExtensibleRecordCase(attributes, name, fields) => ("extensible_record", attributes, name, fields)
+      case TypeCase.ExtensibleRecordCase(attributes, name, fields) => ("ExtensibleRecord", attributes, name, fields)
     }
 
   implicit def FunctionTypeJsonEncoder[A: JsonEncoder, Self: JsonEncoder]: JsonEncoder[TypeCase.FunctionCase[A, Self]] =
     JsonEncoder.tuple4[String, A, Self, Self].contramap {
       case TypeCase.FunctionCase(attributes, argumentType, returnType) =>
-        ("function", attributes, argumentType, returnType)
+        ("Function", attributes, argumentType, returnType)
     }
 
   implicit def RecordTypeJsonEncoder[A: JsonEncoder, Self: JsonEncoder]: JsonEncoder[TypeCase.RecordCase[A, Self]] =
     JsonEncoder.tuple3[String, A, Chunk[Field[Self]]].contramap { case TypeCase.RecordCase(attributes, fields) =>
-      ("record", attributes, fields)
+      ("Record", attributes, fields)
     }
 
   implicit def ReferenceTypeJsonEncoder[A: JsonEncoder, Self: JsonEncoder]
       : JsonEncoder[TypeCase.ReferenceCase[A, Self]] =
     JsonEncoder.tuple4[String, A, FQName, Chunk[Self]].contramap {
       case TypeCase.ReferenceCase(attributes, typeName, typeParams) =>
-        ("reference", attributes, typeName, typeParams)
+        ("Reference", attributes, typeName, typeParams)
     }
 
   implicit def TupleTypeJsonEncoder[A: JsonEncoder, Self: JsonEncoder]: JsonEncoder[TypeCase.TupleCase[A, Self]] =
     JsonEncoder.tuple3[String, A, Chunk[Self]].contramap { case TypeCase.TupleCase(attributes, elements) =>
-      ("tuple", attributes, elements)
+      ("Tuple", attributes, elements)
     }
 
   implicit def UnitTypeJsonEncoder[A: JsonEncoder]: JsonEncoder[TypeCase.UnitCase[A]] =
     JsonEncoder.tuple2[String, A].contramap[TypeCase.UnitCase[A]] { case TypeCase.UnitCase(attributes) =>
-      ("unit", attributes)
+      ("Unit", attributes)
     }
 
   implicit def VariableTypeJsonEncoder[A: JsonEncoder]: JsonEncoder[TypeCase.VariableCase[A]] =
     JsonEncoder.tuple3[String, A, Name].contramap[TypeCase.VariableCase[A]] {
-      case TypeCase.VariableCase(attributes, name) => ("variable", attributes, name)
+      case TypeCase.VariableCase(attributes, name) => ("Variable", attributes, name)
     }
 
   implicit def typeEncoder[A: JsonEncoder]: JsonEncoder[Type[A]] =
@@ -468,10 +481,10 @@ trait MorphirJsonEncodingSupportV1 {
       }
     }
 
-  implicit def documentedEncoder[A: JsonEncoder]: JsonEncoder[Documented[A]] =
-    Json.encoder.contramap[Documented[A]] { documented =>
-      Json.Arr(Json.Str(documented.doc), toJsonAstOrThrow(documented.value))
-    }
+  implicit def documentedEncoder[A: JsonEncoder]: JsonEncoder[Documented[A]] = {
+    lazy val encoder: JsonEncoder[Documented[A]] = DeriveJsonEncoder.gen
+    encoder
+  }
 
   implicit def moduleSpecificationEncoder[TA: JsonEncoder]: JsonEncoder[ModuleSpecification[TA]] =
     Json.encoder.contramap[ModuleSpecification[TA]] { specification =>
@@ -493,10 +506,7 @@ trait MorphirJsonEncodingSupportV1 {
     Json.encoder.contramap[PackageSpecification[TA]] { specification =>
       Json.Obj(
         "modules" -> toJsonAstOrThrow(specification.modules.toList.map { case (name, moduleSpecification) =>
-          Json.Obj(
-            "name" -> toJsonAstOrThrow(name),
-            "spec" -> toJsonAstOrThrow(moduleSpecification)
-          )
+          Json.Arr(toJsonAstOrThrow(name), toJsonAstOrThrow(moduleSpecification))
         })
       )
     }
@@ -504,11 +514,8 @@ trait MorphirJsonEncodingSupportV1 {
   implicit def packageDefinitionEncoder[TA: JsonEncoder, VA: JsonEncoder]: JsonEncoder[PackageDefinition[TA, VA]] =
     Json.encoder.contramap[PackageDefinition[TA, VA]] { definition =>
       Json.Obj(
-        "modules" -> toJsonAstOrThrow(definition.modules.toList.map { case (name, moduleSpecification) =>
-          Json.Obj(
-            "name" -> toJsonAstOrThrow(name),
-            "def"  -> toJsonAstOrThrow(moduleSpecification)
-          )
+        "modules" -> toJsonAstOrThrow(definition.modules.toList.map { case (name, moduleDefinition) =>
+          Json.Arr(toJsonAstOrThrow(name), toJsonAstOrThrow(moduleDefinition))
         })
       )
     }
@@ -517,4 +524,4 @@ trait MorphirJsonEncodingSupportV1 {
     a.toJsonAST.toOption.get
 }
 
-object MorphirJsonEncodingSupportV1 extends MorphirJsonEncodingSupportV1
+object MorphirJsonEncodingSupport extends MorphirJsonEncodingSupport

@@ -286,8 +286,9 @@ lazy val jsonJS = json.js
   .settings(jsSettings)
   .settings(dottySettings)
   .settings(scalaJSUseMainModuleInitializer := true)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
 
-lazy val jsonJVM = sdk.jvm
+lazy val jsonJVM = json.jvm
   .settings(dottySettings)
   .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % Version.zio % Test)
   .settings(scalaReflectTestSettings)

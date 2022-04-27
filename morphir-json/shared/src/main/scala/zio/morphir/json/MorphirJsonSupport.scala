@@ -1,0 +1,4 @@
+package zio.morphir.json
+
+trait MorphirJsonSupport  extends MorphirJsonEncodingSupport with MorphirJsonDecodingSupport
+object MorphirJsonSupport extends MorphirJsonSupport

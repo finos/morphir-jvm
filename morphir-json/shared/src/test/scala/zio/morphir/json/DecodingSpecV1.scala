@@ -13,11 +13,11 @@ import zio.morphir.ir.Type.{Definition => TypeDefinition, Field, Specification =
 import zio.morphir.ir.Value.{Definition => ValueDefinition, Pattern, Specification => ValueSpecification, Value}
 import zio.morphir.ir._
 import zio.morphir.ir.value.recursive.ValueCase
-import zio.morphir.json.MorphirJsonDecodingSupport._
+import zio.morphir.json.MorphirJsonDecodingSupportV1._
 import zio.test.{ZIOSpecDefault, ZSpec, _}
 
-object DecodingSpec extends ZIOSpecDefault {
-  def spec: ZSpec[Environment, Any] = suite("Decoding Suite")(
+object DecodingSpecV1 extends ZIOSpecDefault {
+  def spec: ZSpec[Environment, Any] = suite("Decoding Suite - V1")(
     suite("Unit")(
       test("will decode a Unit") {
         val actual   = """[]"""
@@ -151,36 +151,36 @@ object DecodingSpec extends ZIOSpecDefault {
     ),
     suite("Documented")(
       test("will decode Documented for Integer") {
-        val actual   = """{"doc":"This is an Integer 10","value":10}"""
+        val actual   = """["This is an Integer 10",10]"""
         val expected = Documented("This is an Integer 10", 10)
         assertTrue(actual.fromJson[Documented[Int]] == Right(expected))
       },
       test("will decode Documented for String") {
-        val actual   = """{"doc":"This is a String","value":"Hello"}"""
+        val actual   = """["This is a String","Hello"]"""
         val expected = Documented("This is a String", "Hello")
         assertTrue(actual.fromJson[Documented[String]] == Right(expected))
       }
     ),
     suite("AccessControlled")(
       test("will decode AccessControlled for private Integer") {
-        val actual   = """{"access":"Private","value":10}"""
+        val actual   = """["private",10]"""
         val expected = AccessControlled(AccessControlled.Access.Private, 10)
         assertTrue(actual.fromJson[AccessControlled[Int]] == Right(expected))
       },
       test("will decode AccessControlled for public String") {
-        val actual   = """{"access":"Public","value":"Hello"}"""
+        val actual   = """["public","Hello"]"""
         val expected = AccessControlled(AccessControlled.Access.Public, "Hello")
         assertTrue(actual.fromJson[AccessControlled[String]] == Right(expected))
       }
     ),
     suite("Field")(
       test("will decode Field for private Integer") {
-        val actual   = """{"name":["name"],"tpe":{"access":"Private","value":10}}"""
-        val expected = Field(Name.fromString("Name"), AccessControlled(AccessControlled.Access.Private, 10))
-        assertTrue(actual.fromJson[Field[AccessControlled[Int]]] == Right(expected))
+        val actual   = """[["name"],10]"""
+        val expected = Field(Name.fromString("Name"), 10)
+        assertTrue(actual.fromJson[Field[Int]] == Right(expected))
       },
       test("will decode Field for public String") {
-        val actual = """{"name":["string"],"tpe":{"access":"Public","value":"Hello"}}"""
+        val actual = """[["string"],["public","Hello"]]"""
         val expected =
           Field(Name.fromString("String"), AccessControlled(AccessControlled.Access.Public, "Hello"))
         assertTrue(actual.fromJson[Field[AccessControlled[String]]] == Right(expected))
@@ -188,51 +188,50 @@ object DecodingSpec extends ZIOSpecDefault {
     ),
     suite("Literal")(
       test("will decode a Literal.Bool") {
-        val actual   = """["BoolLiteral",true]"""
+        val actual   = """["bool_literal",true]"""
         val expected = Literal.Bool(true)
         assertTrue(actual.fromJson[Literal.Bool] == Right(expected))
       },
       test("will decode a Literal.Char") {
-        val actual   = """["CharLiteral","x"]"""
+        val actual   = """["char_literal","x"]"""
         val expected = Literal.Char('x')
         assertTrue(actual.fromJson[Literal.Char] == Right(expected))
       },
       test("will decode a Literal.Float") {
-        val actual   = """["FloatLiteral",1.3232]"""
+        val actual   = """["float_literal",1.3232]"""
         val expected = Literal.Float(new java.math.BigDecimal("1.3232"))
         assertTrue(actual.fromJson[Literal.Float] == Right(expected))
       },
       test("will decode a Literal.String") {
-        val actual   = """["StringLiteral","hello"]"""
+        val actual   = """["string_literal","hello"]"""
         val expected = Literal.String("hello")
         assertTrue(actual.fromJson[Literal.String] == Right(expected))
       },
       test("will decode an Literal.WholeNumber") {
-        val actual   = """["WholeNumberLiteral",321321]"""
+        val actual   = """["int_literal",321321]"""
         val expected = Literal.WholeNumber(new java.math.BigInteger("321321"))
         assertTrue(actual.fromJson[Literal.WholeNumber] == Right(expected))
       }
     ),
     suite("Type")(
       test("will decode Type.Unit") {
-        val actual   = """["Unit",1234]"""
+        val actual   = """["unit",1234]"""
         val expected = Type.Unit[Int](1234)
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
         )
       },
       test("will decode Type.Variable") {
-        val actual   = """["Variable",1234,["x"]]"""
+        val actual   = """["variable",1234,["x"]]"""
         val expected = Type.variable[Int](1234, "x")
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
         )
       },
       test("will decode Type.Record") {
-        val var1 = Field(Name("first"), variable[Int](123, "f"))
-        val var2 = Field(Name("second"), variable[Int](345, "g"))
-        val actual =
-          """["Record",1,[{"name":["first"],"tpe":["Variable",123,["f"]]},{"name":["second"],"tpe":["Variable",345,["g"]]}]]"""
+        val var1     = Field(Name("first"), variable[Int](123, "f"))
+        val var2     = Field(Name("second"), variable[Int](345, "g"))
+        val actual   = """["record",1,[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
         val expected = Type.record(1, zio.Chunk(var1, var2))
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
@@ -242,7 +241,7 @@ object DecodingSpec extends ZIOSpecDefault {
         val var1 = Field(Name("first"), variable[Int](123, "f"))
         val var2 = Field(Name("second"), variable[Int](345, "g"))
         val actual =
-          """["ExtensibleRecord",1,["some","name"],[{"name":["first"],"tpe":["Variable",123,["f"]]},{"name":["second"],"tpe":["Variable",345,["g"]]}]]"""
+          """["extensible_record",1,["some","name"],[[["first"],["variable",123,["f"]]],[["second"],["variable",345,["g"]]]]]"""
         val expected = Type.ExtensibleRecord(1, Name.fromString("someName"), zio.Chunk(var1, var2))
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
@@ -251,7 +250,7 @@ object DecodingSpec extends ZIOSpecDefault {
       test("will decode Type.Tuple") {
         val var1     = variable[Int](123, "f")
         val var2     = variable[Int](345, "g")
-        val actual   = """["Tuple",1,[["Variable",123,["f"]],["Variable",345,["g"]]]]"""
+        val actual   = """["tuple",1,[["variable",123,["f"]],["variable",345,["g"]]]]"""
         val expected = Type.Tuple(1, zio.Chunk(var1, var2))
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
@@ -261,7 +260,7 @@ object DecodingSpec extends ZIOSpecDefault {
         val var1 = variable[Int](123, "f")
         val var2 = variable[Int](345, "g")
         val actual =
-          """["Reference",1,[[["test"]],[["java","home"]],["morphir"]],[["Variable",123,["f"]],["Variable",345,["g"]]]]"""
+          """["reference",1,[[["test"]],[["java","home"]],["morphir"]],[["variable",123,["f"]],["variable",345,["g"]]]]"""
         val expected = Type.Reference(1, FQName.fromString("test:JavaHome:morphir"), zio.Chunk(var1, var2))
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
@@ -271,7 +270,7 @@ object DecodingSpec extends ZIOSpecDefault {
         val var1 = variable[Int](123, "f")
         val var2 = variable[Int](345, "g")
         val actual =
-          """["Function",1,["Variable",123,["f"]],["Variable",345,["g"]]]"""
+          """["function",1,["variable",123,["f"]],["variable",345,["g"]]]"""
         val expected = Type.function(1, var1, var2)
         assertTrue(
           actual.fromJson[Type[Int]] == Right(expected)
@@ -286,7 +285,7 @@ object DecodingSpec extends ZIOSpecDefault {
       },
       test("will decode Constructors with one constructor") {
         val name     = Name.fromString("name")
-        val actual   = """[[["name"],[[["name"],["Variable",123,["f"]]]]]]"""
+        val actual   = """[[["name"],[[["name"],["variable",123,["f"]]]]]]"""
         val expected = zio.morphir.ir.Type.Constructors[Int](Map((name, zio.Chunk((name, variable[Int](123, "f"))))))
         assertTrue(actual.fromJson[zio.morphir.ir.Type.Constructors[Int]] == Right(expected))
       },
@@ -296,7 +295,7 @@ object DecodingSpec extends ZIOSpecDefault {
         val name3 = Name.fromString("name3")
         val name4 = Name.fromString("name4")
         val actual =
-          """[[["name","1"],[[["name","1"],["Variable",123,["f"]]],[["name","2"],["Variable",345,["g"]]]]],[["name","2"],[[["name","3"],["Variable",678,["h"]]],[["name","4"],["Variable",789,["i"]]]]]]"""
+          """[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]"""
         val expected = zio.morphir.ir.Type.Constructors[Int](
           Map(
             (name1, zio.Chunk((name1, variable[Int](123, "f")), (name2, variable[Int](345, "g")))),
@@ -310,7 +309,7 @@ object DecodingSpec extends ZIOSpecDefault {
       test("will decode TypeAlias") {
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
-        val actual   = """["TypeAliasDefinition",[["name","1"],["name","2"]],["Variable",345,["g"]]]"""
+        val actual   = """["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
         val expected = TypeDefinition.TypeAlias[Int](zio.Chunk(name1, name2), variable[Int](345, "g"))
         assertTrue(
           actual.fromJson[TypeDefinition.TypeAlias[Int]] == Right(expected),
@@ -332,7 +331,7 @@ object DecodingSpec extends ZIOSpecDefault {
           )
         )
         val actual =
-          """["CustomTypeDefinition",[["name","1"],["name","2"]],{"access":"Public","value":[[["name","1"],[[["name","1"],["Variable",123,["f"]]],[["name","2"],["Variable",345,["g"]]]]],[["name","2"],[[["name","3"],["Variable",678,["h"]]],[["name","4"],["Variable",789,["i"]]]]]]}]"""
+          """["custom_type_definition",[["name","1"],["name","2"]],["public",[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]]"""
         val expected = TypeDefinition.CustomType[Int](zio.Chunk(name1, name2), ctors)
         assertTrue(
           actual.fromJson[TypeDefinition.CustomType[Int]] == Right(expected),
@@ -344,7 +343,7 @@ object DecodingSpec extends ZIOSpecDefault {
       test("will decode TypeAliasSpecification") {
         val name1  = Name.fromString("name1")
         val name2  = Name.fromString("name2")
-        val actual = """["TypeAliasSpecification",[["name","1"],["name","2"]],["Variable",345,["g"]]]"""
+        val actual = """["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]"""
         val expected =
           TypeSpecification
             .TypeAliasSpecification[Int](zio.Chunk(name1, name2), variable[Int](345, "g"))
@@ -365,7 +364,7 @@ object DecodingSpec extends ZIOSpecDefault {
           )
         )
         val actual =
-          """["CustomTypeSpecification",[["name","1"],["name","2"]],[[["name","1"],[[["name","1"],["Variable",123,["f"]]],[["name","2"],["Variable",345,["g"]]]]],[["name","2"],[[["name","3"],["Variable",678,["h"]]],[["name","4"],["Variable",789,["i"]]]]]]]"""
+          """["custom_type_specification",[["name","1"],["name","2"]],[[["name","1"],[[["name","1"],["variable",123,["f"]]],[["name","2"],["variable",345,["g"]]]]],[["name","2"],[[["name","3"],["variable",678,["h"]]],[["name","4"],["variable",789,["i"]]]]]]]"""
         val expected = TypeSpecification.CustomTypeSpecification[Int](zio.Chunk(name1, name2), ctors)
         assertTrue(
           actual.fromJson[TypeSpecification.CustomTypeSpecification[Int]] == Right(expected),
@@ -375,7 +374,7 @@ object DecodingSpec extends ZIOSpecDefault {
       test("will decode OpaqueTypeSpecification") {
         val name1    = Name.fromString("name1")
         val name2    = Name.fromString("name2")
-        val actual   = """["OpaqueTypeSpecification",[["name","1"],["name","2"]]]"""
+        val actual   = """["opaque_type_specification",[["name","1"],["name","2"]]]"""
         val expected = TypeSpecification.OpaqueTypeSpecification(zio.Chunk(name1, name2))
         assertTrue(
           actual.fromJson[TypeSpecification.OpaqueTypeSpecification] == Right(expected),
@@ -390,7 +389,7 @@ object DecodingSpec extends ZIOSpecDefault {
           (Name.fromString("name2"), 2, variable[Int](678, "h"))
         )
         val actual =
-          """{"inputTypes":[[["name","1"],1,["Variable",345,["g"]]],[["name","2"],2,["Variable",678,["h"]]]],"outputType":["Variable",345,["g"]],"body":["unit",1]}"""
+          """{"inputTypes":[[["name","1"],1,["variable",345,["g"]]],[["name","2"],2,["variable",678,["h"]]]],"outputType":["variable",345,["g"]],"body":["unit",1]}"""
         val expected =
           ValueDefinition[Int, Int](inputParams, variable[Int](345, "g"), Value[Int, Int](ValueCase.UnitCase(1)))
         assertTrue(actual.fromJson[ValueDefinition[Int, Int]] == Right(expected))
@@ -403,7 +402,7 @@ object DecodingSpec extends ZIOSpecDefault {
           (Name.fromString("name2"), variable[Int](678, "h"))
         )
         val actual =
-          """{"inputs":[[["name","1"],["Variable",345,["g"]]],[["name","2"],["Variable",678,["h"]]]],"outputs":["Variable",111,["f"]]}"""
+          """{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}"""
         val expected = ValueSpecification[Int](inputs, variable[Int](111, "f"))
         assertTrue(actual.fromJson[ValueSpecification[Int]] == Right(expected))
       }
@@ -440,7 +439,7 @@ object DecodingSpec extends ZIOSpecDefault {
         )
       },
       test("will decode LiteralPattern") {
-        val actual   = """["literal_pattern",1,["StringLiteral","hello"]]"""
+        val actual   = """["literal_pattern",1,["string_literal","hello"]]"""
         val expected = Pattern.LiteralPattern[Any, Int](Literal.String("hello"), 1)
         assertTrue(actual.fromJson[Pattern.LiteralPattern[Any, Int]] == Right(expected))
       },
@@ -501,7 +500,7 @@ object DecodingSpec extends ZIOSpecDefault {
           Map(name -> Documented("valueDoc1", ValueSpecification[Int](inputs, variable[Int](111, "f"))))
 
         val actual =
-          """{"types":[[["name"],{"doc":"typeDoc1","value":["TypeAliasSpecification",[["name","1"],["name","2"]],["Variable",345,["g"]]]}]],"values":[[["name"],{"doc":"valueDoc1","value":{"inputs":[[["name","1"],["Variable",345,["g"]]],[["name","2"],["Variable",678,["h"]]]],"outputs":["Variable",111,["f"]]}}]]}"""
+          """{"types":[[["name"],["typeDoc1",["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]]]],"values":[[["name"],["valueDoc1",{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}]]]}"""
         val expected = ModuleSpecification[Int](typeMap, valueMap)
         assertTrue(actual.fromJson[ModuleSpecification[Int]] == Right(expected))
       }
@@ -527,7 +526,7 @@ object DecodingSpec extends ZIOSpecDefault {
         val modSpec  = ModuleSpecification[Int](typeMap, valueMap)
         val expected = PackageSpecification[Int](Map(modName1 -> modSpec, modName2 -> modSpec))
         val actual =
-          """{"modules":[[[[["org"]],["src"]],{"types":[[["name"],{"doc":"typeDoc1","value":["TypeAliasSpecification",[["name","1"],["name","2"]],["Variable",345,["g"]]]}]],"values":[[["name"],{"doc":"valueDoc1","value":{"inputs":[[["name","1"],["Variable",345,["g"]]],[["name","2"],["Variable",678,["h"]]]],"outputs":["Variable",111,["f"]]}}]]}],[[[["org"]],["test"]],{"types":[[["name"],{"doc":"typeDoc1","value":["TypeAliasSpecification",[["name","1"],["name","2"]],["Variable",345,["g"]]]}]],"values":[[["name"],{"doc":"valueDoc1","value":{"inputs":[[["name","1"],["Variable",345,["g"]]],[["name","2"],["Variable",678,["h"]]]],"outputs":["Variable",111,["f"]]}}]]}]]}"""
+          """{"modules":[{"name":[[["org"]],["src"]],"spec":{"types":[[["name"],["typeDoc1",["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]]]],"values":[[["name"],["valueDoc1",{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}]]]}},{"name":[[["org"]],["test"]],"spec":{"types":[[["name"],["typeDoc1",["type_alias_specification",[["name","1"],["name","2"]],["variable",345,["g"]]]]]],"values":[[["name"],["valueDoc1",{"inputs":[[["name","1"],["variable",345,["g"]]],[["name","2"],["variable",678,["h"]]]],"outputs":["variable",111,["f"]]}]]]}}]}"""
         assertTrue(actual.fromJson[PackageSpecification[Int]] == Right(expected))
       }
     ),
@@ -558,7 +557,7 @@ object DecodingSpec extends ZIOSpecDefault {
 
         val expected = ModuleDefinition[Int, Int](typeMap, valueMap)
         val actual =
-          """{"types":[[["name"],{"access":"Private","value":{"doc":"typeDoc1","value":["TypeAliasDefinition",[["name","1"],["name","2"]],["Variable",345,["g"]]]}}]],"values":[[["name"],{"access":"Private","value":{"doc":"valueDoc1","value":{"inputTypes":[[["name","1"],1,["Variable",345,["g"]]],[["name","2"],2,["Variable",678,["h"]]]],"outputType":["Variable",345,["g"]],"body":["constructor",1,[[["test"]],[["java","home"]],["morphir"]]]}}}]]}"""
+          """{"types":[[["name"],["private",["typeDoc1",["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]]]]],"values":[[["name"],["private",["valueDoc1",{"inputTypes":[[["name","1"],1,["variable",345,["g"]]],[["name","2"],2,["variable",678,["h"]]]],"outputType":["variable",345,["g"]],"body":["constructor",1,[[["test"]],[["java","home"]],["morphir"]]]}]]]]}"""
         assertTrue(actual.fromJson[ModuleDefinition[Int, Int]] == Right(expected))
       }
     ),
@@ -593,7 +592,7 @@ object DecodingSpec extends ZIOSpecDefault {
 
         val modDef = ModuleDefinition[Int, Int](typeMap, valueMap)
         val actual =
-          """{"modules":[[[[["org"]],["src"]],{"access":"Public","value":{"types":[[["name"],{"access":"Private","value":{"doc":"typeDoc1","value":["TypeAliasDefinition",[["name","1"],["name","2"]],["Variable",345,["g"]]]}}]],"values":[[["name"],{"access":"Private","value":{"doc":"valueDoc1","value":{"inputTypes":[[["name","1"],1,["Variable",345,["g"]]],[["name","2"],2,["Variable",678,["h"]]]],"outputType":["Variable",345,["g"]],"body":["constructor",1,[[["test"]],[["java","home"]],["morphir"]]]}}}]]}}],[[[["org"]],["test"]],{"access":"Public","value":{"types":[[["name"],{"access":"Private","value":{"doc":"typeDoc1","value":["TypeAliasDefinition",[["name","1"],["name","2"]],["Variable",345,["g"]]]}}]],"values":[[["name"],{"access":"Private","value":{"doc":"valueDoc1","value":{"inputTypes":[[["name","1"],1,["Variable",345,["g"]]],[["name","2"],2,["Variable",678,["h"]]]],"outputType":["Variable",345,["g"]],"body":["constructor",1,[[["test"]],[["java","home"]],["morphir"]]]}}}]]}}]]}"""
+          """{"modules":[{"name":[[["org"]],["src"]],"def":["public",{"types":[[["name"],["private",["typeDoc1",["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]]]]],"values":[[["name"],["private",["valueDoc1",{"inputTypes":[[["name","1"],1,["variable",345,["g"]]],[["name","2"],2,["variable",678,["h"]]]],"outputType":["variable",345,["g"]],"body":["constructor",1,[[["test"]],[["java","home"]],["morphir"]]]}]]]]}]},{"name":[[["org"]],["test"]],"def":["public",{"types":[[["name"],["private",["typeDoc1",["type_alias_definition",[["name","1"],["name","2"]],["variable",345,["g"]]]]]]],"values":[[["name"],["private",["valueDoc1",{"inputTypes":[[["name","1"],1,["variable",345,["g"]]],[["name","2"],2,["variable",678,["h"]]]],"outputType":["variable",345,["g"]],"body":["constructor",1,[[["test"]],[["java","home"]],["morphir"]]]}]]]]}]}]}"""
         val expected = PackageDefinition[Int, Int](
           Map(
             modName1 -> AccessControlled(AccessControlled.Access.Public, modDef),
@@ -673,7 +672,7 @@ object DecodingSpec extends ZIOSpecDefault {
       },
       test("will decode Value - LiteralCase") {
         val literal  = Literal.Bool(true)
-        val actual   = """["literal",3,["BoolLiteral",true]]"""
+        val actual   = """["literal",3,["bool_literal",true]]"""
         val expected = Value[Int, Int](ValueCase.LiteralCase(3, literal))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
@@ -703,7 +702,7 @@ object DecodingSpec extends ZIOSpecDefault {
         val unitCase          = Value[Int, Int](ValueCase.UnitCase(6))
         val fieldFunctionCase = Value[Int, Int](ValueCase.FieldFunctionCase(3, Name("Hello")))
         val elements          = zio.Chunk(unitCase, fieldFunctionCase)
-        val actual            = """["Tuple",3,[["unit",6],["field_function",3,["hello"]]]]"""
+        val actual            = """["tuple",3,[["unit",6],["field_function",3,["hello"]]]]"""
         val expected          = Value[Int, Int](ValueCase.TupleCase(3, elements))
         assertTrue(actual.fromJson[Value[Int, Int]] == Right(expected))
       },
