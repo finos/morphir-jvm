@@ -5,7 +5,7 @@ import scala.annotation.nowarn
 /**
  * This class is mostly generated. The code to generate it is in the comments below.
  */
-class Key {
+object Key {
 
 //    object GenKey {
 //
