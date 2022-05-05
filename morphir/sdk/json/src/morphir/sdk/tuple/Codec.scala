@@ -8,9 +8,6 @@ object Codec {
   /**
    * Encodes a Tuple of 2 items
    *
-   * @param encodeOfItem1,
-   *   encodeOfItem2
-   *
    * @return
    *   Returns an array of each item encoded by its type
    */
@@ -26,9 +23,6 @@ object Codec {
 
   /**
    * Decode an array of json to a Tuple
-   *
-   * @param decoder
-   *   of first item(decodeA0), decoder of second item(decodeA1)
    *
    * @return
    *   Returns values of json array as Tuples

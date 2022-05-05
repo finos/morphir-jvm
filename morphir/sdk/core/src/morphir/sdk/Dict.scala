@@ -19,16 +19,36 @@ package morphir.sdk
 import morphir.sdk.Maybe._
 
 object Dict {
-  sealed abstract class Dict[K, +V]
+  sealed abstract class Dict[-K, +V]
   private case object EmptyDict                              extends Dict[Any, Nothing]
-  private case class DictImpl[K, +V](val wrapped: Map[K, V]) extends Dict[K, V]
+  private case class DictImpl[K, +V](wrapped: Map[K, V]) extends Dict[K, V]
 
-  def empty[K, V]: Dict[K, V] = EmptyDict.asInstanceOf[Dict[K, V]]
+  /* Build */
+  def empty[K, V]: Dict[K, V] = EmptyDict
 
-  def get[K, V](targetKey: K)(dict: Dict[K, V]): Maybe[V] =
+  def singleton[K, V](key: K)(value: V): Dict[K, V] = DictImpl(Map(key -> value))
+
+  def insert[K, V](key: K)(value: V)(dict: Dict[K, V]): Dict[K, V] =
     dict match {
-      case EmptyDict         => Maybe.Nothing
-      case DictImpl(wrapped) => wrapped.get(targetKey)
+      case EmptyDict         => DictImpl(Map(key -> value))
+      case DictImpl(wrapped) => DictImpl(wrapped + (key -> value))
+    }
+
+  def update[K, V](targetKey: K)(updatedValue: V)(dict: Dict[K, V]): Dict[K, V] = dict match {
+    case EmptyDict         => dict
+    case DictImpl(wrapped) => DictImpl(wrapped.updated(targetKey, updatedValue))
+  }
+
+  def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict match {
+    case EmptyDict         => dict
+    case DictImpl(wrapped) => DictImpl(wrapped.filterKeys(key => key != targetKey))
+  }
+
+  /* Query*/
+  def isEmpty[K, V](dict: Dict[K, V]): Boolean =
+    dict match {
+      case EmptyDict         => true
+      case DictImpl(wrapped) => wrapped.isEmpty
     }
 
   def member[K, V](key: K)(dict: Dict[K, V]): Boolean =
@@ -37,28 +57,27 @@ object Dict {
       case DictImpl(wrapped) => wrapped.contains(key)
     }
 
+  def get[K, V](targetKey: K)(dict: Dict[K, V]): Maybe[V] =
+    dict match {
+      case EmptyDict         => Maybe.Nothing
+      case DictImpl(wrapped) => wrapped.get(targetKey)
+    }
+
   def size[K, V](dict: Dict[K, V]): Int = dict match {
     case EmptyDict         => 0
     case DictImpl(wrapped) => wrapped.size
   }
 
-  def isEmpty[K, V](dict: Dict[K, V]): Boolean =
-    dict match {
-      case EmptyDict         => true
-      case DictImpl(wrapped) => wrapped.isEmpty
-    }
+  /* List */
+  def keys[K, V](dict: Dict[K, V]): List[K] = dict match {
+    case EmptyDict         => List.empty[K]
+    case DictImpl(wrapped) => wrapped.keys.toList
+  }
 
-  def insert[K, V](key: K)(value: V)(dict: Dict[K, V]): Dict[K, V] =
-    dict match {
-      case EmptyDict         => DictImpl(Map(key -> value))
-      case DictImpl(wrapped) => DictImpl(wrapped + (key -> value))
-    }
-
-  def fromList[K, V](assocs: List[(K, V)]): Dict[K, V] =
-    assocs match {
-      case Nil => empty[K, V]
-      case xs  => DictImpl(xs.toMap)
-    }
+  def values[K, V](dict: Dict[K, V]): List[V] = dict match {
+    case EmptyDict         => List.empty[V]
+    case DictImpl(wrapped) => wrapped.values.toList
+  }
 
   def toList[K, V](dict: Dict[K, V]): List[(K, V)] =
     dict match {
@@ -67,6 +86,45 @@ object Dict {
       case DictImpl(map) =>
         map.toList
     }
+
+  def fromList[K, V](assocs: List[(K, V)]): Dict[K, V] =
+    assocs match {
+      case Nil => empty[K, V]
+      case xs  => DictImpl(xs.toMap)
+    }
+
+  /* Transform */
+  def map[K, V, B](f: K => V => B)(dict: Dict[K, V]): Dict[K, B] = dict match {
+    case EmptyDict         => empty
+    case DictImpl(wrapped) => DictImpl(wrapped.map(x => (x._1, f(x._1)(x._2))))
+  }
+
+  def foldl[K, V, B](initValue: B)(f: B => (K, V) => B)(dict: Dict[K, V]): B = dict match {
+    case EmptyDict => initValue
+    case DictImpl(wrapped) =>
+      wrapped.foldLeft(initValue)((accumulator, pairedValues) => f(accumulator)(pairedValues._1, pairedValues._2))
+  }
+
+  def foldr[K, V, B](initValue: B)(f: (K, V) => B => B)(dict: Dict[K, V]): B = dict match {
+    case EmptyDict         => initValue
+    case DictImpl(wrapped) => wrapped.foldRight(initValue)((a, accumulator) => f(a._1, a._2)(accumulator))
+  }
+
+  def filter[K, V](f: K => V => Boolean)(dict: Dict[K, V]): Dict[K, V] = dict match {
+    case EmptyDict => empty
+    case DictImpl(wrapped) =>
+      val filtered = wrapped.filter(x => f(x._1)(x._2))
+      if (filtered.isEmpty) empty else DictImpl(filtered)
+  }
+
+  def partition[K, V](f: ((K, V)) => Boolean)(dict: Dict[K, V]): (Dict[K, V], Dict[K, V]) = dict match {
+    case EmptyDict => (EmptyDict, dict)
+    case DictImpl(wrapped) =>
+      val result = wrapped.partition(f)
+      (DictImpl(result._1), DictImpl(result._2))
+  }
+
+  /* Combine */
 
   object tupled {
 
