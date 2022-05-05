@@ -26,7 +26,7 @@ object Codec {
   /**
    * Decodes a json to its respective list of items
    *
-   * @param decodeA
+   * @param decodeA - Decoder of exact data type expected
    *
    * @return
    *   A List of items of specific types
