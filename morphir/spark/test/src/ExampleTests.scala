@@ -1,38 +1,15 @@
-import com.github.mrpowers.spark.fast.tests.DatasetComparer
-import org.apache.spark
-import org.apache.spark.sql.types.StringType
-import utest.{TestSuite, Tests}
+import org.apache.spark.sql.SparkSession
+import org.scalatest.FunSuite
 
-object ExampleTests extends TestSuite with SparkSessionTestWrapper with DatasetComparer {
+class test extends FunSuite {
+  test("test initailizing spark context"){
+    val myLocalInProcessSession = SparkSession.builder().master("local").appName("Example").getOrCreate()
 
-  val tests = Tests {
+    val list = List(1,2,3,4)
+    val rdd = myLocalInProcessSession.sparkContext.parallelize(list)
 
-    import spark.implicits._
-
-    "withGreeting" - {
-
-      val sourceDF = spark.createDF(
-        List(
-          ("ebuka"),
-          ("osborne"),
-          ("elorm")
-        ), List(
-          ("name", StringType, true)
-        )
-      )
-
-      val actualDF = sourceDF.transform(Example.withGreeting())
-
-      val expectedDF = Seq(
-        ("ebuka", "good morning !"),
-        ("osborne", "good morning !"),
-        ("elorm", "good morning !")
-      ).toDF("name", "greeting")
-
-      assertSmallDatasetEquality(actualDF, expectedDF, ignoreNullable = true)
-
-    }
+    assert(rdd.count === list.length)
+    myLocalInProcessSession.close()
 
   }
-
 }

@@ -364,7 +364,6 @@ object morphir extends Module {
       def ivyDeps = Agg(
         ivy"org.apache.spark::spark-core:3.2.1",
         ivy"org.apache.spark::spark-sql:3.2.1",
-        ivy"com.github.mrpowers::spark-daria:1.2.3",
       )
 
       object test extends Tests {
@@ -376,12 +375,8 @@ object morphir extends Module {
           Agg(
             ivy"org.apache.spark::spark-core:3.2.1",
             ivy"org.apache.spark::spark-sql:3.2.1",
-            ivy"com.lihaoyi::utest:0.7.11",
-            ivy"com.github.mrpowers::spark-fast-tests:1.3.0",
-            ivy"com.github.mrpowers::spark-daria:1.2.3"
+            ivy"org.scalatest::scalatest:3.0.2"
           )
-
-        def testFrameworks = Seq("utest.runner.Framework")
       }
     }
   }
