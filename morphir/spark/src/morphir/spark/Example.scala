@@ -1,8 +1,7 @@
 package morphir.spark
 
-
-
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.explode
 
 
 case class Department(id: String, name: String)
@@ -11,15 +10,13 @@ case class DepartmentWithEmployees(department: Department, employees: Seq[Employ
 
 
 object Example extends App {
-
- // val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-  val spark = SparkSession.builder().appName("Example").getOrCreate()
+  val spark = SparkSession.builder().master("local").appName("Example").getOrCreate()
   import spark.implicits._
 
 
   val department = Department("1234", "Computer Science")
   val employee = Employee("Nunya", "Klah", "nunya@mail.com", 9000)
-  val employee2 = Employee("Ebuka", "Choong", "ebuka@mail.com", 2000)
+  val employee2 = Employee("Ebuka", "Choong", "ebuka@mail.com", 7000)
 
   val departmentWithEmployees = DepartmentWithEmployees(department, Seq(employee, employee2))
 
@@ -31,14 +28,15 @@ object Example extends App {
   df1.show()
 
  //flatten employee class into columns
+ val explodeDF = df1.select(explode($"employees"))
+ explodeDF.show()
 
  val flattenDF = explodeDF.select($"col.*")
  flattenDF.show()
 
  //filter rows
-
  val filterDF = flattenDF.filter($"firstName" === "Ebuka").sort($"lastName".asc)
- display(filterDF)
+ filterDF.show()
 
 
 }
