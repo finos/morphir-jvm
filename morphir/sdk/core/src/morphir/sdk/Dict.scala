@@ -42,11 +42,11 @@ object Dict {
   def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict match {
     case EmptyDict => dict
     case DictImpl(wrapped) =>
-      val res = wrapped.filterKeys(key => key != targetKey)
-      res match {
-        case Map.empty => EmptyDict
-        case resultMap => DictImpl(resultMap)
-      }
+      val result = wrapped.filterKeys(key => key != targetKey)
+      if (result.isEmpty)
+        EmptyDict
+      else
+        DictImpl(result)
   }
 
   /* Query*/
