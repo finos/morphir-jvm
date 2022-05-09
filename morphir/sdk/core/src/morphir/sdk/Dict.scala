@@ -40,8 +40,13 @@ object Dict {
   }
 
   def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict         => dict
-    case DictImpl(wrapped) => DictImpl(wrapped.filterKeys(key => key != targetKey))
+    case EmptyDict => dict
+    case DictImpl(wrapped) =>
+      val res = wrapped.filterKeys(key => key != targetKey)
+      res match {
+        case Map.empty => EmptyDict
+        case resultMap => DictImpl(resultMap)
+      }
   }
 
   /* Query*/
@@ -99,18 +104,16 @@ object Dict {
     case DictImpl(wrapped) => DictImpl(wrapped.map(x => (x._1, f(x._1)(x._2))))
   }
 
-  def foldl[K, V, B](initValue: B)(f: B => (K, V) => B)(dict: Dict[K, V]): B = dict match {
+  def foldl[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B = dict match {
     case EmptyDict => initValue
     case DictImpl(wrapped) =>
-      wrapped.foldLeft(initValue)((accumulator, pairedValues) =>
-        f(accumulator)(pairedValues._1, pairedValues._2)
-      )
+      wrapped.foldLeft(initValue)((accumulator, pairedValues) => f(pairedValues._1)(pairedValues._2)(accumulator))
   }
 
-  def foldr[K, V, B](initValue: B)(f: (K, V) => B => B)(dict: Dict[K, V]): B = dict match {
+  def foldr[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B = dict match {
     case EmptyDict => initValue
     case DictImpl(wrapped) =>
-      wrapped.foldRight(initValue)((a, accumulator) => f(a._1, a._2)(accumulator))
+      wrapped.foldRight(initValue)((a, accumulator) => f(a._1)(a._2)(accumulator))
   }
 
   def filter[K, V](f: K => V => Boolean)(dict: Dict[K, V]): Dict[K, V] = dict match {
@@ -120,11 +123,11 @@ object Dict {
       if (filtered.isEmpty) empty else DictImpl(filtered)
   }
 
-  def partition[K, V](f: ((K, V)) => Boolean)(dict: Dict[K, V]): (Dict[K, V], Dict[K, V]) =
+  def partition[K, V](f: K => V => Boolean)(dict: Dict[K, V]): (Dict[K, V], Dict[K, V]) =
     dict match {
       case EmptyDict => (EmptyDict, dict)
       case DictImpl(wrapped) =>
-        val result = wrapped.partition(f)
+        val result = wrapped.partition(x => f(x._1)(x._2))
         (DictImpl(result._1), DictImpl(result._2))
     }
 
@@ -154,10 +157,10 @@ object Dict {
       Dict.member(key)(dict)
 
     @inline def insert[K, V](
-                              key: K,
-                              value: V,
-                              dict: Dict[K, V]
-                            ): Dict[K, V] =
+      key: K,
+      value: V,
+      dict: Dict[K, V]
+    ): Dict[K, V] =
       Dict.insert(key)(value)(dict)
   }
 }
