@@ -12,7 +12,7 @@ If you are using IntelliJ IDEA to edit morphir-jvm's Scala code, you can create 
 IntelliJ project files via:
 
 ```bash
-./mill mill.scalalib.GenIdea/idea
+.\mill mill.scalalib.GenIdea/idea
 ```
 
 ### BSP Setup
@@ -20,19 +20,19 @@ IntelliJ project files via:
 If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
 
 ```bash
-./mill mill.contrib.Bloop/install
+.\mill mill.contrib.Bloop/install
 ```
 
 ### Run Tests
 
 ```bash
-./mill __.test
+.\mill __.test
 ```
 
 or in watch mode:
 
 ```bash
-./mill -w __.test
+.\mill -w __.test
 ```
 
 ### Formatting Code
@@ -40,11 +40,11 @@ or in watch mode:
 Code needs to be formatted according to `scalafmt` rules. To run `scalafmt` on all the source code using:
 
 ```bash
-./mill mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
+.\mill mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
 ```
 
 or in watch mode to reformat changed files:
 
 ```bash
-./mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
+.\mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
 ```
