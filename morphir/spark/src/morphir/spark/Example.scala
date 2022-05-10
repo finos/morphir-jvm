@@ -3,38 +3,38 @@ package morphir.spark
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.explode
 
-case class Department(id: String, name: String)
-case class Employee(firstName: String, lastName: String, email: String, salary: Int)
-case class DepartmentWithEmployees(department: Department, employees: Seq[Employee])
-
-
+case class School(id: String, name: String)
+case class Student(firstName: String, lastname: String, email: String, age: Int)
+case class SchoolWithStudents(school: School, students: Seq[Student])
 
 object Example extends App {
   val spark = SparkSession.builder().master("local").appName("Example").getOrCreate()
   import spark.implicits._
 
-  val department = Department("1234", "Computer Science")
-  val employee   = Employee("Nunya", "Klah", "nunya@mail.com", 9000)
-  val employee2  = Employee("Ebuka", "Choong", "ebuka@mail.com", 7000)
+  val school = School("1234", "Eaton Square")
 
-  val departmentWithEmployees = DepartmentWithEmployees(department, Seq(employee, employee2))
+  val student1 = Student("John", "Clark", "john@mail.com", 18)
+  val student2 = Student("Thomas", "Kent", "thomas@mail.com", 19)
+  val student3 = Student("Lewis", "Hamilton", "lewis@mail.com", 20)
+  val student4 = Student("Max", "Verstappen", "max@mail.com", 20)
+
+  val schoolWithStudents = SchoolWithStudents(school, Seq(student1, student2, student3, student4))
 
   //creating dataframe
+  val schoolWithStudentsSeq = Seq(schoolWithStudents)
 
-  val departmentWithEmployeesSeq = Seq(departmentWithEmployees)
-
-  val df1 = departmentWithEmployeesSeq.toDF()
+  val df1 = schoolWithStudentsSeq.toDF()
   df1.show()
 
   //flatten employee class into columns
-  val explodeDF = df1.select(explode($"employees"))
+  val explodeDF = df1.select(explode($"students"))
   explodeDF.show()
 
   val flattenDF = explodeDF.select($"col.*")
   flattenDF.show()
 
   //filter rows
-  val filterDF = flattenDF.filter($"firstName" === "Ebuka").sort($"lastName".asc)
+  val filterDF = flattenDF.filter($"firstName" === "Lewis").sort($"lastName".asc)
   filterDF.show()
 
 }
