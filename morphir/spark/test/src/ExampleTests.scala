@@ -20,8 +20,6 @@ class test extends FunSuite {
     val rdd  = localTestSession.sparkContext.parallelize(list)
 
     assert(rdd.count === list.length)
-    localTestSession.close()
-
   }
 
   test("First colunm should be John") {
@@ -30,7 +28,6 @@ class test extends FunSuite {
     val flattenDF = explodeDF.select($"col.firstName").filter($"firstName" === "John").first().get(0)
 
     assert(flattenDF === "John")
-    localTestSession.close()
   }
 
 }
