@@ -25,6 +25,9 @@ trait ValueModule extends ValueConstructors with PatternConstructors {
   final type TypedValue = zio.morphir.ir.value.recursive.Value.TypedValue
   final val TypedValue: zio.morphir.ir.value.recursive.Value.type = zio.morphir.ir.value.recursive.Value.TypedValue
 
+  final type USpecification = zio.morphir.ir.value.USpecification
+  final val USpecification: zio.morphir.ir.value.USpecification.type = zio.morphir.ir.value.USpecification
+
   final type Value[+TA, +VA] = zio.morphir.ir.value.recursive.Value[TA, VA]
   final val Value: zio.morphir.ir.value.recursive.Value.type = zio.morphir.ir.value.recursive.Value
 

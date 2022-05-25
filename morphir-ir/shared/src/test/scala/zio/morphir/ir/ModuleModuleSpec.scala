@@ -1,6 +1,6 @@
 package zio.morphir.ir
 
-import zio.morphir.ir.Module.{Definition, Specification}
+import zio.morphir.ir.Module.Definition
 import zio.morphir.ir.{Literal => Lit}
 import zio.morphir.samples.ModuleExample.*
 import zio.morphir.syntax.AllSyntax
@@ -43,19 +43,23 @@ object ModuleModuleSpec extends MorphirBaseSpec with AllSyntax {
     ),
     suite("Module Specification")(
       test("Can look up values") {
-        val result = moduleSpec.lookupValue(Name("spec1"))
+        val result = moduleSpec.lookupValueSpecification(Name("spec1"))
         assertTrue(
           result.isDefined && result.get.inputs.size == 2 && result.get.output == define.variable("WholeNumbers")
         )
       },
       test("Can look up types") {
-        val result = moduleSpec.lookupType(Name("world"))
+        val result = moduleSpec.lookupTypeSpecification(Name("world"))
         assertTrue(
-          result.isDefined && !moduleSpec.lookupType(Name("notHere")).isDefined
+          result.isDefined && !moduleSpec.lookupTypeSpecification(Name("notHere")).isDefined
         )
       },
       test("Can be erased") {
-        assertTrue(moduleSpec.eraseAttributes == Specification.empty)
+        val result   = moduleSpec.eraseAttributes
+        val expected = moduleSpec.mapAttributes(_ => ())
+        assertTrue(
+          result == expected
+        )
       }
     )
   )

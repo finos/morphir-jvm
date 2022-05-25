@@ -17,4 +17,7 @@ package object nonrecursive {
   /** Represents an un-annotated/un-attributed type. */
   type UType = Type[Any]
   val UType: Type.type = Type
+
+  type Result[+E, +A] = Either[E, A]
+  val Result: Either.type = Either
 }

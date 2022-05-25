@@ -18,7 +18,7 @@ trait PackageModule {
   final type Specification[+TA] = zio.morphir.ir.packages.Specification[TA]
   final val Specification: zio.morphir.ir.packages.Specification.type = zio.morphir.ir.packages.Specification
 
-  final type USpecification = zio.morphir.ir.packages.Specification[Unit]
+  final type USpecification = zio.morphir.ir.packages.Specification[Any]
   final val USpecification: zio.morphir.ir.packages.Specification.type = zio.morphir.ir.packages.Specification
 
   val emptySpecification: Specification[Nothing] = Specification.empty

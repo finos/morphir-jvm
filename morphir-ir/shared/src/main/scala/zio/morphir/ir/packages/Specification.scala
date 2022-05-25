@@ -1,9 +1,12 @@
 package zio.morphir.ir.packages
 import zio.morphir.ir.module.{ModuleName, Specification => ModuleSpec}
+import zio.morphir.ir.value.{Specification => ValueSpec}
 import zio.morphir.ir.{Name, Path}
 
 final case class Specification[+TA](modules: Map[ModuleName, ModuleSpec[TA]]) {
   self =>
+
+  def eraseAttributes: Specification[Any] = self.mapAttributes(_ => ())
 
   def lookupModuleSpecification(path: Path): Option[ModuleSpec[TA]] =
     lookupModuleSpecification(ModuleName.fromPath(path))
@@ -17,7 +20,15 @@ final case class Specification[+TA](modules: Map[ModuleName, ModuleSpec[TA]]) {
   def lookupTypeSpecification(moduleName: ModuleName): Option[ModuleSpec[TA]] =
     modules.get(moduleName)
 
-  def mapSpecificationAttributes[B](func: TA => B): Specification[B] = ???
+  def mapAttributes[TB](func: TA => TB): Specification[TB] = Specification(modules.map { case (name, moduleSpec) =>
+    (name, moduleSpec.mapAttributes(func))
+  })
+
+  def lookupValueSpecification(
+      modulePath: Path,
+      localName: Name
+  ): Option[ValueSpec[TA]] =
+    lookupModuleSpecification(modulePath).flatMap(_.lookupValueSpecification(localName))
 
 }
 

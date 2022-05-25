@@ -1,6 +1,7 @@
 package zio.morphir.ir.types.recursive
 
 import zio.Chunk
+import zio.morphir.ir.types.recursive.Definition
 import zio.morphir.ir.{Documented, Name}
 
 sealed trait Specification[+Attributes] { self =>
@@ -14,15 +15,6 @@ sealed trait Specification[+Attributes] { self =>
     case spec @ OpaqueTypeSpecification(_)          => spec
     case CustomTypeSpecification(typeParams, ctors) => CustomTypeSpecification(typeParams, ctors.map(f))
   }
-
-//   def map[Attributes0 >: Attributes](f: Attributes => Attributes0): Specification[Attributes0] = self match {
-//     case c @ TypeAliasSpecification(_, _) =>
-//       TypeAliasSpecification[Attributes0](c.typeParams, c.expr.map(f))
-//     case c @ OpaqueTypeSpecification(_) =>
-//       OpaqueTypeSpecification[Attributes0](c.typeParams)
-//     case c @ CustomTypeSpecification(_, _) =>
-//       CustomTypeSpecification[Attributes0](c.typeParams, c.ctors.map(f))
-//   }
 
   def eraseAttributes: Specification[Any] = self match {
     case c @ TypeAliasSpecification(_, _) =>
@@ -79,7 +71,19 @@ private[ir] object Specification {
   type UCustomTypeSpecification = CustomTypeSpecification[Any]
   val UCustomTypeSpecification: CustomTypeSpecification.type = CustomTypeSpecification
 
+  type USpecification = Specification[Any]
+  val USpecification: Specification.type = Specification
+
   final class MapSpecificationAttributes[+A](val input: () => Specification[A]) extends AnyVal {
     def map[B](f: A => B): Specification[B] = input().map(f)
+  }
+
+  def fromDefinition[A](definition: Definition[A]): Specification[A] = definition match {
+    case Definition.TypeAlias(typeParams, typeExp) => TypeAliasSpecification(typeParams, typeExp)
+    case Definition.CustomType(typeParams, acessCtors) =>
+      acessCtors.withPublicAccess match {
+        case Some(ctors) => CustomTypeSpecification(typeParams, ctors)
+        case None        => OpaqueTypeSpecification(typeParams)
+      }
   }
 }

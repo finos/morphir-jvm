@@ -1,8 +1,12 @@
 package zio.morphir.ir
-import Module.ModulePath
+
+import Module.{ModulePath, ModuleName}
+
 final case class FQName(packagePath: PackageName, modulePath: ModulePath, localName: Name) {
   def getPackagePath: Path = packagePath.toPath
   def getModulePath: Path  = modulePath.toPath
+
+  def getModuleName: ModuleName = modulePath.toModuleName
 
   def toReferenceName: String = Seq(
     Path.toString(Name.toTitleCase, ".", packagePath.toPath),

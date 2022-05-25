@@ -30,9 +30,12 @@ final case class Definition[+TA, +VA](
   def lookupValueDefinition(localName: Name): Option[Value.Definition[TA, VA]] =
     values.get(localName).flatMap(x => AccessControlled.WithPrivateAccess.unapply(x).map(_.value))
 
-  def eraseAttributes: Definition[Any, Any] = ???
+  def eraseAttributes: Definition[Any, Any] = self.mapAttributes(_ => (), _ => ())
 
-  def mapAttributes[TB, VB](tf: TA => TB, vf: VA => VB): Definition[TA, VA] = ???
+  def mapAttributes[TB, VB](tf: TA => TB, vf: VA => VB): Definition[TB, VB] = Definition(
+    types.map { case (name, access) => (name, access.map(_.map(_.map(tf)))) },
+    values.map { case (name, access) => (name, access.map(_.map(_.mapAttributes(tf, vf)))) }
+  )
 
   def collectTypeReferences: Set[FQName] = self.types.flatMap {
     case (_, AccessControlled.WithPrivateAccess(definition)) =>

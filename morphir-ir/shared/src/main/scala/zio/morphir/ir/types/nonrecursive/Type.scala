@@ -214,7 +214,9 @@ sealed trait Type[+Attributes] { self =>
   def foldUpSome[Z](z: Z)(pf: PartialFunction[(Z, Type[Attributes]), Z]): Z =
     foldUp(z)((z, recursive) => pf.lift(z -> recursive).getOrElse(z))
 
-  def mapAttributes[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
+  @inline def mapAttributes[B](f: Attributes => B): Type[B] = map(f)
+
+  def map[Attributes2](f: Attributes => Attributes2): Type[Attributes2] =
     fold[Type[Attributes2]](
       (attributes, name, fields) => Type.ExtensibleRecord(f(attributes), name, fields),
       (attributes, paramTypes, returnType) => Type.Function(f(attributes), paramTypes, returnType),
