@@ -1,11 +1,27 @@
 package org.finos.morphir.knowledge.core
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 
 final case class Bindings(private[knowledge] val substitutions: Map[Field[_], Any] = Map.empty) { self =>
 
+  private[knowledge] def +[A: ClassTag](kv: (Field[A], Any)): Bindings = {
+    val (k, v) = kv
+    Bindings(substitutions + (k -> v))
+  }
+
+  @tailrec
+  def dynamicValueOf(value: Value): Value = value match {
+    case field @ Field(_, _) =>
+      substitutions.get(field) match {
+        case Some(value) => dynamicValueOf(value)
+        case None        => value
+      }
+    case _ => value
+  }
+
   def fields: Set[Field[_]] = substitutions.keySet
 
-  def hasValue[A](field: Field[A]): Boolean =
+  def hasValue[A: ClassTag](field: Field[A]): Boolean =
     valueOf(field) match {
       case Some(value) =>
         if (value.isInstanceOf[A]) true else false
@@ -15,17 +31,14 @@ final case class Bindings(private[knowledge] val substitutions: Map[Field[_], An
   /**
    * Look up the value of a field in the bindings. NOTE: In minikanren/microkanren, this is called `walk` or `find`.
    */
-  def valueOf[A](field: Field[A]): Option[A] = {
-    @tailrec
-    def loop[T](candidate: Field[T]): Option[T] = substitutions.get(candidate) match {
+  @tailrec
+  def valueOf[A: ClassTag](field: Field[A]): Option[A] =
+    substitutions.get(field) match {
       case Some(field @ Field(_, _)) =>
-        loop(field.asInstanceOf[Field[T]])
-      case Some(value) =>
-        if (value.getClass() == field.fieldType.runtimeClass) Some[T](value.asInstanceOf[T]) else None
-      case None => None
+        valueOf(field.asInstanceOf[Field[A]])
+      case Some(value: A) => Some(value)
+      case _              => None
     }
-    loop(field)
-  }
 }
 
 object Bindings {

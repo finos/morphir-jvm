@@ -18,7 +18,30 @@ object BindingsSpec extends DefaultRunnableSpec {
         val bindings   = Bindings.having(nameField -> "John Doe", aliasField -> nameField)
         val actual     = bindings.valueOf(aliasField)
         assertTrue(
-          actual == Some("John Doe")
+          actual == Some("John Doe"),
+          bindings.fields == Set(nameField, aliasField)
+        )
+      },
+      test("Should return None if there is no path to the field value") {
+        val a        = Field.of[Int]("a")
+        val b        = Field.of[Int]("b")
+        val c        = Field.of[Int]("c")
+        val bindings = Bindings.having(a -> 42, c -> b)
+        val actual   = bindings.valueOf(b)
+        assertTrue(
+          actual == None,
+          bindings.fields == Set(a, c)
+        )
+      },
+      test("should return the value only if it matches the field type") {
+        val indirect    = Field.of[Int]("indirectTuple")
+        val indirect2   = Field.of[Boolean]("indirect")
+        val valueHolder = Field.of[Int]("valueHolder")
+        val bindings    = Bindings.having(indirect -> valueHolder, indirect2 -> valueHolder, valueHolder -> 42)
+        assertTrue(
+          // bindings.valueOf(indirect) == Some(42),
+          // bindings.valueOf(indirect2) == None,
+          bindings.valueOf(valueHolder) == Some(42)
         )
       }
     )
