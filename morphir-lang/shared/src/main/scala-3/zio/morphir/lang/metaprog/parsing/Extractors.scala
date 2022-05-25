@@ -14,7 +14,7 @@ object Extractors {
 
     def apply(using Quotes)(expr: Expr[_]): Expr[_] =
       import quotes.reflect._
-      import scala.util.{ Try, Success, Failure }
+      import scala.util.{Try, Success, Failure}
       Untype.unapply(expr.asTerm).map(_.asExpr).get
   }
 
@@ -22,7 +22,7 @@ object Extractors {
   object Untype {
     def unapply(using Quotes)(term: quotes.reflect.Term): Option[quotes.reflect.Term] = term match {
       case TypedMatroshkaTerm(t) => Some(t)
-      case other => Some(other)
+      case other                 => Some(other)
     }
 
     def apply(using Quotes)(term: quotes.reflect.Term) = Untype.unapply(term).get
@@ -33,13 +33,13 @@ object Extractors {
       import quotes.reflect._
       innerTerm match
         case Typed(innerTree, _) => recurse(innerTree)
-        case other => other
+        case other               => other
 
     def unapply(using Quotes)(term: quotes.reflect.Term): Option[quotes.reflect.Term] =
       import quotes.reflect._
       term match
         case Typed(tree, _) => Some(recurse(tree))
-        case other => None
+        case other          => None
   }
 
   object TypedMatroshka {

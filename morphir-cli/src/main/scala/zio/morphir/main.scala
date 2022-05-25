@@ -12,8 +12,8 @@ object Main extends ZIOAppDefault {
     version = "0.1.0",
     summary = text("Morphir is a command line tool for creating and running morphir IRs."),
     command = CliCommand.morphir()
-  ){
-    case cmd @ CliCommand(Subcommand.Elm(Subcommand.ElmMake()),_) =>
+  ) {
+    case cmd @ CliCommand(Subcommand.Elm(Subcommand.ElmMake()), _) =>
       for {
         _ <- printLine("Running morphir elm make tooling...")
         _ <- printLine(s"Command: ${cmd}")
@@ -21,21 +21,21 @@ object Main extends ZIOAppDefault {
         _ <- printLine("Done.")
       } yield ()
 
-    case cmd @ CliCommand(Subcommand.Elm(Subcommand.ElmGen()),_) =>
+    case cmd @ CliCommand(Subcommand.Elm(Subcommand.ElmGen()), _) =>
       for {
         _ <- printLine("Running morphir elm gen tooling...")
         _ <- printLine(s"Command: ${cmd}")
         _ <- printLine("TODO: Implement morphir elm gen tooling")
         _ <- printLine("Done.")
       } yield ()
-    case cmd @ CliCommand(CliCommand.Subcommand.Elm(_),_) =>
+    case cmd @ CliCommand(CliCommand.Subcommand.Elm(_), _) =>
       for {
         _ <- printLine("Running morphir elm tooling...")
         _ <- printLine(s"Command: ${cmd}")
         _ <- printLine("TODO: Implement morphir elm tooling")
         _ <- printLine("Done.")
       } yield ()
-    case cmd @ CliCommand(CliCommand.Subcommand.Make(),_) =>
+    case cmd @ CliCommand(CliCommand.Subcommand.Make(), _) =>
       for {
         _ <- printLine("Running morphir make tooling...")
         _ <- printLine(s"Command: ${cmd}")
@@ -51,6 +51,6 @@ object Main extends ZIOAppDefault {
 
   def run = for {
     args <- ZIOAppArgs.getArgs
-    _ <- app.run(args.toList)
+    _    <- app.run(args.toList)
   } yield ()
 }
