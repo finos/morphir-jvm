@@ -39,9 +39,25 @@ object BindingsSpec extends DefaultRunnableSpec {
         val valueHolder = Field.of[Int]("valueHolder")
         val bindings    = Bindings.having(indirect -> valueHolder, indirect2 -> valueHolder, valueHolder -> 42)
         assertTrue(
-          // bindings.valueOf(indirect) == Some(42),
-          // bindings.valueOf(indirect2) == None,
+          bindings.valueOf(indirect) == Some(42),
+          bindings.valueOf(indirect2) == None,
           bindings.valueOf(valueHolder) == Some(42)
+        )
+      }
+    ),
+    suite("dynamicValueOf")(
+      test("Will return the field value irrespective of type") {
+        val indirect    = Field.of[Int]("indirectTuple")
+        val indirect2   = Field.of[Boolean]("indirect")
+        val valueHolder = Field.of[Int]("valueHolder")
+        val bindings    = Bindings.having(indirect -> valueHolder, indirect2 -> valueHolder, valueHolder -> 42)
+        assertTrue(
+          bindings.dynamicValueOf(indirect) == 42,
+          Option(bindings.dynamicValueOf(indirect)) == bindings.valueOf(indirect),
+          bindings.dynamicValueOf(indirect2) == 42,
+          Option(bindings.dynamicValueOf(indirect2)) != bindings.valueOf(indirect2),
+          bindings.dynamicValueOf(valueHolder) == 42,
+          Option(bindings.dynamicValueOf(valueHolder)) == bindings.valueOf(valueHolder)
         )
       }
     )
