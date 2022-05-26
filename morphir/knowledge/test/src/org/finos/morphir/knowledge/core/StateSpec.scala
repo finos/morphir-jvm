@@ -50,6 +50,44 @@ object StateSpec extends DefaultRunnableSpec {
         sut.unify(timon, pumba) == Some(sut),
         sut.unify(rating1, rating2) == Some(sut)
       )
+    },
+    test("addField should add the new field to the state's fields") {
+      val batman    = Field.define[String]
+      val superman  = Field.define[String]
+      val spiderman = Field.define[String]
+
+      val sut = State(
+        Fields(
+          batman   -> "Bruce Wayne",
+          superman -> "Clark Kent"
+        )
+      )
+      val expectedFields = sut.fields + (spiderman -> "Peter Parker")
+      val expected       = Some(sut.copy(fields = expectedFields))
+      val actual         = sut.addField(spiderman, "Peter Parker")
+
+      assertTrue(
+        actual == expected
+      )
+    },
+    test("unify should add the new field to the value map") {
+      val batman    = Field.define[String]
+      val superman  = Field.define[String]
+      val spiderman = Field.define[String]
+
+      val sut = State(
+        Fields(
+          batman   -> "Bruce Wayne",
+          superman -> "Clark Kent"
+        )
+      )
+      val expectedFields = sut.fields + (spiderman -> "Peter Parker")
+      val expected       = Some(sut.copy(fields = expectedFields))
+      val actual         = sut.unify(spiderman, "Peter Parker")
+
+      assertTrue(
+        actual == expected
+      )
     }
   )
 

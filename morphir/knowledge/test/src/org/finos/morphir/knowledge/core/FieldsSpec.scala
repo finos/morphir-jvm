@@ -60,6 +60,14 @@ object FieldsSpec extends DefaultRunnableSpec {
           Option(bindings.dynamicValueOf(valueHolder)) == bindings.valueOf(valueHolder)
         )
       }
+    ),
+    suite("Adding fields")(
+      test("should add a field when fields is empty") {
+        val nameField = Field.define[String]("name")
+        val sut       = Fields.empty
+        val actual    = sut + (nameField -> "John Doe")
+        assertTrue(actual == Fields.init(nameField -> "John Doe"))
+      }
     )
   )
 }

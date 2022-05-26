@@ -3,18 +3,19 @@ package org.finos.morphir.knowledge.core
 import scala.reflect.ClassTag
 
 final case class State(
-    private val fields: Fields,
-    private val fieldConstraints: Map[Field[_], List[FieldConstraint]] = Map.empty
+    private[knowledge] val fields: Fields,
+    private[knowledge] val fieldConstraints: Map[Field[_], List[FieldConstraint]] = Map.empty
 ) { self =>
 
-  private def addWithEnforcedConstraints[A: ClassTag](field: Field[A], value: Value): Option[State] = {
+  private[knowledge] def addField[A](field: Field[A], value: Value)(implicit tag: ClassTag[A]): Option[State] = {
+    println(s"Adding field $field with value $value")
     def applyConstraint(state: Option[State], fieldConstraint: FieldConstraint): Option[State] =
       state.collect(fieldConstraint)
 
     def fieldsConstrainedBy(fieldConstraint: FieldConstraint): List[Field[_]] =
       fieldConstraints.collect { case (field, constraints) if constraints.contains(fieldConstraint) => field }.toList
 
-    val newState    = copy(fields = fields + (field, value))
+    val newState    = copy(fields = self.fields + (field, value))
     val constraints = fieldConstraints.getOrElse(field, List.empty)
     constraints
       .filter { constraint =>
@@ -53,9 +54,9 @@ final case class State(
     if (firstValue == secondValue) { Some(self) }
     else {
       (firstValue, secondValue) match {
-        case (field @ Field(_, value), _) => addWithEnforcedConstraints(field, value)(field.fieldType)
-        case (_, field @ Field(_, value)) => addWithEnforcedConstraints(field, value)(field.fieldType)
-        case _                            => None
+        case (field @ Field(_, tag), value) => addField(field, value)(tag)
+        case (value, field @ Field(_, tag)) => addField(field, value)(tag)
+        case _                              => None
       }
     }
   }
@@ -72,6 +73,8 @@ final case class State(
   }
 
   def valuesOf(selected: Field[_]*): Fields = valuesOf(selected.toList)
+
+  private[knowledge] def withFields(fields: Fields): State = copy(fields = fields)
 
   private[knowledge] def withFieldConstraints(fieldConstraints: Map[Field[_], List[FieldConstraint]]): State =
     copy(fieldConstraints = fieldConstraints)
