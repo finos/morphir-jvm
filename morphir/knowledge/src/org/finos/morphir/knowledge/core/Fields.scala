@@ -47,6 +47,7 @@ final case class Fields(private[knowledge] val bindings: Map[Field[_], Value] = 
 }
 
 object Fields {
-  val empty: Fields                                               = Fields()
-  private[knowledge] def init(bindings: (Field[_], Any)*): Fields = Fields(bindings.toMap)
+  val empty: Fields                                                = Fields()
+  private[knowledge] def apply(bindings: (Field[_], Any)*): Fields = Fields(bindings.toMap)
+  private[knowledge] def init(bindings: (Field[_], Any)*): Fields  = Fields(bindings.toMap)
 }

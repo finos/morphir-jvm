@@ -27,11 +27,12 @@ final case class State(
       }
   }
 
-  def addConstraint[A](field: Field[A], constraint: FieldConstraint): State = fieldConstraints.get(field) match {
-    case Some(constraints) =>
-      copy(fieldConstraints = (fieldConstraints - field) + (field -> (constraints :+ constraint)))
-    case None => copy(fieldConstraints = fieldConstraints + (field -> List(constraint)))
-  }
+  private[knowledge] def addConstraint[A](field: Field[A], constraint: FieldConstraint): State =
+    fieldConstraints.get(field) match {
+      case Some(constraints) =>
+        copy(fieldConstraints = (fieldConstraints - field) + (field -> (constraints :+ constraint)))
+      case None => copy(fieldConstraints = fieldConstraints + (field -> List(constraint)))
+    }
 
   private[knowledge] def constraintsOn[A](field: Field[A]): List[FieldConstraint] =
     fieldConstraints.get(field).getOrElse(Nil)
@@ -71,8 +72,21 @@ final case class State(
   }
 
   def valuesOf(selected: Field[_]*): Fields = valuesOf(selected.toList)
+
+  private[knowledge] def withFieldConstraints(fieldConstraints: Map[Field[_], List[FieldConstraint]]): State =
+    copy(fieldConstraints = fieldConstraints)
+
+  private[knowledge] def withFieldConstraints(fieldConstraints: (Field[_], List[FieldConstraint])*): State =
+    copy(fieldConstraints = fieldConstraints.toMap)
+
 }
 
 object State {
   val empty: State = State(Fields.empty, Map.empty)
+
+  private[knowledge] def fromFieldConstraints(fieldConstraints: Map[Field[_], List[FieldConstraint]]): State =
+    State(Fields.empty, fieldConstraints)
+
+  private[knowledge] def fromFieldConstraints(fieldConstraints: (Field[_], List[FieldConstraint])*): State =
+    State(Fields.empty, fieldConstraints.toMap)
 }

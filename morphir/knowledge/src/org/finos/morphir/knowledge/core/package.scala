@@ -1,6 +1,7 @@
 package org.finos.morphir.knowledge
 
 package object core {
-  type Name  = String
-  type Value = Any
+  type FieldConstraint = PartialFunction[State, State]
+  type Name            = String
+  type Value           = Any
 }
