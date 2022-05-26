@@ -1,12 +1,12 @@
-import mill._, scalalib._
+import mill._, scalalib._, scalafmt._
 import Dependencies._
 
 val crossVersions = Seq("2.13.8", "3.1.2")
 
 object morphir extends Module {
-  object knowledge                                     extends mill.Cross[KnowledgeModule](crossVersions: _*) {}
-  class KnowledgeModule(val crossScalaVersion: String) extends MorphirCrossScalaModule                        {
-    // def ivyDeps = Agg(com.softwaremill.common.tagging)
+  object knowledge extends mill.Cross[KnowledgeModule](crossVersions: _*) {}
+  class KnowledgeModule(val crossScalaVersion: String) extends MorphirCrossScalaModule {
+    def ivyDeps = Agg(com.lihaoyi.sourcecode)
     object test extends Tests with MorphirZioTestModule {}
   }
 }
@@ -15,7 +15,7 @@ trait MorphirCrossScalaModule extends CommonCrossModule {}
 
 trait MorphirZioTestModule extends CommonTestModule {}
 
-trait CommonCrossModule extends CrossScalaModule {
+trait CommonCrossModule extends CrossScalaModule with ScalafmtModule {
   def scalacOptions = T.task {
     val extraOptions = if (this.crossScalaVersion.startsWith("2.")) {
       Seq("-Yrangepos")
@@ -33,6 +33,9 @@ trait CommonTestModule extends TestModule {
 
 object Dependencies {
   case object com {
+    case object lihaoyi {
+      val sourcecode = ivy"com.lihaoyi::sourcecode::0.2.8"
+    }
     case object softwaremill {
       case object common {
         val tagging = ivy"com.softwaremill.common::tagging::2.3.3"

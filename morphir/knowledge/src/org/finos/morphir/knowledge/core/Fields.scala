@@ -2,24 +2,27 @@ package org.finos.morphir.knowledge.core
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
-final case class Bindings(private[knowledge] val substitutions: Map[Field[_], Any] = Map.empty) { self =>
+final case class Fields(private[knowledge] val bindings: Map[Field[_], Value] = Map.empty) { self =>
 
-  private[knowledge] def +[A: ClassTag](kv: (Field[A], Any)): Bindings = {
+  private[knowledge] def +[A: ClassTag](kv: (Field[A], Value)): Fields = {
     val (k, v) = kv
-    Bindings(substitutions + (k -> v))
+    Fields(bindings + (k -> v))
   }
+
+  def associateWithFields(selected: List[Field[_]])(bindWith: Field[_] => Value): Map[Field[_], Value] =
+    bindings.keySet.map(field => field -> bindWith(field)).toMap
 
   @tailrec
   def dynamicValueOf(value: Value): Value = value match {
     case field @ Field(_, _) =>
-      substitutions.get(field) match {
+      bindings.get(field) match {
         case Some(value) => dynamicValueOf(value)
         case None        => value
       }
     case _ => value
   }
 
-  def fields: Set[Field[_]] = substitutions.keySet
+  def fields: Set[Field[_]] = bindings.map(_._1).toSet
 
   def hasValue[A: ClassTag](field: Field[A]): Boolean =
     valueOf(field) match {
@@ -28,12 +31,14 @@ final case class Bindings(private[knowledge] val substitutions: Map[Field[_], An
       case None => false
     }
 
+  def keys: Set[Field[_]] = bindings.keySet
+
   /**
    * Look up the value of a field in the bindings. NOTE: In minikanren/microkanren, this is called `walk` or `find`.
    */
   @tailrec
   def valueOf[A: ClassTag](field: Field[A]): Option[A] =
-    substitutions.get(field) match {
+    bindings.get(field) match {
       case Some(field @ Field(_, _)) =>
         valueOf(field.asInstanceOf[Field[A]])
       case Some(value: A) => Some(value)
@@ -41,7 +46,7 @@ final case class Bindings(private[knowledge] val substitutions: Map[Field[_], An
     }
 }
 
-object Bindings {
-  val empty: Bindings                                                      = Bindings()
-  private[knowledge] def having(substitutions: (Field[_], Any)*): Bindings = Bindings(substitutions.toMap)
+object Fields {
+  val empty: Fields                                               = Fields()
+  private[knowledge] def init(bindings: (Field[_], Any)*): Fields = Fields(bindings.toMap)
 }
