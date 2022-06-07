@@ -1,6 +1,6 @@
 package morphir.sdk.localdate
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{ Decoder, Encoder }
 import morphir.sdk.LocalDate.LocalDate
 
 object Codec {

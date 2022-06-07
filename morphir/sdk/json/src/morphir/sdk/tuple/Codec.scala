@@ -1,6 +1,6 @@
 package morphir.sdk.tuple
 
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe.{ Decoder, Encoder, HCursor, Json }
 import morphir.sdk.Tuple.Tuple
 
 object Codec {

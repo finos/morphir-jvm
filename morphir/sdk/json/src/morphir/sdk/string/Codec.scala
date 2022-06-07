@@ -1,6 +1,6 @@
 package morphir.sdk.string
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{ Decoder, Encoder }
 import morphir.sdk.String.String
 
 object Codec {

@@ -1,6 +1,6 @@
 package morphir.sdk.list
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{ Decoder, Encoder }
 import morphir.sdk.List.List
 
 /** Encoder and Decoder for items in a list */
