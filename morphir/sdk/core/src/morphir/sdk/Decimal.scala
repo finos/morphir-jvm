@@ -118,11 +118,8 @@ object Decimal extends DecimalModuleCompat {
   //TODO: Make sure the Elm call and this call return the same value
   def toString(value: Decimal): morphir.sdk.String.String = value.toString
 
-  def truncate(decimal: Decimal): Decimal = {
-    // Since morphir's Int is actually a Long this isn't really safe
-    val scale = decimal.scale
-    decimal.setScale(scale, BigDecimal.RoundingMode.DOWN)
-  }
+  def truncate(decimal: Decimal): Decimal =
+    decimal.setScale(0, BigDecimal.RoundingMode.DOWN)
 
   /**
    * The number -1.
