@@ -73,8 +73,27 @@ object DictSpec extends DefaultRunnableSpec {
         assert(Dict.fromList(List((1 -> "A"), (2 -> "B"), (3 -> "C"))))(equalTo(Map(1 -> "A", 2 -> "B", 3 -> "C")))
       }
     ),
-    suite("Dict.map")(
-      test("")
+//    suite("Dict.map")(
+//      test("should map over values in dict"){
+//        def doubleValues(n: Int) = n * 2
+//        val dc = Map("A" -> 1, "B" -> 2, "C" -> 3)
+//        assert(Dict.map(doubleValues(Dict.values(dc))(dc)))
+//      }
+//    ),
+    suite("Dict.union spec")(
+      test("union of two dicts"){
+        assert(Dict.union(Map(1 -> "A", 2 -> "B", 3 -> "C"))(Map(4 -> "D", 5 -> "E", 6 -> "F")))(equalTo(Map(1 -> "A", 2 -> "B", 3 -> "C",4 -> "D", 5 -> "E", 6 -> "F")))
+      }
+    ),
+    suite("Dict.intersect spec")(
+      test("should return common field in two dicts"){
+        assert(Dict.intersect(Map(1 -> "A", 2 -> "B", 3 -> "C", 4 -> "D"))(Map(4 -> "D", 1 -> "A")))(equalTo(Map(4 -> "D", 1 -> "A")))
+      }
+    ),
+    suite("Dict.diff spec")(
+      test("should return diff in two dicts"){
+        assert(Dict.diff(Map(1 -> "A", 2 -> "B", 3 -> "C", 4 -> "D"))(Map(4 -> "D", 1 -> "A")))(equalTo(Map(2 -> "B", 3 -> "C")))
+      }
     )
   )
 }

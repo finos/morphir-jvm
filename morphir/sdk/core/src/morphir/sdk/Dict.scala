@@ -78,7 +78,7 @@ object Dict {
     dict.toSet.intersect(Dict.toList(dictToIntersect).toSet).toMap
 
   def diff[K, V](dictToDiff: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] =
-    dict.toSet.diff(Dict.toList(dictToDiff).toSet).toMap
+    dictToDiff -- dict.keySet
 
   object tupled {
 
