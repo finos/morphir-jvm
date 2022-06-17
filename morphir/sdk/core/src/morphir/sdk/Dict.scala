@@ -32,11 +32,11 @@ object Dict {
 
   def update[K, V](targetKey: K)(updatedValue: V)(dict: Dict[K, V]): Dict[K, V] = dict.updated(targetKey, updatedValue)
 
-  def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict.filter(key => key != targetKey)
+  def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict.-(targetKey)
 
   /* Query*/
   def isEmpty[K, V](dict: Dict[K, V]): Boolean =
-    isEmpty(dict)
+    dict.isEmpty
 
   def member[K, V](key: K)(dict: Dict[K, V]): Boolean =
     dict.contains(key)
