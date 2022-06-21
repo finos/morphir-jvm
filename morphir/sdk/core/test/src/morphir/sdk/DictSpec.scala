@@ -73,6 +73,42 @@ object DictSpec extends DefaultRunnableSpec {
         assert(Dict.fromList(List((1 -> "A"), (2 -> "B"), (3 -> "C"))))(equalTo(Map(1 -> "A", 2 -> "B", 3 -> "C")))
       }
     ),
+    suite("Dict.map spec")(
+      test("should map over values in dict") {
+        def addOne = (_: String) => (y: Int) => (y + 1)
+        val b      = Map("A" -> 1, "B" -> 2, "C" -> 3)
+        assert(Dict.map(addOne)(b))(equalTo(Map("A" -> 2, "B" -> 3, "C" -> 4)))
+      }
+    ),
+    suite("Dict.foldl spec")(
+      test("should foldl values in dict") {
+        def sumAll = (_: String) => (v: Int) => (z: Int) => z + v
+        val b      = Map("A" -> 1, "B" -> 2, "C" -> 3)
+        assert(Dict.foldl(sumAll)(0)(b))(equalTo(6))
+      }
+    ),
+    suite("Dict.foldr spec")(
+      test("should foldr values in dict") {
+        def sumAll = (_: String) => (v: Int) => (z: Int) => z + v
+        val b      = Map("A" -> 1, "B" -> 2, "C" -> 3)
+        assert(Dict.foldr(sumAll)(0)(b))(equalTo(6))
+      }
+    ),
+    suite("Dict.filter spec")(
+      test("should filter and return a key and its value in a dict") {
+        val b       = Map("A" -> 1, "B" -> 2, "C" -> 3)
+        def findKey = (k: String) => (_: Int) => k == "B"
+        assert(Dict.filter(findKey)(b))(equalTo(Map("B" -> 2)))
+      }
+    ),
+    suite("Dict.partition spec")(
+      test("should partition a dict") {
+        val b      = Map("A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4)
+        val result = (Map("B" -> 2, "D" -> 4), Map("A" -> 1, "C" -> 3))
+        def parti  = (_: String) => (v: Int) => v % 2 == 0
+        assert(Dict.partition(parti)(b))(equalTo(result))
+      }
+    ),
     suite("Dict.union spec")(
       test("union of two dicts") {
         assert(Dict.union(Map(1 -> "A", 2 -> "B", 3 -> "C"))(Map(4 -> "D", 5 -> "E", 6 -> "F")))(
