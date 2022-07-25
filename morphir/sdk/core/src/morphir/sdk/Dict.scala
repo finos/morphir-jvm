@@ -16,137 +16,69 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Maybe._
+import morphir.sdk.Maybe.Maybe
 
 object Dict {
-  sealed abstract class Dict[-K, +V]
-  private case object EmptyDict                          extends Dict[Any, Nothing]
-  private case class DictImpl[K, +V](wrapped: Map[K, V]) extends Dict[K, V]
+
+  type Dict[K, V] = Map[K, V]
+
+  def empty[K, V]: Dict[K, V] = Map.empty[K, V]
 
   /* Build */
-  def empty[K, V]: Dict[K, V] = EmptyDict
-
-  def singleton[K, V](key: K)(value: V): Dict[K, V] = DictImpl(Map(key -> value))
+  def singleton[K, V](key: K)(value: V): Dict[K, V] = Map(key -> value)
 
   def insert[K, V](key: K)(value: V)(dict: Dict[K, V]): Dict[K, V] =
-    dict match {
-      case EmptyDict         => DictImpl(Map(key -> value))
-      case DictImpl(wrapped) => DictImpl(wrapped + (key -> value))
-    }
+    dict + (key -> value)
 
-  def update[K, V](targetKey: K)(updatedValue: V)(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict         => dict
-    case DictImpl(wrapped) => DictImpl(wrapped.updated(targetKey, updatedValue))
-  }
+  def update[K, V](targetKey: K)(updatedValue: V)(dict: Dict[K, V]): Dict[K, V] = dict.updated(targetKey, updatedValue)
 
-  def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict => dict
-    case DictImpl(wrapped) =>
-      val result = wrapped.filterKeys(key => key != targetKey)
-      if (result.isEmpty)
-        EmptyDict
-      else
-        DictImpl(result)
-  }
+  def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict.-(targetKey)
 
   /* Query*/
   def isEmpty[K, V](dict: Dict[K, V]): Boolean =
-    dict match {
-      case EmptyDict         => true
-      case DictImpl(wrapped) => wrapped.isEmpty
-    }
+    dict.isEmpty
 
   def member[K, V](key: K)(dict: Dict[K, V]): Boolean =
-    dict match {
-      case EmptyDict         => false
-      case DictImpl(wrapped) => wrapped.contains(key)
-    }
+    dict.contains(key)
 
   def get[K, V](targetKey: K)(dict: Dict[K, V]): Maybe[V] =
-    dict match {
-      case EmptyDict         => Maybe.Nothing
-      case DictImpl(wrapped) => wrapped.get(targetKey)
-    }
+    dict.get(targetKey)
 
-  def size[K, V](dict: Dict[K, V]): Int = dict match {
-    case EmptyDict         => 0
-    case DictImpl(wrapped) => wrapped.size
-  }
+  def size[K, V](dict: Dict[K, V]): Int = dict.size
 
   /* List */
-  def keys[K, V](dict: Dict[K, V]): List[K] = dict match {
-    case EmptyDict         => List.empty[K]
-    case DictImpl(wrapped) => wrapped.keys.toList
-  }
+  def keys[K, V](dict: Dict[K, V]): List[K] = dict.keys.toList
 
-  def values[K, V](dict: Dict[K, V]): List[V] = dict match {
-    case EmptyDict         => List.empty[V]
-    case DictImpl(wrapped) => wrapped.values.toList
-  }
+  def values[K, V](dict: Dict[K, V]): List[V] = dict.values.toList
 
   def toList[K, V](dict: Dict[K, V]): List[(K, V)] =
-    dict match {
-      case EmptyDict =>
-        List()
-      case DictImpl(map) =>
-        map.toList
-    }
+    dict.toList
 
   def fromList[K, V](assocs: List[(K, V)]): Dict[K, V] =
-    assocs match {
-      case Nil => empty[K, V]
-      case xs  => DictImpl(xs.toMap)
-    }
+    assocs.toMap
 
   /* Transform */
-  def map[K, V, B](f: K => V => B)(dict: Dict[K, V]): Dict[K, B] = dict match {
-    case EmptyDict         => empty
-    case DictImpl(wrapped) => DictImpl(wrapped.map(x => (x._1, f(x._1)(x._2))))
-  }
+  def map[K, V, B](f: K => V => B)(dict: Dict[K, V]): Dict[K, B] = dict.map(x => (x._1, f(x._1)(x._2)))
 
-  def foldl[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B = dict match {
-    case EmptyDict => initValue
-    case DictImpl(wrapped) =>
-      wrapped.foldLeft(initValue)((accumulator, pairedValues) => f(pairedValues._1)(pairedValues._2)(accumulator))
-  }
+  def foldl[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B =
+    dict.foldLeft(initValue)((accumulator, pairedValues) => f(pairedValues._1)(pairedValues._2)(accumulator))
 
-  def foldr[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B = dict match {
-    case EmptyDict => initValue
-    case DictImpl(wrapped) =>
-      wrapped.foldRight(initValue)((a, accumulator) => f(a._1)(a._2)(accumulator))
-  }
+  def foldr[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B =
+    dict.foldRight(initValue)((a, accumulator) => f(a._1)(a._2)(accumulator))
 
-  def filter[K, V](f: K => V => Boolean)(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict => empty
-    case DictImpl(wrapped) =>
-      val filtered = wrapped.filter(x => f(x._1)(x._2))
-      if (filtered.isEmpty) empty else DictImpl(filtered)
-  }
+  def filter[K, V](f: K => V => Boolean)(dict: Dict[K, V]): Dict[K, V] = dict.filter(x => f(x._1)(x._2))
 
   def partition[K, V](f: K => V => Boolean)(dict: Dict[K, V]): (Dict[K, V], Dict[K, V]) =
-    dict match {
-      case EmptyDict => (EmptyDict, dict)
-      case DictImpl(wrapped) =>
-        val result = wrapped.partition(x => f(x._1)(x._2))
-        (DictImpl(result._1), DictImpl(result._2))
-    }
+    dict.partition(x => f(x._1)(x._2))
 
   /* Combine */
-  def union[K, V](dictToMerged: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict         => EmptyDict
-    case DictImpl(wrapped) => wrapped ++ dictToMerged
-  }
+  def union[K, V](dictToMerged: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] = dict ++ dictToMerged
 
-  def intersect[K, V](dictToIntersect: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict => EmptyDict
-    case DictImpl(wrapped) =>
-      DictImpl(wrapped.toSet.intersect(Dict.toList(dictToIntersect).toSet).toMap)
-  }
+  def intersect[K, V](dictToIntersect: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] =
+    dict.toSet.intersect(Dict.toList(dictToIntersect).toSet).toMap
 
-  def diff[K, V](dictToDiff: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] = dict match {
-    case EmptyDict         => EmptyDict
-    case DictImpl(wrapped) => DictImpl(wrapped.toSet.diff(Dict.toList(dictToDiff).toSet).toMap)
-  }
+  def diff[K, V](dictToDiff: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] =
+    dictToDiff -- dict.keySet
 
   object tupled {
 
