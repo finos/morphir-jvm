@@ -93,3 +93,7 @@ or in watch mode to reformat changed files:
 ```
 .\mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
 ```
+
+# Contributing
+
+* [Creating a new release](docs/release.md)
