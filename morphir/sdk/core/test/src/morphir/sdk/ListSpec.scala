@@ -223,6 +223,20 @@ object ListSpec extends DefaultRunnableSpec {
       test("reverse should reverse a list") {
         assert(List.reverse(List(1, 2, 3, 4)))(equalTo(List(4, 3, 2, 1)))
       }
+    ),
+    suite("List.innerJoin specs")(
+      test("innerJoin should join two lists discarding non-matching rows") {
+        assert(List.innerJoin(List(1, 2, 3, 4))((a: Int) => (b: Int) => a == b)(List(4, 3, 2)))(
+          equalTo(List((4, 4), (3, 3), (2, 2)))
+        )
+      }
+    ),
+    suite("List.leftJoin specs")(
+      test("leftJoin should join two lists including non-matching rows with a value of Maybe.Nothing") {
+        assert(List.leftJoin(List(2, 3, 4))((a: Int) => (b: Int) => a == b)(List(4, 3, 2, 1)))(
+          equalTo(List((4, Maybe.just(4)), (3, Maybe.just(3)), (2, Maybe.just(2)), (1, Maybe.nothing)))
+        )
+      }
     )
   )
 }

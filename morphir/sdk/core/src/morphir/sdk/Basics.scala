@@ -15,7 +15,6 @@ limitations under the License.
  */
 
 package morphir.sdk
-import morphir.sdk.{ Bool => BoolModule }
 
 object Basics {
 
@@ -31,24 +30,28 @@ object Basics {
   val GT: Order = Order.GT
 
   // Bool
-  type Bool = BoolModule.Bool
-  val Bool: BoolModule.Bool.type          = BoolModule.Bool
-  @inline def not(a: Bool): Bool          = BoolModule.not(a)
-  @inline def and(a: Bool)(b: Bool): Bool = BoolModule.and(a)(b)
-  @inline def or(a: Bool)(b: Bool): Bool  = BoolModule.or(a)(b)
-  @inline def xor(a: Bool)(b: Bool): Bool = BoolModule.xor(a)(b)
+  type Bool = Boolean
+  object Bool {
+    @inline def apply(value: Boolean): Bool = value
+  }
+  val True: Bool                          = true
+  val False: Bool                         = false
+  @inline def not(a: Bool): Bool          = !a
+  @inline def and(a: Bool)(b: Bool): Bool = a && b
+  @inline def or(a: Bool)(b: Bool): Bool  = a || b
+  @inline def xor(a: Bool)(b: Bool): Bool = a ^ b
 
   // Equality
-  @inline def equal[A](a: A)(b: A): Bool    = BoolModule.equal(a)(b)
-  @inline def notEqual[A](a: A)(b: A): Bool = BoolModule.notEqual(a)(b)
+  @inline def equal[A](a: A)(b: A): Bool    = a == b
+  @inline def notEqual[A](a: A)(b: A): Bool = a != b
 
   // Comparable
-  @inline def lessThan[A: Ordering](a: A)(b: A): Bool           = BoolModule.lessThan(a)(b)
-  @inline def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool    = BoolModule.lessThanOrEqual(a)(b)
-  @inline def greaterThan[A: Ordering](a: A)(b: A): Bool        = BoolModule.greaterThan(a)(b)
-  @inline def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool = BoolModule.greaterThanOrEqual(a)(b)
-  @inline def min[A: Ordering](a: A)(b: A): A                   = BoolModule.min(a)(b)
-  @inline def max[A: Ordering](a: A)(b: A): A                   = BoolModule.max(a)(b)
+  @inline def lessThan[A: Ordering](a: A)(b: A): Bool           = implicitly[Ordering[A]].lt(a, b)
+  @inline def lessThanOrEqual[A: Ordering](a: A)(b: A): Bool    = implicitly[Ordering[A]].lteq(a, b)
+  @inline def greaterThan[A: Ordering](a: A)(b: A): Bool        = implicitly[Ordering[A]].gt(a, b)
+  @inline def greaterThanOrEqual[A: Ordering](a: A)(b: A): Bool = implicitly[Ordering[A]].gteq(a, b)
+  @inline def min[A: Ordering](a: A)(b: A): A                   = if (lessThan(a)(b)) a else b
+  @inline def max[A: Ordering](a: A)(b: A): A                   = if (greaterThan(a)(b)) a else b
 
   // Int construction
   type Int = morphir.sdk.Int.Int

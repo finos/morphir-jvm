@@ -16,6 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
+import morphir.sdk.Basics.{ Bool, True }
 import morphir.sdk.List.List
 import morphir.sdk.Maybe.Maybe
 
@@ -29,16 +30,16 @@ object Rule {
         .find(rule => rule(input).isDefined)
         .flatMap(rule => rule(input))
 
-  def any[A]: A => Bool.Bool =
-    _ => Bool.True
+  def any[A]: A => Bool =
+    _ => True
 
-  def is[A](ref: A)(input: A): Bool.Bool =
+  def is[A](ref: A)(input: A): Bool =
     ref == input
 
-  def anyOf[A](ref: List[A])(input: A): Bool.Bool =
+  def anyOf[A](ref: List[A])(input: A): Bool =
     ref.contains(input)
 
-  def noneOf[A](ref: List[A])(input: A): Bool.Bool =
+  def noneOf[A](ref: List[A])(input: A): Bool =
     !anyOf(ref)(input)
 
 }
