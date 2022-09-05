@@ -1,7 +1,7 @@
 package morphir.sdk
 import java.math.{ BigDecimal => BigDec }
 
-import morphir.sdk.Basics.Order
+import morphir.sdk.Basics.{ Bool, Order }
 import morphir.sdk.Maybe.Maybe
 
 import scala.util.control.NonFatal
@@ -51,7 +51,7 @@ object Decimal extends DecimalModuleCompat {
   def divWithDefault(default: Decimal)(a: Decimal)(b: Decimal): Decimal =
     Maybe.withDefault(default)(div(a)(b))
 
-  def eq(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = a.compareTo(b) == 0
+  def eq(a: Decimal)(b: Decimal): Bool = a.compareTo(b) == 0
 
   def fromInt(value: morphir.sdk.Basics.Int): Decimal =
     Decimal(value)
@@ -78,10 +78,10 @@ object Decimal extends DecimalModuleCompat {
   def hundredth(n: morphir.sdk.Int.Int): Decimal =
     Decimal(n * 0.01)
 
-  def gt(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool  = a.compareTo(b) > 0
-  def gte(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = a.compareTo(b) >= 0
+  def gt(a: Decimal)(b: Decimal): Bool  = a.compareTo(b) > 0
+  def gte(a: Decimal)(b: Decimal): Bool = a.compareTo(b) >= 0
 
-  def lt(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = a.compareTo(b) < 0
+  def lt(a: Decimal)(b: Decimal): Bool = a.compareTo(b) < 0
 
   def million(n: morphir.sdk.Int.Int): Decimal =
     Decimal(n * 1000000)
@@ -91,8 +91,8 @@ object Decimal extends DecimalModuleCompat {
 
   def mul(a: Decimal)(b: Decimal): Decimal = a * b
 
-  @inline def ne(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool = neq(a)(b)
-  def neq(a: Decimal)(b: Decimal): morphir.sdk.Bool.Bool        = a.compareTo(b) != 0
+  @inline def ne(a: Decimal)(b: Decimal): Bool = neq(a)(b)
+  def neq(a: Decimal)(b: Decimal): Bool        = a.compareTo(b) != 0
 
   def negate(value: Decimal): Decimal = -value
 

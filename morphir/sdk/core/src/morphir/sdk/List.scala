@@ -16,6 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
+import morphir.sdk.Basics.Bool
 import morphir.sdk.Maybe.{ Just, Maybe }
 
 object List {
@@ -151,4 +152,23 @@ object List {
     if (list.isEmpty) Maybe.Nothing else Maybe.Just(list.max)
   @inline def sum[A: Numeric](list: List[A]): A     = list.sum
   @inline def product[A: Numeric](list: List[A]): A = list.product
+
+  def innerJoin[A, B](listB: List[B])(f: A => B => Bool)(listA: List[A]): List[(A, B)] =
+    for {
+      itemA <- listA
+      itemB <- listB
+      if f(itemA)(itemB)
+    } yield (itemA, itemB)
+
+  def leftJoin[A, B](listB: List[B])(f: A => B => Bool)(listA: List[A]): List[(A, Maybe[B])] =
+    listA.flatMap { itemA =>
+      val filteredListB = listB.filter(f(itemA))
+      if (filteredListB.isEmpty) {
+        scala.List((itemA, Maybe.nothing))
+      } else {
+        for {
+          itemB <- filteredListB
+        } yield (itemA, Maybe.just(itemB))
+      }
+    }
 }

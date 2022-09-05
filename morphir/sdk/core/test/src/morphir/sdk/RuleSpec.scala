@@ -39,12 +39,12 @@ object RuleSpec extends DefaultRunnableSpec {
     ),
     suite("Rule.any specs")(
       testM("Calling any on anything should return True") {
-        check(Gen.alphaNumericChar)(input => assert(Rule.any(input))(equalTo(Bool.True)))
+        check(Gen.alphaNumericChar)(input => assert(Rule.any(input))(equalTo(Basics.True)))
       }
     ),
     suite("Rule.is specs")(
       testM("Calling is by passing in the same value twice should return True") {
-        check(Gen.alphaNumericChar)(input => assert(Rule.is(input)(input))(equalTo(Bool.True)))
+        check(Gen.alphaNumericChar)(input => assert(Rule.is(input)(input))(equalTo(Basics.True)))
       },
       testM("Calling is by passing in two different values should return False") {
         val gen =
@@ -54,7 +54,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if ref != input
           } yield (ref, input)
         check(gen) { case (ref, input) =>
-          assert(Rule.is(ref)(input))(equalTo(Bool.False))
+          assert(Rule.is(ref)(input))(equalTo(Basics.False))
         }
       }
     ),
@@ -66,7 +66,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if ref.nonEmpty
           } yield (ref, ref.head)
         check(gen) { case (ref, input) =>
-          assert(Rule.anyOf(ref)(input))(equalTo(Bool.True))
+          assert(Rule.anyOf(ref)(input))(equalTo(Basics.True))
         }
       },
       testM("Calling anyOf by passing in a list and a non-member should return False") {
@@ -77,7 +77,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if !ref.contains(input)
           } yield (ref, input)
         check(gen) { case (ref, input) =>
-          assert(Rule.anyOf(ref)(input))(equalTo(Bool.False))
+          assert(Rule.anyOf(ref)(input))(equalTo(Basics.False))
         }
       }
     ),
@@ -89,7 +89,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if ref.nonEmpty
           } yield (ref, ref.head)
         check(gen) { case (ref, input) =>
-          assert(Rule.noneOf(ref)(input))(equalTo(Bool.False))
+          assert(Rule.noneOf(ref)(input))(equalTo(Basics.False))
         }
       },
       testM("Calling noneOf by passing in a list and a non-member should return True") {
@@ -100,7 +100,7 @@ object RuleSpec extends DefaultRunnableSpec {
             if !ref.contains(input)
           } yield (ref, input)
         check(gen) { case (ref, input) =>
-          assert(Rule.noneOf(ref)(input))(equalTo(Bool.True))
+          assert(Rule.noneOf(ref)(input))(equalTo(Basics.True))
         }
       }
     )
