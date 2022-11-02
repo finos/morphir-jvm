@@ -87,6 +87,23 @@ object Aggregate {
       )(a)
   }
 
+  def aggregateMap4[A, B, Key1, Key2, Key3, Key4](agg1: Aggregation[A, Key1])(agg2: Aggregation[A, Key2])(
+    agg3: Aggregation[A, Key3]
+  )(agg4: Aggregation[A, Key4])(f: Double => Double => Double => Double => A => B)(list: List[A]): List[B] = {
+    val aggregated1: Map[Key1, Double] =
+      aggregateHelp(agg1.key, agg1.operator, list.filter(agg1.filter))
+    val aggregated2: Map[Key2, Double] =
+      aggregateHelp(agg2.key, agg2.operator, list.filter(agg2.filter))
+    val aggregated3: Map[Key3, Double] =
+      aggregateHelp(agg3.key, agg3.operator, list.filter(agg3.filter))
+    val aggregated4: Map[Key4, Double] =
+      aggregateHelp(agg4.key, agg4.operator, list.filter(agg4.filter))
+    for (a <- list)
+      yield f(aggregated1.getOrElse(agg1.key(a), 0))(aggregated2.getOrElse(agg2.key(a), 0))(
+        aggregated3.getOrElse(agg3.key(a), 0)
+      )(aggregated4.getOrElse(agg4.key(a), 0))(a)
+  }
+
   def aggregateHelp[A, K](getKey: A => K, op: Operator[A], list: List[A]): Map[K, Double] = {
     def aggregate(getValue: A => Double, o: (Double, Double) => Double, sourceList: List[A]): Map[K, Double] =
       sourceList.foldLeft(HashMap[K, Double]()) { (soFar: HashMap[K, Double], nextA: A) =>
