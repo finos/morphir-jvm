@@ -155,6 +155,32 @@ object AggregateSpec extends DefaultRunnableSpec {
         assert(actualResult)(equalTo(expectedResult))
       },
       test(
+        "aggregate 4"
+      ) {
+        val actualResult =
+          aggregateMap4[TestInput1, (TestInput1, Double), String, String, (String, String), (String, String)](
+            byKey[TestInput1, String](_.key1)(sumOf(_.value))
+          )(byKey[TestInput1, String](_.key2)(maximumOf(_.value)))(
+            byKey[TestInput1, (String, String)](a => (a.key1, a.key2))(minimumOf(_.value))
+          )(byKey[TestInput1, (String, String)](a => (a.key1, a.key2))(averageOf(_.value))) {
+            totalValue => maxValue => minValue => averageValue => input =>
+              (input, (totalValue * maxValue) / input.value + minValue + averageValue)
+          }(testDataSet)
+
+        val expectedResult =
+          List(
+            TestInput1("k1_1", "k2_1", 1) -> (10.0 * 6.0 / 1.0 + 1.0 + 1.5),
+            TestInput1("k1_1", "k2_1", 2) -> (10.0 * 6 / 2 + 1.0 + 1.5),
+            TestInput1("k1_1", "k2_2", 3) -> (10.0 * 8 / 3 + 3.0 + 3.5),
+            TestInput1("k1_1", "k2_2", 4) -> (10.0 * 8 / 4 + 3.0 + 3.5),
+            TestInput1("k1_2", "k2_1", 5) -> (26.0 * 6 / 5 + 5.0 + 5.5),
+            TestInput1("k1_2", "k2_1", 6) -> (26.0 * 6 / 6 + 5.0 + 5.5),
+            TestInput1("k1_2", "k2_2", 7) -> (26.0 * 8 / 7 + 7.0 + 7.5),
+            TestInput1("k1_2", "k2_2", 8) -> (26.0 * 8 / 8 + 7.0 + 7.5)
+          )
+        assert(actualResult)(equalTo(expectedResult))
+      },
+      test(
         "count by single key"
       ) {
         val actualResult =
