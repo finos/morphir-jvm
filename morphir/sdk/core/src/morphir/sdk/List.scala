@@ -151,4 +151,6 @@ object List {
     if (list.isEmpty) Maybe.Nothing else Maybe.Just(list.max)
   @inline def sum[A: Numeric](list: List[A]): A     = list.sum
   @inline def product[A: Numeric](list: List[A]): A = list.product
+
+  @inline def isEmpty[A](list: List[A]): Boolean = list.isEmpty
 }
