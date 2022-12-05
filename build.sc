@@ -108,7 +108,8 @@ trait MorphirCommonModule extends MorphirScalaModule with ScalafmtModule {
 
   def repositories = super.repositories ++ Seq(
     MavenRepository("https://oss.sonatype.org/content/repositories/releases"),
-    MavenRepository("https://oss.sonatype.org/content/repositories/snapshots")
+    MavenRepository("https://oss.sonatype.org/content/repositories/snapshots"),
+    MavenRepository("http://dl.bintray.com/spark-packages/maven")
   )
 
   def platformSegment: String
@@ -246,28 +247,35 @@ object morphir extends Module {
 //  }
   object sdk extends Module {
 
-    object core extends Module {
-      object jvm
-          extends Cross[JvmMorphirSdkCore](
-            Versions.scala212,
-            Versions.scala211,
-            Versions.scala213
-          )
-      class JvmMorphirSdkCore(val crossScalaVersion: String)
-          extends CrossScalaModule
-          with CommonJvmModule
-          with MorphirPublishModule { self =>
+  object core extends Module {
+    object jvm
+      extends Cross[JvmMorphirSdkCore](
+        Versions.scala212,
+        Versions.scala211,
+        Versions.scala213
+      )
 
-        def artifactName = "morphir-sdk-core"
-        def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
-        def compileIvyDeps = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
-        def ivyDeps = Agg(ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}")
-        object test extends Tests {
-          def platformSegment: String = self.platformSegment
-          def crossScalaVersion       = JvmMorphirSdkCore.this.crossScalaVersion
-        }
+    class JvmMorphirSdkCore(val crossScalaVersion: String)
+      extends CrossScalaModule
+        with CommonJvmModule
+        with MorphirPublishModule {
+      self =>
+
+      def artifactName = "morphir-sdk-core"
+
+      def scalacPluginIvyDeps = Agg(ivy"com.github.ghik:::silencer-plugin:${Versions.silencer}")
+
+      def compileIvyDeps = Agg(ivy"com.github.ghik:::silencer-lib:${Versions.silencer}")
+
+      def ivyDeps = Agg(ivy"org.scala-lang.modules::scala-collection-compat:${Versions.scalaCollectionsCompat}")
+
+      object test extends Tests {
+        def platformSegment: String = self.platformSegment
+
+        def crossScalaVersion = JvmMorphirSdkCore.this.crossScalaVersion
       }
     }
+  }
 
     object json extends Module {
       object jvm
@@ -325,6 +333,7 @@ object morphir extends Module {
 
         object test extends Tests {
           def platformSegment: String = self.platformSegment
+
           def crossScalaVersion       = JvmMorphirSdkSpark.this.crossScalaVersion
 
           override def ivyDeps = super.ivyDeps() ++
@@ -334,6 +343,40 @@ object morphir extends Module {
               ivy"org.apache.spark::spark-sql:2.4.7"
             )
         }
+      }
+    }
+  }
+
+  object spark extends Module {
+    object jvm
+      extends Cross[JvmMorphirSdkSpark](
+        Versions.scala212,
+      )
+
+    class JvmMorphirSdkSpark(val crossScalaVersion: String)
+      extends CrossScalaModule
+        with CommonJvmModule
+        with MorphirPublishModule {
+      self =>
+
+      def artifactName = "morphir-spark"
+
+      def ivyDeps = Agg(
+        ivy"org.apache.spark::spark-core:3.2.1",
+        ivy"org.apache.spark::spark-sql:3.2.1",
+      )
+
+      object test extends Tests {
+        def platformSegment: String = self.platformSegment
+
+        def crossScalaVersion = JvmMorphirSdkSpark.this.crossScalaVersion
+
+        override def ivyDeps = super.ivyDeps() ++
+          Agg(
+            ivy"org.apache.spark::spark-core:3.2.1",
+            ivy"org.apache.spark::spark-sql:3.2.1",
+            ivy"org.scalatest::scalatest:3.0.2"
+          )
       }
     }
   }

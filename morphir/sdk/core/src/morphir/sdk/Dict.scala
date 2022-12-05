@@ -16,57 +16,69 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Maybe._
+import morphir.sdk.Maybe.Maybe
 
 object Dict {
-  sealed abstract class Dict[K, +V]
-  private case object EmptyDict                              extends Dict[Any, Nothing]
-  private case class DictImpl[K, +V](val wrapped: Map[K, V]) extends Dict[K, V]
 
-  def empty[K, V]: Dict[K, V] = EmptyDict.asInstanceOf[Dict[K, V]]
+  type Dict[K, V] = Map[K, V]
 
-  def get[K, V](targetKey: K)(dict: Dict[K, V]): Maybe[V] =
-    dict match {
-      case EmptyDict         => Maybe.Nothing
-      case DictImpl(wrapped) => wrapped.get(targetKey)
-    }
+  def empty[K, V]: Dict[K, V] = Map.empty[K, V]
 
-  def member[K, V](key: K)(dict: Dict[K, V]): Boolean =
-    dict match {
-      case EmptyDict         => false
-      case DictImpl(wrapped) => wrapped.contains(key)
-    }
-
-  def size[K, V](dict: Dict[K, V]): Int = dict match {
-    case EmptyDict         => 0
-    case DictImpl(wrapped) => wrapped.size
-  }
-
-  def isEmpty[K, V](dict: Dict[K, V]): Boolean =
-    dict match {
-      case EmptyDict         => true
-      case DictImpl(wrapped) => wrapped.isEmpty
-    }
+  /* Build */
+  def singleton[K, V](key: K)(value: V): Dict[K, V] = Map(key -> value)
 
   def insert[K, V](key: K)(value: V)(dict: Dict[K, V]): Dict[K, V] =
-    dict match {
-      case EmptyDict         => DictImpl(Map(key -> value))
-      case DictImpl(wrapped) => DictImpl(wrapped + (key -> value))
-    }
+    dict + (key -> value)
 
-  def fromList[K, V](assocs: List[(K, V)]): Dict[K, V] =
-    assocs match {
-      case Nil => empty[K, V]
-      case xs  => DictImpl(xs.toMap)
-    }
+  def update[K, V](targetKey: K)(updatedValue: V)(dict: Dict[K, V]): Dict[K, V] = dict.updated(targetKey, updatedValue)
+
+  def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict.-(targetKey)
+
+  /* Query*/
+  def isEmpty[K, V](dict: Dict[K, V]): Boolean =
+    dict.isEmpty
+
+  def member[K, V](key: K)(dict: Dict[K, V]): Boolean =
+    dict.contains(key)
+
+  def get[K, V](targetKey: K)(dict: Dict[K, V]): Maybe[V] =
+    dict.get(targetKey)
+
+  def size[K, V](dict: Dict[K, V]): Int = dict.size
+
+  /* List */
+  def keys[K, V](dict: Dict[K, V]): List[K] = dict.keys.toList
+
+  def values[K, V](dict: Dict[K, V]): List[V] = dict.values.toList
 
   def toList[K, V](dict: Dict[K, V]): List[(K, V)] =
-    dict match {
-      case EmptyDict =>
-        List()
-      case DictImpl(map) =>
-        map.toList
-    }
+    dict.toList
+
+  def fromList[K, V](assocs: List[(K, V)]): Dict[K, V] =
+    assocs.toMap
+
+  /* Transform */
+  def map[K, V, B](f: K => V => B)(dict: Dict[K, V]): Dict[K, B] = dict.map(x => (x._1, f(x._1)(x._2)))
+
+  def foldl[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B =
+    dict.foldLeft(initValue)((accumulator, pairedValues) => f(pairedValues._1)(pairedValues._2)(accumulator))
+
+  def foldr[K, V, B](f: K => V => B => B)(initValue: B)(dict: Dict[K, V]): B =
+    dict.foldRight(initValue)((a, accumulator) => f(a._1)(a._2)(accumulator))
+
+  def filter[K, V](f: K => V => Boolean)(dict: Dict[K, V]): Dict[K, V] = dict.filter(x => f(x._1)(x._2))
+
+  def partition[K, V](f: K => V => Boolean)(dict: Dict[K, V]): (Dict[K, V], Dict[K, V]) =
+    dict.partition(x => f(x._1)(x._2))
+
+  /* Combine */
+  def union[K, V](dictToMerged: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] = dict ++ dictToMerged
+
+  def intersect[K, V](dictToIntersect: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] =
+    dict.toSet.intersect(Dict.toList(dictToIntersect).toSet).toMap
+
+  def diff[K, V](dictToDiff: Dict[K, V])(dict: Dict[K, V]): Dict[K, V] =
+    dictToDiff -- dict.keySet
 
   object tupled {
 
@@ -76,7 +88,11 @@ object Dict {
     @inline def member[K, V](key: K, dict: Dict[K, V]): Boolean =
       Dict.member(key)(dict)
 
-    @inline def insert[K, V](key: K, value: V, dict: Dict[K, V]): Dict[K, V] =
+    @inline def insert[K, V](
+      key: K,
+      value: V,
+      dict: Dict[K, V]
+    ): Dict[K, V] =
       Dict.insert(key)(value)(dict)
   }
 }
