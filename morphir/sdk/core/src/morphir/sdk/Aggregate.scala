@@ -1,5 +1,8 @@
 package morphir.sdk
 
+import morphir.sdk.Dict.Dict
+import morphir.sdk.Key.{ Key0, key0 }
+
 import scala.collection.immutable.HashMap
 
 object Aggregate {
@@ -21,28 +24,30 @@ object Aggregate {
 
   }
 
-  def count[A]: Aggregation[A, Unit] =
+  type Aggretator[A, K] = Aggregation[A, K] => morphir.sdk.Float.Float
+
+  def count[A]: Aggregation[A, Key0] =
     operatorToAggregation(Operator.Count)
 
-  def sumOf[A](f: A => Double): Aggregation[A, Unit] =
+  def sumOf[A](f: A => Double): Aggregation[A, Key0] =
     operatorToAggregation(Operator.Sum(f))
 
-  def averageOf[A](f: A => Double): Aggregation[A, Unit] =
+  def averageOf[A](f: A => Double): Aggregation[A, Key0] =
     operatorToAggregation(Operator.Avg(f))
 
-  def minimumOf[A](f: A => Double): Aggregation[A, Unit] =
+  def minimumOf[A](f: A => Double): Aggregation[A, Key0] =
     operatorToAggregation(Operator.Min(f))
 
-  def maximumOf[A](f: A => Double): Aggregation[A, Unit] =
+  def maximumOf[A](f: A => Double): Aggregation[A, Key0] =
     operatorToAggregation(Operator.Max(f))
 
-  def weightedAverageOf[A](getWeight: A => Double, getValue: A => Double): Aggregation[A, Unit] =
+  def weightedAverageOf[A](getWeight: A => Double, getValue: A => Double): Aggregation[A, Key0] =
     operatorToAggregation(Operator.WAvg(getWeight, getValue))
 
   case class Aggregation[A, K](key: A => K, filter: A => Boolean, operator: Operator[A])
 
-  def operatorToAggregation[A](op: Operator[A]): Aggregation[A, Unit] =
-    Aggregation(_ => (), _ => true, op)
+  def operatorToAggregation[A](op: Operator[A]): Aggregation[A, Key0] =
+    Aggregation(key0, _ => true, op)
 
   def byKey[A, K](k: A => K)(agg: Aggregation[A, _]): Aggregation[A, K] =
     agg.copy(key = k)
@@ -144,4 +149,24 @@ object Aggregate {
     }
   }
 
+  def groupBy[A, K](getKey: A => K)(list: List[A]): Dict[K, List[A]] =
+    List.foldl((a: A) =>
+      (dictSoFar: Dict[K, List[A]]) =>
+        Dict.update[K, List[A]](getKey(a))({
+          case Maybe.Just(listOfValues: List[A]) => Maybe.Just(List.cons(a)(listOfValues))
+          case Maybe.Nothing                     => Maybe.Just(List.singleton(a): List[A])
+        })(dictSoFar)
+    )(Dict.empty)(list)
+
+  def aggregate[K, A, B](f: K => Aggretator[A, Key0] => B)(dict: Dict[K, List[A]]): List[B] =
+    Dict
+      .toList(dict)
+      .map({ case (key, items) =>
+        f(key) { agg =>
+          val list = List.filter(agg.filter)(items)
+          val dict = aggregateHelp(agg.key, agg.operator, list)
+          val d    = Dict.get(key0(()))(dict)
+          Maybe.withDefault(0.0)(d)
+        }
+      })
 }
