@@ -17,6 +17,7 @@ limitations under the License.
 package morphir.sdk
 
 import morphir.sdk.Aggregate._
+import morphir.sdk.Key.Key0
 import zio.test.Assertion._
 import zio.test._
 
@@ -87,8 +88,8 @@ object AggregateSpec extends DefaultRunnableSpec {
         "aggregate by no key and filter"
       ) {
         val actualResult =
-          aggregateMap[TestInput1, (TestInput1, Double), Unit](
-            withFilter[TestInput1, Unit](a => a.value > 3)(sumOf(_.value))
+          aggregateMap[TestInput1, (TestInput1, Double), Key0](
+            withFilter[TestInput1, Key0](a => a.value > 3)(sumOf(_.value))
           ) { totalValue => input =>
             (input, totalValue / input.value)
           }(testDataSet)
