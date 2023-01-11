@@ -34,8 +34,8 @@ object Codec {
     Decoder.decodeBigDecimal
 
   /* Encoder / Decoder for Unit Type */
-  implicit val encodeUnit: Encoder[Unit] = (_) => io.circe.Json.obj()
+  implicit val encodeUnit: Encoder[Unit] = _ => io.circe.Json.obj()
 
-  implicit val decodeUnit: Decoder[Unit] = (a: io.circe.HCursor) => Right({})
+  implicit val decodeUnit: Decoder[Unit] = (_: io.circe.HCursor) => Right({})
 
 }
