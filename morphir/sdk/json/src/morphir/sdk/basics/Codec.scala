@@ -1,7 +1,7 @@
 package morphir.sdk.basics
 
 import io.circe.{ Decoder, Encoder }
-import morphir.sdk.Basics.{ Bool, Decimal, Float, Int }
+import morphir.sdk.Basics.{ Bool, Float, Int }
 
 object Codec {
 
