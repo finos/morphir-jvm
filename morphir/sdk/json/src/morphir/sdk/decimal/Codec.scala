@@ -1,6 +1,6 @@
 package morphir.sdk.decimal
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{ Decoder, Encoder }
 import morphir.sdk.Basics.Decimal
 
 object Codec {

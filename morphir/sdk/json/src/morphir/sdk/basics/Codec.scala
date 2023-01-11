@@ -26,7 +26,6 @@ object Codec {
   implicit val decodeFloat: Decoder[Float] =
     Decoder.decodeDouble
 
-
   /* Encoder / Decoder for Unit Type */
   implicit val encodeUnit: Encoder[Unit] = _ => io.circe.Json.obj()
 
