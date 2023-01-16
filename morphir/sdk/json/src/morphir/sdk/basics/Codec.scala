@@ -1,7 +1,7 @@
 package morphir.sdk.basics
 
 import io.circe.{ Decoder, Encoder }
-import morphir.sdk.Basics.{ Bool, Decimal, Float, Int }
+import morphir.sdk.Basics.{ Bool, Float, Int }
 
 object Codec {
 
@@ -26,10 +26,9 @@ object Codec {
   implicit val decodeFloat: Decoder[Float] =
     Decoder.decodeDouble
 
-  /* Encoder / Decoder for Decimal Types */
-  implicit val encodeDecimal: Encoder[Decimal] =
-    Encoder.encodeBigDecimal
+  /* Encoder / Decoder for Unit Type */
+  implicit val encodeUnit: Encoder[Unit] = _ => io.circe.Json.obj()
 
-  implicit val decodeDecimal: Decoder[Decimal] =
-    Decoder.decodeBigDecimal
+  implicit val decodeUnit: Decoder[Unit] = (_: io.circe.HCursor) => Right({})
+
 }
