@@ -30,7 +30,11 @@ object Dict {
   def insert[K, V](key: K)(value: V)(dict: Dict[K, V]): Dict[K, V] =
     dict + (key -> value)
 
-  def update[K, V](targetKey: K)(updatedValue: V)(dict: Dict[K, V]): Dict[K, V] = dict.updated(targetKey, updatedValue)
+  def update[K, V](targetKey: K)(alter: Maybe[V] => Maybe[V])(dict: Dict[K, V]): Dict[K, V] =
+    alter(dict.get(targetKey)) match {
+      case Maybe.Just(updatedValue) => dict.updated(targetKey, updatedValue)
+      case Maybe.Nothing            => dict
+    }
 
   def remove[K, V](targetKey: K)(dict: Dict[K, V]): Dict[K, V] = dict.-(targetKey)
 
