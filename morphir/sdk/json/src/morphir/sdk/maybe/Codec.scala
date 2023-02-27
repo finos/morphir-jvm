@@ -14,10 +14,9 @@ object Codec {
 
   implicit def decodeMaybe[A](implicit decodeA: Decoder[A]): Decoder[Maybe[A]] =
     (c: HCursor) =>
-      c.downN(0).as(decodeA).map { value =>
-        value match {
-          case Json.Null => Maybe.Nothing
-          case va        => Maybe.Just(va)
-        }
+      c.focus match {
+        case None            => Right(Maybe.Nothing)
+        case Some(Json.Null) => Right(Maybe.Nothing)
+        case Some(_)         => decodeA(c).map(Maybe.Just(_))
       }
 }
