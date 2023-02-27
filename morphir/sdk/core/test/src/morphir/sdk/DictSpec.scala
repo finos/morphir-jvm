@@ -22,7 +22,7 @@ object DictSpec extends DefaultRunnableSpec {
     ),
     suite("Dict.update spec")(
       test("should update value of a key") {
-        assert(Dict.update(1)("C")(Map(1 -> "A")))(equalTo(Map(1 -> "C")))
+        assert(Dict.update(1)((_: Maybe.Maybe[String]) => Maybe.Just("C"))(Map(1 -> "A")))(equalTo(Map(1 -> "C")))
       }
     ),
     suite("Dict.remove spec")(

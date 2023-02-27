@@ -125,6 +125,8 @@ object List {
   @inline def member[A, A1 >: A](candidate: A1)(xs: List[A]): Boolean =
     xs.contains(candidate)
 
+  @inline def isEmpty[A](list: List[A]): Boolean = list.isEmpty
+
   @inline def partition[A](f: A => Boolean)(xs: List[A]): (List[A], List[A]) =
     xs.partition(f)
 
