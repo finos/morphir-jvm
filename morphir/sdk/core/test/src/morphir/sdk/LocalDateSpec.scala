@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.{ LocalDate => SdkDate }
+import morphir.sdk.{LocalDate => SdkDate}
 import zio.test.Assertion._
 import zio.test._
 
@@ -70,46 +70,46 @@ object LocalDateSpec extends DefaultRunnableSpec {
     }
     suite("Diff days") {
       test("Identity: diff self") {
-        assert(SdkDate.diffInDays(date)(date))(equalTo(0L))
+        assert(SdkDate.diffInDays(date)(date))(equalTo(0))
       }
       test("Identity: diff later") {
-        assert(SdkDate.diffInDays(date)(date.plusDays(1)))(equalTo(1L))
+        assert(SdkDate.diffInDays(date)(date.plusDays(1)))(equalTo(1))
       }
       test("Identity: diff earlier") {
-        assert(SdkDate.diffInDays(date)(date.plusDays(-1)))(equalTo(-1L))
+        assert(SdkDate.diffInDays(date)(date.plusDays(-1)))(equalTo(-1))
       }
     }
     suite("Diff weeks") {
       test("Identity: diff self") {
-        assert(SdkDate.diffInWeeks(date)(date))(equalTo(0L))
+        assert(SdkDate.diffInWeeks(date)(date))(equalTo(0))
       }
       test("Identity: diff later") {
-        assert(SdkDate.diffInWeeks(date)(date.plusWeeks(1)))(equalTo(1L))
+        assert(SdkDate.diffInWeeks(date)(date.plusWeeks(1)))(equalTo(1))
       }
       test("Identity: diff earlier") {
-        assert(SdkDate.diffInWeeks(date)(date.plusWeeks(-1)))(equalTo(-1L))
+        assert(SdkDate.diffInWeeks(date)(date.plusWeeks(-1)))(equalTo(-1))
       }
     }
     suite("Diff days") {
       test("Identity: diff self") {
-        assert(SdkDate.diffInMonths(date)(date))(equalTo(0L))
+        assert(SdkDate.diffInMonths(date)(date))(equalTo(0))
       }
       test("Identity: diff later") {
-        assert(SdkDate.diffInMonths(date)(date.plusMonths(1)))(equalTo(1L))
+        assert(SdkDate.diffInMonths(date)(date.plusMonths(1)))(equalTo(1))
       }
       test("Identity: diff earlier") {
-        assert(SdkDate.diffInMonths(date)(date.plusMonths(-1)))(equalTo(-1L))
+        assert(SdkDate.diffInMonths(date)(date.plusMonths(-1)))(equalTo(-1))
       }
     }
     suite("Diff days") {
       test("Identity: diff self") {
-        assert(SdkDate.diffInYears(date)(date))(equalTo(0L))
+        assert(SdkDate.diffInYears(date)(date))(equalTo(0))
       }
       test("Identity: diff later") {
-        assert(SdkDate.diffInYears(date)(date.plusYears(1)))(equalTo(1L))
+        assert(SdkDate.diffInYears(date)(date.plusYears(1)))(equalTo(1))
       }
       test("Identity: diff earlier") {
-        assert(SdkDate.diffInYears(date)(date.plusYears(-1)))(equalTo(-1L))
+        assert(SdkDate.diffInYears(date)(date.plusYears(-1)))(equalTo(-1))
       }
     }
   }

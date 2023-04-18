@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.Basics.Int
+import morphir.sdk.Basics._
 
 import java.time.temporal.ChronoUnit._
 
