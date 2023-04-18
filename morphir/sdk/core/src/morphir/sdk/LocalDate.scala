@@ -16,9 +16,9 @@ limitations under the License.
 
 package morphir.sdk
 
-import java.time.temporal.ChronoUnit._
+import morphir.sdk.Basics.Int
 
-import morphir.sdk.Int.Int64
+import java.time.temporal.ChronoUnit._
 
 object LocalDate {
   type LocalDate = java.time.LocalDate
@@ -35,17 +35,17 @@ object LocalDate {
   def addYears(count: Long)(date: LocalDate): LocalDate =
     date plusYears count
 
-  def diffInDays(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    DAYS between (fromDate, toDate)
+  def diffInDays(fromDate: LocalDate)(toDate: LocalDate): Int =
+    (DAYS between (fromDate, toDate)).toInt
 
-  def diffInWeeks(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    WEEKS between (fromDate, toDate)
+  def diffInWeeks(fromDate: LocalDate)(toDate: LocalDate): Int =
+    (WEEKS between (fromDate, toDate)).toInt
 
-  def diffInMonths(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    MONTHS between (fromDate, toDate)
+  def diffInMonths(fromDate: LocalDate)(toDate: LocalDate): Int =
+    (MONTHS between (fromDate, toDate)).toInt
 
-  def diffInYears(fromDate: LocalDate)(toDate: LocalDate): Int64 =
-    YEARS between (fromDate, toDate)
+  def diffInYears(fromDate: LocalDate)(toDate: LocalDate): Int =
+    (YEARS between (fromDate, toDate)).toInt
 
   /**
    * Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
