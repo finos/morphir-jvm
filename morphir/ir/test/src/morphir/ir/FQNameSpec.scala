@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.ir
 
-import io.circe.{Json, parser}
+import io.circe.{ Json, parser }
 import morphir.ir.FQName.FQName
 import morphir.ir.Module.ModuleName
 import morphir.ir.Name.Name
@@ -26,28 +26,27 @@ import zio.test.Assertion._
 import zio.test._
 
 object FQNameSpec extends DefaultRunnableSpec {
-  val packageName: PackageName = List(List("morphir"),List("core"))
-  val moduleName: ModuleName =  List(List("morphir"), List("i", "r"))
-  val localName: Name = List("f", "q", "name")
-  val fqName: FQName = (packageName, moduleName, localName)
+  val packageName: PackageName = List(List("morphir"), List("core"))
+  val moduleName: ModuleName   = List(List("morphir"), List("i", "r"))
+  val localName: Name          = List("f", "q", "name")
+  val fqName: FQName           = (packageName, moduleName, localName)
 
   def spec: Spec[_root_.zio.test.environment.TestEnvironment, TestFailure[Nothing], TestSuccess] =
     suite("FQNameSpec")(
-      test("Encoding FQName"){
+      test("Encoding FQName") {
         val encodedFQName = Codec.encodeFQName(fqName)
-        
+
         val expectedJson = parser.parse("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""")
 
         assert(encodedFQName)(equalTo(expectedJson.getOrElse(Json.Null)))
       },
+      test("Decoding FQName") {
+        val parsedFQName =
+          parser.parse("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""").getOrElse(Json.Null)
 
-      test("Decoding FQName"){
-        val parsedFQName = parser.parse("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""").getOrElse(Json.Null)
-        
         val decodedFQName = Codec.decodeFQName(parsedFQName.hcursor)
 
         assert(decodedFQName.getOrElse(Json.Null))(equalTo(fqName))
       }
-
     )
 }

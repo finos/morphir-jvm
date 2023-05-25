@@ -717,10 +717,13 @@ object Codec {
                                       (c: io.circe.HCursor) =>
                                         for {
                                           arg1 <- c.downN(0).as(morphir.ir.value.Codec.decodePattern(decodeVa))
-                                          arg2 <- c.downN(1).as(morphir.ir.value.Codec.decodeValue(
-                                                    decodeTa,
-                                                    decodeVa
-                                                  ))
+                                          arg2 <- c.downN(1)
+                                                    .as(
+                                                      morphir.ir.value.Codec.decodeValue(
+                                                        decodeTa,
+                                                        decodeVa
+                                                      )
+                                                    )
                                         } yield (arg1, arg2)
                                     )
                                   )
