@@ -80,16 +80,22 @@ object List {
   @inline def map[A, B](mapping: A => B)(list: List[A]): List[B] =
     list.map(mapping)
 
-  /**
-   * Combine two lists, combining them with the given function. If one list is longer, the extra elements are dropped.
-   * @param mapping a mapping function
-   * @param xs the first list
-   * @param ys the second list
-   * @tparam A the type of the first list
-   * @tparam B the type of the second list
-   * @tparam R the type of the resulting list
-   * @return a list containing the combined elements of list1 and list2 using the mapping function.
-   */
+  /** Combine two lists, combining them with the given function. If one list is longer, the extra elements are dropped.
+    * @param mapping
+    *   a mapping function
+    * @param xs
+    *   the first list
+    * @param ys
+    *   the second list
+    * @tparam A
+    *   the type of the first list
+    * @tparam B
+    *   the type of the second list
+    * @tparam R
+    *   the type of the resulting list
+    * @return
+    *   a list containing the combined elements of list1 and list2 using the mapping function.
+    */
   def map2[A, B, R](
     mapping: A => B => R
   )(xs: List[A])(ys: List[B]): List[R] =

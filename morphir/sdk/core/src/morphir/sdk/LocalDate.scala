@@ -47,9 +47,8 @@ object LocalDate {
   def diffInYears(fromDate: LocalDate)(toDate: LocalDate): Int =
     (YEARS between (fromDate, toDate)).toInt
 
-  /**
-   * Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
-   */
+  /** Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
+    */
   implicit def fromJavaTimeLocalDate(
     localDate: java.time.LocalDate
   ): LocalDate =

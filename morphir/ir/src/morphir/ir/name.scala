@@ -1,132 +1,141 @@
-/*
-Copyright 2020 Morgan Stanley
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package morphir.ir
 
-import morphir.ir.codec.NameCodec
-import morphir.ir.path.Path
+/**
+ * Generated based on IR.Name
+ */
+object Name {
 
-import scala.annotation.tailrec
+  type Name = morphir.sdk.List.List[morphir.sdk.String.String]
 
-object name {
+  def capitalize(
+    string: morphir.sdk.String.String
+  ): morphir.sdk.String.String =
+    morphir.sdk.String.uncons(string) match {
+      case morphir.sdk.Maybe.Just((headChar, tailString)) =>
+        morphir.sdk.String.cons(morphir.sdk.Char.toUpper(headChar))(tailString)
+      case morphir.sdk.Maybe.Nothing =>
+        string
+    }
 
-  def apply(head: String, rest: String*): Name = Name.name(head, rest: _*)
+  def fromList(
+    words: morphir.sdk.List.List[morphir.sdk.String.String]
+  ): morphir.ir.Name.Name =
+    words
 
-  final case class Name private (value: List[String]) extends AnyVal {
+  def fromString(
+    string: morphir.sdk.String.String
+  ): morphir.ir.Name.Name =
+    fromList(
+      "([a-zA-Z][a-z]*|[0-9]+)".r
+        .findAllMatchIn(string)
+        .map(_.toString.toLowerCase)
+        .toList
+    )
 
-    def ::(segment: String): Name =
-      Name(segment :: value)
+  def toCamelCase(
+    name: morphir.ir.Name.Name
+  ): morphir.sdk.String.String =
+    morphir.ir.Name.toList(name) match {
+      case Nil =>
+        ""
+      case head :: tail =>
+        morphir.sdk.String.join("")(morphir.sdk.List.cons(head)(morphir.sdk.List.map(morphir.ir.Name.capitalize)(tail)))
+    }
 
-    def ++(other: Name): Name = Name(value ++ other.value)
+  def toHumanWords(
+    name: morphir.ir.Name.Name
+  ): morphir.sdk.List.List[morphir.sdk.String.String] = {
+    val words: morphir.sdk.List.List[morphir.sdk.String.String] = morphir.ir.Name.toList(name)
 
-    def /(other: Name): Path = Path(this, other)
+    def join(
+      abbrev: morphir.sdk.List.List[morphir.sdk.String.String]
+    ): morphir.sdk.String.String =
+      morphir.sdk.String.toUpper(morphir.sdk.String.join("")(abbrev))
 
-    def mapSegments(f: String => String): Name =
-      Name(value.map(f))
-
-    def mkString(f: String => String)(sep: String): String =
-      value.map(f).mkString(sep)
-
-    @inline def segments: List[String] = value
-
-    @inline def toList: List[String] = value
-
-    override def toString: String = toTitleCase
-
-    def toLowerCase: String =
-      mkString(part => part.toLowerCase)("")
-
-    def toCamelCase: String =
-      value match {
-        case Nil => ""
-        case head :: tail =>
-          (head :: tail.map(_.capitalize)).mkString("")
-      }
-
-    def toKebabCase: String =
-      humanize.mkString("-")
-
-    def toSnakeCase: String =
-      humanize.mkString("_")
-
-    def toTitleCase: String =
-      value
-        .map(_.capitalize)
-        .mkString("")
-
-    def humanize: List[String] = {
-      val words                        = value
-      val join: List[String] => String = abbrev => abbrev.map(_.toUpperCase()).mkString("")
-
-      @tailrec
+    {
       def process(
-        prefix: List[String],
-        abbrev: List[String],
-        suffix: List[String]
-      ): List[String] =
+        prefix: morphir.sdk.List.List[morphir.sdk.String.String],
+        abbrev: morphir.sdk.List.List[morphir.sdk.String.String],
+        suffix: morphir.sdk.List.List[morphir.sdk.String.String]
+      ): morphir.sdk.List.List[morphir.sdk.String.String] =
         suffix match {
           case Nil =>
-            abbrev match {
-              case Nil => prefix
-              case _   => prefix ++ List(join(abbrev))
+            if (morphir.sdk.List.isEmpty(abbrev)) {
+              prefix
+            } else {
+              morphir.sdk.List.append(prefix)(morphir.sdk.List(join(abbrev)))
             }
           case first :: rest =>
-            if (first.length() == 1)
-              process(prefix, abbrev ++ List(first), rest)
-            else
+            if (morphir.sdk.Basics.equal(morphir.sdk.String.length(first))(morphir.sdk.Basics.Int(1))) {
+              process(prefix, morphir.sdk.List.append(abbrev)(morphir.sdk.List(first)), rest)
+            } else {
               abbrev match {
-                case Nil => process(prefix ++ List(first), List.empty, rest)
+                case Nil =>
+                  process(morphir.sdk.List.append(prefix)(morphir.sdk.List(first)), morphir.sdk.List(), rest)
                 case _ =>
-                  process(prefix ++ List(join(abbrev), first), List.empty, rest)
+                  process(
+                    morphir.sdk.List.append(prefix)(
+                      morphir.sdk.List(
+                        join(abbrev),
+                        first
+                      )
+                    ),
+                    morphir.sdk.List(),
+                    rest
+                  )
               }
+            }
         }
 
-      process(List.empty, List.empty, words)
+      name match {
+        case word :: Nil =>
+          if (morphir.sdk.Basics.equal(morphir.sdk.String.length(word))(morphir.sdk.Basics.Int(1))) {
+            name
+          } else {
+            process(
+              morphir.sdk.List(
+              ),
+              morphir.sdk.List(
+              ),
+              words
+            )
+          }
+        case _ =>
+          process(
+            morphir.sdk.List(
+            ),
+            morphir.sdk.List(
+            ),
+            words
+          )
+      }
     }
-
-    def show: String = value.map(segment => s""""$segment"""").mkString("[", ",", "]")
   }
 
-  object Name extends NameCodec {
-
-    def apply(firstWord: String, otherWords: String*): Name =
-      (firstWord :: otherWords.toList).map(fromString).reduce(_ ++ _)
-
-    def fromString(str: String): Name = {
-      val pattern = """[a-zA-Z][a-z]*|[0-9]+""".r
-      Name(pattern.findAllIn(str).toList.map(_.toLowerCase()))
+  def toHumanWordsTitle(
+    name: morphir.ir.Name.Name
+  ): morphir.sdk.List.List[morphir.sdk.String.String] =
+    morphir.ir.Name.toHumanWords(name) match {
+      case firstWord :: rest =>
+        morphir.sdk.List.cons(morphir.ir.Name.capitalize(firstWord))(rest)
+      case Nil =>
+        morphir.sdk.List(
+        )
     }
 
-    def name(head: String, rest: String*): Name =
-      Name(head :: rest.toList)
+  def toList(
+    words: morphir.ir.Name.Name
+  ): morphir.sdk.List.List[morphir.sdk.String.String] =
+    words
 
-    def fromList(words: List[String]): Name =
-      Name(words)
+  def toSnakeCase(
+    name: morphir.ir.Name.Name
+  ): morphir.sdk.String.String =
+    morphir.sdk.String.join("_")(morphir.ir.Name.toHumanWords(name))
 
-    def toList(name: Name): List[String] = name.value
-
-    @inline def toTitleCase(name: Name): String = name.toTitleCase
-
-    @inline def toCamelCase(name: Name): String = name.toCamelCase
-
-    @inline def toSnakeCase(name: Name): String = name.toSnakeCase
-
-    @inline def toKebabCase(name: Name): String = name.toKebabCase
-
-    @inline def toHumanWords(name: Name): List[String] = name.humanize
-  }
+  def toTitleCase(
+    name: morphir.ir.Name.Name
+  ): morphir.sdk.String.String =
+    morphir.sdk.String.join("")(morphir.sdk.List.map(morphir.ir.Name.capitalize)(morphir.ir.Name.toList(name)))
 
 }

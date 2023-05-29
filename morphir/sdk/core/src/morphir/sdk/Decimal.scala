@@ -23,9 +23,8 @@ object Decimal extends DecimalModuleCompat {
   @inline def apply(value: morphir.sdk.Float.Float): Decimal = Decimal.apply(value)
   @inline def apply(value: morphir.sdk.Int.Int): Decimal     = Decimal.apply(value)
 
-  /**
-   * Absolute value (sets the sign as positive)
-   */
+  /** Absolute value (sets the sign as positive)
+    */
   def abs(value: Decimal): Decimal = value.abs
 
   def add(a: Decimal)(b: Decimal): Decimal = a + b
@@ -56,9 +55,8 @@ object Decimal extends DecimalModuleCompat {
   def fromInt(value: morphir.sdk.Basics.Int): Decimal =
     Decimal(value)
 
-  /**
-   * Converts a Float to a Decimal
-   */
+  /** Converts a Float to a Decimal
+    */
   def fromFloat(value: morphir.sdk.Float.Float): Decimal =
     Decimal(value)
 
@@ -69,9 +67,8 @@ object Decimal extends DecimalModuleCompat {
       case NonFatal(_) => Maybe.nothing
     }
 
-  /**
-   * Converts an `Int` to a `Decimal`` that represents n hundreds.
-   */
+  /** Converts an `Int` to a `Decimal`` that represents n hundreds.
+    */
   def hundred(n: morphir.sdk.Int.Int): Decimal =
     Decimal(n * 100)
 
@@ -121,9 +118,8 @@ object Decimal extends DecimalModuleCompat {
   def truncate(decimal: Decimal): Decimal =
     decimal.setScale(0, BigDecimal.RoundingMode.DOWN)
 
-  /**
-   * The number -1.
-   */
+  /** The number -1.
+    */
   val minusOne: Decimal = BigDecimal.exact(-1).bigDecimal
 
   val one: Decimal = BigDec.ONE
