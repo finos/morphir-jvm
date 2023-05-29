@@ -13,7 +13,7 @@ object DistributionSpec extends DefaultRunnableSpec {
   val distributionDecoder: Decoder[Distribution] = (c: io.circe.HCursor) =>
     c.downField("distribution").as(Codec.decodeDistribution)
   val bufferResource: BufferedSource = Source.fromFile(
-    "morphir\\ir\\test\\resources\\morphir\\ir\\morphir-ir.json"
+    "morphir/ir/test/resources/morphir/ir/morphir-ir.json"
   )
   val irContent: String = bufferResource.mkString
   bufferResource.close()
