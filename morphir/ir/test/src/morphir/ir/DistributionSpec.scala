@@ -3,40 +3,23 @@ package morphir.ir
 import io.circe.{ Decoder, Json, parser }
 import io.circe.Decoder.Result
 import morphir.ir.Distribution.Distribution
-import morphir.ir.distribution.Codec
-import zio.test.Assertion.equalTo
-import zio.test._
-
+import morphir.ir.distribution.Codec._
+import org.scalatest.funsuite.AnyFunSuite
 import scala.io.{ BufferedSource, Source }
 
-object DistributionSpec extends DefaultRunnableSpec {
+class DistributionSpec extends AnyFunSuite {
   val distributionDecoder: Decoder[Distribution] = (c: io.circe.HCursor) =>
-    c.downField("distribution").as(Codec.decodeDistribution)
+    c.downField("distribution").as(decodeDistribution)
   val bufferResource: BufferedSource = Source.fromFile(
     "morphir/ir/test/resources/morphir/ir/morphir-ir.json"
   )
   val irContent: String = bufferResource.mkString
   bufferResource.close()
 
-  override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] = suite("DistributionSpec")(
-    suite("Comparism of Generated IR Json vs Encoded Distribution to IR Json")(
-      test("Decode Distribution from IRJson + Re-Encode Distribution + Compare ") {
-        val irJson                                   = parser.parse(irContent).getOrElse(Json.Null)
-        val distributionResult: Result[Distribution] = distributionDecoder.decodeJson(irJson)
-        distributionResult match {
-          case Left(_) => assert(true)(equalTo(false)) // cant find an intentional fail
-          case Right(distribution) =>
-            irJson.hcursor.downField("distribution").as[Json] match {
-              case Left(_) => assert(true)(equalTo(false)) // cant find an intentional fail
-              case Right(originalDistroFromFile) =>
-                Codec.encodeDistribution(distribution).as[Json] match {
-                  case Left(_) => assert(true)(equalTo(false)) // cant find an intentional fail
-                  case Right(expected) =>
-                    assert(originalDistroFromFile)(equalTo(expected))
-                }
-            }
-        }
-      }
-    )
-  )
+  test("Decoding and Encoding an IR JSON should match the original JSON") {
+    val irJson                                   = parser.parse(irContent)
+    val distributionResult: Result[Distribution] = decodeVersionDistribution.decodeJson(irJson.getOrElse(Json.Null))
+    val encodedDistributionResult                = distributionResult.map(encodeVersionDistribution.apply)
+    assert(encodedDistributionResult === irJson)
+  }
 }

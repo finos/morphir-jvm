@@ -57,6 +57,7 @@ object Deps {
     val quill         = "3.6.0-RC3"
 
     val circe         = "0.14.1"
+    val scalatest     = "3.2.16"
   }
 }
 
@@ -213,6 +214,7 @@ object morphir extends Module {
 
       def artifactName = "morphir-ir"
       def ivyDeps = Agg(
+        ivy"org.scalatest::scalatest:${Versions.scalatest}",
         ivy"dev.zio::zio:${Versions.zio}",
         ivy"dev.zio::zio-streams:${Versions.zio}",
         ivy"com.lihaoyi::upickle:${Versions.upickle}",
