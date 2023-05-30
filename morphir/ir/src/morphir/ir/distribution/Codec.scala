@@ -1,7 +1,5 @@
 package morphir.ir.distribution
 
-import morphir.FormatVersion
-import morphir.ir.Distribution.Distribution
 
 /**
  * Generated based on IR.Distribution
@@ -27,23 +25,8 @@ object Codec {
       }
     )
 
-  implicit val encodeVersionDistribution: io.circe.Encoder[morphir.ir.Distribution.Distribution] =
-    (distribution: morphir.ir.Distribution.Distribution) =>
-      io.circe.Json.obj(("formatVersion", io.circe.Json.fromInt(FormatVersion.formatVersion)),
-        ("distribution", encodeDistribution(distribution)))
 
-
-  implicit val decodeVersionDistribution: io.circe.Decoder[Distribution] =
-    (c: io.circe.HCursor) =>
-      c.downField("formatVersion").as[Int]
-        .flatMap{
-          case FormatVersion.formatVersion => c.downField("distribution").as(decodeDistribution)
-          case _ => Left(io.circe.DecodingFailure("IR version is old, please re generate IR",Nil))
-        }
-
-
-
-   val decodeDistribution: io.circe.Decoder[morphir.ir.Distribution.Distribution] = (
+  val decodeDistribution: io.circe.Decoder[morphir.ir.Distribution.Distribution] = (
     (c: io.circe.HCursor) =>
       c.withFocus(_.withString(((str) => io.circe.Json.arr(io.circe.Json.fromString(str)))))
         .downN(0)

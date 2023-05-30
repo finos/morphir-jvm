@@ -4,6 +4,7 @@ import io.circe.{ Decoder, Json, parser }
 import io.circe.Decoder.Result
 import morphir.ir.Distribution.Distribution
 import morphir.ir.distribution.Codec._
+import morphir.FormatVersionCodecs._
 import org.scalatest.funsuite.AnyFunSuite
 import scala.io.{ BufferedSource, Source }
 
@@ -18,8 +19,8 @@ class DistributionSpec extends AnyFunSuite {
 
   test("Decoding and Encoding an IR JSON should match the original JSON") {
     val irJson                                   = parser.parse(irContent)
-    val distributionResult: Result[Distribution] = decodeVersionDistribution.decodeJson(irJson.getOrElse(Json.Null))
-    val encodedDistributionResult                = distributionResult.map(encodeVersionDistribution.apply)
+    val distributionResult: Result[Distribution] = decodeDistributionVersion.decodeJson(irJson.getOrElse(Json.Null))
+    val encodedDistributionResult                = distributionResult.map(encodeDistributionVersion.apply)
     assert(encodedDistributionResult === irJson)
   }
 }
