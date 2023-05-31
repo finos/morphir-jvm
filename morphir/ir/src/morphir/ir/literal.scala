@@ -1,67 +1,78 @@
-/*
-Copyright 2020 Morgan Stanley
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package morphir.ir
 
-import morphir.ir.codec.literalCodecs
+/** Generated based on IR.Literal
+*/
+object Literal{
 
-object literal {
-  def bool(value: Boolean): Literal.BoolLiteral = Literal.BoolLiteral(value)
-
-  def char(value: Char): Literal.CharLiteral = Literal.CharLiteral(value)
-
-  def string(value: String): Literal.StringLiteral = Literal.StringLiteral(value)
-
-  def int(value: Int): Literal.IntLiteral = Literal.IntLiteral(value)
-
-  def float(value: Float): Literal.FloatLiteral = Literal.FloatLiteral(value)
-
-  sealed abstract class Literal(val tag: String) extends Product with Serializable {
-    type ValueType
-
-    def value: ValueType
+  sealed trait Literal {
+  
+    
+  
   }
-
-  object Literal extends literalCodecs.LiteralCodec {
-    type Aux[A0] = Literal { type A = A0 }
-
-    final case class BoolLiteral(value: Boolean) extends Literal(BoolLiteral.Tag) {
-      type ValueType = Boolean
-    }
-    object BoolLiteral extends literalCodecs.BoolLiteralCodec
-
-    final case class CharLiteral(value: Char) extends Literal(CharLiteral.Tag) {
-      type ValueType = Char
-    }
-    object CharLiteral extends literalCodecs.CharLiteralCodec
-
-    final case class StringLiteral(value: String) extends Literal(StringLiteral.Tag) {
-      type ValueType = String
-    }
-    object StringLiteral extends literalCodecs.StringLiteralCodec
-
-    final case class IntLiteral(value: Int) extends Literal(IntLiteral.Tag) {
-      type ValueType = Int
-    }
-    object IntLiteral extends literalCodecs.IntLiteralCodec
-
-    final case class FloatLiteral(value: Float) extends Literal(FloatLiteral.Tag) {
-      type ValueType = Float
-    }
-    object FloatLiteral extends literalCodecs.FloatLiteralCodec
+  
+  object Literal{
+  
+    final case class BoolLiteral(
+      arg1: morphir.sdk.Basics.Bool
+    ) extends morphir.ir.Literal.Literal{}
+    
+    final case class CharLiteral(
+      arg1: morphir.sdk.Char.Char
+    ) extends morphir.ir.Literal.Literal{}
+    
+    final case class DecimalLiteral(
+      arg1: morphir.sdk.Decimal.Decimal
+    ) extends morphir.ir.Literal.Literal{}
+    
+    final case class FloatLiteral(
+      arg1: morphir.sdk.Basics.Float
+    ) extends morphir.ir.Literal.Literal{}
+    
+    final case class StringLiteral(
+      arg1: morphir.sdk.String.String
+    ) extends morphir.ir.Literal.Literal{}
+    
+    final case class WholeNumberLiteral(
+      arg1: morphir.sdk.Basics.Int
+    ) extends morphir.ir.Literal.Literal{}
+  
   }
+  
+  val BoolLiteral: morphir.ir.Literal.Literal.BoolLiteral.type  = morphir.ir.Literal.Literal.BoolLiteral
+  
+  val CharLiteral: morphir.ir.Literal.Literal.CharLiteral.type  = morphir.ir.Literal.Literal.CharLiteral
+  
+  val DecimalLiteral: morphir.ir.Literal.Literal.DecimalLiteral.type  = morphir.ir.Literal.Literal.DecimalLiteral
+  
+  val FloatLiteral: morphir.ir.Literal.Literal.FloatLiteral.type  = morphir.ir.Literal.Literal.FloatLiteral
+  
+  val StringLiteral: morphir.ir.Literal.Literal.StringLiteral.type  = morphir.ir.Literal.Literal.StringLiteral
+  
+  val WholeNumberLiteral: morphir.ir.Literal.Literal.WholeNumberLiteral.type  = morphir.ir.Literal.Literal.WholeNumberLiteral
+  
+  def boolLiteral(
+    value: morphir.sdk.Basics.Bool
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.BoolLiteral(value) : morphir.ir.Literal.Literal)
+  
+  def charLiteral(
+    value: morphir.sdk.Char.Char
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.CharLiteral(value) : morphir.ir.Literal.Literal)
+  
+  def floatLiteral(
+    value: morphir.sdk.Basics.Float
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.FloatLiteral(value) : morphir.ir.Literal.Literal)
+  
+  def intLiteral(
+    value: morphir.sdk.Basics.Int
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.WholeNumberLiteral(value) : morphir.ir.Literal.Literal)
+  
+  def stringLiteral(
+    value: morphir.sdk.String.String
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.StringLiteral(value) : morphir.ir.Literal.Literal)
 
 }

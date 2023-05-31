@@ -35,9 +35,8 @@ object sparkModule {
   object SparkModule {
     trait Service extends Serializable {
 
-      /**
-       * Get access to an instance of the `SparkSession`.
-       */
+      /** Get access to an instance of the `SparkSession`.
+        */
       def sparkSession: SparkSession
 
       def createDataset[A <: Product: TypeTag](data: Seq[A]): Task[Dataset[A]]

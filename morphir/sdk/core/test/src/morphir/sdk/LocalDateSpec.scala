@@ -16,7 +16,7 @@ limitations under the License.
 
 package morphir.sdk
 
-import morphir.sdk.{LocalDate => SdkDate}
+import morphir.sdk.{ LocalDate => SdkDate }
 import zio.test.Assertion._
 import zio.test._
 

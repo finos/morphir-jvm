@@ -22,27 +22,23 @@ object Int {
   private[Int] type IntCompanion = scala.Int.type
   private[Int] val IntCompanion: IntCompanion = scala.Int
 
-  /**
-   * Represents an 8 bit integer value.
-   */
+  /** Represents an 8 bit integer value.
+    */
   type Int8 = scala.Byte
   val Int8: scala.Byte.type = scala.Byte
 
-  /**
-   * Represents a 16 bit integer value.
-   */
+  /** Represents a 16 bit integer value.
+    */
   type Int16 = scala.Short
   val Int16: scala.Short.type = scala.Short
 
-  /**
-   * Represents a 32 bit integer value.
-   */
+  /** Represents a 32 bit integer value.
+    */
   type Int32 = scala.Int
   val Int32: scala.Int.type = scala.Int
 
-  /**
-   * Represents a 64 bit integer value.
-   */
+  /** Represents a 64 bit integer value.
+    */
   type Int64 = scala.Long
   val Int64: scala.Long.type = scala.Long
 
@@ -78,9 +74,8 @@ object Int {
   @inline def remainderBy(divisor: Int64)(dividend: Int64): Int64 =
     dividend % divisor
 
-  /**
-   * Turn an 8 bit integer value into an arbitrary precision integer to use in calculations.
-   */
+  /** Turn an 8 bit integer value into an arbitrary precision integer to use in calculations.
+    */
   def fromInt8(int: Int8): Basics.Int = Basics.Int(int)
 
   def toInt8(int: Basics.Int): Maybe.Maybe[Int8] =
@@ -105,14 +100,12 @@ object Int {
     else
       Maybe.just(int.intValue())
 
-  /**
-   * Turn a 64 bit integer value into a arbitrary precision integer to use in calculations.
-   */
+  /** Turn a 64 bit integer value into a arbitrary precision integer to use in calculations.
+    */
   def fromInt64(int: Int64): Basics.Int = int.intValue()
 
-  /**
-   * Turns an arbitrary precision integer into a 64 bit integer if it fits within the precision.
-   */
+  /** Turns an arbitrary precision integer into a 64 bit integer if it fits within the precision.
+    */
   def toInt64(int: Basics.Int): Maybe.Maybe[Int64] =
     if (int < Int64.MinValue && int > Int64.MaxValue)
       Maybe.nothing

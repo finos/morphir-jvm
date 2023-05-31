@@ -64,15 +64,13 @@ object String {
 
   @inline def trim(text: String): String = text.trim()
 
-  /**
-   * Put many strings together with a given separator.
-   */
+  /** Put many strings together with a given separator.
+    */
   def join(sep: Char)(chunks: List[String]): String =
     chunks.mkString(sep.toString())
 
-  /**
-   * Put many strings together with a given separator.
-   */
+  /** Put many strings together with a given separator.
+    */
   def join(sep: String)(chunks: List[String]): String =
     chunks.mkString(sep)
 
