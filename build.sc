@@ -199,7 +199,7 @@ trait MorphirTestModule extends MorphirScalaModule with TestModule {
 object morphir extends Module {
   import Deps._
   object ir extends Module {
-    object jvm extends Cross[JvmMorphirIrModule](Versions.scala213)
+    object jvm extends Cross[JvmMorphirIrModule](Versions.scala213, Versions.scala212)
     class JvmMorphirIrModule(val crossScalaVersion: String)
       extends CrossScalaModule
         with CommonJvmModule
