@@ -1,6 +1,6 @@
 package morphir.ir
 
-import io.circe.{Json, parser }
+import io.circe.{ Json, parser }
 import io.circe.Decoder.Result
 import morphir.FormatVersionCodecs._
 import org.scalatest.funsuite.AnyFunSuite
