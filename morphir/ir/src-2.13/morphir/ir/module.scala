@@ -2,9 +2,8 @@ package morphir.ir
 
 import morphir.ir.FQName.FQName
 
-/**
- * Generated based on IR.Module
- */
+/** Generated based on IR.Module
+  */
 object Module {
 
   final case class Definition[Ta, Va](

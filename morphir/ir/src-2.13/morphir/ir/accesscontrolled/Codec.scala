@@ -2,9 +2,8 @@ package morphir.ir.accesscontrolled
 
 import scala.language.reflectiveCalls
 
-/**
- * Generated based on IR.AccessControlled
- */
+/** Generated based on IR.AccessControlled
+  */
 object Codec {
 
   implicit val encodeAccess: io.circe.Encoder[morphir.ir.AccessControlled.Access] = (

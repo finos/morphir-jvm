@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.QName
- */
+/** Generated based on IR.QName
+  */
 object QName {
 
   final case class QName(

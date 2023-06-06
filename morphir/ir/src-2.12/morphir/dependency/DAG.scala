@@ -8,6 +8,8 @@ object DAG{
     arg1: ComparableNode,
     arg2: ComparableNode
   ){}
+
+  implicit def ordering[ComparableNode]: Ordering[ComparableNode] = (_: ComparableNode, _: ComparableNode) => 0
   
   final case class DAG[ComparableNode](
     arg1: morphir.sdk.Dict.Dict[ComparableNode, morphir.sdk.Set.Set[ComparableNode]]
@@ -44,7 +46,7 @@ object DAG{
                 }
             } : ((morphir.dependency.DAG.DAG[ComparableNode], morphir.sdk.List.List[morphir.sdk.List.List[ComparableNode]])) => (morphir.dependency.DAG.DAG[ComparableNode], morphir.sdk.List.List[morphir.sdk.List.List[ComparableNode]]))
           
-          morphir.sdk.Tuple.second(removeStartNodes(((morphir.dependency.DAG.DAG(morphir.sdk.Dict.map(morphir.sdk.Set.remove)(dag)) : morphir.dependency.DAG.DAG[ComparableNode]), morphir.sdk.List(
+          morphir.sdk.Tuple.second(removeStartNodes(((morphir.dependency.DAG.DAG(morphir.sdk.Dict.map(morphir.sdk.Set.remove[ComparableNode])(dag)) : morphir.dependency.DAG.DAG[ComparableNode]), morphir.sdk.List(
           
           ))))
         }
@@ -56,7 +58,7 @@ object DAG{
     ({
       case morphir.dependency.DAG.DAG(initialEdgesByNode) => 
         {
-          val firstReachableNodes: morphir.sdk.Set.Set[ComparableNode] = morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty)(morphir.sdk.Dict.get(firstNode)(initialEdgesByNode))
+          val firstReachableNodes: morphir.sdk.Set.Set[ComparableNode] = morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.get(firstNode)(initialEdgesByNode))
           
           {
             def collect(
@@ -70,17 +72,17 @@ object DAG{
                 } : morphir.sdk.Set.Set[ComparableNode] => morphir.sdk.Basics.Bool)))(currentEdgesByNode)
               
               {
-                val nextReachableNodes: morphir.sdk.Set.Set[ComparableNode] = morphir.sdk.Set.diff(morphir.sdk.List.foldl(morphir.sdk.Set.union)(morphir.sdk.Set.empty)(morphir.sdk.Dict.values(reachableEdges)))(reachableSoFar)
+                val nextReachableNodes: morphir.sdk.Set.Set[ComparableNode] = morphir.sdk.Set.diff(morphir.sdk.List.foldl(morphir.sdk.Set.union[ComparableNode])(morphir.sdk.Set.empty)(morphir.sdk.Dict.values(reachableEdges)))(reachableSoFar)
                 
                 if (morphir.sdk.Set.isEmpty(nextReachableNodes)) {
                   reachableSoFar
                 } else {
-                  collect(morphir.sdk.Set.union(reachableSoFar)(nextReachableNodes))(unreachableEdges)
+                  collect(morphir.sdk.Set.union(reachableSoFar)(nextReachableNodes),unreachableEdges)
                 }
               }
             }
             
-            collect(firstReachableNodes)(initialEdgesByNode)
+            collect(firstReachableNodes,initialEdgesByNode)
           }
         }
     } : morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Set.Set[ComparableNode])
@@ -125,20 +127,20 @@ object DAG{
       case morphir.dependency.DAG.DAG(edgesByNodes) => 
         if (morphir.sdk.Basics.equal(from)(to)) {
           (morphir.sdk.Result.Ok((morphir.dependency.DAG.DAG(((edges: morphir.sdk.Set.Set[ComparableNode]) =>
-            morphir.sdk.Dict.insert(from)(morphir.sdk.Set.insert(to)(edges))(edgesByNodes))(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty)(morphir.sdk.Dict.get(from)(edgesByNodes)))) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
+            morphir.sdk.Dict.insert(from)(morphir.sdk.Set.insert(to)(edges))(edgesByNodes))(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.get(from)(edgesByNodes)))) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
         } else if (morphir.sdk.Set.member(from)(morphir.dependency.DAG.collectForwardReachableNodes(to)((morphir.dependency.DAG.DAG(edgesByNodes) : morphir.dependency.DAG.DAG[ComparableNode])))) {
           (morphir.sdk.Result.Err((morphir.dependency.DAG.CycleDetected(
             from,
             to
           ) : morphir.dependency.DAG.CycleDetected[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
-        } else if (morphir.sdk.Set.member(to)(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty)(morphir.sdk.Dict.get(from)(edgesByNodes)))) {
+        } else if (morphir.sdk.Set.member(to)(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.get(from)(edgesByNodes)))) {
           (morphir.sdk.Result.Ok((morphir.dependency.DAG.DAG(edgesByNodes) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
         } else if (morphir.sdk.Dict.member(to)(edgesByNodes)) {
           (morphir.sdk.Result.Ok((morphir.dependency.DAG.DAG(((fromEdges: morphir.sdk.Set.Set[ComparableNode]) =>
-            morphir.sdk.Dict.insert(from)(morphir.sdk.Set.insert(to)(fromEdges))(edgesByNodes))(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty)(morphir.sdk.Dict.get(from)(edgesByNodes)))) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
+            morphir.sdk.Dict.insert(from)(morphir.sdk.Set.insert(to)(fromEdges))(edgesByNodes))(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.get(from)(edgesByNodes)))) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
         } else {
-          (morphir.sdk.Result.Ok((morphir.dependency.DAG.DAG(morphir.sdk.Dict.insert(to)(morphir.sdk.Set.empty)(((fromEdges: morphir.sdk.Set.Set[ComparableNode]) =>
-            morphir.sdk.Dict.insert(from)(morphir.sdk.Set.insert(to)(fromEdges))(edgesByNodes))(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty)(morphir.sdk.Dict.get(from)(edgesByNodes))))) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
+          (morphir.sdk.Result.Ok((morphir.dependency.DAG.DAG(morphir.sdk.Dict.insert(to)(morphir.sdk.Set.empty[ComparableNode])(((fromEdges: morphir.sdk.Set.Set[ComparableNode]) =>
+            morphir.sdk.Dict.insert(from)(morphir.sdk.Set.insert(to)(fromEdges))(edgesByNodes))(morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.get(from)(edgesByNodes))))) : morphir.dependency.DAG.DAG[ComparableNode])) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
         }
     } : morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
   
@@ -162,7 +164,7 @@ object DAG{
           if (morphir.sdk.Dict.member(fromNode)(edgesByNode)) {
             insertEdges(toNodes)((morphir.dependency.DAG.DAG(edgesByNode) : morphir.dependency.DAG.DAG[ComparableNode]))
           } else {
-            insertEdges(toNodes)((morphir.dependency.DAG.DAG(morphir.sdk.Dict.insert(fromNode)(morphir.sdk.Set.empty)(edgesByNode)) : morphir.dependency.DAG.DAG[ComparableNode]))
+            insertEdges(toNodes)((morphir.dependency.DAG.DAG(morphir.sdk.Dict.insert(fromNode)(morphir.sdk.Set.empty[ComparableNode])(edgesByNode)) : morphir.dependency.DAG.DAG[ComparableNode]))
           }
         }
     } : morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[ComparableNode], morphir.dependency.DAG.DAG[ComparableNode]])
@@ -172,7 +174,7 @@ object DAG{
   ): morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Set.Set[ComparableNode] =
     ({
       case morphir.dependency.DAG.DAG(edges) => 
-        morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty)(morphir.sdk.Dict.get(fromNode)(edges))
+        morphir.sdk.Maybe.withDefault(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.get(fromNode)(edges))
     } : morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Set.Set[ComparableNode])
   
   def removeEdge[ComparableNode](

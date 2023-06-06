@@ -2,9 +2,8 @@ package morphir.ir._type
 
 import scala.language.reflectiveCalls
 
-/**
- * Generated based on IR.Type
- */
+/** Generated based on IR.Type
+  */
 object Codec {
 
   implicit def encodeConstructor[A](

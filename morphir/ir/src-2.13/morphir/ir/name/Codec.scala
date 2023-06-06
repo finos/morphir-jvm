@@ -1,8 +1,7 @@
 package morphir.ir.name
 
-/**
- * Generated based on IR.Name
- */
+/** Generated based on IR.Name
+  */
 object Codec {
 
   implicit val encodeName: io.circe.Encoder[morphir.ir.Name.Name] =

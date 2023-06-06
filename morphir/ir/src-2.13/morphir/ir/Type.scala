@@ -5,9 +5,8 @@ import morphir.ir.FQName.FQName
 import morphir.ir.Name.Name
 import morphir.sdk.{ Dict, Result }
 
-/**
- * Generated based on IR.Type
- */
+/** Generated based on IR.Type
+  */
 object Type {
 
   type Constructor[A] = (morphir.ir.Name.Name, morphir.ir.Type.ConstructorArgs[A])

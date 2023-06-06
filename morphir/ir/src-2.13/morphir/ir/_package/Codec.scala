@@ -2,9 +2,8 @@ package morphir.ir._package
 
 import scala.language.reflectiveCalls
 
-/**
- * Generated based on IR.Package
- */
+/** Generated based on IR.Package
+  */
 object Codec {
 
   implicit def encodeDefinition[Ta, Va](

@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.Distribution
- */
+/** Generated based on IR.Distribution
+  */
 object Distribution {
 
   sealed trait Distribution {}

@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.AccessControlled
- */
+/** Generated based on IR.AccessControlled
+  */
 object AccessControlled {
 
   sealed trait Access {}

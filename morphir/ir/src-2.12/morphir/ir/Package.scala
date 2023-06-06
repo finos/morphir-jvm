@@ -1,9 +1,14 @@
 package morphir.ir
 
+import morphir.ir.Module.{ModuleName, QualifiedModuleName}
+import morphir.ir.Path.Path
+
 /** Generated based on IR.Package
 */
 object Package{
 
+  implicit def qualifiedModuleNameOrdering: Ordering[QualifiedModuleName] = (_: QualifiedModuleName, _: QualifiedModuleName) => 0
+  implicit def moduleNameOrdering: Ordering[ModuleName] = (_: ModuleName, _: ModuleName) => 0
   final case class Definition[Ta, Va](
     modules: morphir.sdk.Dict.Dict[morphir.ir.Module.ModuleName, morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[Ta, Va]]]
   ){}
@@ -61,7 +66,7 @@ object Package{
   )(
     packageDef: morphir.ir.Package.Definition[Ta, Va]
   ): morphir.sdk.Maybe.Maybe[morphir.ir.Module.Definition[Ta, Va]] =
-    morphir.sdk.Maybe.map(morphir.ir.AccessControlled.withPrivateAccess)(morphir.sdk.Dict.get(modulePath)(packageDef.modules))
+    morphir.sdk.Maybe.map(morphir.ir.AccessControlled.withPrivateAccess[morphir.ir.Module.Definition[Ta, Va]])(morphir.sdk.Dict.get(modulePath)(packageDef.modules))
   
   def lookupModuleSpecification[Ta](
     modulePath: morphir.ir.Path.Path
@@ -77,7 +82,7 @@ object Package{
   )(
     packageSpec: morphir.ir.Package.Specification[Ta]
   ): morphir.sdk.Maybe.Maybe[morphir.ir.Type.Specification[Ta]] =
-    morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupTypeSpecification(localName))(morphir.ir.Package.lookupModuleSpecification(modulePath)(packageSpec))
+    morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupTypeSpecification[Ta](localName))(morphir.ir.Package.lookupModuleSpecification(modulePath)(packageSpec))
   
   def lookupValueDefinition[Ta, Va](
     modulePath: morphir.ir.Path.Path
@@ -86,7 +91,7 @@ object Package{
   )(
     packageDef: morphir.ir.Package.Definition[Ta, Va]
   ): morphir.sdk.Maybe.Maybe[morphir.ir.Value.Definition[Ta, Va]] =
-    morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupValueDefinition(localName))(morphir.ir.Package.lookupModuleDefinition(modulePath)(packageDef))
+    morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupValueDefinition[Ta, Va](localName))(morphir.ir.Package.lookupModuleDefinition(modulePath)(packageDef))
   
   def lookupValueSpecification[Ta](
     modulePath: morphir.ir.Path.Path
@@ -95,7 +100,7 @@ object Package{
   )(
     packageSpec: morphir.ir.Package.Specification[Ta]
   ): morphir.sdk.Maybe.Maybe[morphir.ir.Value.Specification[Ta]] =
-    morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupValueSpecification(localName))(morphir.ir.Package.lookupModuleSpecification(modulePath)(packageSpec))
+    morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupValueSpecification[Ta](localName))(morphir.ir.Package.lookupModuleSpecification(modulePath)(packageSpec))
   
   def mapDefinitionAttributes[Ta, Tb, Va, Vb](
     tf: Ta => Tb
@@ -131,11 +136,11 @@ object Package{
   ): morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Module.ModuleName], morphir.sdk.List.List[(morphir.ir.Module.ModuleName, morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]])]] =
     morphir.sdk.Result.map(((moduleDependencies: morphir.dependency.DAG.DAG[morphir.ir.Path.Path]) =>
       morphir.sdk.List.filterMap(((moduleName: morphir.ir.Path.Path) =>
-        morphir.sdk.Maybe.map(morphir.sdk.Tuple.pair(moduleName))(morphir.sdk.Dict.get(moduleName)(packageDef.modules))))(morphir.sdk.List.concat(morphir.dependency.DAG.backwardTopologicalOrdering(moduleDependencies)))))(morphir.sdk.List.foldl(({
-      case (moduleName, accessControlledModuleDef) => 
+        morphir.sdk.Maybe.map((a: morphir.ir.AccessControlled.AccessControlled[Module.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]] ])=> morphir.sdk.Tuple.pair(moduleName)(a))(morphir.sdk.Dict.get(moduleName)(packageDef.modules))))(morphir.sdk.List.concat(morphir.dependency.DAG.backwardTopologicalOrdering(moduleDependencies)))))(morphir.sdk.List.foldl(({
+      case (moduleName, accessControlledModuleDef) =>
         ((dagResultSoFar: morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Path.Path], morphir.dependency.DAG.DAG[morphir.ir.Path.Path]]) =>
           {
-            val dependsOnModules: morphir.sdk.Set.Set[morphir.ir.Module.ModuleName] = morphir.sdk.Set.map(morphir.sdk.Tuple.second)(morphir.sdk.Set.filter(({
+            val dependsOnModules: morphir.sdk.Set.Set[morphir.ir.Module.ModuleName] = morphir.sdk.Set.map(morphir.sdk.Tuple.second[Path,ModuleName])(morphir.sdk.Set.filter(({
               case (dependsOnPackage, _) => 
                 morphir.sdk.Basics.equal(dependsOnPackage)(packageName)
             } : ((morphir.ir.Path.Path, morphir.ir.Path.Path)) => morphir.sdk.Basics.Bool))(morphir.ir.Module.dependsOnModules(accessControlledModuleDef.value)))
@@ -154,7 +159,7 @@ object Package{
     def findAllDependencies(
       current: morphir.sdk.Set.Set[morphir.ir.Module.ModuleName]
     ): morphir.sdk.Set.Set[morphir.ir.Module.ModuleName] =
-      morphir.sdk.List.foldl(morphir.sdk.Set.union)(morphir.sdk.Set.empty)(morphir.sdk.List.filterMap(((currentModuleName: morphir.ir.Module.ModuleName) =>
+      morphir.sdk.List.foldl(morphir.sdk.Set.union[ModuleName])(morphir.sdk.Set.empty)(morphir.sdk.List.filterMap(((currentModuleName: morphir.ir.Module.ModuleName) =>
         morphir.sdk.Maybe.map(((mDef: morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[Ta, Va]]) =>
           morphir.sdk.Set.fromList(morphir.sdk.List.filterMap(({
             case (pName, mName) => 

@@ -1,9 +1,7 @@
 package morphir.ir.distribution
 
-
-/**
- * Generated based on IR.Distribution
- */
+/** Generated based on IR.Distribution
+  */
 object Codec {
 
   val encodeDistribution: io.circe.Encoder[morphir.ir.Distribution.Distribution] = (
@@ -23,8 +21,7 @@ object Codec {
             )(arg3)
           )
       }
-    )
-
+  )
 
   val decodeDistribution: io.circe.Decoder[morphir.ir.Distribution.Distribution] = (
     (c: io.circe.HCursor) =>
@@ -39,27 +36,27 @@ object Codec {
                   for {
                     arg1 <- c.downN(1).as(morphir.ir._package.Codec.decodePackageName)
                     arg2 <- c.downN(2)
-                      .as(
-                        morphir.sdk.dict.Codec.decodeDict(
-                          morphir.ir._package.Codec.decodePackageName,
-                          morphir.ir._package.Codec.decodeSpecification(morphir.sdk.basics.Codec.decodeUnit)
-                        )
-                      )
+                              .as(
+                                morphir.sdk.dict.Codec.decodeDict(
+                                  morphir.ir._package.Codec.decodePackageName,
+                                  morphir.ir._package.Codec.decodeSpecification(morphir.sdk.basics.Codec.decodeUnit)
+                                )
+                              )
                     arg3 <- c.downN(3)
-                      .as(
-                        morphir.ir._package.Codec.decodeDefinition(
-                          morphir.sdk.basics.Codec.decodeUnit,
-                          morphir.ir._type.Codec.decodeType(morphir.sdk.basics.Codec.decodeUnit)
-                        )
-                      )
+                              .as(
+                                morphir.ir._package.Codec.decodeDefinition(
+                                  morphir.sdk.basics.Codec.decodeUnit,
+                                  morphir.ir._type.Codec.decodeType(morphir.sdk.basics.Codec.decodeUnit)
+                                )
+                              )
                   } yield morphir.ir.Distribution.Library(
                     arg1,
                     arg2,
                     arg3
                   )
               }
-            )
+          )
         )
-    )
+  )
 
 }

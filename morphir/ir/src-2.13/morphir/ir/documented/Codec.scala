@@ -2,9 +2,8 @@ package morphir.ir.documented
 
 import scala.language.reflectiveCalls
 
-/**
- * Generated based on IR.Documented
- */
+/** Generated based on IR.Documented
+  */
 object Codec {
 
   implicit def encodeDocumented[A](

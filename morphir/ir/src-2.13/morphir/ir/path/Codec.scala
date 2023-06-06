@@ -1,8 +1,7 @@
 package morphir.ir.path
 
-/**
- * Generated based on IR.Path
- */
+/** Generated based on IR.Path
+  */
 object Codec {
 
   implicit val encodePath: io.circe.Encoder[morphir.ir.Path.Path] =

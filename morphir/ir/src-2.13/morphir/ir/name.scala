@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.Name
- */
+/** Generated based on IR.Name
+  */
 object Name {
 
   type Name = morphir.sdk.List.List[morphir.sdk.String.String]
