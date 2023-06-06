@@ -1,8 +1,7 @@
 package morphir.ir
 
-import io.circe.{ Decoder, Json, parser }
+import io.circe.{Json, parser }
 import io.circe.Decoder.Result
-import morphir.ir.distribution.Codec._
 import morphir.FormatVersionCodecs._
 import org.scalatest.funsuite.AnyFunSuite
 import scala.io.{ BufferedSource, Source }
