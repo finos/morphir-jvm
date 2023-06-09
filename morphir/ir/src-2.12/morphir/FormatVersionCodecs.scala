@@ -12,16 +12,16 @@ object FormatVersionCodecs {
         ("distribution", encodeDistribution(distribution))
       )
 
+  val versionFieldDecoder: Decoder[Int] = (c: io.circe.HCursor) => c.downField("formatVersion").as[Int]
+  val distributionFieldDecoder: Decoder[Distribution] = (c: io.circe.HCursor) =>
+    c.downField("distribution").as(decodeDistribution)
+
   implicit val decodeDistributionVersion: Decoder[Distribution] =
-    (c: io.circe.HCursor) =>
-      c.downField("formatVersion").as[Int].flatMap {
-        case FormatVersion.formatVersion => c.downField("distribution").as(decodeDistribution)
-        case version =>
-          Left(
-            io.circe.DecodingFailure(
-              s"IR is using an old version is old, please re generate IR. Expected version ${FormatVersion.formatVersion}, but found version $version",
-              Nil
-            )
-          )
-      }
+    versionFieldDecoder.flatMap {
+      case FormatVersion.formatVersion => distributionFieldDecoder
+      case version =>
+        Decoder.failedWithMessage(
+          s"IR is using an old version is old, please re generate IR. Expected version ${FormatVersion.formatVersion}, but found version $version"
+        )
+    }
 }
