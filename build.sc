@@ -55,9 +55,8 @@ object Deps {
     val spark         = "2.4.7"
     val oslib         = "0.6.2"
     val quill         = "3.6.0-RC3"
-
-    val circe         = "0.14.1"
     val scalatest     = "3.2.16"
+    val circe         = "0.14.1"
   }
 }
 
@@ -204,8 +203,7 @@ object morphir extends Module {
       extends CrossScalaModule
         with CommonJvmModule
         with MorphirPublishModule
-        with ScalaMacroModule
-        /*with MorphirScalafixModule*/ { self =>
+           { self =>
 
       override def moduleDeps = Seq(
         morphir.sdk.core.jvm(crossScalaVersion),
@@ -213,6 +211,7 @@ object morphir extends Module {
       )
 
       def artifactName = "morphir-ir"
+
       def ivyDeps = Agg(
         ivy"org.scalatest::scalatest:${Versions.scalatest}",
         ivy"dev.zio::zio:${Versions.zio}",

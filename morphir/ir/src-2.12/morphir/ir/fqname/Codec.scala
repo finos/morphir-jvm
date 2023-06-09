@@ -16,10 +16,10 @@ object Codec {
   implicit val decodeFQName: io.circe.Decoder[morphir.ir.FQName.FQName] = (
     (c: io.circe.HCursor) =>
       for {
-        arg1 <- morphir.ir.path.Codec.decodePath(c)
-        arg2 <- morphir.ir.path.Codec.decodePath(c)
-        arg3 <- morphir.ir.name.Codec.decodeName(c)
+        arg1 <- c.downN(0).as(morphir.ir.path.Codec.decodePath)
+        arg2 <- c.downN(1).as(morphir.ir.path.Codec.decodePath)
+        arg3 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
       } yield (arg1, arg2, arg3)
-  )
+    )
 
 }

@@ -178,16 +178,16 @@ object Codec {
     )
 
   implicit def decodeConstructorArgs[A](
-    decodeA: io.circe.Decoder[A]
-  ): io.circe.Decoder[morphir.ir.Type.ConstructorArgs[A]] =
+     decodeA: io.circe.Decoder[A]
+     ): io.circe.Decoder[morphir.ir.Type.ConstructorArgs[A]] =
     morphir.sdk.list.Codec.decodeList(
       (
         (c: io.circe.HCursor) =>
           for {
-            arg1 <- morphir.ir.name.Codec.decodeName(c)
-            arg2 <- morphir.ir._type.Codec.decodeType(decodeA)(c)
+            arg1 <- c.downN(0).as(morphir.ir.name.Codec.decodeName)
+            arg2 <- c.downN(1).as(morphir.ir._type.Codec.decodeType(decodeA))
           } yield (arg1, arg2)
-      )
+        )
     )
 
   implicit def decodeConstructors[A](

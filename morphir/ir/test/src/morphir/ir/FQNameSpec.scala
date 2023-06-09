@@ -16,11 +16,13 @@ limitations under the License.
 
 package morphir.ir
 
-import io.circe.{ Json, parser }
+import io.circe.Decoder.Result
+import io.circe.{Json, parser}
 import morphir.ir.FQName.FQName
 import morphir.ir.Module.ModuleName
 import morphir.ir.Name.Name
 import morphir.ir.Package.PackageName
+import morphir.ir.Path.Path
 import morphir.ir.fqname.Codec
 import zio.test.Assertion._
 import zio.test._
@@ -44,9 +46,8 @@ object FQNameSpec extends DefaultRunnableSpec {
         val parsedFQName =
           parser.parse("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""").getOrElse(Json.Null)
 
-        val decodedFQName = Codec.decodeFQName(parsedFQName.hcursor)
-
-        assert(decodedFQName.getOrElse(Json.Null))(equalTo(fqName))
+        val decodedFQName: Result[(Path, Path, Name)] = Codec.decodeFQName(parsedFQName.hcursor)
+        assert(decodedFQName)(equalTo(Right(fqName)))
       }
     )
 }
