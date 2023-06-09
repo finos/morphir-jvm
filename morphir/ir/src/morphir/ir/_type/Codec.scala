@@ -1,7 +1,5 @@
 package morphir.ir._type
 
-import scala.language.reflectiveCalls
-
 /** Generated based on IR.Type
   */
 object Codec {
@@ -64,10 +62,7 @@ object Codec {
     encodeA: io.circe.Encoder[A]
   ): io.circe.Encoder[morphir.ir.Type.DerivedTypeSpecificationDetails[A]] =
     (
-      (derivedTypeSpecificationDetails: {
-        def baseType: morphir.ir.Type.Type[A]; def fromBaseType: morphir.ir.FQName.FQName;
-        def toBaseType: morphir.ir.FQName.FQName
-      }) =>
+      (derivedTypeSpecificationDetails: morphir.ir.Type.DerivedTypeSpecificationDetails[A]) =>
         io.circe.Json.obj(
           ("baseType", morphir.ir._type.Codec.encodeType(encodeA)(derivedTypeSpecificationDetails.baseType)),
           ("fromBaseType", morphir.ir.fqname.Codec.encodeFQName(derivedTypeSpecificationDetails.fromBaseType)),
@@ -79,22 +74,11 @@ object Codec {
     encodeA: io.circe.Encoder[A]
   ): io.circe.Encoder[morphir.ir.Type.Field[A]] =
     (
-      (field: { def name: morphir.ir.Name.Name; def tpe: morphir.ir.Type.Type[A] }) =>
+      (field: morphir.ir.Type.Field[A]) =>
         io.circe.Json.obj(
           ("name", morphir.ir.name.Codec.encodeName(field.name)),
           ("tpe", morphir.ir._type.Codec.encodeType(encodeA)(field.tpe))
         )
-    )
-
-  implicit def encodeResultList[E, A](
-    encodeE: io.circe.Encoder[E],
-    encodeA: io.circe.Encoder[A]
-  ): io.circe.Encoder[morphir.ir.Type.ResultList[E, A]] =
-    morphir.sdk.list.Codec.encodeList(
-      morphir.sdk.result.Codec.encodeResult(
-        encodeE,
-        encodeA
-      )
     )
 
   implicit def encodeSpecification[A](
@@ -279,17 +263,6 @@ object Codec {
           name_,
           tpe_
         )
-    )
-
-  implicit def decodeResultList[E, A](
-    decodeE: io.circe.Decoder[E],
-    decodeA: io.circe.Decoder[A]
-  ): io.circe.Decoder[morphir.ir.Type.ResultList[E, A]] =
-    morphir.sdk.list.Codec.decodeList(
-      morphir.sdk.result.Codec.decodeResult(
-        decodeE,
-        decodeA
-      )
     )
 
   implicit def decodeSpecification[A](
