@@ -17,7 +17,7 @@ limitations under the License.
 package morphir.ir
 
 import io.circe.Decoder.Result
-import io.circe.{Json, parser}
+import io.circe.{ Json, parser }
 import morphir.ir.FQName.FQName
 import morphir.ir.Module.ModuleName
 import morphir.ir.Name.Name
