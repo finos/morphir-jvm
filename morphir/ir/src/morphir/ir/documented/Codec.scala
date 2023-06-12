@@ -1,17 +1,14 @@
 package morphir.ir.documented
 
-import scala.language.reflectiveCalls
-
-/**
- * Generated based on IR.Documented
- */
+/** Generated based on IR.Documented
+  */
 object Codec {
 
   implicit def encodeDocumented[A](
     encodeA: io.circe.Encoder[A]
   ): io.circe.Encoder[morphir.ir.Documented.Documented[A]] =
     (
-      (documented: { def doc: morphir.sdk.String.String; def value: A }) =>
+      (documented: morphir.ir.Documented.Documented[A]) =>
         io.circe.Json.obj(
           ("doc", morphir.sdk.string.Codec.encodeString(documented.doc)),
           ("value", encodeA(documented.value))

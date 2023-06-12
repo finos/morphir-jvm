@@ -1,8 +1,7 @@
 package morphir.ir.literal
 
-/**
- * Generated based on IR.Literal
- */
+/** Generated based on IR.Literal
+  */
 object Codec {
 
   implicit val encodeLiteral: io.circe.Encoder[morphir.ir.Literal.Literal] = (

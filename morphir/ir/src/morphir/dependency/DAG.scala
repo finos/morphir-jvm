@@ -9,10 +9,8 @@ object DAG{
     arg2: ComparableNode
   ){}
 
-
   implicit def ordering[ComparableNode]: Ordering[ComparableNode] = (_: ComparableNode, _: ComparableNode) => 0
-
-
+  
   final case class DAG[ComparableNode](
     arg1: morphir.sdk.Dict.Dict[ComparableNode, morphir.sdk.Set.Set[ComparableNode]]
   ) extends scala.AnyVal{}
@@ -79,12 +77,12 @@ object DAG{
                 if (morphir.sdk.Set.isEmpty(nextReachableNodes)) {
                   reachableSoFar
                 } else {
-                  collect(morphir.sdk.Set.union(reachableSoFar)(nextReachableNodes), unreachableEdges)
+                  collect(morphir.sdk.Set.union(reachableSoFar)(nextReachableNodes),unreachableEdges)
                 }
               }
             }
             
-            collect(firstReachableNodes, initialEdgesByNode)
+            collect(firstReachableNodes,initialEdgesByNode)
           }
         }
     } : morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Set.Set[ComparableNode])

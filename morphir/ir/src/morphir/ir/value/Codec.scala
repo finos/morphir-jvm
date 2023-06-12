@@ -1,10 +1,7 @@
 package morphir.ir.value
 
-import scala.language.reflectiveCalls
-
-/**
- * Generated based on IR.Value
- */
+/** Generated based on IR.Value
+  */
 object Codec {
 
   implicit def encodeDefinition[Ta, Va](
@@ -12,10 +9,7 @@ object Codec {
     encodeVa: io.circe.Encoder[Va]
   ): io.circe.Encoder[morphir.ir.Value.Definition[Ta, Va]] =
     (
-      (definition: {
-        def inputTypes: morphir.sdk.List.List[(morphir.ir.Name.Name, Va, morphir.ir.Type.Type[Ta])];
-        def outputType: morphir.ir.Type.Type[Ta]; def body: morphir.ir.Value.Value[Ta, Va]
-      }) =>
+      (definition: morphir.ir.Value.Definition[Ta, Va]) =>
         io.circe.Json.obj(
           (
             "inputTypes",
@@ -107,10 +101,7 @@ object Codec {
     encodeTa: io.circe.Encoder[Ta]
   ): io.circe.Encoder[morphir.ir.Value.Specification[Ta]] =
     (
-      (specification: {
-        def inputs: morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[Ta])];
-        def output: morphir.ir.Type.Type[Ta]
-      }) =>
+      (specification: morphir.ir.Value.Specification[Ta]) =>
         io.circe.Json.obj(
           (
             "inputs",
@@ -356,9 +347,9 @@ object Codec {
                                (
                                  (c: io.circe.HCursor) =>
                                    for {
-                                     arg1 <- c.downN(0).as(morphir.ir.name.Codec.decodeName)
-                                     arg2 <- c.downN(1).as(decodeVa)
-                                     arg3 <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeTa))
+                                     arg1 <- morphir.ir.name.Codec.decodeName(c)
+                                     arg2 <- decodeVa(c)
+                                     arg3 <- morphir.ir._type.Codec.decodeType(decodeTa)(c)
                                    } yield (arg1, arg2, arg3)
                                )
                              )
@@ -716,14 +707,11 @@ object Codec {
                                     (
                                       (c: io.circe.HCursor) =>
                                         for {
-                                          arg1 <- c.downN(0).as(morphir.ir.value.Codec.decodePattern(decodeVa))
-                                          arg2 <- c.downN(1)
-                                                    .as(
-                                                      morphir.ir.value.Codec.decodeValue(
-                                                        decodeTa,
-                                                        decodeVa
-                                                      )
-                                                    )
+                                          arg1 <- morphir.ir.value.Codec.decodePattern(decodeVa)(c)
+                                          arg2 <- morphir.ir.value.Codec.decodeValue(
+                                                    decodeTa,
+                                                    decodeVa
+                                                  )(c)
                                         } yield (arg1, arg2)
                                     )
                                   )

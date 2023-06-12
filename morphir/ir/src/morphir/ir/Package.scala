@@ -1,10 +1,7 @@
 package morphir.ir
 
-import morphir.dependency.DAG
-import morphir.ir.AccessControlled.AccessControlled
 import morphir.ir.Module.{ModuleName, QualifiedModuleName}
-import morphir.sdk.{Dict, Maybe, Result}
-import morphir.sdk.Result.Ok
+import morphir.ir.Path.Path
 
 /** Generated based on IR.Package
 */
@@ -12,7 +9,6 @@ object Package{
 
   implicit def qualifiedModuleNameOrdering: Ordering[QualifiedModuleName] = (_: QualifiedModuleName, _: QualifiedModuleName) => 0
   implicit def moduleNameOrdering: Ordering[ModuleName] = (_: ModuleName, _: ModuleName) => 0
-
   final case class Definition[Ta, Va](
     modules: morphir.sdk.Dict.Dict[morphir.ir.Module.ModuleName, morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[Ta, Va]]]
   ){}
@@ -137,37 +133,21 @@ object Package{
     packageName: morphir.ir.Package.PackageName
   )(
     packageDef: morphir.ir.Package.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]
-  ): morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Module.ModuleName], morphir.sdk.List.List[(morphir.ir.Module.ModuleName, morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]])]] = {
-    import scala.util.chaining._
-    import morphir.ir.Type.Type
-    import morphir.sdk.List
-
-    packageDef.modules
-      .pipe(Dict.toList[ModuleName, AccessControlled[Module.Definition[Unit, Type[Unit]]]])
-      .pipe(List.foldl((pair: (ModuleName, AccessControlled[Module.Definition[Unit, Type[Unit]]])) => (dagResultSoFar: Result.Result[DAG.CycleDetected[ModuleName], DAG.DAG[ModuleName]]) => {
-        val (moduleName, accessControlledModuleDef) = pair
-        val dependsOnModules: Set[ModuleName] =
-          accessControlledModuleDef.value
-            .pipe(Module.dependsOnModules)
-            .pipe(morphir.sdk.Set.filter { case (dependsOnPackage, _) => dependsOnPackage == packageName })
-            .pipe(morphir.sdk.Set.map { case (_, second) => second })
-
-        dagResultSoFar
-          .pipe(Result.andThen(DAG.insertNode(moduleName)(dependsOnModules)))
-      })(Ok(DAG.empty[ModuleName])))
-      .pipe(Result.map {
-        moduleDependencies =>
-          moduleDependencies
-            .pipe(DAG.backwardTopologicalOrdering)
-            .pipe(List.concat[ModuleName])
-            .pipe(List.filterMap {
-              moduleName: ModuleName =>
-                packageDef.modules
-                  .pipe(Dict.get(moduleName))
-                  .pipe(Maybe.map(v => (moduleName, v)))
-            })
-      })
-  }
+  ): morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Module.ModuleName], morphir.sdk.List.List[(morphir.ir.Module.ModuleName, morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]])]] =
+    morphir.sdk.Result.map(((moduleDependencies: morphir.dependency.DAG.DAG[morphir.ir.Path.Path]) =>
+      morphir.sdk.List.filterMap(((moduleName: morphir.ir.Path.Path) =>
+        morphir.sdk.Maybe.map((a: morphir.ir.AccessControlled.AccessControlled[Module.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]] ])=> morphir.sdk.Tuple.pair(moduleName)(a))(morphir.sdk.Dict.get(moduleName)(packageDef.modules))))(morphir.sdk.List.concat(morphir.dependency.DAG.backwardTopologicalOrdering(moduleDependencies)))))(morphir.sdk.List.foldl(({
+      case (moduleName, accessControlledModuleDef) =>
+        ((dagResultSoFar: morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Path.Path], morphir.dependency.DAG.DAG[morphir.ir.Path.Path]]) =>
+          {
+            val dependsOnModules: morphir.sdk.Set.Set[morphir.ir.Module.ModuleName] = morphir.sdk.Set.map(morphir.sdk.Tuple.second[Path,ModuleName])(morphir.sdk.Set.filter(({
+              case (dependsOnPackage, _) => 
+                morphir.sdk.Basics.equal(dependsOnPackage)(packageName)
+            } : ((morphir.ir.Path.Path, morphir.ir.Path.Path)) => morphir.sdk.Basics.Bool))(morphir.ir.Module.dependsOnModules(accessControlledModuleDef.value)))
+            
+            morphir.sdk.Result.andThen(morphir.dependency.DAG.insertNode(moduleName)(dependsOnModules))(dagResultSoFar)
+          })
+    } : ((morphir.ir.Path.Path, morphir.ir.AccessControlled.AccessControlled[morphir.ir.Module.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]])) => morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Path.Path], morphir.dependency.DAG.DAG[morphir.ir.Path.Path]] => morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Path.Path], morphir.dependency.DAG.DAG[morphir.ir.Path.Path]]))((morphir.sdk.Result.Ok(morphir.dependency.DAG.empty) : morphir.sdk.Result.Result[morphir.dependency.DAG.CycleDetected[morphir.ir.Path.Path], morphir.dependency.DAG.DAG[morphir.ir.Path.Path]]))(morphir.sdk.Dict.toList(packageDef.modules)))
   
   def selectModules[Ta, Va](
     modulesToInclude: morphir.sdk.Set.Set[morphir.ir.Module.ModuleName]

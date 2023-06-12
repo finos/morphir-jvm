@@ -1,10 +1,7 @@
 package morphir.ir.accesscontrolled
 
-import scala.language.reflectiveCalls
-
-/**
- * Generated based on IR.AccessControlled
- */
+/** Generated based on IR.AccessControlled
+  */
 object Codec {
 
   implicit val encodeAccess: io.circe.Encoder[morphir.ir.AccessControlled.Access] = (
@@ -21,7 +18,7 @@ object Codec {
     encodeA: io.circe.Encoder[A]
   ): io.circe.Encoder[morphir.ir.AccessControlled.AccessControlled[A]] =
     (
-      (accessControlled: { def access: morphir.ir.AccessControlled.Access; def value: A }) =>
+      (accessControlled: morphir.ir.AccessControlled.AccessControlled[A]) =>
         io.circe.Json.obj(
           ("access", morphir.ir.accesscontrolled.Codec.encodeAccess(accessControlled.access)),
           ("value", encodeA(accessControlled.value))

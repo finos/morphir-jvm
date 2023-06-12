@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.FQName
- */
+/** Generated based on IR.FQName
+  */
 object FQName {
 
   type FQName = (morphir.ir.Path.Path, morphir.ir.Path.Path, morphir.ir.Name.Name)

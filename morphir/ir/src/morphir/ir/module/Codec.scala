@@ -1,10 +1,7 @@
 package morphir.ir.module
 
-import scala.language.reflectiveCalls
-
-/**
- * Generated based on IR.Module
- */
+/** Generated based on IR.Module
+  */
 object Codec {
 
   implicit def encodeDefinition[Ta, Va](
@@ -12,14 +9,7 @@ object Codec {
     encodeVa: io.circe.Encoder[Va]
   ): io.circe.Encoder[morphir.ir.Module.Definition[Ta, Va]] =
     (
-      (definition: {
-        def types: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.AccessControlled.AccessControlled[
-          morphir.ir.Documented.Documented[morphir.ir.Type.Definition[Ta]]
-        ]];
-        def values: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.AccessControlled.AccessControlled[
-          morphir.ir.Documented.Documented[morphir.ir.Value.Definition[Ta, Va]]
-        ]]; def doc: morphir.sdk.Maybe.Maybe[morphir.sdk.String.String]
-      }) =>
+      (definition: morphir.ir.Module.Definition[Ta, Va]) =>
         io.circe.Json.obj(
           (
             "types",
@@ -62,14 +52,7 @@ object Codec {
     encodeTa: io.circe.Encoder[Ta]
   ): io.circe.Encoder[morphir.ir.Module.Specification[Ta]] =
     (
-      (specification: {
-        def types: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Documented.Documented[
-          morphir.ir.Type.Specification[Ta]
-        ]];
-        def values: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Documented.Documented[
-          morphir.ir.Value.Specification[Ta]
-        ]]; def doc: morphir.sdk.Maybe.Maybe[morphir.sdk.String.String]
-      }) =>
+      (specification: morphir.ir.Module.Specification[Ta]) =>
         io.circe.Json.obj(
           (
             "types",

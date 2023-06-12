@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.Path
- */
+/** Generated based on IR.Path
+  */
 object Path {
 
   type Path = morphir.sdk.List.List[morphir.ir.Name.Name]

@@ -1,10 +1,7 @@
 package morphir.ir._package
 
-import scala.language.reflectiveCalls
-
-/**
- * Generated based on IR.Package
- */
+/** Generated based on IR.Package
+  */
 object Codec {
 
   implicit def encodeDefinition[Ta, Va](
@@ -12,11 +9,7 @@ object Codec {
     encodeVa: io.circe.Encoder[Va]
   ): io.circe.Encoder[morphir.ir.Package.Definition[Ta, Va]] =
     (
-      (definition: {
-        def modules: morphir.sdk.Dict.Dict[morphir.ir.Module.ModuleName, morphir.ir.AccessControlled.AccessControlled[
-          morphir.ir.Module.Definition[Ta, Va]
-        ]]
-      }) =>
+      (definition: morphir.ir.Package.Definition[Ta, Va]) =>
         io.circe.Json.obj(
           (
             "modules",
@@ -39,9 +32,7 @@ object Codec {
     encodeTa: io.circe.Encoder[Ta]
   ): io.circe.Encoder[morphir.ir.Package.Specification[Ta]] =
     (
-      (specification: {
-        def modules: morphir.sdk.Dict.Dict[morphir.ir.Module.ModuleName, morphir.ir.Module.Specification[Ta]]
-      }) =>
+      (specification: morphir.ir.Package.Specification[Ta]) =>
         io.circe.Json.obj(
           (
             "modules",

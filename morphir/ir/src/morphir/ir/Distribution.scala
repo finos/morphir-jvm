@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.Distribution
- */
+/** Generated based on IR.Distribution
+  */
 object Distribution {
 
   sealed trait Distribution {}
@@ -118,11 +117,15 @@ object Distribution {
     morphir.ir.Value.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]
   ] =
     ({ case morphir.ir.QName.QName(moduleName, localName) =>
-      ({ case morphir.ir.Distribution.Library(_, _, packageDef) =>
-        morphir.sdk.Maybe.andThen(morphir.ir.Module.lookupValueDefinition[Unit, morphir.ir.Type.Type[Unit]](localName))(
-          morphir.ir.Package.lookupModuleDefinition(moduleName)(packageDef)
-        )
-      })
+      (
+        (distribution: morphir.ir.Distribution.Distribution) =>
+          distribution match {
+            case morphir.ir.Distribution.Library(_, _, packageDef) =>
+              morphir.sdk.Maybe.andThen(
+                morphir.ir.Module.lookupValueDefinition[Unit, morphir.ir.Type.Type[Unit]](localName)
+              )(morphir.ir.Package.lookupModuleDefinition(moduleName)(packageDef))
+          }
+      )
     }: morphir.ir.QName.QName => morphir.ir.Distribution.Distribution => morphir.sdk.Maybe.Maybe[
       morphir.ir.Value.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]
     ])

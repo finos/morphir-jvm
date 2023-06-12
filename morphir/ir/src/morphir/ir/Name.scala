@@ -1,8 +1,7 @@
 package morphir.ir
 
-/**
- * Generated based on IR.Name
- */
+/** Generated based on IR.Name
+  */
 object Name {
 
   type Name = morphir.sdk.List.List[morphir.sdk.String.String]
@@ -22,6 +21,14 @@ object Name {
   ): morphir.ir.Name.Name =
     words
 
+//  def fromString(
+//    string: morphir.sdk.String.String
+//  ): morphir.ir.Name.Name = {
+//    val wordPattern: morphir.sdk.Regex.Regex = morphir.sdk.Maybe.withDefault(morphir.sdk.Regex.never)(morphir.sdk.Regex.fromString("([a-zA-Z][a-z]*|[0-9]+)").r)
+//
+//    morphir.ir.Name.fromList(morphir.sdk.List.map(morphir.sdk.String.toLower)(morphir.sdk.List.map(((x: morphir.sdk.Regex.Match) =>
+//      x._match))(morphir.sdk.Regex.find(wordPattern)(string))))
+//  }
   def fromString(
     string: morphir.sdk.String.String
   ): morphir.ir.Name.Name =
@@ -71,7 +78,12 @@ object Name {
             } else {
               abbrev match {
                 case Nil =>
-                  process(morphir.sdk.List.append(prefix)(morphir.sdk.List(first)), morphir.sdk.List(), rest)
+                  process(
+                    morphir.sdk.List.append(prefix)(morphir.sdk.List(first)),
+                    morphir.sdk.List(
+                    ),
+                    rest
+                  )
                 case _ =>
                   process(
                     morphir.sdk.List.append(prefix)(
@@ -80,7 +92,8 @@ object Name {
                         first
                       )
                     ),
-                    morphir.sdk.List(),
+                    morphir.sdk.List(
+                    ),
                     rest
                   )
               }
