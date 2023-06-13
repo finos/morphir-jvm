@@ -335,39 +335,39 @@ object Codec {
     )
 
   implicit def decodeDefinition[Ta, Va](
-    decodeTa: io.circe.Decoder[Ta],
-    decodeVa: io.circe.Decoder[Va]
-  ): io.circe.Decoder[morphir.ir.Value.Definition[Ta, Va]] =
+                                         decodeTa: io.circe.Decoder[Ta],
+                                         decodeVa: io.circe.Decoder[Va]
+                                       ): io.circe.Decoder[morphir.ir.Value.Definition[Ta, Va]] =
     (
       (c: io.circe.HCursor) =>
         for {
           inputTypes_ <- c.downField("inputTypes")
-                           .as(
-                             morphir.sdk.list.Codec.decodeList(
-                               (
-                                 (c: io.circe.HCursor) =>
-                                   for {
-                                     arg1 <- morphir.ir.name.Codec.decodeName(c)
-                                     arg2 <- decodeVa(c)
-                                     arg3 <- morphir.ir._type.Codec.decodeType(decodeTa)(c)
-                                   } yield (arg1, arg2, arg3)
-                               )
-                             )
-                           )
+            .as(
+              morphir.sdk.list.Codec.decodeList(
+                (
+                  (c: io.circe.HCursor) =>
+                    for {
+                      arg1 <- c.downN(0).as(morphir.ir.name.Codec.decodeName)
+                      arg2 <- c.downN(1).as(decodeVa)
+                      arg3 <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeTa))
+                    } yield (arg1, arg2, arg3)
+                  )
+              )
+            )
           outputType_ <- c.downField("outputType").as(morphir.ir._type.Codec.decodeType(decodeTa))
           body_ <- c.downField("body")
-                     .as(
-                       morphir.ir.value.Codec.decodeValue(
-                         decodeTa,
-                         decodeVa
-                       )
-                     )
+            .as(
+              morphir.ir.value.Codec.decodeValue(
+                decodeTa,
+                decodeVa
+              )
+            )
         } yield morphir.ir.Value.Definition(
           inputTypes_,
           outputType_,
           body_
         )
-    )
+      )
 
   implicit def decodePattern[A](
     decodeA: io.circe.Decoder[A]
