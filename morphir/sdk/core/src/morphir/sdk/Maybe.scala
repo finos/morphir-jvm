@@ -56,11 +56,9 @@ object Maybe {
 
     def withFilter(fn: A => Boolean): WithFilter = new WithFilter((fn))
 
-    /**
-     * We need a whole WithFilter class to honor the "doesn't create a new
-     *  collection" contract even though it seems unlikely to matter much in a
-     *  collection with max size 1.
-     */
+    /** We need a whole WithFilter class to honor the "doesn't create a new collection" contract even though it seems
+      * unlikely to matter much in a collection with max size 1.
+      */
     class WithFilter(p: A => Boolean) {
       def map[B](f: A => B): Maybe[B] = self filter p map f
       def flatMap[B](f: A => Maybe[B]): Maybe[B] =

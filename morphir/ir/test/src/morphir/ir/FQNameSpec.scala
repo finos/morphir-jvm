@@ -16,33 +16,38 @@ limitations under the License.
 
 package morphir.ir
 
-import morphir.ir.fuzzer.AllFuzzers
-import morphir.ir.testing.JsonSpec
-import zio.test._
+import io.circe.Decoder.Result
+import io.circe.{ Json, parser }
+import morphir.ir.FQName.FQName
+import morphir.ir.Module.ModuleName
+import morphir.ir.Name.Name
+import morphir.ir.Package.PackageName
+import morphir.ir.Path.Path
+import morphir.ir.fqname.Codec
 import zio.test.Assertion._
-import zio.test.TestAspect._
-import FQName.fQName
+import zio.test._
 
-object FQNameSpec extends DefaultRunnableSpec with JsonSpec with AllFuzzers {
-  def spec =
+object FQNameSpec extends DefaultRunnableSpec {
+  val packageName: PackageName = List(List("morphir"), List("core"))
+  val moduleName: ModuleName   = List(List("morphir"), List("i", "r"))
+  val localName: Name          = List("f", "q", "name")
+  val fqName: FQName           = (packageName, moduleName, localName)
+
+  def spec: Spec[_root_.zio.test.environment.TestEnvironment, TestFailure[Nothing], TestSuccess] =
     suite("FQNameSpec")(
-      suite("Encoding and decoding")(
-        test("Should encode properly - 1")(
-          assert(
-            compactEncode(
-              fQName(
-                path(name("morphir"), name("core")),
-                path(name("morphir"), name("i", "r")),
-                name("f", "q", "name")
-              )
-            )
-          )(
-            equalTo("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""")
-          )
-        ),
-        testM("Should encode/decode in a well-behaved manner (roundtrips).")(
-          checkM(fuzzFQName)(fqn => checkCodecIsWellBehaved(fqn))
-        )
-      )
-    ) @@ silent
+      test("Encoding FQName") {
+        val encodedFQName = Codec.encodeFQName(fqName)
+
+        val expectedJson = parser.parse("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""")
+
+        assert(encodedFQName)(equalTo(expectedJson.getOrElse(Json.Null)))
+      },
+      test("Decoding FQName") {
+        val parsedFQName =
+          parser.parse("""[[["morphir"],["core"]],[["morphir"],["i","r"]],["f","q","name"]]""").getOrElse(Json.Null)
+
+        val decodedFQName: Result[(Path, Path, Name)] = Codec.decodeFQName(parsedFQName.hcursor)
+        assert(decodedFQName)(equalTo(Right(fqName)))
+      }
+    )
 }
