@@ -104,10 +104,10 @@ object Result {
     }
 
   def map3[X, A, B, C, V](
-    fn: (A, B, C) => V
+    fn: A => B => C => V
   )(resA: Result[X, A])(resB: Result[X, B])(resC: Result[X, C]): Result[X, V] =
     (resA, resB, resC) match {
-      case (Ok(a), Ok(b), Ok(c)) => Ok(fn(a, b, c))
+      case (Ok(a), Ok(b), Ok(c)) => Ok(fn(a)(b)(c))
       case (err @ Err(_), _, _)  => err.asInstanceOf[Result[X, V]]
       case (_, err @ Err(_), _)  => err.asInstanceOf[Result[X, V]]
       case (_, _, err @ Err(_))  => err.asInstanceOf[Result[X, V]]

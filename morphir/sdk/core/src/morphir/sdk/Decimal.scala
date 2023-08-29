@@ -115,6 +115,8 @@ object Decimal extends DecimalModuleCompat {
   //TODO: Make sure the Elm call and this call return the same value
   def toString(value: Decimal): morphir.sdk.String.String = value.toString
 
+  def _toString: Decimal => String = toString
+
   def truncate(decimal: Decimal): Decimal =
     decimal.setScale(0, BigDecimal.RoundingMode.DOWN)
 

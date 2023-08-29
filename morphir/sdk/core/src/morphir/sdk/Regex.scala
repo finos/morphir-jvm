@@ -18,6 +18,7 @@ package morphir.sdk
 
 import morphir.sdk.Maybe.Maybe
 
+import scala.util.Try
 import scala.util.matching.{ Regex => RE }
 
 object Regex {
@@ -25,11 +26,31 @@ object Regex {
   case class Regex(toRE: RE) extends AnyVal
   case class Options(caseInsensitive: Boolean, multiline: Boolean)
   case class Match(
-    `match`: String,
+    _match: String,
     index: Int,
     number: Int,
     submatches: List[Maybe[String]]
   )
 
   val never: Regex = Regex(".^".r)
+
+  def fromString(string: String): Maybe[Regex] =
+    Try(string.r).toOption.map(Regex.apply)
+
+  def split(regex: Regex)(string: String): List[String] =
+    regex.toRE.split(string).toList
+
+  def find(regex: Regex)(str: String): List[Match] =
+    regex.toRE
+      .findAllMatchIn(str)
+      .map(m =>
+        Match(
+          _match = m.matched,
+          index = m.start,
+          number = m.end,  // TODO verify
+          submatches = Nil // TODO verify
+        )
+      )
+      .toList
+
 }
