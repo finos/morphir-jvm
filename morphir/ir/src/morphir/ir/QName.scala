@@ -1,47 +1,70 @@
-/*
-Copyright 2020 Morgan Stanley
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 package morphir.ir
 
-import morphir.ir.codec.QNameCodec
-import morphir.ir.path.Path
+/** Generated based on IR.QName
+  */
+object QName {
 
-case class QName(modulePath: Path, localName: Name) {
-  def toTuple: (Path, Name) = (modulePath, localName)
+  final case class QName(
+    arg1: morphir.ir.Path.Path,
+    arg2: morphir.ir.Name.Name
+  ) {}
 
-  override def toString: String = s"${modulePath}.$localName"
-}
+  def fromName(
+    modulePath: morphir.ir.Path.Path
+  )(
+    localName: morphir.ir.Name.Name
+  ): morphir.ir.QName.QName =
+    (morphir.ir.QName.QName(
+      modulePath,
+      localName
+    ): morphir.ir.QName.QName)
 
-object QName extends QNameCodec {
-  @inline def toTuple(qname: QName): (Path, Name) = qname.toTuple
-  def fromTuple(tuple: (Path, Name)): QName       = QName(tuple._1, tuple._2)
-  @inline def getModulePath(qname: QName): Path   = qname.modulePath
-  @inline def getLocalName(qname: QName): Name    = qname.localName
+  def fromString(
+    qNameString: morphir.sdk.String.String
+  ): morphir.sdk.Maybe.Maybe[morphir.ir.QName.QName] =
+    morphir.sdk.String.split(":")(qNameString) match {
+      case packageNameString :: localNameString :: Nil =>
+        (morphir.sdk.Maybe.Just(
+          (morphir.ir.QName.QName(
+            morphir.ir.Path.fromString(packageNameString),
+            morphir.ir.Name.fromString(localNameString)
+          ): morphir.ir.QName.QName)
+        ): morphir.sdk.Maybe.Maybe[morphir.ir.QName.QName])
+      case _ =>
+        (morphir.sdk.Maybe.Nothing: morphir.sdk.Maybe.Maybe[morphir.ir.QName.QName])
+    }
 
-  def qName(modulePath: Path, localName: Name): QName =
-    QName(modulePath, localName)
+  def fromTuple: ((morphir.ir.Path.Path, morphir.ir.Name.Name)) => morphir.ir.QName.QName =
+    ({ case (m, l) =>
+      (morphir.ir.QName.QName(
+        m,
+        l
+      ): morphir.ir.QName.QName)
+    }: ((morphir.ir.Path.Path, morphir.ir.Name.Name)) => morphir.ir.QName.QName)
 
-  def toString(
-    pathPartToString: Name => String,
-    nameToString: Name => String,
-    sep: String,
-    qualifiedName: QName
-  ): String =
-    (qualifiedName.modulePath.toList.map(pathPartToString) ++ nameToString(
-      qualifiedName.localName
-    )).mkString(sep)
+  def getLocalName: morphir.ir.QName.QName => morphir.ir.Name.Name =
+    ({ case morphir.ir.QName.QName(_, localName) =>
+      localName
+    }: morphir.ir.QName.QName => morphir.ir.Name.Name)
+
+  def getModulePath: morphir.ir.QName.QName => morphir.ir.Path.Path =
+    ({ case morphir.ir.QName.QName(modulePath, _) =>
+      modulePath
+    }: morphir.ir.QName.QName => morphir.ir.Path.Path)
+
+  def _toString: morphir.ir.QName.QName => morphir.sdk.String.String =
+    ({ case morphir.ir.QName.QName(moduleName, localName) =>
+      morphir.sdk.String.join(":")(
+        morphir.sdk.List(
+          morphir.ir.Path._toString(morphir.ir.Name.toTitleCase)(".")(moduleName),
+          morphir.ir.Name.toCamelCase(localName)
+        )
+      )
+    }: morphir.ir.QName.QName => morphir.sdk.String.String)
+
+  def toTuple: morphir.ir.QName.QName => (morphir.ir.Path.Path, morphir.ir.Name.Name) =
+    ({ case morphir.ir.QName.QName(m, l) =>
+      (m, l)
+    }: morphir.ir.QName.QName => (morphir.ir.Path.Path, morphir.ir.Name.Name))
 
 }

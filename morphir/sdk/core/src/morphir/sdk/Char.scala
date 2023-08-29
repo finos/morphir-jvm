@@ -31,12 +31,12 @@ object Char {
   def isAlphaNum(ch: Char): Boolean =
     isLower(ch) || isUpper(ch) || isDigit(ch)
 
-  /**
-   * Detect upper case ASCII characters.
-   *
-   * @param ch a character
-   * @return
-   */
+  /** Detect upper case ASCII characters.
+    *
+    * @param ch
+    *   a character
+    * @return
+    */
   def isUpper(ch: Char): Boolean = ch match {
     case UnicodeChar(code) => code <= 0x5a && 0x41 <= code
   }
@@ -49,12 +49,11 @@ object Char {
     case UnicodeChar(code) => code <= 0x39 && 0x30 <= code
   }
 
-  /**
-   * Detect octal digits `01234567`
-   *
-   * @param ch
-   * @return
-   */
+  /** Detect octal digits `01234567`
+    *
+    * @param ch
+    * @return
+    */
   def isOctDigit(ch: Char): Boolean = ch match {
     case UnicodeChar(code) => code <= 0x37 && 0x30 <= code
   }
