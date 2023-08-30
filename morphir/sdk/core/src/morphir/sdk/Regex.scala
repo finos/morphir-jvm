@@ -40,17 +40,34 @@ object Regex {
   def split(regex: Regex)(string: String): List[String] =
     regex.toRE.split(string).toList
 
-  def find(regex: Regex)(str: String): List[Match] =
-    regex.toRE
-      .findAllMatchIn(str)
-      .map(m =>
-        Match(
-          _match = m.matched,
-          index = m.start,
-          number = m.end,  // TODO verify
-          submatches = Nil // TODO verify
-        )
+  /** Find matches in a string:
+    *
+    * val location: Regex.Regex = Maybe.withDefault(never)(fromString "[oi]n a (\\w+)")
+    *
+    * val places : List[Regex.Match places = Regex.find location "I am on a boat in a lake."
+    *
+    * // places.map(_.match) == List( "on a boat", "in a lake" ) // places.map(_.submatches) == List( List(Just "boat"),
+    * List(Just "lake") )
+    *
+    * > Note: .submatches will always return an empty list
+    */
+  def find(regex: Regex)(str: String): List[Match] = {
+    def from(n: Int): LazyList[Int] = n #:: from(n + 1)
+    val counter                     = from(1)
+
+    val matches = for {
+      mtch  <- regex.toRE.findAllMatchIn(str)
+      count <- counter
+    } yield {
+      Match(
+        _match = mtch.matched,
+        index = mtch.start,
+        number = count,
+        submatches = mtch.subgroups.map(Maybe.Just(_))
       )
-      .toList
+    }
+
+    matches.toList
+  }
 
 }
