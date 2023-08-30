@@ -4,12 +4,12 @@ package morphir.dependency
 */
 object DAG{
 
+  implicit def comparableOrdering[ComparableNode]: Ordering[ComparableNode] =(_: ComparableNode, _: ComparableNode) => 0
+
   final case class CycleDetected[ComparableNode](
     arg1: ComparableNode,
     arg2: ComparableNode
   ){}
-
-  implicit def ordering[ComparableNode]: Ordering[ComparableNode] = (_: ComparableNode, _: ComparableNode) => 0
   
   final case class DAG[ComparableNode](
     arg1: morphir.sdk.Dict.Dict[ComparableNode, morphir.sdk.Set.Set[ComparableNode]]
@@ -62,7 +62,8 @@ object DAG{
           
           {
             def collect(
-              reachableSoFar: morphir.sdk.Set.Set[ComparableNode],
+              reachableSoFar: morphir.sdk.Set.Set[ComparableNode]
+            )(
               currentEdgesByNode: morphir.sdk.Dict.Dict[ComparableNode, morphir.sdk.Set.Set[ComparableNode]]
             ): morphir.sdk.Set.Set[ComparableNode] = {
               val (reachableEdges, unreachableEdges) = morphir.sdk.Dict.partition(((fromNode: ComparableNode) =>
@@ -72,17 +73,17 @@ object DAG{
                 } : morphir.sdk.Set.Set[ComparableNode] => morphir.sdk.Basics.Bool)))(currentEdgesByNode)
               
               {
-                val nextReachableNodes: morphir.sdk.Set.Set[ComparableNode] = morphir.sdk.Set.diff(morphir.sdk.List.foldl(morphir.sdk.Set.union[ComparableNode])(morphir.sdk.Set.empty)(morphir.sdk.Dict.values(reachableEdges)))(reachableSoFar)
+                val nextReachableNodes: morphir.sdk.Set.Set[ComparableNode] = morphir.sdk.Set.diff(morphir.sdk.List.foldl[Set[ComparableNode], Set[ComparableNode]](morphir.sdk.Set.union)(morphir.sdk.Set.empty[ComparableNode])(morphir.sdk.Dict.values(reachableEdges)))(reachableSoFar)
                 
                 if (morphir.sdk.Set.isEmpty(nextReachableNodes)) {
                   reachableSoFar
                 } else {
-                  collect(morphir.sdk.Set.union(reachableSoFar)(nextReachableNodes),unreachableEdges)
+                  collect(morphir.sdk.Set.union(reachableSoFar)(nextReachableNodes))(unreachableEdges)
                 }
               }
             }
             
-            collect(firstReachableNodes,initialEdgesByNode)
+            collect(firstReachableNodes)(initialEdgesByNode)
           }
         }
     } : morphir.dependency.DAG.DAG[ComparableNode] => morphir.sdk.Set.Set[ComparableNode])

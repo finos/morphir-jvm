@@ -1,9 +1,5 @@
 package morphir.ir
 
-import morphir.ir.FQName.FQName
-import morphir.ir.Name.Name
-import morphir.sdk.Result
-
 /** Generated based on IR.Type
 */
 object Type{
@@ -23,13 +19,13 @@ object Type{
   object Definition{
   
     final case class CustomTypeDefinition[A](
-                                              arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-                                              arg2: morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[A]]
+      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
+      arg2: morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[A]]
     ) extends morphir.ir.Type.Definition[A]{}
     
     final case class TypeAliasDefinition[A](
-                                             arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-                                             arg2: morphir.ir.Type.Type[A]
+      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
+      arg2: morphir.ir.Type.Type[A]
     ) extends morphir.ir.Type.Definition[A]{}
   
   }
@@ -45,8 +41,8 @@ object Type{
   ){}
   
   final case class Field[A](
-                             name: morphir.ir.Name.Name,
-                             tpe: morphir.ir.Type.Type[A]
+    name: morphir.ir.Name.Name,
+    tpe: morphir.ir.Type.Type[A]
   ){}
   
   sealed trait Specification[A] {
@@ -58,13 +54,13 @@ object Type{
   object Specification{
   
     final case class CustomTypeSpecification[A](
-                                                 arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-                                                 arg2: morphir.ir.Type.Constructors[A]
+      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
+      arg2: morphir.ir.Type.Constructors[A]
     ) extends morphir.ir.Type.Specification[A]{}
     
     final case class DerivedTypeSpecification[A](
-                                                  arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-                                                  arg2: morphir.ir.Type.DerivedTypeSpecificationDetails[A]
+      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
+      arg2: morphir.ir.Type.DerivedTypeSpecificationDetails[A]
     ) extends morphir.ir.Type.Specification[A]{}
     
     final case class OpaqueTypeSpecification[A](
@@ -72,8 +68,8 @@ object Type{
     ) extends morphir.ir.Type.Specification[A]{}
     
     final case class TypeAliasSpecification[A](
-                                                arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-                                                arg2: morphir.ir.Type.Type[A]
+      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
+      arg2: morphir.ir.Type.Type[A]
     ) extends morphir.ir.Type.Specification[A]{}
   
   }
@@ -95,9 +91,9 @@ object Type{
   object Type{
   
     final case class ExtensibleRecord[A](
-                                          arg1: A,
-                                          arg2: morphir.ir.Name.Name,
-                                          arg3: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
+      arg1: A,
+      arg2: morphir.ir.Name.Name,
+      arg3: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Function[A](
@@ -153,7 +149,7 @@ object Type{
     def collectUnion(
       values: morphir.sdk.List.List[morphir.ir.Type.Type[Ta]]
     ): morphir.sdk.Set.Set[morphir.ir.FQName.FQName] =
-      morphir.sdk.List.foldl(morphir.sdk.Set.union[FQName])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Type.collectReferences[Ta])(values))
+      morphir.sdk.List.foldl(morphir.sdk.Set.union[FQName.FQName])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Type.collectReferences[Ta])(values))
     
     tpe match {
       case morphir.ir.Type.Variable(_, _) => 
@@ -185,7 +181,7 @@ object Type{
       case morphir.ir.Type.TypeAliasDefinition(_, tpe) => 
         morphir.ir.Type.collectReferences(tpe)
       case morphir.ir.Type.CustomTypeDefinition(_, accessControlledType) => 
-        morphir.sdk.List.foldl(morphir.sdk.Set.union[FQName])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.sdk.Basics.composeRight(morphir.sdk.Tuple.second[Name, Type[Ta]])(morphir.ir.Type.collectReferences[Ta]))(morphir.sdk.List.concat(morphir.sdk.Dict.values(accessControlledType.value))))
+        morphir.sdk.List.foldl(morphir.sdk.Set.union[FQName.FQName])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.sdk.Basics.composeRight(morphir.sdk.Tuple.second[Name.Name, Type[Ta]])(morphir.ir.Type.collectReferences[Ta]))(morphir.sdk.List.concat(morphir.sdk.Dict.values(accessControlledType.value))))
     }
   
   def collectVariables[Ta](
@@ -194,7 +190,7 @@ object Type{
     def collectUnion(
       values: morphir.sdk.List.List[morphir.ir.Type.Type[Ta]]
     ): morphir.sdk.Set.Set[morphir.ir.Name.Name] =
-      morphir.sdk.List.foldl(morphir.sdk.Set.union[Name])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Type.collectVariables[Ta])(values))
+      morphir.sdk.List.foldl(morphir.sdk.Set.union[Name.Name])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Type.collectVariables[Ta])(values))
     
     tpe match {
       case morphir.ir.Type.Variable(_, name) => 
@@ -342,59 +338,33 @@ object Type{
       argumentType,
       returnType
     ) : morphir.ir.Type.Type[A])
-
-  def keepAllErrors[A, E](
-                           results: morphir.sdk.List.List[Result[E, A]]
-                         ): morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.sdk.List.List[A]] = {
-    val oks: morphir.sdk.List.List[A] = morphir.sdk.List.filterMap(
-      ((result: morphir.sdk.Result.Result[E, A]) => morphir.sdk.Result.toMaybe(result))
-    )(results)
-
-    val errs: morphir.sdk.List.List[E] = morphir.sdk.List.filterMap(
-      (
-        (result: morphir.sdk.Result.Result[E, A]) =>
-          result match {
-            case morphir.sdk.Result.Ok(_) =>
-              (morphir.sdk.Maybe.Nothing: morphir.sdk.Maybe.Maybe[E])
-            case morphir.sdk.Result.Err(e) =>
-              (morphir.sdk.Maybe.Just(e): morphir.sdk.Maybe.Maybe[E])
-          }
-        )
-    )(results)
-
-    errs match {
-      case Nil =>
-        (morphir.sdk.Result.Ok(oks): morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.sdk.List.List[A]])
-      case _ =>
-        (morphir.sdk.Result.Err(errs): morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.sdk.List.List[A]])
-    }
-  }
+  
   def mapDefinition[A, B, E](
     f: morphir.ir.Type.Type[A] => morphir.sdk.Result.Result[E, morphir.ir.Type.Type[B]]
   )(
     _def: morphir.ir.Type.Definition[A]
   ): morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.ir.Type.Definition[B]] =
     _def match {
-      case morphir.ir.Type.TypeAliasDefinition(params, tpe) =>
+      case morphir.ir.Type.TypeAliasDefinition(params, tpe) => 
         morphir.sdk.Result.mapError(morphir.sdk.List.singleton[E])(morphir.sdk.Result.map(((a0: morphir.ir.Type.Type[B]) =>
           (morphir.ir.Type.TypeAliasDefinition(
             params,
             a0
           ) : morphir.ir.Type.Definition[B])))(f(tpe)))
-      case morphir.ir.Type.CustomTypeDefinition(params, constructors) =>
+      case morphir.ir.Type.CustomTypeDefinition(params, constructors) => 
         {
-          val ctorsResult: morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[B]]] = morphir.sdk.Result.mapError(morphir.sdk.List.concat[E])(morphir.sdk.Result.map(morphir.sdk.Basics.composeRight(morphir.sdk.Dict.fromList[morphir.ir.Name.Name,morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])]])(((a0: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])]]) =>
+          val ctorsResult: morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[B]]] = morphir.sdk.Result.mapError(morphir.sdk.List.concat[E])(morphir.sdk.Result.map(morphir.sdk.Basics.composeRight(morphir.sdk.Dict.fromList[morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])]])(((a0: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])]]) =>
             (morphir.ir.AccessControlled.AccessControlled(
               constructors.access,
               a0
-            ) : morphir.ir.AccessControlled.AccessControlled[morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])]]]))))(keepAllErrors(morphir.sdk.List.map(({
+            ) : morphir.ir.AccessControlled.AccessControlled[morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])]]]))))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
             case (ctorName, ctorArgs) => 
-              morphir.sdk.Result.map((a: List[(Name, Type[B])]) => morphir.sdk.Tuple.pair(ctorName)(a))(keepAllErrors[(Name, Type[B]),E](morphir.sdk.List.map(({
+              morphir.sdk.Result.map(morphir.sdk.Tuple.pair[Name.Name, ConstructorArgs[B]](ctorName))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
                 case (argName, argType) => 
-                  morphir.sdk.Result.map[E, Type[B], (Name, Type[B])]((a: Type[B]) => morphir.sdk.Tuple.pair(argName)(a))(f(argType))
+                  morphir.sdk.Result.map[E, Type[B], (Name.Name, Type[B])](morphir.sdk.Tuple.pair(argName))(f(argType))
               } : ((morphir.ir.Name.Name, morphir.ir.Type.Type[A])) => morphir.sdk.Result.Result[E, (morphir.ir.Name.Name, morphir.ir.Type.Type[B])]))(ctorArgs)))
           } : ((morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[A])])) => morphir.sdk.Result.Result[morphir.sdk.List.List[E], (morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])])]))(morphir.sdk.Dict.toList(constructors.value)))))
-
+          
           morphir.sdk.Result.map(((a0: morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[B]]) =>
             (morphir.ir.Type.CustomTypeDefinition(
               params,
@@ -614,59 +584,59 @@ object Type{
         morphir.ir.Name.toCamelCase(name)
       case morphir.ir.Type.Reference(_, (packageName, moduleName, localName), args) => 
         {
-          val referenceName: morphir.sdk.String.String = morphir.sdk.String.join(".")(morphir.sdk.List(
-            morphir.ir.Path._toString(morphir.ir.Name.toTitleCase)(".")(packageName),
-            morphir.ir.Path._toString(morphir.ir.Name.toTitleCase)(".")(moduleName),
+          val referenceName: morphir.sdk.String.String = morphir.sdk.String.join(""".""")(morphir.sdk.List(
+            morphir.ir.Path._toString(morphir.ir.Name.toTitleCase)(""".""")(packageName),
+            morphir.ir.Path._toString(morphir.ir.Name.toTitleCase)(""".""")(moduleName),
             morphir.ir.Name.toTitleCase(localName)
           ))
           
-          morphir.sdk.String.join(" ")(morphir.sdk.List.cons(referenceName)(morphir.sdk.List.map(morphir.ir.Type._toString[A])(args)))
+          morphir.sdk.String.join(""" """)(morphir.sdk.List.cons(referenceName)(morphir.sdk.List.map(morphir.ir.Type._toString[A])(args)))
         }
       case morphir.ir.Type.Tuple(_, elems) => 
         morphir.sdk.String.concat(morphir.sdk.List(
-          "( ",
-          morphir.sdk.String.join(", ")(morphir.sdk.List.map(morphir.ir.Type._toString[A])(elems)),
-          " )"
+          """( """,
+          morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Type._toString[A])(elems)),
+          """ )"""
         ))
       case morphir.ir.Type.Record(_, fields) => 
         morphir.sdk.String.concat(morphir.sdk.List(
-          "{ ",
-          morphir.sdk.String.join(", ")(morphir.sdk.List.map(((field: morphir.ir.Type.Field[A]) =>
+          """{ """,
+          morphir.sdk.String.join(""", """)(morphir.sdk.List.map(((field: morphir.ir.Type.Field[A]) =>
             morphir.sdk.String.concat(morphir.sdk.List(
               morphir.ir.Name.toCamelCase(field.name),
-              " : ",
+              """ : """,
               morphir.ir.Type._toString(field.tpe)
             ))))(fields)),
-          " }"
+          """ }"""
         ))
       case morphir.ir.Type.ExtensibleRecord(_, varName, fields) => 
         morphir.sdk.String.concat(morphir.sdk.List(
-          "{ ",
+          """{ """,
           morphir.ir.Name.toCamelCase(varName),
-          " | ",
-          morphir.sdk.String.join(", ")(morphir.sdk.List.map(((field: morphir.ir.Type.Field[A]) =>
+          """ | """,
+          morphir.sdk.String.join(""", """)(morphir.sdk.List.map(((field: morphir.ir.Type.Field[A]) =>
             morphir.sdk.String.concat(morphir.sdk.List(
               morphir.ir.Name.toCamelCase(field.name),
-              " : ",
+              """ : """,
               morphir.ir.Type._toString(field.tpe)
             ))))(fields)),
-          " }"
+          """ }"""
         ))
       case morphir.ir.Type.Function(_, argType @ morphir.ir.Type.Function(_, _, _), returnType) => 
         morphir.sdk.String.concat(morphir.sdk.List(
-          "(",
+          """(""",
           morphir.ir.Type._toString(argType),
-          ") -> ",
+          """) -> """,
           morphir.ir.Type._toString(returnType)
         ))
       case morphir.ir.Type.Function(_, argType, returnType) => 
         morphir.sdk.String.concat(morphir.sdk.List(
           morphir.ir.Type._toString(argType),
-          " -> ",
+          """ -> """,
           morphir.ir.Type._toString(returnType)
         ))
       case morphir.ir.Type.Unit(_) => 
-        "()"
+        """()"""
     }
   
   def tuple[A](

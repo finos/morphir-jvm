@@ -8,7 +8,7 @@ object Codec{
     qName match {
       case morphir.ir.QName.QName(arg1, arg2) => 
         io.circe.Json.arr(
-          io.circe.Json.fromString("QName"),
+          io.circe.Json.fromString("""QName"""),
           morphir.ir.path.Codec.encodePath(arg1),
           morphir.ir.name.Codec.encodeName(arg2)
         )
@@ -18,7 +18,7 @@ object Codec{
     c.withFocus(_.withString(((str) =>
       io.circe.Json.arr(io.circe.Json.fromString(str))))).downN(0).as(morphir.sdk.string.Codec.decodeString).flatMap(((tag) =>
       tag match {
-        case "QName" => 
+        case """QName""" => 
           for {
             arg1 <- c.downN(1).as(morphir.ir.path.Codec.decodePath)
             arg2 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)

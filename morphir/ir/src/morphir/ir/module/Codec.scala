@@ -10,18 +10,18 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Module.Definition[Ta, Va]] =
     ((definition: morphir.ir.Module.Definition[Ta, Va]) =>
       io.circe.Json.obj(
-        ("types", morphir.sdk.dict.Codec.encodeDict(
+        ("""types""", morphir.sdk.dict.Codec.encodeDict(
           morphir.ir.name.Codec.encodeName,
           morphir.ir.accesscontrolled.Codec.encodeAccessControlled(morphir.ir.documented.Codec.encodeDocumented(morphir.ir._type.Codec.encodeDefinition(encodeTa)))
         )(definition.types)),
-        ("values", morphir.sdk.dict.Codec.encodeDict(
+        ("""values""", morphir.sdk.dict.Codec.encodeDict(
           morphir.ir.name.Codec.encodeName,
           morphir.ir.accesscontrolled.Codec.encodeAccessControlled(morphir.ir.documented.Codec.encodeDocumented(morphir.ir.value.Codec.encodeDefinition(
             encodeTa,
             encodeVa
           )))
         )(definition.values)),
-        ("doc", morphir.sdk.maybe.Codec.encodeMaybe(morphir.sdk.string.Codec.encodeString)(definition.doc))
+        ("""doc""", morphir.sdk.maybe.Codec.encodeMaybe(morphir.sdk.string.Codec.encodeString)(definition.doc))
       ))
   
   implicit val encodeModuleName: io.circe.Encoder[morphir.ir.Module.ModuleName] = morphir.ir.path.Codec.encodePath
@@ -37,15 +37,15 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Module.Specification[Ta]] =
     ((specification: morphir.ir.Module.Specification[Ta]) =>
       io.circe.Json.obj(
-        ("types", morphir.sdk.dict.Codec.encodeDict(
+        ("""types""", morphir.sdk.dict.Codec.encodeDict(
           morphir.ir.name.Codec.encodeName,
           morphir.ir.documented.Codec.encodeDocumented(morphir.ir._type.Codec.encodeSpecification(encodeTa))
         )(specification.types)),
-        ("values", morphir.sdk.dict.Codec.encodeDict(
+        ("""values""", morphir.sdk.dict.Codec.encodeDict(
           morphir.ir.name.Codec.encodeName,
           morphir.ir.documented.Codec.encodeDocumented(morphir.ir.value.Codec.encodeSpecification(encodeTa))
         )(specification.values)),
-        ("doc", morphir.sdk.maybe.Codec.encodeMaybe(morphir.sdk.string.Codec.encodeString)(specification.doc))
+        ("""doc""", morphir.sdk.maybe.Codec.encodeMaybe(morphir.sdk.string.Codec.encodeString)(specification.doc))
       ))
   
   implicit def decodeDefinition[Ta, Va](
@@ -54,18 +54,18 @@ object Codec{
   ): io.circe.Decoder[morphir.ir.Module.Definition[Ta, Va]] =
     ((c: io.circe.HCursor) =>
       for {
-        types_ <- c.downField("types").as(morphir.sdk.dict.Codec.decodeDict(
+        types_ <- c.downField("""types""").as(morphir.sdk.dict.Codec.decodeDict(
           morphir.ir.name.Codec.decodeName,
           morphir.ir.accesscontrolled.Codec.decodeAccessControlled(morphir.ir.documented.Codec.decodeDocumented(morphir.ir._type.Codec.decodeDefinition(decodeTa)))
         ))
-        values_ <- c.downField("values").as(morphir.sdk.dict.Codec.decodeDict(
+        values_ <- c.downField("""values""").as(morphir.sdk.dict.Codec.decodeDict(
           morphir.ir.name.Codec.decodeName,
           morphir.ir.accesscontrolled.Codec.decodeAccessControlled(morphir.ir.documented.Codec.decodeDocumented(morphir.ir.value.Codec.decodeDefinition(
             decodeTa,
             decodeVa
           )))
         ))
-        doc_ <- c.downField("doc").as(morphir.sdk.maybe.Codec.decodeMaybe(morphir.sdk.string.Codec.decodeString))
+        doc_ <- c.downField("""doc""").as(morphir.sdk.maybe.Codec.decodeMaybe(morphir.sdk.string.Codec.decodeString))
       }  yield morphir.ir.Module.Definition(
         types_,
         values_,
@@ -85,15 +85,15 @@ object Codec{
   ): io.circe.Decoder[morphir.ir.Module.Specification[Ta]] =
     ((c: io.circe.HCursor) =>
       for {
-        types_ <- c.downField("types").as(morphir.sdk.dict.Codec.decodeDict(
+        types_ <- c.downField("""types""").as(morphir.sdk.dict.Codec.decodeDict(
           morphir.ir.name.Codec.decodeName,
           morphir.ir.documented.Codec.decodeDocumented(morphir.ir._type.Codec.decodeSpecification(decodeTa))
         ))
-        values_ <- c.downField("values").as(morphir.sdk.dict.Codec.decodeDict(
+        values_ <- c.downField("""values""").as(morphir.sdk.dict.Codec.decodeDict(
           morphir.ir.name.Codec.decodeName,
           morphir.ir.documented.Codec.decodeDocumented(morphir.ir.value.Codec.decodeSpecification(decodeTa))
         ))
-        doc_ <- c.downField("doc").as(morphir.sdk.maybe.Codec.decodeMaybe(morphir.sdk.string.Codec.decodeString))
+        doc_ <- c.downField("""doc""").as(morphir.sdk.maybe.Codec.decodeMaybe(morphir.sdk.string.Codec.decodeString))
       }  yield morphir.ir.Module.Specification(
         types_,
         values_,
