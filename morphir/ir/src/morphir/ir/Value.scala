@@ -1116,14 +1116,12 @@ object Value{
   )(
     _def: morphir.ir.Value.Definition[Ta, Va]
   ): morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.ir.Value.Definition[Ta, Va]] =
-    morphir.sdk.Result.map3(((inputTypes: morphir.sdk.List.List[(morphir.ir.Name.Name, Va, morphir.ir.Type.Type[Ta])]) =>
-      ((outputType: morphir.ir.Type.Type[Ta]) =>
-        ((body: morphir.ir.Value.Value[Ta, Va]) =>
-          (morphir.ir.Value.Definition(
-            inputTypes,
-            outputType,
-            body
-          ) : morphir.ir.Value.Definition[Ta, Va])))))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
+    morphir.sdk.Result.map3(((inputTypes: morphir.sdk.List.List[(morphir.ir.Name.Name, Va, morphir.ir.Type.Type[Ta])], outputType: morphir.ir.Type.Type[Ta], body: morphir.ir.Value.Value[Ta, Va]) =>
+      (morphir.ir.Value.Definition(
+        inputTypes,
+        outputType,
+        body
+      ): morphir.ir.Value.Definition[Ta, Va])))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
       case (name, attr, tpe) =>
         morphir.sdk.Result.map(((t: morphir.ir.Type.Type[Ta]) =>
           (name, attr, t)))(mapType(tpe))
