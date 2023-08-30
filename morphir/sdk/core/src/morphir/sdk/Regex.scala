@@ -52,12 +52,10 @@ object Regex {
     * > Note: .submatches will always return an empty list
     */
   def find(regex: Regex)(str: String): List[Match] = {
-    def from(n: Int): LazyList[Int] = n #:: from(n + 1)
-    val counter                     = from(1)
-
+    val allMatch = regex.toRE.findAllMatchIn(str)
     val matches = for {
-      mtch  <- regex.toRE.findAllMatchIn(str)
-      count <- counter
+      mtch  <- allMatch
+      count <- 1 to allMatch.length
     } yield {
       Match(
         _match = mtch.matched,
