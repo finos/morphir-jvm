@@ -42,9 +42,9 @@ object Regex {
 
   /** Find matches in a string:
     *
-    * val location: Regex.Regex = Maybe.withDefault(never)(fromString "[oi]n a (\\w+)")
+    * val location: Regex = Maybe.withDefault(never)(fromString "[oi]n a (\\w+)")
     *
-    * val places : List[Regex.Match places = Regex.find location "I am on a boat in a lake."
+    * val places : List[Match places = find location "I am on a boat in a lake."
     *
     * // places.map(_.match) == List( "on a boat", "in a lake" ) // places.map(_.submatches) == List( List(Just "boat"),
     * List(Just "lake") )
