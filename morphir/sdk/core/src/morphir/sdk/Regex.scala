@@ -51,21 +51,14 @@ object Regex {
     *
     * > Note: .submatches will always return an empty list
     */
-  def find(regex: Regex)(str: String): List[Match] = {
-    val allMatch = regex.toRE.findAllMatchIn(str)
-    val matches = for {
-      mtch  <- allMatch
-      count <- 1 to allMatch.length
-    } yield {
+  def find(regex: Regex)(str: String): List[Match] =
+    regex.toRE.findAllMatchIn(str).toList.zipWithIndex.map { case (mtch, idx) =>
       Match(
         _match = mtch.matched,
         index = mtch.start,
-        number = count,
+        number = idx + 1,
         submatches = mtch.subgroups.map(Maybe.Just(_))
       )
     }
-
-    matches.toList
-  }
 
 }
