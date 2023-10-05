@@ -108,6 +108,10 @@ object Basics {
     if (a < min) min
     else if (a > max) max
     else a
+  @inline def logBase(base: Float, number: Float): Float =
+    divide(scala.math.log(number))(scala.math.log(base))
+  @inline def e(a: Float): Float =
+    scala.math.exp(a)
   @inline def isNaN(a: Float): Bool      = a.isNaN
   @inline def isInfinite(a: Float): Bool = a.isInfinite
 
