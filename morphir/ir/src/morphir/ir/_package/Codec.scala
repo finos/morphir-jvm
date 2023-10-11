@@ -9,7 +9,7 @@ object Codec{
     encodeVa: io.circe.Encoder[Va]
   ): io.circe.Encoder[morphir.ir.Package.Definition[Ta, Va]] =
     ((definition: morphir.ir.Package.Definition[Ta, Va]) =>
-      io.circe.Json.obj(("modules", morphir.sdk.dict.Codec.encodeDict(
+      io.circe.Json.obj(("""modules""", morphir.sdk.dict.Codec.encodeDict(
         morphir.ir.module.Codec.encodeModuleName,
         morphir.ir.accesscontrolled.Codec.encodeAccessControlled(morphir.ir.module.Codec.encodeDefinition(
           encodeTa,
@@ -23,7 +23,7 @@ object Codec{
     encodeTa: io.circe.Encoder[Ta]
   ): io.circe.Encoder[morphir.ir.Package.Specification[Ta]] =
     ((specification: morphir.ir.Package.Specification[Ta]) =>
-      io.circe.Json.obj(("modules", morphir.sdk.dict.Codec.encodeDict(
+      io.circe.Json.obj(("""modules""", morphir.sdk.dict.Codec.encodeDict(
         morphir.ir.module.Codec.encodeModuleName,
         morphir.ir.module.Codec.encodeSpecification(encodeTa)
       )(specification.modules))))
@@ -34,7 +34,7 @@ object Codec{
   ): io.circe.Decoder[morphir.ir.Package.Definition[Ta, Va]] =
     ((c: io.circe.HCursor) =>
       for {
-        modules_ <- c.downField("modules").as(morphir.sdk.dict.Codec.decodeDict(
+        modules_ <- c.downField("""modules""").as(morphir.sdk.dict.Codec.decodeDict(
           morphir.ir.module.Codec.decodeModuleName,
           morphir.ir.accesscontrolled.Codec.decodeAccessControlled(morphir.ir.module.Codec.decodeDefinition(
             decodeTa,
@@ -50,7 +50,7 @@ object Codec{
   ): io.circe.Decoder[morphir.ir.Package.Specification[Ta]] =
     ((c: io.circe.HCursor) =>
       for {
-        modules_ <- c.downField("modules").as(morphir.sdk.dict.Codec.decodeDict(
+        modules_ <- c.downField("""modules""").as(morphir.sdk.dict.Codec.decodeDict(
           morphir.ir.module.Codec.decodeModuleName,
           morphir.ir.module.Codec.decodeSpecification(decodeTa)
         ))

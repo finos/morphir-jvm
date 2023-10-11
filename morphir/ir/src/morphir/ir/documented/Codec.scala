@@ -9,8 +9,8 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Documented.Documented[A]] =
     ((documented: morphir.ir.Documented.Documented[A]) =>
       io.circe.Json.obj(
-        ("doc", morphir.sdk.string.Codec.encodeString(documented.doc)),
-        ("value", encodeA(documented.value))
+        ("""doc""", morphir.sdk.string.Codec.encodeString(documented.doc)),
+        ("""value""", encodeA(documented.value))
       ))
   
   implicit def decodeDocumented[A](
@@ -18,8 +18,8 @@ object Codec{
   ): io.circe.Decoder[morphir.ir.Documented.Documented[A]] =
     ((c: io.circe.HCursor) =>
       for {
-        doc_ <- c.downField("doc").as(morphir.sdk.string.Codec.decodeString)
-        value_ <- c.downField("value").as(decodeA)
+        doc_ <- c.downField("""doc""").as(morphir.sdk.string.Codec.decodeString)
+        value_ <- c.downField("""value""").as(decodeA)
       }  yield morphir.ir.Documented.Documented(
         doc_,
         value_

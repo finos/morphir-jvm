@@ -8,7 +8,7 @@ object Codec{
     distribution match {
       case morphir.ir.Distribution.Library(arg1, arg2, arg3) => 
         io.circe.Json.arr(
-          io.circe.Json.fromString("Library"),
+          io.circe.Json.fromString("""Library"""),
           morphir.ir._package.Codec.encodePackageName(arg1),
           morphir.sdk.dict.Codec.encodeDict(
             morphir.ir._package.Codec.encodePackageName,
@@ -25,7 +25,7 @@ object Codec{
     c.withFocus(_.withString(((str) =>
       io.circe.Json.arr(io.circe.Json.fromString(str))))).downN(0).as(morphir.sdk.string.Codec.decodeString).flatMap(((tag) =>
       tag match {
-        case "Library" => 
+        case """Library""" => 
           for {
             arg1 <- c.downN(1).as(morphir.ir._package.Codec.decodePackageName)
             arg2 <- c.downN(2).as(morphir.sdk.dict.Codec.decodeDict(
