@@ -94,7 +94,7 @@ object Basics {
   @inline def subtract(a: Float)(b: Float): Float          = a - b
   @inline def multiply(a: Float)(b: Float): Float          = a * b
   @inline def divide(a: Float)(b: Float): Float            = a / b
-  @inline def power(a: Float)(b: Float)                    = a ^ b
+  @inline def power(a: Float)(b: Float): Float             = a ^ b
   @inline def toFloat(a: Int): Float                       = a.toDouble
   @inline def round(a: Float): Int =
     a.round.intValue() //TODO: Look at truncation (need to update the SDK to return an Int64 here)
