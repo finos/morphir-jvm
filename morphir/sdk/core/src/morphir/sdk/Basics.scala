@@ -94,6 +94,7 @@ object Basics {
   @inline def subtract(a: Float)(b: Float): Float          = a - b
   @inline def multiply(a: Float)(b: Float): Float          = a * b
   @inline def divide(a: Float)(b: Float): Float            = a / b
+  @inline def power(a: Float)(b: Float): Float             = Math.pow(a, b)
   @inline def toFloat(a: Int): Float                       = a.toDouble
   @inline def round(a: Float): Int =
     a.round.intValue() //TODO: Look at truncation (need to update the SDK to return an Int64 here)
@@ -108,7 +109,7 @@ object Basics {
     if (a < min) min
     else if (a > max) max
     else a
-  @inline def logBase(base: Float, number: Float): Float =
+  @inline def logBase(base: Float)(number: Float): Float =
     divide(scala.math.log(number))(scala.math.log(base))
   @inline def e: Float =
     Math.E
