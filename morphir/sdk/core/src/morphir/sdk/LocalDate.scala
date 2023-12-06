@@ -47,6 +47,9 @@ object LocalDate {
   def diffInYears(fromDate: LocalDate)(toDate: LocalDate): Int =
     (YEARS between (fromDate, toDate)).toInt
 
+  def isWeekDay(date: LocalDate): Bool =
+    date.getDayOfWeek.getValue < 6
+
   /** Provides a conversion from a `java.time.LocalDate` to a `morphir.sdk.LocalDate.LocalDate`
     */
   implicit def fromJavaTimeLocalDate(
