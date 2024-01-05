@@ -18,8 +18,9 @@ package morphir.internal.collection.decorators
 
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object IterableDecoratorSpec extends DefaultRunnableSpec {
+object IterableDecoratorSpec extends MorphirBaseSpec {
   def spec = suite("IterableDecoratorSpec")(
     suite("foldSomeLeft Specs")(
       test("Test Case 1:") {

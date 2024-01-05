@@ -32,6 +32,14 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
   import DevMode._
   val workspaceDir = millbuild.build.millSourcePath
 
+  trait CommonZioTestModule extends TestModule.ZioTest {
+    override def ivyDeps = super.ivyDeps() ++ Agg(
+      Deps.dev.zio.zio,
+      Deps.dev.zio.`zio-test`,
+      Deps.dev.zio.`zio-test-sbt`
+    )
+  }
+
   trait MorphirCommonModule
       extends ScalaModule
       with CrossValue
@@ -71,9 +79,14 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
 
   object sdk extends Module {
     object core extends CrossPlatform with CrossValue {
-      trait Shared extends MorphirCommonCrossModule with MorphirPublishModule
-      object jvm   extends Shared with MorphirJVMModule
-      object js    extends Shared with MorphirJSModule
+      trait Shared extends MorphirCommonCrossModule with MorphirPublishModule {
+        def ivyDeps = Agg(Deps.org.`scala-lang`.modules.`scala-collection-compat`)
+      }
+      object jvm extends Shared with MorphirJVMModule {
+        object test extends ScalaTests with CommonZioTestModule
+      }
+
+      object js extends Shared with MorphirJSModule
     }
   }
 }

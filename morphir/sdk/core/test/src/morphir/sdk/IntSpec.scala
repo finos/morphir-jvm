@@ -21,67 +21,68 @@ import morphir.sdk.Int._
 import zio.test.Assertion._
 import zio.test._
 
-object IntSpec extends DefaultRunnableSpec {
+import morphir.testing.MorphirBaseSpec
+object IntSpec extends MorphirBaseSpec {
   def spec = suite("IntSpec")(
     suite("Int.divide spec")(
-      testM("Dividing an Int8 value by an Int8 value") {
-        check(Gen.anyByte, Gen.anyByte.filter(n => n != 0)) { (x: Int8, y: Int8) =>
+      test("Dividing an Int8 value by an Int8 value") {
+        check(Gen.byte, Gen.byte.filter(n => n != 0)) { (x: Int8, y: Int8) =>
           val expected: scala.Int = x / y
           assert(sdk.Int.divide(x)(y).toInt)(equalTo(expected))
         }
       },
-      testM("Dividing an Int16 value by an Int16 value") {
-        check(Gen.anyShort, Gen.anyShort.filter(n => n != 0)) { (x: Int16, y: Int16) =>
+      test("Dividing an Int16 value by an Int16 value") {
+        check(Gen.short, Gen.short.filter(n => n != 0)) { (x: Int16, y: Int16) =>
           val expected: scala.Int = x / y
           assert(sdk.Int.divide(x)(y).toInt)(equalTo(expected))
         }
       },
-      testM("Dividing an Int32 value by an Int32 value") {
-        check(Gen.anyInt, Gen.anyInt.filter(n => n != 0)) { (x: Int32, y: Int32) =>
+      test("Dividing an Int32 value by an Int32 value") {
+        check(Gen.int, Gen.int.filter(n => n != 0)) { (x: Int32, y: Int32) =>
           val expected: scala.Int = x / y
           assert(sdk.Int.divide(x)(y))(equalTo(expected))
         }
       },
-      testM("Dividing an Int64 value by an Int64 value") {
-        check(Gen.anyLong, Gen.anyLong.filter(n => n != 0)) { (x: Int64, y: Int64) =>
+      test("Dividing an Int64 value by an Int64 value") {
+        check(Gen.long, Gen.long.filter(n => n != 0)) { (x: Int64, y: Int64) =>
           val expected: scala.Long = x / y
           assert(sdk.Int.divide(x)(y))(equalTo(expected))
         }
       },
-      testM("Dividing an Int value by an Int value") {
-        check(Gen.anyLong, Gen.anyLong.filter(n => n != 0)) { (x: Int64, y: Int64) =>
+      test("Dividing an Int value by an Int value") {
+        check(Gen.long, Gen.long.filter(n => n != 0)) { (x: Int64, y: Int64) =>
           val expected: Long = x / y
           assert(sdk.Int.divide(x)(y))(equalTo(expected))
         }
       }
     ),
     suite("Int.modBy spec")(
-      testM("Performing ModBy on Int8s") {
-        check(Gen.anyByte.filter(n => n != 0), Gen.anyByte) { (divisor, dividend) =>
+      test("Performing ModBy on Int8s") {
+        check(Gen.byte.filter(n => n != 0), Gen.byte) { (divisor, dividend) =>
           val expected: scala.Int = (dividend % divisor).abs
           assert(sdk.Int.modBy(divisor)(dividend).toInt)(equalTo(expected))
         }
       },
-      testM("Performing ModBy on Int16s") {
-        check(Gen.anyShort.filter(n => n != 0), Gen.anyShort) { (divisor, dividend) =>
+      test("Performing ModBy on Int16s") {
+        check(Gen.short.filter(n => n != 0), Gen.short) { (divisor, dividend) =>
           val expected: scala.Int = (dividend % divisor).abs
           assert(sdk.Int.modBy(divisor)(dividend).toInt)(equalTo(expected))
         }
       },
-      testM("Performing ModBy on Int32s") {
-        check(Gen.anyInt.filter(n => n != 0), Gen.anyInt) { (divisor, dividend) =>
+      test("Performing ModBy on Int32s") {
+        check(Gen.int.filter(n => n != 0), Gen.int) { (divisor, dividend) =>
           val expected: scala.Int = (dividend % divisor).abs
           assert(sdk.Int.modBy(divisor)(dividend))(equalTo(expected))
         }
       },
-      testM("Performing ModBy on Int64s") {
-        check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (divisor, dividend) =>
+      test("Performing ModBy on Int64s") {
+        check(Gen.long.filter(n => n != 0), Gen.long) { (divisor, dividend) =>
           val expected: scala.Long = (dividend % divisor).abs
           assert(sdk.Int.modBy(divisor)(dividend))(equalTo(expected))
         }
       },
-      testM("Performing ModBy on Ints") {
-        check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (longDivisor, longDividend) =>
+      test("Performing ModBy on Ints") {
+        check(Gen.long.filter(n => n != 0), Gen.long) { (longDivisor, longDividend) =>
           val divisor       = sdk.Int.fromInt64(longDivisor)
           val dividend      = sdk.Int.fromInt64(longDividend)
           val expected: Int = (dividend % divisor).abs
@@ -90,36 +91,36 @@ object IntSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Int.remainderBy spec")(
-      testM("Performing remainderBy on Int8s") {
-        check(Gen.anyByte.filter(n => n != 0), Gen.anyByte) { (divisor, dividend) =>
+      test("Performing remainderBy on Int8s") {
+        check(Gen.byte.filter(n => n != 0), Gen.byte) { (divisor, dividend) =>
           val expected: scala.Int = dividend % divisor
           assert(sdk.Int.remainderBy(divisor)(dividend).toInt)(
             equalTo(expected)
           )
         }
       },
-      testM("Performing remainderBy on Int16s") {
-        check(Gen.anyShort.filter(n => n != 0), Gen.anyShort) { (divisor, dividend) =>
+      test("Performing remainderBy on Int16s") {
+        check(Gen.short.filter(n => n != 0), Gen.short) { (divisor, dividend) =>
           val expected: scala.Int = dividend % divisor
           assert(sdk.Int.remainderBy(divisor)(dividend).toInt)(
             equalTo(expected)
           )
         }
       },
-      testM("Performing remainderBy on Int32s") {
-        check(Gen.anyInt.filter(n => n != 0), Gen.anyInt) { (divisor, dividend) =>
+      test("Performing remainderBy on Int32s") {
+        check(Gen.int.filter(n => n != 0), Gen.int) { (divisor, dividend) =>
           val expected: scala.Int = dividend % divisor
           assert(sdk.Int.remainderBy(divisor)(dividend))(equalTo(expected))
         }
       },
-      testM("Performing remainderBy on Int64s") {
-        check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (divisor, dividend) =>
+      test("Performing remainderBy on Int64s") {
+        check(Gen.long.filter(n => n != 0), Gen.long) { (divisor, dividend) =>
           val expected: scala.Long = dividend % divisor
           assert(sdk.Int.remainderBy(divisor)(dividend))(equalTo(expected))
         }
       },
-      testM("Performing remainderBy on Ints") {
-        check(Gen.anyLong.filter(n => n != 0), Gen.anyLong) { (longDivisor, longDividend) =>
+      test("Performing remainderBy on Ints") {
+        check(Gen.long.filter(n => n != 0), Gen.long) { (longDivisor, longDividend) =>
           val divisor       = sdk.Int.fromInt64(longDivisor)
           val dividend      = sdk.Int.fromInt64(longDividend)
           val expected: Int = dividend % divisor

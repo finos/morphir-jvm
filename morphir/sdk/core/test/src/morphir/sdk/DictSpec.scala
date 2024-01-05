@@ -3,7 +3,8 @@ package morphir.sdk
 import zio.test.Assertion._
 import zio.test._
 
-object DictSpec extends DefaultRunnableSpec {
+import morphir.testing.MorphirBaseSpec
+object DictSpec extends MorphirBaseSpec {
   def spec = suite("ListSpec")(
     suite("Dict.empty spec")(
       test("should create an empty dict") {

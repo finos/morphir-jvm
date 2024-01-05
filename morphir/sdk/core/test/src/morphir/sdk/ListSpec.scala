@@ -16,12 +16,13 @@ limitations under the License.
 
 package morphir.sdk
 
-import zio.duration._
+import zio.test._
+import zio._
 import zio.test.Assertion._
 import zio.test.TestAspect.timeout
-import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object ListSpec extends DefaultRunnableSpec {
+object ListSpec extends MorphirBaseSpec {
   def spec = suite("ListSpec")(
     suite("List.all spec")(
       test(

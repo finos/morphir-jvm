@@ -1,8 +1,8 @@
 package morphir.sdk
 
 import zio.test._
-
-object RegexSpec extends DefaultRunnableSpec {
+import morphir.testing.MorphirBaseSpec
+object RegexSpec extends MorphirBaseSpec {
 
   val splitPattern: Regex.Regex =
     Maybe.withDefault(Regex.never)(Regex.fromString("""[^\w\s]+"""))

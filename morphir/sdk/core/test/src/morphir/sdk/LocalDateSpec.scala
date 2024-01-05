@@ -19,8 +19,9 @@ package morphir.sdk
 import morphir.sdk.{ LocalDate => SdkDate }
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object LocalDateSpec extends DefaultRunnableSpec {
+object LocalDateSpec extends MorphirBaseSpec {
   val date = java.time.LocalDate.now
 
   def spec = suite("Addition") {

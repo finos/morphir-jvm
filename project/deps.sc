@@ -164,6 +164,10 @@ object Deps {
       def `scala3-compiler`(scalaVersion: String): Dep = ivy"org.scala-lang::scala3-compiler:$scalaVersion"
       def `scala3-tasty-inspector`(scalaVersion: String): Dep =
         ivy"org.scala-lang::scala3-tasty-inspector::$scalaVersion"
+
+      case object modules {
+        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.11.0"
+      }
     }
     case object scalameta {
       val munit: mill.scalalib.Dep = ivy"org.scalameta::munit::${Versions.munit}"

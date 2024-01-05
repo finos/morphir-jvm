@@ -19,11 +19,12 @@ package morphir.sdk
 import morphir.sdk.Maybe.Maybe
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object MaybeSpec extends DefaultRunnableSpec {
+object MaybeSpec extends MorphirBaseSpec {
   def spec = suite("MaybeSpec")(
     suite("Just specs")(
-      testM("Just should be convertible to Some") {
+      test("Just should be convertible to Some") {
         check(Gen.alphaNumericChar) { input =>
           val maybe = Maybe.Just(input)
           assert(Maybe.toOption(maybe))(isSome(equalTo(input)))
@@ -72,7 +73,7 @@ object MaybeSpec extends DefaultRunnableSpec {
         }
       ),
       suite("Calling andThen")(
-        testM("Should return a mapped 'Just' value for an input that is 'Just'") {
+        test("Should return a mapped 'Just' value for an input that is 'Just'") {
           check(Gen.int(0, 255)) { input =>
             val sut = Maybe.just(input.toString())
             assert(Maybe.andThen((v: String) => Maybe.Just(v.toInt))(sut))(
@@ -115,7 +116,7 @@ object MaybeSpec extends DefaultRunnableSpec {
           } yield 2 * a
           assert(result)(equalTo(Maybe.Just(84)))
         },
-        testM("Multiple generators should be supported") {
+        test("Multiple generators should be supported") {
           check(Gen.alphaNumericString, Gen.alphaNumericString) { (part1, part2) =>
             val result = for {
               a <- Maybe.Just(part1)
