@@ -140,7 +140,7 @@ object BasicsSpec extends MorphirBaseSpec {
         }
       },
       test("Performing lessThanOrEqual check on same Float") {
-        check(Gen.double) { dn: Double =>
+        check(Gen.double) { (dn: Double) =>
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn)
           val expected = (d1 <= d2)
@@ -156,7 +156,7 @@ object BasicsSpec extends MorphirBaseSpec {
         }
       },
       test("Performing greaterThanOrEqual check on same Float") {
-        check(Gen.double) { dn: Double =>
+        check(Gen.double) { (dn: Double) =>
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn)
           val expected = (d1 >= d2)

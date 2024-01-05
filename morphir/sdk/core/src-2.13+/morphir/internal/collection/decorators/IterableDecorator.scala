@@ -16,9 +16,7 @@ limitations under the License.
 
 package morphir.internal.collection.decorators
 
-import scala.collection.generic.IsIterable
-
-class IterableDecorator[C, I <: IsIterable[C]](coll: C)(implicit val it: I) {
+class IterableDecorator[C, I <: scala.collection.generic.IsIterable[C]](coll: C)(implicit val it: I) {
 
   /** Left to right fold that stops if the combination function `op` returns `None`
     * @param z
