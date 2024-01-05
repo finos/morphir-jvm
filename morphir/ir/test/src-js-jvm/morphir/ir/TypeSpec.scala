@@ -5,9 +5,9 @@ import morphir.ir.FQName.FQName
 import morphir.ir.Name.Name
 import morphir.ir._type.Codec
 import zio.test.Assertion._
+import morphir.testing.MorphirBaseSpec
 import zio.test._
-
-object TypeSpec extends DefaultRunnableSpec {
+object TypeSpec extends MorphirBaseSpec {
   val fqn: FQName                                = FQName.fromString("Morphir.SDK:Int:Int")(":")
   val sdkIntReferenceType: Type.Type[scala.Unit] = Type.Reference({}, fqn, List())
   val customTypeDefName: List[Name]              = List(Name.fromString("CustomerType"))
@@ -20,23 +20,25 @@ object TypeSpec extends DefaultRunnableSpec {
                    | ["Reference",{},[[["morphir"],["s","d","k"]],[["int"]],["int"]],[]]
                    |]]""".stripMargin)
 
-  override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] =
-    suite("Serialization / De-serialization of Types")(
-      suite("Encoding / Decoding ConstructorArgs")(
-        test("Encoding") {
-          val encodedConstructorArgs = Codec.encodeConstructorArgs(io.circe.Encoder.encodeUnit)(ctorArgs)
-          val expectedJson           = constructorArgsFromIRJson.getOrElse(Json.Null)
+  def spec =
+    suite("TypeSpec")(
+      suite("Serialization / De-serialization of Types")(
+        suite("Encoding / Decoding ConstructorArgs")(
+          test("Encoding") {
+            val encodedConstructorArgs = Codec.encodeConstructorArgs(io.circe.Encoder.encodeUnit)(ctorArgs)
+            val expectedJson           = constructorArgsFromIRJson.getOrElse(Json.Null)
 
-          assert(encodedConstructorArgs)(equalTo(expectedJson))
-        },
-        test("Decoding") {
-          val decodedConstructorArgs = Codec.decodeConstructorArgs(io.circe.Decoder.decodeUnit)(
-            constructorArgsFromIRJson.getOrElse(Json.Null).hcursor
-          )
-          val expectedConstructorArgs = List((ctorArgName, sdkIntReferenceType))
+            assert(encodedConstructorArgs)(equalTo(expectedJson))
+          },
+          test("Decoding") {
+            val decodedConstructorArgs = Codec.decodeConstructorArgs(io.circe.Decoder.decodeUnit)(
+              constructorArgsFromIRJson.getOrElse(Json.Null).hcursor
+            )
+            val expectedConstructorArgs = List((ctorArgName, sdkIntReferenceType))
 
-          assert(decodedConstructorArgs.getOrElse(emptyCtorArgs))(equalTo(expectedConstructorArgs))
-        }
+            assert(decodedConstructorArgs.getOrElse(emptyCtorArgs))(equalTo(expectedConstructorArgs))
+          }
+        )
       )
     )
 }

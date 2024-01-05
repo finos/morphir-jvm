@@ -77,6 +77,28 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
     def scalaNativeVersion = T(resolvedBuildSettings().native.version)
   }
 
+  object ir extends CrossPlatform with CrossValue {
+    trait Shared extends MorphirCommonCrossModule with MorphirPublishModule {
+      def ivyDeps                                        = Agg(Deps.io.circe.`circe-core`, Deps.io.circe.`circe-generic`, Deps.io.circe.`circe-parser`)
+      def platformSpecificModuleDeps: Seq[CrossPlatform] = Seq(sdk.core, sdk.json)
+    }
+    object jvm extends Shared with MorphirJVMModule {
+      object test extends ScalaTests with CommonZioTestModule
+    }
+
+    object js extends Shared with MorphirJSModule {
+      object test extends ScalaJSTests with CommonZioTestModule {
+        override def ivyDeps = super.ivyDeps() ++ Agg(
+          Deps.io.github.cquiroz.`scala-java-time`
+        )
+      }
+    }
+
+    object native extends Shared with MorphirNativeModule {
+      object test extends ScalaNativeTests with CommonZioTestModule
+    }
+  }
+
   object sdk extends Module {
     object core extends CrossPlatform with CrossValue {
       trait Shared extends MorphirCommonCrossModule with MorphirPublishModule {

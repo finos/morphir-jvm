@@ -26,14 +26,15 @@ import morphir.ir.Path.Path
 import morphir.ir.fqname.Codec
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object FQNameSpec extends DefaultRunnableSpec {
+object FQNameSpec extends MorphirBaseSpec {
   val packageName: PackageName = List(List("morphir"), List("core"))
   val moduleName: ModuleName   = List(List("morphir"), List("i", "r"))
   val localName: Name          = List("f", "q", "name")
   val fqName: FQName           = (packageName, moduleName, localName)
 
-  def spec: Spec[_root_.zio.test.environment.TestEnvironment, TestFailure[Nothing], TestSuccess] =
+  def spec =
     suite("FQNameSpec")(
       test("Encoding FQName") {
         val encodedFQName = Codec.encodeFQName(fqName)
