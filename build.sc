@@ -86,7 +86,9 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
         object test extends ScalaTests with CommonZioTestModule
       }
 
-      object js extends Shared with MorphirJSModule
+      object js extends Shared with MorphirJSModule {
+       object test extends ScalaJSTests with CommonZioTestModule 
+      }
     }
   }
 }
