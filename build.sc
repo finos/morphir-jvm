@@ -94,7 +94,57 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
         object test extends ScalaNativeTests with CommonZioTestModule
       }
     }
+
+    object json extends CrossPlatform with CrossValue {
+      trait Shared extends MorphirCommonCrossModule with MorphirPublishModule {
+
+        // Making these compile time only dependencies which is the equivalent to the provided scope in Maven, but I feel we
+        // should stop doing this. Need to discuss with existing consumers of the SDK to see if this is a problem.
+        def compileIvyDeps = Agg(
+          Deps.io.circe.`circe-core`,
+          Deps.io.circe.`circe-generic`,
+          Deps.io.circe.`circe-parser`
+        )
+
+        def platformSpecificModuleDeps: Seq[CrossPlatform] = Seq(sdk.core)
+      }
+      object jvm extends Shared with MorphirJVMModule {
+        object test extends ScalaTests with CommonZioTestModule
+      }
+
+      object js extends Shared with MorphirJSModule {
+        object test extends ScalaJSTests with CommonZioTestModule
+      }
+
+      object native extends Shared with MorphirNativeModule {
+        object test extends ScalaNativeTests with CommonZioTestModule
+      }
+    }
+
+    object spark extends CrossPlatform with CrossValue {
+      trait Shared extends MorphirCommonCrossModule {}
+      object jvm extends Shared with MorphirJVMModule {
+        object test extends ScalaTests with CommonZioTestModule {
+          def ivyDeps = Agg(
+            Deps.org.apache.spark.`spark-core`,
+            Deps.org.apache.spark.`spark-sql`
+          )
+        }
+      }
+    }
   }
+
+}
+
+object MyAliases extends Aliases {
+  def fmt           = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
+  def checkfmt      = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
+  def deps          = alias("mill.scalalib.Dependency/showUpdates")
+  def testall       = alias("__.test")
+  def testJVM       = alias("morphir.__.jvm.__.test")
+  def testJVMCached = alias("morphir.__.jvm.__.testCached")
+  def compileall    = alias("__.compile")
+  def comptestall   = alias("__.compile", "__.test")
 }
 
 //-----------------------------------------------------------------------------

@@ -141,6 +141,12 @@ object Deps {
       def `borer-derivation`(scalaVersionParts: Seq[String]): Dep =
         ivy"io.bullet::borer-derivation::${Versions.borer(scalaVersionParts)}"
     }
+
+    case object circe {
+      val `circe-core`    = ivy"io.circe::circe-core::${Versions.circe}"
+      val `circe-generic` = ivy"io.circe::circe-generic::${Versions.circe}"
+      val `circe-parser`  = ivy"io.circe::circe-parser::${Versions.circe}"
+    }
     case object `get-coursier` {
       val coursier = ivy"io.get-coursier::coursier::${Versions.coursier}"
     }
@@ -155,6 +161,13 @@ object Deps {
     }
   }
   case object org {
+    case object apache {
+      case object spark {
+        val `spark-core` = ivy"org.apache.spark::spark-core:2.4.7"
+        val `spark-sql`  = ivy"org.apache.spark::spark-sql:2.4.7"
+      }
+    }
+
     case object `scala-lang` {
       def `scala-compiler`(scalaVersion: String): Dep =
         if (scalaVersion.startsWith("3")) ivy"org.scala-lang::scala3-compiler:$scalaVersion"
@@ -215,6 +228,7 @@ object Versions {
       case _            => "4.8.11"
     }
 
+  val circe                      = "0.14.6"
   val coursier                   = "2.1.4"
   val expecty                    = "0.16.0"
   val fansi                      = "0.4.0"
