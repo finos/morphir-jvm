@@ -20,6 +20,9 @@ import mill.contrib.buildinfo.BuildInfo
 
 implicit val buildSettings: BuildSettings = interp.watchValue(MyBuild.cachedBuildSettings)
 def resolvedBuildSettings                 = T.input(MyBuild.buildSettings())
+val scala212                              = buildSettings.scala.scala212Version
+val scala213                              = buildSettings.scala.scala213Version
+val scala3x                               = buildSettings.scala.scala3xVersion
 
 /** The version of Scala natively supported by the toolchain. Morphir itself may provide backends that generate code for
   * other Scala versions. We may also directly cross-compile to additional Scla versions.
@@ -158,15 +161,23 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
 
 }
 
+def morphirAlias(scalaVersion: String)(tasks: String*) = MyAliases.alias(
+  tasks.map(task => s"morphir[$scalaVersion].$task"): _*
+)
+
 object MyAliases extends Aliases {
-  def fmt           = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
-  def checkfmt      = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
-  def deps          = alias("mill.scalalib.Dependency/showUpdates")
-  def testall       = alias("__.test")
-  def testJVM       = alias("morphir.__.jvm.__.test")
-  def testJVMCached = alias("morphir.__.jvm.__.testCached")
-  def compileall    = alias("__.compile")
-  def comptestall   = alias("__.compile", "__.test")
+  def fmt             = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
+  def checkfmt        = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
+  def ciTestJS        = alias("morphir.__.js.__.compile + morphir.__.js.publishArtifacts + morphir.__.js.__.test")
+  def ci_test_js_2_12 = morphirAlias(scala212)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  def ci_test_js_2_13 = morphirAlias(scala213)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  def ci_test_js_3    = morphirAlias(scala3x)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  def deps            = alias("mill.scalalib.Dependency/showUpdates")
+  def testall         = alias("__.test")
+  def testJVM         = alias("morphir.__.jvm.__.test")
+  def testJVMCached   = alias("morphir.__.jvm.__.testCached")
+  def compileall      = alias("__.compile")
+  def comptestall     = alias("__.compile", "__.test")
 }
 
 //-----------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import millbuild.crossplatform.DevMode
 
 final case class ScalaSettings(
   defaultVersion: String = ScalaSettings.defaultVersion,
+  scala212Version: String = ScalaSettings.defaultScala212Version,
   scala213Version: String = ScalaSettings.defaultScala213Version,
   scala3xVersion: String = ScalaSettings.defaultScala3xVersion,
   crossScalaVersions: List[String] = ScalaSettings.defaultCrossScalaVersions
