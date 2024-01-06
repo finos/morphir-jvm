@@ -146,19 +146,7 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
       }
     }
 
-    object spark extends CrossPlatform with CrossValue {
-      trait Shared extends MorphirCommonCrossModule {}
-      object jvm extends Shared with MorphirJVMModule {
-        object test extends ScalaTests with CommonZioTestModule {
-          def ivyDeps = Agg(
-            Deps.org.apache.spark.`spark-core`,
-            Deps.org.apache.spark.`spark-sql`
-          )
-        }
-      }
-    }
   }
-
 }
 
 def morphirAlias(scalaVersion: String)(tasks: String*) = MyAliases.alias(
