@@ -7,7 +7,7 @@ on:
 
 jobs:
   submit-dependency-graph:
-    if: github.repository == 'finos/morphir-scala' && github.ref == 'refs/heads/main'
+    if: github.repository == 'finos/morphir-jvm' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
     
