@@ -1,4 +1,12 @@
-name: CI CD
+name: "CI/CD"
+on:
+  pull_request:
+  push:
+    branches: [main]
+  release:
+    types:
+      - published
+  workflow_dispatch:
 
 env:
   JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xss10M # JDK_JAVA_OPTIONS is _the_ env. variable to use for modern Java
@@ -6,14 +14,6 @@ env:
   scala_212_version: "2.12.18"
   scala_213_version: "2.13.12"
   scala_3_version: "3.3.1"
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  release:
-    types: [published]
 
 # cancel older runs of a pull request;
 # this will not cancel anything for normal git pushes
