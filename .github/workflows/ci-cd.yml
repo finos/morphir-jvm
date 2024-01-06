@@ -11,9 +11,9 @@ on:
 env:
   JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xss10M # JDK_JAVA_OPTIONS is _the_ env. variable to use for modern Java
   JVM_OPTS: -XX:+PrintCommandLineFlags -Xss10M # for Java 8 only (sadly, it is not modern enough for JDK_JAVA_OPTIONS)
-  scala_212_version: "2.12.18"
-  scala_213_version: "2.13.12"
-  scala_3_version: "3.3.1"
+  scala_212_version: &scala212 "2.12.18"
+  scala_213_version: &scala213 "2.13.12"
+  scala_3_version: &scala3 "3.3.1"
 
 # cancel older runs of a pull request;
 # this will not cancel anything for normal git pushes
@@ -47,7 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["17"] # Note there is no need ro actually run this for multiple JVM versions for JS
-        scala: ['${{ env.scala_212_version }}', '${{ env.scala_213_version }}', '${{ env.scala_3_version }}']
+        scala: [ &scala212, &scala213, &scala3]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
