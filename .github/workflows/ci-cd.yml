@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI CD
 
 env:
   JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xss10M # JDK_JAVA_OPTIONS is _the_ env. variable to use for modern Java
