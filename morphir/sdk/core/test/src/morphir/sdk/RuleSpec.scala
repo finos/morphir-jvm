@@ -18,8 +18,9 @@ package morphir.sdk
 
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object RuleSpec extends DefaultRunnableSpec {
+object RuleSpec extends MorphirBaseSpec {
   def spec = suite("RuleSpec")(
     suite("Rule.chain specs")(
       chainTests(
@@ -38,15 +39,15 @@ object RuleSpec extends DefaultRunnableSpec {
       ): _*
     ),
     suite("Rule.any specs")(
-      testM("Calling any on anything should return True") {
+      test("Calling any on anything should return True") {
         check(Gen.alphaNumericChar)(input => assert(Rule.any(input))(equalTo(Basics.True)))
       }
     ),
     suite("Rule.is specs")(
-      testM("Calling is by passing in the same value twice should return True") {
+      test("Calling is by passing in the same value twice should return True") {
         check(Gen.alphaNumericChar)(input => assert(Rule.is(input)(input))(equalTo(Basics.True)))
       },
-      testM("Calling is by passing in two different values should return False") {
+      test("Calling is by passing in two different values should return False") {
         val gen =
           for {
             ref   <- Gen.alphaNumericString
@@ -59,7 +60,7 @@ object RuleSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Rule.anyOf specs")(
-      testM("Calling anyOf by passing in a list and a member should return True") {
+      test("Calling anyOf by passing in a list and a member should return True") {
         val gen =
           for {
             ref <- Gen.listOf(Gen.alphaNumericString)
@@ -69,7 +70,7 @@ object RuleSpec extends DefaultRunnableSpec {
           assert(Rule.anyOf(ref)(input))(equalTo(Basics.True))
         }
       },
-      testM("Calling anyOf by passing in a list and a non-member should return False") {
+      test("Calling anyOf by passing in a list and a non-member should return False") {
         val gen =
           for {
             ref   <- Gen.listOf(Gen.alphaNumericString)
@@ -82,7 +83,7 @@ object RuleSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Rule.noneOf specs")(
-      testM("Calling noneOf by passing in a list and a member should return False") {
+      test("Calling noneOf by passing in a list and a member should return False") {
         val gen =
           for {
             ref <- Gen.listOf(Gen.alphaNumericString)
@@ -92,7 +93,7 @@ object RuleSpec extends DefaultRunnableSpec {
           assert(Rule.noneOf(ref)(input))(equalTo(Basics.False))
         }
       },
-      testM("Calling noneOf by passing in a list and a non-member should return True") {
+      test("Calling noneOf by passing in a list and a non-member should return True") {
         val gen =
           for {
             ref   <- Gen.listOf(Gen.alphaNumericString)

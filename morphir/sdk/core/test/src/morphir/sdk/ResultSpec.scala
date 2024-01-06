@@ -17,13 +17,14 @@ limitations under the License.
 package morphir.sdk
 
 import zio.test.Assertion._
-import zio.test._
+import zio.test.{ Result => _, _ }
+import morphir.testing.MorphirBaseSpec
 
-object ResultSpec extends DefaultRunnableSpec {
+object ResultSpec extends MorphirBaseSpec {
   def spec = suite("ResultSpec")(
     suite("Mapping")(
       suite("Calling map")(
-        testM("Given an Ok value should invoke the mapping") {
+        test("Given an Ok value should invoke the mapping") {
           check(Gen.alphaNumericString) { input =>
             assert(
               Result.map((text: String) => text.toUpperCase())(Result.Ok(input))
@@ -42,7 +43,7 @@ object ResultSpec extends DefaultRunnableSpec {
     ),
     suite("Map2")(
       suite("Calling map2")(
-        testM("Given an Ok value should invoke the map2") {
+        test("Given an Ok value should invoke the map2") {
           check(Gen.int(1, 100), Gen.int(1, 100)) { (inputA, inputB) =>
             val inputa = Result.Ok(inputA).withErr[String]
             val inputb = Result.Ok(inputB).withErr[String]
@@ -74,7 +75,7 @@ object ResultSpec extends DefaultRunnableSpec {
       )
     ),
     suite("Calling flatMap")(
-      testM("Given an Ok value, then it should invoke the mapping function") {
+      test("Given an Ok value, then it should invoke the mapping function") {
         check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
           val orderItem = OrderItem(product, quantity)
           val input     = Result.Ok(orderItem).withErr[String]
@@ -95,7 +96,7 @@ object ResultSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Calling andThen")(
-      testM("Given an Ok value, then it should invoke the mapping function") {
+      test("Given an Ok value, then it should invoke the mapping function") {
         check(Gen.alphaNumericString, Gen.int(1, 200)) { (product, quantity) =>
           val orderItem = OrderItem(product, quantity)
           val input     = Result.Ok(orderItem).withErr[String]

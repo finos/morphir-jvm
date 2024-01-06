@@ -10,7 +10,7 @@ object Aggregate {
   sealed trait Operator[+A]
   object Operator {
 
-    final case object Count extends Operator[Nothing]
+    case object Count extends Operator[Nothing]
 
     final case class Sum[A](getValue: A => Double) extends Operator[A]
 

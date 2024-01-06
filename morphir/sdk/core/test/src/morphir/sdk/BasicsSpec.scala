@@ -18,79 +18,80 @@ package morphir.sdk
 
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object BasicsSpec extends DefaultRunnableSpec {
+object BasicsSpec extends MorphirBaseSpec {
   def spec = suite("BasicsSpec")(
     suite("Basics.Float spec")(
-      testM("Construct from Float") {
-        check(Gen.anyFloat) { (f: Float) =>
+      test("Construct from Float") {
+        check(Gen.float) { (f: Float) =>
           val instance = Basics.Float(f)
           assert(instance)(equalTo(f.doubleValue()))
         }
       },
-      testM("Construct from Double") {
-        check(Gen.anyDouble) { (d: Double) =>
+      test("Construct from Double") {
+        check(Gen.double) { (d: Double) =>
           val instance = Basics.Float(d)
           assert(instance)(equalTo(d))
         }
       },
-      testM("Construct from Int") {
-        check(Gen.anyInt) { (i: Int) =>
+      test("Construct from Int") {
+        check(Gen.int) { (i: Int) =>
           val instance = Basics.Float(i)
           assert(instance)(equalTo(i.doubleValue()))
         }
       }
     ),
     suite("Basics.add spec")(
-      testM("Add a Float value to another Float value") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Add a Float value to another Float value") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = d1 + d2
           assert(Basics.add(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.subtract spec")(
-      testM("Subtract a Float value from another Float value") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Subtract a Float value from another Float value") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = d1 - d2
           assert(Basics.subtract(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.multiply spec")(
-      testM("Multiply a Float value by another Float value") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Multiply a Float value by another Float value") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = d1 * d2
           assert(Basics.multiply(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.divide spec")(
-      testM("Divide a Float value by another Float value") {
-        check(Gen.anyDouble, Gen.anyDouble.filter(n => n != 0)) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Divide a Float value by another Float value") {
+        check(Gen.double, Gen.double.filter(n => n != 0)) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = d1 / d2
           assert(Basics.divide(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.power spec")(
-      testM("Power an Int value by another Int value") {
-        check(Gen.anyInt, Gen.int(-10, 10)) { (d1: Basics.Int, d2: Basics.Int) =>
+      test("Power an Int value by another Int value") {
+        check(Gen.int, Gen.int(-10, 10)) { (d1: Basics.Int, d2: Basics.Int) =>
           val expected = d1 ^ d2
           assert(Basics.power(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.equal spec")(
-      testM("Equal check a Float value to itself") {
-        check(Gen.anyDouble) { (dn: Double) =>
+      test("Equal check a Float value to itself") {
+        check(Gen.double) { (dn: Double) =>
           val expected = true
           val d        = Basics.Float(dn)
           assert(Basics.equal(d)(d))(equalTo(expected))
         }
       },
-      testM("Equal check a Float value to a different Float value") {
-        check(Gen.anyDouble) { (dn: Double) =>
+      test("Equal check a Float value to a different Float value") {
+        check(Gen.double) { (dn: Double) =>
           val expected = false
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn + 3.14)
@@ -99,15 +100,15 @@ object BasicsSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Basics.notEqual spec")(
-      testM("Not-Equal check a Float value to itself") {
-        check(Gen.anyDouble) { (dn: Double) =>
+      test("Not-Equal check a Float value to itself") {
+        check(Gen.double) { (dn: Double) =>
           val expected = false
           val d        = Basics.Float(dn)
           assert(Basics.notEqual(d)(d))(equalTo(expected))
         }
       },
-      testM("Not-Equal check a Float value to a different Float value") {
-        check(Gen.anyDouble) { (dn: Double) =>
+      test("Not-Equal check a Float value to a different Float value") {
+        check(Gen.double) { (dn: Double) =>
           val expected = true
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn + 3.14)
@@ -116,30 +117,30 @@ object BasicsSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Basics.lessThan spec")(
-      testM("Performing lessThan check on Floats") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Performing lessThan check on Floats") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = (d1 < d2)
           assert(Basics.lessThan(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.greaterThan spec")(
-      testM("Performing lessThan check on Floats") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Performing lessThan check on Floats") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = (d1 > d2)
           assert(Basics.greaterThan(d1)(d2))(equalTo(expected))
         }
       }
     ),
     suite("Basics.lessThanOrEqual spec")(
-      testM("Performing lessThanOrEqual check on different Floats") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Performing lessThanOrEqual check on different Floats") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = (d1 <= d2)
           assert(Basics.lessThanOrEqual(d1)(d2))(equalTo(expected))
         }
       },
-      testM("Performing lessThanOrEqual check on same Float") {
-        check(Gen.anyDouble) { dn: Double =>
+      test("Performing lessThanOrEqual check on same Float") {
+        check(Gen.double) { (dn: Double) =>
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn)
           val expected = (d1 <= d2)
@@ -148,14 +149,14 @@ object BasicsSpec extends DefaultRunnableSpec {
       }
     ),
     suite("Basics.greaterThanOrEqual spec")(
-      testM("Performing greaterThanOrEqual check on different Floats") {
-        check(Gen.anyDouble, Gen.anyDouble) { (d1: Basics.Float, d2: Basics.Float) =>
+      test("Performing greaterThanOrEqual check on different Floats") {
+        check(Gen.double, Gen.double) { (d1: Basics.Float, d2: Basics.Float) =>
           val expected = (d1 >= d2)
           assert(Basics.greaterThanOrEqual(d1)(d2))(equalTo(expected))
         }
       },
-      testM("Performing greaterThanOrEqual check on same Float") {
-        check(Gen.anyDouble) { dn: Double =>
+      test("Performing greaterThanOrEqual check on same Float") {
+        check(Gen.double) { (dn: Double) =>
           val d1       = Basics.Float(dn)
           val d2       = Basics.Float(dn)
           val expected = (d1 >= d2)

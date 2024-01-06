@@ -18,8 +18,8 @@ package morphir.sdk
 
 import zio.test.Assertion._
 import zio.test._
-
-object CharSpec extends DefaultRunnableSpec {
+import morphir.testing.MorphirBaseSpec
+object CharSpec extends MorphirBaseSpec {
   def spec = suite("CharSpec")(
     suite("Char.toCode specs")(
       toCodeTests(
@@ -104,10 +104,10 @@ object CharSpec extends DefaultRunnableSpec {
       ): _*
     ),
     suite("Char.isHexDigit specs")(
-      testM(
+      test(
         s"Given a character calliing isHexDigit should return true only for hex digits"
       ) {
-        check(Gen.anyUnicodeChar) { input =>
+        check(Gen.unicodeChar) { input =>
           val sut      = Char.from(input)
           val expected = "0123456789abcdefABCDEF".contains(input)
           assert(Char.isHexDigit(sut))(equalTo(expected))

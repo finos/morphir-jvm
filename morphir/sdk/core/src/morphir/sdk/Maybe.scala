@@ -69,7 +69,11 @@ object Maybe {
     }
 
     @inline final def foreach[U](f: A => U): Unit = {
-      if (!isEmpty) f(this.get)
+      if (!isEmpty) {
+        val _ = f(this.get)
+        ()
+      }
+
       ()
     }
 

@@ -18,8 +18,9 @@ package morphir.sdk
 
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object StringSpec extends DefaultRunnableSpec {
+object StringSpec extends MorphirBaseSpec {
   def spec = suite("StringSpec")(
     suite("String.isEmpty specs")(
       isEmptyTests(
@@ -200,7 +201,7 @@ object StringSpec extends DefaultRunnableSpec {
       }
     }
 
-  def joinTests(cases: (String.String, List[String.String], String.String)*): Seq[ZSpec[Any, Nothing]] =
+  def joinTests(cases: (String.String, List[String.String], String.String)*) =
     cases.map { case (sep, chunks, expected) =>
       test(
         s"Given a List[String]: '$chunks' calling join with a String separator should return '$expected'"

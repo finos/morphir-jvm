@@ -20,8 +20,9 @@ import morphir.sdk.Aggregate._
 import morphir.sdk.Key.Key0
 import zio.test.Assertion._
 import zio.test._
+import morphir.testing.MorphirBaseSpec
 
-object AggregateSpec extends DefaultRunnableSpec {
+object AggregateSpec extends MorphirBaseSpec {
 
   case class TestInput1(key1: String, key2: String, value: Double)
 
