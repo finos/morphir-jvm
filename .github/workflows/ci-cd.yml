@@ -57,7 +57,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: ${{ matrix.java }}å
+          java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
 
@@ -74,80 +74,80 @@ jobs:
             out/morphir/${{matrix.scala}}/**/js/
           key: ${{ runner.os }}-mill-js-${{matrix.java}}-${{ matrix.scala }}-${{ github.sha}}-${{ hashFiles('out') }}
 
-  # test-jvm:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 30
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       java: ["11", "17"]
-  #       scala: ["2.12.18","2.13.12", "3.3.1"]
-  #   steps:
-  #     - name: Checkout current branch
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Setup Scala and Java
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: "temurin"
-  #         java-version: ${{ matrix.java }}
-  #     - name: Cache scala dependencies
-  #       uses: coursier/cache-action@v6
+  test-jvm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["11", "17"]
+        scala: ["2.12.18","2.13.12", "3.3.1"]
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Scala and Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java }}
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
 
-  #     - name: Run JVM tests
-  #       run: |
-  #         ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test"
+      - name: Run JVM tests
+        run: |
+          ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test"
 
-  #     - name: Cache JVM build output
-  #       # when in master repo: all commits to main branch and all additional tags
-  #       if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
-  #       uses: actions/cache/save@v3
-  #       with:
-  #         path: |
-  #           out/morphir/${{matrix.scala}}/**/jvm/
-  #           out/morphir/build/
-  #         key: ${{ runner.os }}-mill-jvm-${{matrix.java}}-${{ matrix.scala }}-${{ github.sha }}-${{ hashFiles('out') }}
+      - name: Cache JVM build output
+        # when in master repo: all commits to main branch and all additional tags
+        if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            out/morphir/${{matrix.scala}}/**/jvm/
+            out/morphir/build/
+          key: ${{ runner.os }}-mill-jvm-${{matrix.java}}-${{ matrix.scala }}-${{ github.sha }}-${{ hashFiles('out') }}
 
-  # test-native:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 30
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       java: ["11"] # Note there is no need ro actually run this for multiple JVM versions for native
-  #       scala: ["2.12.18","2.13.12", "3.3.1"]
-  #   steps:
-  #     - name: Checkout current branch
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Install libuv
-  #       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
+  test-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["11"] # Note there is no need ro actually run this for multiple JVM versions for native
+        scala: ["2.12.18","2.13.12", "3.3.1"]
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install libuv
+        run: sudo apt-get update && sudo apt-get install -y libuv1-dev
 
-  #     - name: Set up Clang
-  #       uses: egor-tensin/setup-clang@v1
-  #       with:
-  #         version: latest
-  #         platform: x64
-  #     - name: Setup Scala and Java
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: "temurin"
-  #         java-version: ${{ matrix.java }}
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: latest
+          platform: x64
+      - name: Setup Scala and Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java }}
 
-  #     - name: Run Native tests
-  #       run: |
-  #         ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.compile" + "morphir[${{matrix.scala}}].__.native.publishArtifacts" + "morphir[${{matrix.scala}}].__.native.__.test"
+      - name: Run Native tests
+        run: |
+          ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.compile" + "morphir[${{matrix.scala}}].__.native.publishArtifacts" + "morphir[${{matrix.scala}}].__.native.__.test"
 
-  #     - name: Cache Native build output
-  #       # when in master repo: all commits to main branch and all additional tags
-  #       if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
-  #       uses: actions/cache/save@v3
-  #       with:
-  #         path: |
-  #           out/morphir/${{matrix.scala}}/**/native/
-  #         key: ${{ runner.os }}-mill-native-${{matrix.java}}-${{ matrix.scala }}-${{ github.sha }}-${{ hashFiles('out') }}
+      - name: Cache Native build output
+        # when in master repo: all commits to main branch and all additional tags
+        if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            out/morphir/${{matrix.scala}}/**/native/
+          key: ${{ runner.os }}-mill-native-${{matrix.java}}-${{ matrix.scala }}-${{ github.sha }}-${{ hashFiles('out') }}
 
   # publish-sonatype:
   #   # when in master repo: all commits to main branch and all additional tags
