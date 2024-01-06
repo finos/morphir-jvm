@@ -154,18 +154,19 @@ def morphirAlias(scalaVersion: String)(tasks: String*) = MyAliases.alias(
 )
 
 object MyAliases extends Aliases {
-  def fmt             = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
-  def checkfmt        = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
-  def ciTestJS        = alias("morphir.__.js.__.compile + morphir.__.js.publishArtifacts + morphir.__.js.__.test")
-  def ci_test_js_2_12 = morphirAlias(scala212)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
-  def ci_test_js_2_13 = morphirAlias(scala213)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
-  def ci_test_js_3    = morphirAlias(scala3x)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
-  def deps            = alias("mill.scalalib.Dependency/showUpdates")
-  def testall         = alias("__.test")
-  def testJVM         = alias("morphir.__.jvm.__.test")
-  def testJVMCached   = alias("morphir.__.jvm.__.testCached")
-  def compileall      = alias("__.compile")
-  def comptestall     = alias("__.compile", "__.test")
+  def fmt                    = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
+  def checkfmt               = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
+  def ciTestJS               = alias("morphir.__.js.__.compile + morphir.__.js.publishArtifacts + morphir.__.js.__.test")
+  def ci_test_js_2_12        = morphirAlias(scala212)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  def ci_test_js_2_13        = morphirAlias(scala213)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  def ci_test_js_3           = morphirAlias(scala3x)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  def deps                   = alias("mill.scalalib.Dependency/showUpdates")
+  def testall                = alias("__.test")
+  def testJVM                = alias("morphir.__.jvm.__.test")
+  def testJVMCached          = alias("morphir.__.jvm.__.testCached")
+  def compileall             = alias("__.compile")
+  def comptestall            = alias("__.compile", "__.test")
+  def createPublishArtifacts = alias("morphir.__.publishArtifacts")
 }
 
 //-----------------------------------------------------------------------------
