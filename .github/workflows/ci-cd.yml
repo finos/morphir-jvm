@@ -8,13 +8,12 @@ env:
   scala_3_version: "3.3.1"
 
 on:
-  pull_request:
   push:
-    branches: ["main"]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   release:
-    types:
-      - published
-  workflow_dispatch:
+    types: [published]
 
 # cancel older runs of a pull request;
 # this will not cancel anything for normal git pushes
