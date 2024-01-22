@@ -68,7 +68,7 @@ jobs:
       - name: Cache JVM build output
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             out/morphir/${{matrix.scala}}/**/jvm/
@@ -103,7 +103,7 @@ jobs:
       - name: Cache JS build output
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             out/morphir/${{matrix.scala}}/**/js/
@@ -143,7 +143,7 @@ jobs:
       - name: Cache Native build output
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             out/morphir/${{matrix.scala}}/**/native/
@@ -188,7 +188,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libuv1-dev
 
       - name: Restore Scala 2.12 JVM Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/2.12.18/**/jvm/
@@ -197,7 +197,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-jvm-11-2.12.18-${{ github.sha }}-        
 
       - name: Restore Scala 2.13 JVM Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/2.13.12/**/jvm/
@@ -206,7 +206,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-jvm-11-2.13.12-${{ github.sha }}-
 
       - name: Restore Scala 3.3 JVM Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/3.3.1/**/jvm/
@@ -214,7 +214,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-jvm-11-3.3.1-${{ github.sha }}-
 
       - name: Restore Scala 2.12 JS Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/2.12.18/**/js/
@@ -222,7 +222,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-js-11-2.12.18-${{ github.sha }}-            
 
       - name: Restore Scala 2.13 JS Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/2.13.12/**/js/
@@ -230,7 +230,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-js-11-2.13.12-${{ github.sha }}-
 
       - name: Restore Scala 3.3 JS Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/3.3.1/**/js/
@@ -238,7 +238,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-js-11-3.3.1-${{ github.sha }}-
 
       - name: Restore Scala 2.12 Native Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/2.12.18/**/native/
@@ -246,7 +246,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-native-11-2.12.18-${{ github.sha }}-
 
       - name: Restore Scala 2.13 Native Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/2.13.12/**/native/
@@ -254,7 +254,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-native-11-2.13.12-${{ github.sha }}-
 
       - name: Restore Scala 3.3 Native Build Output From Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             out/morphir/3.3.1/**/native/
