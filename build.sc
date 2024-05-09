@@ -121,7 +121,7 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
       object native extends Shared with MorphirNativeModule {
         object test extends ScalaNativeTests with CommonZioTestModule
       }
-      
+
     }
 
     object json extends CrossPlatform with CrossValue {

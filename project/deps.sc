@@ -31,7 +31,7 @@ object Deps {
     }
 
     case object `47Deg` {
-        val memeid4s = ivy"com.47deg.memeid4s:${Versions.memeid4s}"
+        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
     }
 
     case object geirsson {
