@@ -1,10 +1,11 @@
-package morphir.sdk
+import memeid4s.UUID as MUUID
 
 import scala.util.Try
-import memeid4s.{ UUID => MUUID }
 
 object UUID {
-  val Nil: UUID = memeid4s.UUID.Nil
+  type UUID = MUUID
+
+  val Nil: UUID = MUUID.Nil
 
   type V1 = MUUID.V1
 
@@ -28,10 +29,6 @@ object UUID {
   object V4 {
     def random: UUID = MUUID.V4.random
   }
-
-  def unapply(str: String): Option[UUID] =
-    if (str.nonEmpty) UUID.from(str).toOption
-    else None
 
   /** Creates a valid [[UUID]] from two [[_root_.scala.Long Long]] values representing the most/least significant bits.
     *

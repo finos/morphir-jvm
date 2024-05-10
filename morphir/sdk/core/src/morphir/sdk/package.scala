@@ -19,5 +19,4 @@ package morphir
 package object sdk {
   val StringModule: StringModule = String
   type StringModule = String.type
-  type UUID = memeid4s.UUID
 }

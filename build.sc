@@ -105,12 +105,12 @@ trait MorphirModule extends Cross.Module[String] with CrossPlatform {
   object sdk extends Module {
     object core extends CrossPlatform with CrossValue {
       trait Shared extends MorphirCommonCrossModule with MorphirPublishModule {
-        def ivyDeps = Agg(
-          Deps.org.`scala-lang`.modules.`scala-collection-compat`,
-          Deps.com.`47Deg`.memeid4s
-        )
+        def ivyDeps = Agg(Deps.org.`scala-lang`.modules.`scala-collection-compat`)
       }
       object jvm extends Shared with MorphirJVMModule {
+        def ivyDeps = super.ivyDeps() ++ Agg(
+          Deps.com.`47Deg`.memeid4s
+        )
         object test extends ScalaTests with CommonZioTestModule
       }
 
