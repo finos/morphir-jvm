@@ -8,6 +8,7 @@ object UUIDSpec extends MorphirBaseSpec {
     test("Generate UUID from valid String") {
       val uuid = UUID.V4.random
       assert(UUID.from(uuid.toString))(isRight(equalTo(uuid)))
+      assertTrue(uuid.version == 4)
     },
     test("Return Throwable from invalid String") {
       assert(UUID.from("0f769c4185a634208b09bb63bce12014"))(isLeft)
@@ -16,6 +17,12 @@ object UUIDSpec extends MorphirBaseSpec {
       check(Gen.long) { (msb) =>
         assertEquals(UUID.from(msb, 0xc000000000000000L), MUUID.from(msb, 0xc000000000000000L))
       }
+    },
+    test("Nil check returns true for Nil String"){
+        assertTrue(UUID.isNil("00000000-0000-0000-0000-000000000000"))
+    },
+    test("Nil check returns false for non Nil String"){
+      assertTrue(!UUID.isNil("10000000-0000-0000-0000-000000000000"))
     },
     suite("V1 UUID")(
       test("Generate unique V1 UUIDs") {
