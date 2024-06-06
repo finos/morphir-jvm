@@ -6,35 +6,22 @@ import scala.util.Try
 object UUID {
   type UUID = MUUID
 
+  trait Error                                                      extends Throwable
+  case class WrongFormat(message: String, cause: Throwable)        extends Error
+  case class WrongLength(message: String, cause: Throwable)        extends Error
+  case class UnsupportedVariant(message: String, cause: Throwable) extends Error
+  case class IsNil(message: String, cause: Throwable)              extends Error
+  case class NoVersion(message: String, cause: Throwable)          extends Error
+
   val Nil: UUID = MUUID.Nil
-
-  type V1 = MUUID.V1
-
-  type V2 = MUUID.V2
-
-  type V3 = MUUID.V3
-
-  type V4 = MUUID.V4
-
-  type V5 = MUUID.V5
 
   val dnsNamespace  = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
   val urlNamespace  = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
   val oidNamespace  = "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
   val x500Namespace = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 
-  object V1 {
-    def next(): UUID = MUUID.V1.next
-  }
-  object V3 {
-    def apply(namespace: UUID, local: String): UUID = MUUID.V3(namespace, local)
-  }
-  object V4 {
-    def random: UUID = MUUID.V4.random
-  }
-  object V5 {
-    def apply(namespace: UUID, local: String): UUID = MUUID.V3(namespace, local)
-  }
+  def compare(uuid1: UUID, uuid2: UUID): Int = uuid1.compareTo(uuid2)
+  def forName(s: String, uuid: UUID): UUID   = MUUID.V5(uuid, s)
 
   /** Creates a valid [[UUID]] from two [[_root_.scala.Long Long]] values representing the most/least significant bits.
     *
@@ -60,7 +47,19 @@ object UUID {
     *   doesn't follow the string standard representation or [[_root_.scala.util.Right Right]] with the [[UUID UUID]]
     *   representation.
     */
-  @inline def from(s: String): Either[Throwable, UUID] = MUUID.from(s)
+  @inline def parse(s: String): Either[Error, UUID] = {
+    val result = MUUID.from(s)
+    result match {
+      case Left(e)  => Left(WrongFormat(e.getMessage, e.getCause))
+      case Right(u) => Right(u)
+    }
+  }
+
+  /** Similar to `parse` but returns an `Option` instead of an `Either`.
+    * @param s
+    * @return
+    */
+  @inline def fromString(s: String): Option[UUID] = MUUID.from(s).toOption
 
   /** Creates a valid [[UUID]] from a [[JUUID]].
     *
@@ -80,4 +79,8 @@ object UUID {
     */
   @inline def isNil(s: String): Boolean = Nil.toString.equals(s)
 
+  @inline def toString(uuid: UUID): String       = uuid.toString
+  @inline def version(uuid: UUID): Int           = uuid.version
+  @inline def nilString(): String                = Nil.toString
+  @inline def isNilString(uuid: String): Boolean = Nil.toString.equals(uuid)
 }
