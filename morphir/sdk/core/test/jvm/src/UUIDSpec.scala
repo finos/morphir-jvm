@@ -32,12 +32,11 @@ object UUIDSpec extends MorphirBaseSpec {
         assert(UUID.fromString("0f769c4185a634208b09bb63bce12014"))(isNone)
       }
     ),
-
-      test ("UUID from msb and lsb") {
-        check(Gen.long) { (msb) =>
-          assertEquals(UUID.from(msb, 0xc000000000000000L), MUUID.from(msb, 0xc000000000000000L))
-        }
-      },
+    test("UUID from msb and lsb") {
+      check(Gen.long) { (msb) =>
+        assertEquals(UUID.from(msb, 0xc000000000000000L), MUUID.from(msb, 0xc000000000000000L))
+      }
+    },
     test("Nil check returns true for Nil String") {
       assertTrue(UUID.isNilString("00000000-0000-0000-0000-000000000000"))
     },
