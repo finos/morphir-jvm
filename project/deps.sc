@@ -30,6 +30,10 @@ object Deps {
       }
     }
 
+    case object `47Deg` {
+        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
+    }
+
     case object geirsson {
       case object metaconfig {
         val core    = ivy"com.geirsson::metaconfig-core::${Versions.metaconfig}"
@@ -235,6 +239,7 @@ object Versions {
   val fs2                        = "3.9.2"
   val geny                       = "1.0.0"
   val `izumi-reflect`            = "2.3.8"
+  val memeid4s                   = "0.8.0"
   val metaconfig                 = "0.11.1"
   val munit                      = "1.0.0-M10"
   val `munit-zio`                = "0.1.1"
