@@ -97,5 +97,3 @@ or in watch mode to reformat changed files:
 # Contributing
 
 * [Creating a new release](docs/release.md)
-
-# Notes
