@@ -18,7 +18,10 @@ env:
   SonatypeAppId: morphir-jvm
   SonatypeStage: 'build' 
   SonatypeScanTarget: '.' # depCache/coursier/v1/https/repo1.maven.org/maven2/
-  ExcludeDirectory: " -D fileExcludes='*.class, **/website/, **/docs/, **/.*' "
+  ExcludeDirectory: " -X -D fileExcludes='*.class, **/website/, **/docs/, **/.*' "
+
+# Build support Test: 002 
+
 
 # cancel older runs of a pull request;
 # this will not cancel anything for normal git pushes
