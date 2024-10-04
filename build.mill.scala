@@ -211,7 +211,7 @@ object `package` extends RootModule {
 
   // With this we can now just do ./mill reformatAll __.sources
   // instead of ./mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
-  def reformatAll(evaluator: Evaluator, sources: mill.main.Tasks[Seq[PathRef]]) = T.command {
+  def reformatAll(evaluator: Evaluator, @mainargs.arg(short='s')sources: mill.main.Tasks[Seq[PathRef]]) = T.command {
     ScalafmtModule.reformatAll(sources)()
   }
 
