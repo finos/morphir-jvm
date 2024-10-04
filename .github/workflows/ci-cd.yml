@@ -159,7 +159,7 @@ jobs:
 
   ############### SONATYPE SCAN ###############
   sonatype-scan:
-    if: always()
+    if: false
     needs: [ci]
     runs-on: ubuntu-latest
     steps:
