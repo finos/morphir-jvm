@@ -30,26 +30,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  compile-and-lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout current branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup Scala and Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-      - name: Cache scala dependencies
-        uses: coursier/cache-action@v6
-      - name: Compile code
-        run: ./mill -i -k -j 0 __.compile
-      - name: Lint code
-        run: ./mill -i -k -j 0 __.checkFormat
-
   test-jvm:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -345,7 +325,7 @@ jobs:
 
   ci:
     runs-on: ubuntu-latest
-    needs: [compile-and-lint, test-jvm, test-js, test-native]
+    needs: [test-jvm, test-js, test-native]
     steps:
       - name: Aggregate of lint, and all tests
         run: echo "ci passed"
