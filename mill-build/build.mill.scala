@@ -9,6 +9,7 @@ object `package` extends MillBuildRootModule {
     ivy"dev.zio::zio-config-magnolia:4.0.0",
     ivy"dev.zio::zio-config-typesafe:4.0.0",
     ivy"dev.zio::zio-config-yaml:4.0.0",
-    ivy"dev.zio::zio-config-refined:4.0.0"
+    ivy"dev.zio::zio-config-refined:4.0.0",
+    ivy"com.carlosedp::mill-aliases::0.4.1",
   )
 }
