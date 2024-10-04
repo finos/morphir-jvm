@@ -46,7 +46,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: ./mill mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources
+        run: ./mill -i -k -j 0 "__.checkFormat"
 
   test-jvm:
     runs-on: ubuntu-latest

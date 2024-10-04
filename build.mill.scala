@@ -205,9 +205,9 @@ object `package` extends RootModule {
     mill.idea.GenIdea.idea(ev)
   }
 
-  def checkFormatAll(evaluator:Evaluator, sources: mill.main.Tasks[Seq[PathRef]])= T.command{
-    ScalafmtModule.checkFormatAll(sources)()
-  }
+  // def checkFormatAll(evaluator:Evaluator, sources: mill.main.Tasks[Seq[PathRef]])= T.command{
+  //   ScalafmtModule.checkFormatAll(sources)()
+  // }
 
   // With this we can now just do ./mill reformatAll __.sources
   // instead of ./mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
@@ -223,25 +223,25 @@ object `package` extends RootModule {
     buildSettings.scala.crossScalaVersions
   }
 
-  object MyAliases extends Aliases {
-    def fmt                    = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
-    def checkfmt               = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
-    def ciTestJS               = alias("morphir.__.js.__.compile + morphir.__.js.publishArtifacts + morphir.__.js.__.test")
-    def ci_test_js_2_12        = morphirAlias(build.scala212)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
-    def ci_test_js_2_13        = morphirAlias(build.scala213)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
-    def ci_test_js_3           = morphirAlias(build.scala3x)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
-    def deps                   = alias("mill.scalalib.Dependency/showUpdates")
-    def testall                = alias("__.test")
-    def testJVM                = alias("morphir.__.jvm.__.test")
-    def testJVMCached          = alias("morphir.__.jvm.__.testCached")
-    def compileall             = alias("__.compile")
-    def comptestall            = alias("__.compile", "__.test")
-    def createPublishArtifacts = alias("morphir.__.publishArtifacts")
+  // object MyAliases extends Aliases {
+  //   def fmt                    = alias("mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources")
+  //   def checkfmt               = alias("mill.scalalib.scalafmt.ScalafmtModule/checkFormatAll __.sources")
+  //   def ciTestJS               = alias("morphir.__.js.__.compile + morphir.__.js.publishArtifacts + morphir.__.js.__.test")
+  //   def ci_test_js_2_12        = morphirAlias(build.scala212)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  //   def ci_test_js_2_13        = morphirAlias(build.scala213)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  //   def ci_test_js_3           = morphirAlias(build.scala3x)("__.js.__.compile", "__.js.publishArtifacts", "__.js.__.test")
+  //   def deps                   = alias("mill.scalalib.Dependency/showUpdates")
+  //   def testall                = alias("__.test")
+  //   def testJVM                = alias("morphir.__.jvm.__.test")
+  //   def testJVMCached          = alias("morphir.__.jvm.__.testCached")
+  //   def compileall             = alias("__.compile")
+  //   def comptestall            = alias("__.compile", "__.test")
+  //   def createPublishArtifacts = alias("morphir.__.publishArtifacts")
 
-    def morphirAlias(scalaVersion: String)(tasks: String*) = alias(
-      tasks.map(task => s"morphir[$scalaVersion].$task"): _*
-    )
+  //   def morphirAlias(scalaVersion: String)(tasks: String*) = alias(
+  //     tasks.map(task => s"morphir[$scalaVersion].$task"): _*
+  //   )
 
-  }
+  // }
 
 }

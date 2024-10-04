@@ -101,11 +101,11 @@ object Basics extends Basics {
   @inline def power(a: Float)(b: Float): Float             = Math.pow(a, b)
   @inline def toFloat(a: Int): Float                       = a.toDouble
   @inline def round(a: Float): Int =
-    a.round.intValue() //TODO: Look at truncation (need to update the SDK to return an Int64 here)
+    a.round.intValue() // TODO: Look at truncation (need to update the SDK to return an Int64 here)
   @inline def floor(a: Float): Int =
-    a.floor.intValue //TODO: Look at truncation (need to update the SDK to return an Int64 here)
+    a.floor.intValue // TODO: Look at truncation (need to update the SDK to return an Int64 here)
   @inline def ceiling(a: Float): Int =
-    a.ceil.intValue //TODO: Look at truncation (need to update the SDK to return an Int64 here)
+    a.ceil.intValue // TODO: Look at truncation (need to update the SDK to return an Int64 here)
   @inline def truncate(a: Float): Int = if (a >= 0) floor(a) else -floor(-a)
   @inline def negate(a: Float): Float = -a
   @inline def abs(a: Float): Float    = Math.abs(a)

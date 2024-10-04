@@ -99,10 +99,10 @@ object Decimal extends DecimalModuleCompat {
   }
 
   def shiftDecimalLeft(n: morphir.sdk.Int.Int)(value: Decimal): Decimal =
-    value.bigDecimal.scaleByPowerOfTen(-n.intValue()) //TODO: When we align Int to Int this should settle in correctly
+    value.bigDecimal.scaleByPowerOfTen(-n.intValue()) // TODO: When we align Int to Int this should settle in correctly
 
   def shiftDecimalRight(n: morphir.sdk.Int.Int)(value: Decimal): Decimal =
-    value.bigDecimal.scaleByPowerOfTen(n.intValue()) //TODO: When we align Int to Int this should settle in correctly
+    value.bigDecimal.scaleByPowerOfTen(n.intValue()) // TODO: When we align Int to Int this should settle in correctly
 
   def sub(a: Decimal)(b: Decimal): Decimal = a - b
 
@@ -112,7 +112,7 @@ object Decimal extends DecimalModuleCompat {
   def toFloat(value: Decimal): morphir.sdk.Float.Float =
     morphir.sdk.Float.Float(value.toDouble)
 
-  //TODO: Make sure the Elm call and this call return the same value
+  // TODO: Make sure the Elm call and this call return the same value
   def toString(value: Decimal): morphir.sdk.String.String = value.toString
 
   def _toString: Decimal => String = toString

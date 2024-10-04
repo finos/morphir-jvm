@@ -136,7 +136,7 @@ object Maybe {
 
   case object Nothing extends Maybe[scala.Nothing] {
 
-    def get: scala.Nothing = throw new NoSuchElementException("Nothing.get") //scalafix:ok
+    def get: scala.Nothing = throw new NoSuchElementException("Nothing.get") // scalafix:ok
 
     def map[B](fn: scala.Nothing => B): Maybe[B] = this
 

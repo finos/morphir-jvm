@@ -152,21 +152,21 @@ object Aggregate {
   def groupBy[A, K](getKey: A => K)(list: List[A]): Dict[K, List[A]] =
     List.foldl((a: A) =>
       (dictSoFar: Dict[K, List[A]]) =>
-        Dict.update[K, List[A]](getKey(a))({
+        Dict.update[K, List[A]](getKey(a)) {
           case Maybe.Just(listOfValues: List[A]) => Maybe.Just(List.cons(a)(listOfValues))
           case Maybe.Nothing                     => Maybe.Just(List.singleton(a): List[A])
-        })(dictSoFar)
+        }(dictSoFar)
     )(Dict.empty)(list)
 
   def aggregate[K, A, B](f: K => Aggretator[A, Key0] => B)(dict: Dict[K, List[A]]): List[B] =
     Dict
       .toList(dict)
-      .map({ case (key, items) =>
+      .map { case (key, items) =>
         f(key) { agg =>
           val list = List.filter(agg.filter)(items)
           val dict = aggregateHelp(agg.key, agg.operator, list)
           val d    = Dict.get(key0(()))(dict)
           Maybe.withDefault(0.0)(d)
         }
-      })
+      }
 }
