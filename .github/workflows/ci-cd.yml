@@ -46,7 +46,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: ./mill --allow-positional-command-args checkFormatAll __.sources
+        run: ./mill --allow-positional checkFormatAll __.sources
 
   test-jvm:
     runs-on: ubuntu-latest
