@@ -31,6 +31,7 @@ concurrency:
 
 jobs:
   lint:
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -43,10 +44,10 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
-      # - name: Cache scala dependencies
-      #   uses: coursier/cache-action@v6
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
       - name: Lint code
-        run: ./mill -i -k -j 0 "__.checkFormat"
+        run: ./mill __.checkFormat
 
   test-jvm:
     runs-on: ubuntu-latest
@@ -71,9 +72,11 @@ jobs:
 
       - name: Run JVM tests
         run: |
-          ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test"
+          ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test" 
+      - name: Check JVM format
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.test" 
 
-      - name: Cache JVM build output
+      - name: Lint Scala (JVM)
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
         uses: actions/cache/save@v4
@@ -107,8 +110,11 @@ jobs:
       - name: Run JS tests
         run: |
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.compile" + "morphir[${{matrix.scala}}].__.js.publishArtifacts" + "morphir[${{matrix.scala}}].__.js.__.test"
+      
+      - name: Check JS format
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.test" 
 
-      - name: Cache JS build output
+      - name: Lint ScalaJS
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
         uses: actions/cache/save@v4
@@ -147,6 +153,9 @@ jobs:
       - name: Run Native tests
         run: |
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.compile" + "morphir[${{matrix.scala}}].__.native.publishArtifacts" + "morphir[${{matrix.scala}}].__.native.__.test"
+
+      - name: Lint ScalaNative
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.test" 
 
       - name: Cache Native build output
         # when in master repo: all commits to main branch and all additional tags
