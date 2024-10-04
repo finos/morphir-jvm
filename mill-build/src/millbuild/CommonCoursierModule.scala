@@ -30,7 +30,8 @@ trait CommonCoursierModule extends CoursierModule {
     ("commons-io", "commons-io", "2.11.0"),
     ("com.google.code.gson", "gson", "2.9.0"),
     ("com.google.protobuf", "protobuf-java", "3.21.2"),
-    ("com.google.guava", "guava", "31.1-jre"),
-    ("org.jsoup", "jsoup", "1.15.3")
+    ("com.google.guava", "guava", "32.0.1-jre"),
+    ("org.jsoup", "jsoup", "1.15.3"),
+    ("org.yaml","snakeyaml","1.33")
   )
 }
