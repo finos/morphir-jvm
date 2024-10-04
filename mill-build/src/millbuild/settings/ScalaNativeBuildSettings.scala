@@ -12,7 +12,7 @@ object ScalaNativeBuildSettings {
   val config: Config[ScalaNativeBuildSettings] = deriveConfig[ScalaNativeBuildSettings]
   lazy val default: ScalaNativeBuildSettings   = ScalaNativeBuildSettings()
 
-  lazy val defaultVersion = "0.4.16"
+  lazy val defaultVersion = "0.5.5"
 
   implicit lazy val rw: upickle.default.ReadWriter[ScalaNativeBuildSettings] = upickle.default.macroRW
 }

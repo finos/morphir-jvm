@@ -1,6 +1,7 @@
+package build 
 import mill._, scalalib._
 
-object millbuild extends MillBuildRootModule {
+object `package` extends MillBuildRootModule {
   override def scalacOptions = super.scalacOptions() ++ Seq("-feature", "-deprecation", "-unchecked")
   override def ivyDeps = super.ivyDeps() ++ Seq(
     ivy"dev.zio::zio:2.0.21",
