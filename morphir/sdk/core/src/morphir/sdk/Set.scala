@@ -19,7 +19,7 @@ import morphir.sdk.Basics.Bool
 
 object Set {
   type Set[A] = scala.collection.immutable.Set[A]
-  private val Set = scala.collection.immutable.Set
+  private[morphir] val Set = scala.collection.immutable.Set
 
   /** Create an empty set.
     */

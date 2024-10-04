@@ -16,7 +16,11 @@ limitations under the License.
 
 package morphir.sdk
 
-object Basics {
+trait Basics {
+  def append[A: Appendable](a: A)(b: A): A = Appendable[A].append(a, b)
+}
+
+object Basics extends Basics {
 
   sealed abstract class Order(val value: Int) extends Product with Serializable
   object Order {
