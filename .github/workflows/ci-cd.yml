@@ -73,10 +73,11 @@ jobs:
       - name: Run JVM tests
         run: |
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test" 
-      - name: Check JVM format
-        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.test" 
 
       - name: Lint Scala (JVM)
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.checkFormat" 
+
+      - name: Cache JVM build output
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
         uses: actions/cache/save@v4
@@ -111,10 +112,10 @@ jobs:
         run: |
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.compile" + "morphir[${{matrix.scala}}].__.js.publishArtifacts" + "morphir[${{matrix.scala}}].__.js.__.test"
       
-      - name: Check JS format
-        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.test" 
-
       - name: Lint ScalaJS
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.checkFormat" 
+
+      - name: Cache JS build output
         # when in master repo: all commits to main branch and all additional tags
         if: github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') )
         uses: actions/cache/save@v4
@@ -155,7 +156,7 @@ jobs:
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.compile" + "morphir[${{matrix.scala}}].__.native.publishArtifacts" + "morphir[${{matrix.scala}}].__.native.__.test"
 
       - name: Lint ScalaNative
-        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.test" 
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.checkFormat" 
 
       - name: Cache Native build output
         # when in master repo: all commits to main branch and all additional tags
