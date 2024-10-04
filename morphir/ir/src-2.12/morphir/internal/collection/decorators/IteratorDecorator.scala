@@ -20,7 +20,7 @@ package morphir.internal.collection.decorators
 class IteratorDecorator[A](val `this`: Iterator[A]) extends AnyVal {
 
   def foldSomeLeft[B](z: B)(op: (B, A) => Option[B]): B = {
-    //scalafix:off
+    // scalafix:off
     var result: B = z
     while (`this`.hasNext)
       op(result, `this`.next()) match {
@@ -28,6 +28,6 @@ class IteratorDecorator[A](val `this`: Iterator[A]) extends AnyVal {
         case None    => return result
       }
     result
-    //sclafix:on
+    // sclafix:on
   }
 }

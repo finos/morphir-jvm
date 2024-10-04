@@ -48,7 +48,7 @@ object String {
   @inline def concat(strings: List[String]): String = strings.mkString
 
   @inline def split(sep: String)(target: String): List[String] =
-    target.split(sep).toList //TODO: These aren't exactly the same
+    target.split(sep).toList // TODO: These aren't exactly the same
 
   def toInt(text: String): Maybe[Basics.Int] =
     try Maybe.just(text.toInt)

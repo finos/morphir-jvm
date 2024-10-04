@@ -1,3 +1,5 @@
+package millbuild
+
 import mill._, scalalib._
 import mill.scalalib.api.ZincWorkerUtil.scalaNativeBinaryVersion
 import millbuild.crossplatform.DevMode
@@ -183,7 +185,7 @@ object Deps {
         ivy"org.scala-lang::scala3-tasty-inspector::$scalaVersion"
 
       case object modules {
-        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.11.0"
+        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.12.0"
       }
     }
     case object scalameta {
@@ -232,13 +234,13 @@ object Versions {
       case _            => "4.8.11"
     }
 
-  val circe                      = "0.14.6"
-  val coursier                   = "2.1.4"
+  val circe                      = "0.14.10"
+  val coursier                   = "2.1.13"
   val expecty                    = "0.16.0"
   val fansi                      = "0.4.0"
   val fs2                        = "3.9.2"
   val geny                       = "1.0.0"
-  val `izumi-reflect`            = "2.3.8"
+  val `izumi-reflect`            = "2.3.10"
   val memeid4s                   = "0.8.0"
   val metaconfig                 = "0.11.1"
   val munit                      = "1.0.0-M10"
@@ -249,19 +251,19 @@ object Versions {
   val `scala-java-time`          = "2.5.0"
   val `scala-native-crypto`      = "0.0.4"
   val `scalac-compat-annotation` = "0.1.3"
-  val scribe                     = "3.11.9"
+  val scribe                     = "3.15.0"
   val silencer                   = "1.17.13"
   val spire                      = "0.18.0"
   val `tasty-query`              = "0.5.6"
-  val upickle                    = "3.0.0-M1"
-  val zio                        = "2.1-RC1"
+  val upickle                    = "4.0.2"
+  val zio                        = "2.1.9"
   val `zio-cli`                  = "0.5.0"
   val `zio-config`               = "4.0.2"
   val `zio-interop-cats`         = "23.1.0.0"
   val `zio-json`                 = "0.7.3"
   val `zio-nio`                  = "2.0.2"
   val `zio-parser`               = "0.1.10"
-  val `zio-prelude`              = "1.0.0-RC21"
+  val `zio-prelude`              = "1.0.0-RC31"
   val `zio-process`              = "0.7.2"
   val `zio-schema`               = "1.5.0"
 }

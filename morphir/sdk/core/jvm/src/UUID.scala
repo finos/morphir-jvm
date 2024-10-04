@@ -64,9 +64,9 @@ object UUID {
   /** Creates a valid [[UUID]] from a [[JUUID]].
     *
     * @param juuid
-    *   the { @link java.util.UUID}
+    *   the {@link java.util.UUID}
     * @return
-    *   a valid { @link UUID} created from a { @link java.util.UUID}
+    *   a valid {@link UUID} created from a {@link java.util.UUID}
     */
   @inline def fromUUID(juuid: JUUID): UUID = MUUID.fromUUID(juuid)
 
