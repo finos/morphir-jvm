@@ -188,8 +188,8 @@ jobs:
     - name: Sonatype Lifecycle SCA Scan
       uses: sonatype-nexus-community/iq-github-action@main
       with:
-        username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
-        password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+        username: ${{ secrets.ORG_MORPHIR_SONATYPE_USER }}
+        password: ${{ secrets.ORG_MORPHIR_SONATYPE_PASSWORD }}
         serverUrl: ${{ env.SonatypeUrl }}
         applicationId: ${{ env.SonatypeAppId }}
         stage: ${{ env.SonatypeStage }}
@@ -199,7 +199,7 @@ jobs:
       if: always()
       run: |
         mkdir reports/
-        iqCredentials="${{ secrets.SONATYPE_SCANNER_USERNAME }}:${{ secrets.SONATYPE_SCANNER_PASSWORD }}"
+        iqCredentials="${{ secrets.ORG_MORPHIR_SONATYPE_USER }}:${{ secrets.ORG_MORPHIR_SONATYPE_PASSWORD }}"
         echo 'Get internal app ID for public ID: '$SonatypeAppId
         res=$(curl -u $iqCredentials --location $SonatypeUrl'api/v2/applications?publicId='$SonatypeAppId)
         IFS='"' read -a array <<< "$res"
