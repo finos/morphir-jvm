@@ -18,7 +18,7 @@ env:
   SonatypeAppId: morphir-jvm
   SonatypeStage: 'build' 
   SonatypeScanTarget: '.' # depCache/coursier/v1/https/repo1.maven.org/maven2/
-  ExcludeDirectory: " -D fileExcludes='*.class, **/website/, **/docs/, **/.*, **/com-lihaoyi*mill*.jar' "
+  ExcludeDirectory: " -D fileExcludes='*.class, **/website/, **/docs/, **/.*, **/*mill*.jar' "
 
 # Build support Test: 002 
 
