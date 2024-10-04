@@ -15,6 +15,24 @@ object `package` extends MillBuildRootModule {
     ivy"com.goyeau::mill-scalafix::0.3.1",
     ivy"com.google.jimfs:jimfs:1.3.0",
     ivy"io.github.davidgregory084::mill-tpolecat::0.3.5",
-    ivy"org.yaml:snakeyaml:1.33",
+    //ivy"org.yaml:snakeyaml:1.33",
+  )
+
+  override def mapDependencies: Task[coursier.Dependency => coursier.Dependency] = T.task {
+    super.mapDependencies().andThen { dep =>
+      forcedVersions
+        .find(t => t._1 == dep.module.organization.value && t._2 == dep.module.name.value)
+        .map { forced =>
+          val newDep = dep.withVersion(forced._3)
+          T.log.debug(s"Mapping $dep to $newDep")
+          newDep
+        }
+        .getOrElse(dep)
+    }
+  }
+
+  val forcedVersions = Seq(    
+    ("com.google.guava", "guava", "32.0.1-jre"),
+    ("org.yaml","snakeyaml","1.33")
   )
 }
