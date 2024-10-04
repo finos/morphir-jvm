@@ -30,8 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    if: false
+  compile-and-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -46,8 +45,10 @@ jobs:
           java-version: "17"
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
+      - name: Compile code
+        run: ./mill -i -k -j 0 __.compile
       - name: Lint code
-        run: ./mill __.checkFormat
+        run: ./mill -i -k -j 0 __.checkFormat
 
   test-jvm:
     runs-on: ubuntu-latest
