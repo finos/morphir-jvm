@@ -1,18 +1,25 @@
 #!/usr/bin/env bash
 
-set -eux
+set -eu
 
-#echo $GPG_PRIVATE_KEY_B64 | base64 --decode > gpg_key
-echo $GPG_SECRET > gpg_key
+echo "$PGP_SECRET" | base64 --decode > gpg_key
 
-gpg --import gpg_key
+gpg --import  --no-tty --batch --yes gpg_key
 
 rm gpg_key
 
-mill.scalalib.PublishModule/publishAll \
-    --sonatypeCreds lihaoyi:$SONATYPE_PASSWORD \
-    --gpgArgs --passphrase,$GPG_PASSWORD,--batch,--yes,-a,-b \
+# Build all artifacts
+./mill -i __.publishArtifacts
+
+# Publish all artifacts
+./mill -i \
+    mill.scalalib.PublishModule/publishAll \
+    --sonatypeCreds "$SONATYPE_USER":"$SONATYPE_PASSWORD" \
+    --gpgArgs --passphrase="$PGP_PASSWORD",--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
     --publishArtifacts __.publishArtifacts \
-    --readTimeout 600000 \
+    --readTimeout  3600000 \
+    --awaitTimeout 3600000 \
     --release true \
-    --signed true
+    --signed  true \
+    --sonatypeUri https://s01.oss.sonatype.org/service/local \
+    --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots

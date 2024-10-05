@@ -221,10 +221,10 @@ jobs:
       group: ${{ github.workflow}}-publish-${{ github.sha }}
 
     env:
-      PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-      PGP_SECRET: ${{ secrets.PGP_SECRET_BASE64 }}
-      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      MILL_PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+      MILL_PGP_SECRET_BASE64: ${{ secrets.PGP_SECRET_BASE64 }}
+      MILL_SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      MILL_SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       PUBLISH_AS_SNAPSHOT: true
       LANG: "en_US.UTF-8"
       LC_MESSAGES: "en_US.UTF-8"
@@ -321,7 +321,7 @@ jobs:
           restore-keys: ${{ runner.os }}-mill-native-11-3.3.4-${{ github.sha }}-
 
       - name: Publish artifacts to Sonatype        
-        run: ./mill -i -j 0 io.kipp.mill.ci.release.ReleaseModule/publishAll
+        run: ./mill -i -j 0 mill.scalalib.PublishModule/
 
   ci:
     runs-on: ubuntu-latest
