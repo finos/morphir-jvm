@@ -1,4 +1,4 @@
-package build 
+package build
 
 import $meta._
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
@@ -7,7 +7,7 @@ import com.carlosedp.aliases._
 import coursier.maven.MavenRepository
 import io.github.davidgregory084.TpolecatModule
 import millbuild._
-import millbuild.{Versions => Vers}
+import millbuild.{ Versions => Vers }
 import millbuild.crossplatform._
 import millbuild.settings._
 import mill._, mill.scalalib._, mill.scalajslib._, mill.scalanativelib._, scalafmt._
@@ -16,16 +16,15 @@ import mill.scalajslib.api.ModuleKind
 import mill.contrib.buildinfo.BuildInfo
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 
-
 object `package` extends RootModule {
-    implicit val buildSettings: BuildSettings = interp.watchValue(MyBuild.cachedBuildSettings)
-    def resolvedBuildSettings                 = T.input(MyBuild.buildSettings())
-    val scala212                              = buildSettings.scala.scala212Version
-    val scala213                              = buildSettings.scala.scala213Version
-    val scala3x                               = buildSettings.scala.scala3xVersion
+  implicit val buildSettings: BuildSettings = interp.watchValue(MyBuild.cachedBuildSettings)
+  def resolvedBuildSettings                 = T.input(MyBuild.buildSettings())
+  val scala212                              = buildSettings.scala.scala212Version
+  val scala213                              = buildSettings.scala.scala213Version
+  val scala3x                               = buildSettings.scala.scala3xVersion
 
-  /** The version of Scala natively supported by the toolchain. Morphir itself may provide backends that generate code for
-    * other Scala versions. We may also directly cross-compile to additional Scla versions.
+  /** The version of Scala natively supported by the toolchain. Morphir itself may provide backends that generate code
+    * for other Scala versions. We may also directly cross-compile to additional Scla versions.
     */
   val morphirScalaVersion: String = interp.watchValue(buildSettings.scala.defaultVersion)
 
@@ -152,10 +151,9 @@ object `package` extends RootModule {
     }
   }
 
-
-  //-----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
   // Build settings and common code
-  //-----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
   trait MorphirScalaModule extends ScalaModule with TpolecatModule with CommonCoursierModule { self =>
 
     override def scalacOptions = T {
@@ -168,7 +166,23 @@ object `package` extends RootModule {
   trait MorphirPublishModule extends PublishModule with JavaModule {
     import mill.scalalib.publish._
     def packageDescription: String = s"The $artifactName package"
-    override def publishVersion: T[String] = VcsVersion.vcsState().format()
+    def publishAsSnapshot = T.input {
+      val publishAsSnapshotVar = T.env.getOrElse("PUBLISH_AS_SNAPSHOT", "false")
+      T.log.info(s"PUBLISH_AS_SNAPSHOT: $publishAsSnapshotVar")
+      publishAsSnapshotVar match {
+        case "true" | "1" | "yes" => true
+        case _                    => false
+      }
+    }
+    override def publishVersion: T[String] = T {
+      val version = VcsVersion.vcsState().format()
+      if (publishAsSnapshot()) {
+        s"${version}-SNAPSHOT"
+      } else {
+        version
+      }
+
+    }
 
     def pomSettings = PomSettings(
       description = packageDescription,
@@ -207,7 +221,7 @@ object `package` extends RootModule {
 
   // With this we can now just do ./mill reformatAll __.sources
   // instead of ./mill -w mill.scalalib.scalafmt.ScalafmtModule/reformatAll __.sources
-  def reformatAll(evaluator: Evaluator, @mainargs.arg(short='s')sources: mill.main.Tasks[Seq[PathRef]]) = T.command {
+  def reformatAll(evaluator: Evaluator, @mainargs.arg(short = 's') sources: mill.main.Tasks[Seq[PathRef]]) = T.command {
     ScalafmtModule.reformatAll(sources)()
   }
 

@@ -3,6 +3,8 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags:
+      - "v*.*.*"
   release:
     types:
       - published
@@ -14,14 +16,13 @@ env:
   scala_212_version: "2.12.20"
   scala_213_version: "2.13.15"
   scala_3_version: "3.3.4"
-  SonatypeUrl: 'https://finos.sonatype.app/platform/'
+  SonatypeUrl: "https://finos.sonatype.app/platform/"
   SonatypeAppId: morphir-jvm
-  SonatypeStage: 'build' 
-  SonatypeScanTarget: '.' # depCache/coursier/v1/https/repo1.maven.org/maven2/
+  SonatypeStage: "build"
+  SonatypeScanTarget: "." # depCache/coursier/v1/https/repo1.maven.org/maven2/
   ExcludeDirectory: " -D fileExcludes='*.class, **/website/, **/docs/, **/.*, **/*mill*.jar' "
 
-# Build support Test: 002 
-
+# Build support Test: 002
 
 # cancel older runs of a pull request;
 # this will not cancel anything for normal git pushes
@@ -37,7 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["11", "17"]
-        scala: ["2.12.20","2.13.15", "3.3.4"]
+        scala: ["2.12.20", "2.13.15", "3.3.4"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -53,10 +54,10 @@ jobs:
 
       - name: Run JVM tests
         run: |
-          ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test" 
+          ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test"
 
       - name: Lint Scala (JVM)
-        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.checkFormat" 
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.checkFormat"
 
       - name: Cache JVM build output
         # when in master repo: all commits to main branch and all additional tags
@@ -75,7 +76,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["17"] # Note there is no need ro actually run this for multiple JVM versions for JS
-        scala: [ "2.12.20", "2.13.15", "3.3.4"]
+        scala: ["2.12.20", "2.13.15", "3.3.4"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -92,9 +93,9 @@ jobs:
       - name: Run JS tests
         run: |
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.compile" + "morphir[${{matrix.scala}}].__.js.publishArtifacts" + "morphir[${{matrix.scala}}].__.js.__.test"
-      
+
       - name: Lint ScalaJS
-        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.checkFormat" 
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.js.__.checkFormat"
 
       - name: Cache JS build output
         # when in master repo: all commits to main branch and all additional tags
@@ -112,7 +113,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["11"] # Note there is no need ro actually run this for multiple JVM versions for native
-        scala: ["2.12.20","2.13.15", "3.3.4"]
+        scala: ["2.12.20", "2.13.15", "3.3.4"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -137,7 +138,7 @@ jobs:
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.compile" + "morphir[${{matrix.scala}}].__.native.publishArtifacts" + "morphir[${{matrix.scala}}].__.native.__.test"
 
       - name: Lint ScalaNative
-        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.checkFormat" 
+        run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.native.__.checkFormat"
 
       - name: Cache Native build output
         # when in master repo: all commits to main branch and all additional tags
@@ -206,18 +207,18 @@ jobs:
         with:
           name: ${{ env.SonatypeAppId }} Sonatype SBOM (SPDX)
           path: reports/
-  #############################################             
+  #############################################
 
-  cd:    
+  cd:
     needs: [sonatype-scan, ci]
 
     runs-on: ubuntu-latest
     # when in primary repo: all commits to main branch and all additional tags
-    if: github.repository == 'finos/morphir-jvm' && ( github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') ) )      
+    if: github.repository == 'finos/morphir-jvm' && ( github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') ) )
 
     # only run one publish job for the same sha at the same time
     # e.g. when a main-branch push is also tagged
-    concurrency: 
+    concurrency:
       group: ${{ github.workflow}}-publish-${{ github.sha }}
 
     env:
@@ -225,7 +226,7 @@ jobs:
       MILL_PGP_SECRET_BASE64: ${{ secrets.PGP_SECRET_BASE64 }}
       MILL_SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       MILL_SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      PUBLISH_AS_SNAPSHOT: true
+      PUBLISH_AS_SNAPSHOT: ${{ github.event_name != 'release' && !startsWith(github.ref, 'refs/tags/') }}
       LANG: "en_US.UTF-8"
       LC_MESSAGES: "en_US.UTF-8"
       LC_ALL: "en_US.UTF-8"
@@ -253,7 +254,7 @@ jobs:
             out/morphir/2.12.20/**/jvm/
             out/morphir/build/
           key: ${{ runner.os }}-mill-jvm-11-2.12.20-${{ github.sha }}-${{ hashFiles('out') }}
-          restore-keys: ${{ runner.os }}-mill-jvm-11-2.12.20-${{ github.sha }}-        
+          restore-keys: ${{ runner.os }}-mill-jvm-11-2.12.20-${{ github.sha }}-
 
       - name: Restore Scala 2.13 JVM Build Output From Cache
         uses: actions/cache/restore@v4
@@ -278,7 +279,7 @@ jobs:
           path: |
             out/morphir/2.12.20/**/js/
           key: ${{ runner.os }}-mill-js-11-2.12.20-${{ github.sha }}-${{ hashFiles('out') }}
-          restore-keys: ${{ runner.os }}-mill-js-11-2.12.20-${{ github.sha }}-            
+          restore-keys: ${{ runner.os }}-mill-js-11-2.12.20-${{ github.sha }}-
 
       - name: Restore Scala 2.13 JS Build Output From Cache
         uses: actions/cache/restore@v4
@@ -320,7 +321,7 @@ jobs:
           key: ${{ runner.os }}-mill-native-11-3.3.4-${{ github.sha }}-${{ hashFiles('out') }}
           restore-keys: ${{ runner.os }}-mill-native-11-3.3.4-${{ github.sha }}-
 
-      - name: Publish artifacts to Sonatype        
+      - name: Publish artifacts to Sonatype
         run: ./mill -i -j 0 mill.scalalib.PublishModule/
 
   ci:
