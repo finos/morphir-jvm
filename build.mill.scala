@@ -5,7 +5,6 @@ import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import com.goyeau.mill.scalafix.ScalafixModule
 import com.carlosedp.aliases._
 import coursier.maven.MavenRepository
-import io.kipp.mill.ci.release.CiReleaseModule
 import io.github.davidgregory084.TpolecatModule
 import millbuild._
 import millbuild.{Versions => Vers}
@@ -15,7 +14,7 @@ import mill._, mill.scalalib._, mill.scalajslib._, mill.scalanativelib._, scalaf
 import mill.scalalib.publish.PublishInfo
 import mill.scalajslib.api.ModuleKind
 import mill.contrib.buildinfo.BuildInfo
-
+import de.tobiasroeser.mill.vcs.version.VcsVersion
 
 
 object `package` extends RootModule {
@@ -166,9 +165,10 @@ object `package` extends RootModule {
 
   trait MorphirScalafixModule extends ScalafixModule
 
-  trait MorphirPublishModule extends CiReleaseModule with JavaModule {
+  trait MorphirPublishModule extends PublishModule with JavaModule {
     import mill.scalalib.publish._
     def packageDescription: String = s"The $artifactName package"
+    override def publishVersion: T[String] = VcsVersion.vcsState().format()
 
     def pomSettings = PomSettings(
       description = packageDescription,

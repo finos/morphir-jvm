@@ -11,11 +11,10 @@ object `package` extends MillBuildRootModule {
     ivy"dev.zio::zio-config-yaml:4.0.2",
     ivy"dev.zio::zio-config-refined:4.0.2",
     ivy"com.carlosedp::mill-aliases::0.4.1",
-    ivy"io.chris-kipp::mill-ci-release::0.1.10",
     ivy"com.goyeau::mill-scalafix::0.3.1",
     ivy"com.google.jimfs:jimfs:1.3.0",
     ivy"io.github.davidgregory084::mill-tpolecat::0.3.5",
-    //ivy"org.yaml:snakeyaml:1.33",
+    ivy"de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0"
   )
 
   override def mapDependencies: Task[coursier.Dependency => coursier.Dependency] = T.task {
