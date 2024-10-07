@@ -1,3 +1,5 @@
+package morphir.sdk
+
 import UUID.WrongFormat
 import memeid4s.{ UUID => MUUID }
 import morphir.testing.MorphirBaseSpec

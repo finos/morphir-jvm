@@ -1,3 +1,5 @@
+package morphir.sdk
+
 import memeid4s.{ UUID => MUUID }
 
 import java.util.{ UUID => JUUID }
