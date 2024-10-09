@@ -11,7 +11,7 @@ object UUIDSpec extends MorphirBaseSpec {
     suite("parse Tests")(
       test("Generate UUID from valid String using parse") {
         val namespace = MUUID.V4.random
-        val uuid      = UUID.forName("test", namespace)
+        val uuid      = UUID.forName("test")(namespace)
 
         assert(UUID.parse(uuid.toString))(isRight(equalTo(uuid)))
         assertTrue(uuid.version == 5)
@@ -25,7 +25,7 @@ object UUIDSpec extends MorphirBaseSpec {
     suite("fromString Tests")(
       test("Generate UUID from valid String using fromString") {
         val namespace = MUUID.V4.random
-        val uuid      = UUID.forName("test", namespace)
+        val uuid      = UUID.forName("test")(namespace)
 
         assert(UUID.fromString(uuid.toString))(isSome(equalTo(uuid)))
         assertTrue(uuid.version == 5)
@@ -49,24 +49,24 @@ object UUIDSpec extends MorphirBaseSpec {
       test("Generate same V5 UUID for same namespace and name") {
         val namespace = MUUID.V4.random
         val name      = "Test Name!"
-        val u1        = UUID.forName(name, namespace)
-        val u2        = UUID.forName(name, namespace)
+        val u1        = UUID.forName(name)(namespace)
+        val u2        = UUID.forName(name)(namespace)
         assertEquals(u1, u2)
       },
       test("Generate unique V5 UUID for unique namespace") {
         val namespace1 = MUUID.V4.random
         val namespace2 = MUUID.V4.random
         val name       = "Test Name!"
-        val u1         = UUID.forName(name, namespace1)
-        val u2         = UUID.forName(name, namespace2)
+        val u1         = UUID.forName(name)(namespace1)
+        val u2         = UUID.forName(name)(namespace2)
         assertTrue(u1 != u2)
       },
       test("Generate unique V5 UUID for unique names") {
         val namespace = MUUID.V4.random
         val name1     = "Test Name!"
         val name2     = "Test Name 2!"
-        val u1        = UUID.forName(name1, namespace)
-        val u2        = UUID.forName(name2, namespace)
+        val u1        = UUID.forName(name1)(namespace)
+        val u2        = UUID.forName(name2)(namespace)
         assertTrue(u1 != u2)
       }
     )
