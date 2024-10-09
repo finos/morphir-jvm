@@ -22,8 +22,8 @@ object UUID {
   val oidNamespace  = "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
   val x500Namespace = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 
-  def compare(uuid1: UUID, uuid2: UUID): Int = uuid1.compareTo(uuid2)
-  def forName(s: String, uuid: UUID): UUID   = MUUID.V5(uuid, s)
+  def compare(uuid1: UUID)(uuid2: UUID): Int = uuid1.compareTo(uuid2)
+  def forName(s: String)(uuid: UUID): UUID   = MUUID.V5(uuid, s)
 
   /** Creates a valid [[UUID]] from two [[_root_.scala.Long Long]] values representing the most/least significant bits.
     *
