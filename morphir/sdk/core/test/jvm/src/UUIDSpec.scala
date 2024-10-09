@@ -69,6 +69,24 @@ object UUIDSpec extends MorphirBaseSpec {
         val u2        = UUID.forName(name2)(namespace)
         assertTrue(u1 != u2)
       }
+    ),
+    suite("Known namespaces")(
+      test("dnsNamespace should be a valid UUID") {
+        val uuid = UUID.dnsNamespace
+        assertTrue(uuid.isInstanceOf[UUID.UUID])
+      },
+      test("urlNamespace should be a valid UUID") {
+        val uuid = UUID.urlNamespace
+        assertTrue(uuid.isInstanceOf[UUID.UUID])
+      },
+      test("oidNamespace should be a valid UUID") {
+        val uuid = UUID.oidNamespace
+        assertTrue(uuid.isInstanceOf[UUID.UUID])
+      },
+      test("x500Namespace should be a valid UUID") {
+        val uuid = UUID.x500Namespace
+        assertTrue(uuid.isInstanceOf[UUID.UUID])
+      }
     )
   )
 
