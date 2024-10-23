@@ -151,7 +151,7 @@ jobs:
 
   ############### SONATYPE SCAN ###############
   sonatype-scan:
-    if: github.repository_owner == 'finos'
+    # if: github.repository_owner == 'finos'
     needs: [ci]
     runs-on: ubuntu-latest
     steps:
