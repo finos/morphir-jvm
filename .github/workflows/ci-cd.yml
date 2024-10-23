@@ -178,28 +178,50 @@ jobs:
       #     path: depCache/
 
       - name: Sonatype Lifecycle SCA Scan
-        uses: sonatype-nexus-community/iq-github-action@main
+        uses: sonatype/actions/evaluate@v1
         with:
+          iq-server-url: ${{ env.SonatypeUrl }}
           username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
           password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
-          serverUrl: ${{ env.SonatypeUrl }}
-          applicationId: ${{ env.SonatypeAppId }}
+          application-id: ${{ env.SonatypeAppId }}
           stage: ${{ env.SonatypeStage }}
-          target: ${{ env.SonatypeScanTarget }} ${{ env.ExcludeDirectory }}
+          scan-targets: ${{ env.SonatypeScanTarget }}
+          module-exclude: ${{ env.ExcludeDirectory }}
 
-      - name: Retrieve Sonatype SBOM (SPDX)
-        if: always()
-        run: |
-          mkdir reports/
-          iqCredentials="${{ secrets.SONATYPE_SCANNER_USERNAME }}:${{ secrets.SONATYPE_SCANNER_PASSWORD }}"
-          echo 'Get internal app ID for public ID: '$SonatypeAppId
-          res=$(curl -u $iqCredentials --location $SonatypeUrl'api/v2/applications?publicId='$SonatypeAppId)
-          IFS='"' read -a array <<< "$res"
-          echo 'Internal app ID: '${array[5]}
-          internalID=${array[5]}
-          curl -u $iqCredentials --location $SonatypeUrl'api/v2/spdx/'$internalID'/stages/'$SonatypeStage -H 'Accept: application/xml' > reports/$SonatypeAppId.spdx.json
-          echo 'Sonatype SBOM (SPDX): '
-          cat reports/$SonatypeAppId.spdx.json
+      - name: Save Sonatype SBOM
+        uses: sonatype/actions/fetch-sbom@v1
+        if: ( success() || failure() ) && steps.evaluate.outputs.scan-id
+        with:
+          iq-server-url: https://finos.sonatype.app/platform/
+          username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
+          password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+          application-id: ${{ env.SonatypeAppId }}
+          scan-id: ${{ steps.evaluate.outputs.scan-id }}
+          sbom-standard: spdx
+          sbom-version: 2.3
+          artifact-name: ${{ env.SonatypeAppId }}-bom
+        # uses: sonatype-nexus-community/iq-github-action@main
+        # with:
+        #   username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
+        #   password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+        #   serverUrl: ${{ env.SonatypeUrl }}
+        #   applicationId: ${{ env.SonatypeAppId }}
+        #   stage: ${{ env.SonatypeStage }}
+        #   target: ${{ env.SonatypeScanTarget }} ${{ env.ExcludeDirectory }}
+
+      # - name: Retrieve Sonatype SBOM (SPDX)
+      #   if: always()
+      #   run: |
+      #     mkdir reports/
+      #     iqCredentials="${{ secrets.SONATYPE_SCANNER_USERNAME }}:${{ secrets.SONATYPE_SCANNER_PASSWORD }}"
+      #     echo 'Get internal app ID for public ID: '$SonatypeAppId
+      #     res=$(curl -u $iqCredentials --location $SonatypeUrl'api/v2/applications?publicId='$SonatypeAppId)
+      #     IFS='"' read -a array <<< "$res"
+      #     echo 'Internal app ID: '${array[5]}
+      #     internalID=${array[5]}
+      #     curl -u $iqCredentials --location $SonatypeUrl'api/v2/spdx/'$internalID'/stages/'$SonatypeStage -H 'Accept: application/xml' > reports/$SonatypeAppId.spdx.json
+      #     echo 'Sonatype SBOM (SPDX): '
+      #     cat reports/$SonatypeAppId.spdx.json
 
       - name: Upload Sonatype SBOM (SPDX)
         if: always()
