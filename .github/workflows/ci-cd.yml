@@ -192,7 +192,7 @@ jobs:
 
       - name: Save Sonatype SBOM
         uses: sonatype/actions/fetch-sbom@v1
-        if: alway() && steps.evaluate.outputs.scan-id
+        if: always() && steps.evaluate.outputs.scan-id
         with:
           iq-server-url: https://finos.sonatype.app/platform/
           username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
@@ -206,7 +206,6 @@ jobs:
 
   cd:
     needs: [sonatype-scan, ci]
-
     runs-on: ubuntu-latest
     # when in primary repo: all commits to main branch and all additional tags
     if: github.repository == 'finos/morphir-jvm' && ( github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') ) )
