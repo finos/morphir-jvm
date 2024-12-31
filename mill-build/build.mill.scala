@@ -1,10 +1,10 @@
-package build 
+package build
 import mill._, scalalib._
 
 object `package` extends MillBuildRootModule {
   override def scalacOptions = super.scalacOptions() ++ Seq("-feature", "-deprecation", "-unchecked")
   override def ivyDeps = super.ivyDeps() ++ Seq(
-    ivy"dev.zio::zio:2.1.9",
+    ivy"dev.zio::zio:2.1.14",
     ivy"dev.zio::zio-config:4.0.2",
     ivy"dev.zio::zio-config-magnolia:4.0.2",
     ivy"dev.zio::zio-config-typesafe:4.0.2",
@@ -30,8 +30,8 @@ object `package` extends MillBuildRootModule {
     }
   }
 
-  val forcedVersions = Seq(    
+  val forcedVersions = Seq(
     ("com.google.guava", "guava", "32.0.1-jre"),
-    ("org.yaml","snakeyaml","1.33")
+    ("org.yaml", "snakeyaml", "1.33")
   )
 }
