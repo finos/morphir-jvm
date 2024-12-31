@@ -33,7 +33,7 @@ object Deps {
     }
 
     case object `47Deg` {
-        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
+      val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
     }
 
     case object geirsson {
@@ -276,7 +276,7 @@ object ScalaVersions {
   def scala3x  = "3.3.4"
 
   def scalaJSVersion     = "1.17.0"
-  def scalaNativeVersion = "0.5.5"
+  def scalaNativeVersion = "0.5.6"
   def millScalaVersion   = "2.13.10"
 }
 
