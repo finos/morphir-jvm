@@ -1,4 +1,4 @@
-import upickle.default.{ReadWriter => RW, macroRW}
+import upickle.default.{ ReadWriter => RW, macroRW }
 
 sealed trait Platform {
   def name: String
