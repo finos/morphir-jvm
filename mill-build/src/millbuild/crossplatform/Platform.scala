@@ -1,6 +1,6 @@
 package millbuild.crossplatform
 
-import upickle.default.{ReadWriter => RW, macroRW}
+import upickle.default.{ ReadWriter => RW, macroRW }
 
 sealed trait Platform extends Ordered[Platform] { self =>
   val isJS: Boolean        = self == Platform.JS
@@ -10,14 +10,17 @@ sealed trait Platform extends Ordered[Platform] { self =>
   def name: String
   def compare(that: Platform): Int = self.name.compare(that.name)
 
-  def suffixes: Seq[String] = Seq(self.name) ++ pairs.map {
-    case (a, b) => a + "-" + b
+  def suffixes: Seq[String] = Seq(self.name) ++ pairs.map { case (a, b) =>
+    a + "-" + b
   }
   final def pairs: Seq[(String, String)] =
-    Platform.all.filter(_ != self).map { p =>
-      if (self < p) (self.name, p.name)
-      else (p.name, self.name)
-    }.toSeq
+    Platform.all
+      .filter(_ != self)
+      .map { p =>
+        if (self < p) (self.name, p.name)
+        else (p.name, self.name)
+      }
+      .toSeq
 
   override def toString = name
 }

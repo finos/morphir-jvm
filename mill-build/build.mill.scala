@@ -1,4 +1,4 @@
-package build 
+package build
 import mill._, scalalib._
 
 object `package` extends MillBuildRootModule {
@@ -30,8 +30,8 @@ object `package` extends MillBuildRootModule {
     }
   }
 
-  val forcedVersions = Seq(    
+  val forcedVersions = Seq(
     ("com.google.guava", "guava", "32.0.1-jre"),
-    ("org.yaml","snakeyaml","1.33")
+    ("org.yaml", "snakeyaml", "1.33")
   )
 }
