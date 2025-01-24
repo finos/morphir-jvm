@@ -32,6 +32,6 @@ trait CommonCoursierModule extends CoursierModule {
     ("com.google.protobuf", "protobuf-java", "3.21.2"),
     ("com.google.guava", "guava", "32.0.1-jre"),
     ("org.jsoup", "jsoup", "1.15.3"),
-    ("org.yaml","snakeyaml","1.33")
+    ("org.yaml", "snakeyaml", "1.33")
   )
 }

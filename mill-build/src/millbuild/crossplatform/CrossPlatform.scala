@@ -55,7 +55,7 @@ trait CrossPlatform extends Module with DynamicModule { self =>
   def childPlatformModules: Seq[PlatformModule] =
     millModuleDirectChildren.collect { case (m: PlatformModule @unchecked) => m }
 
-  def targetPlatforms: T[Seq[Platform]] = T { childPlatformModules.map(_.platform) }
+  def targetPlatforms: T[Seq[Platform]] = T(childPlatformModules.map(_.platform))
 
   /// Try and resolve to an actual platform specific module if it exists (not expecting multiple but in theory it is possible)
   def childPlatformModules(platform: Platform): Seq[PlatformModule] =
