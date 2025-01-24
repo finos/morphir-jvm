@@ -12,37 +12,39 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.examples.booksandrecords
 
-import com.fasterxml.jackson.annotation.{JsonAutoDetect, JsonProperty, JsonSubTypes, JsonTypeInfo}
+import com.fasterxml.jackson.annotation.{ JsonAutoDetect, JsonProperty, JsonSubTypes, JsonTypeInfo }
 import org.springframework.context.annotation.Bean;
 
-
 object API {
-  type DealId = String
+  type DealId    = String
   type ProductId = String
-  type Price = Float
-  type Quantity = Int
-
+  type Price     = Float
+  type Quantity  = Int
 
   // Commands
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-  @JsonSubTypes(Array
-  (
-    new JsonSubTypes.Type(value = classOf[OpenDeal], name = "openDeal"),
-    new JsonSubTypes.Type(value = classOf[CloseDeal], name = "closeDeal")
-  ))
+  @JsonSubTypes(
+    Array(
+      new JsonSubTypes.Type(value = classOf[OpenDeal], name = "openDeal"),
+      new JsonSubTypes.Type(value = classOf[CloseDeal], name = "closeDeal")
+    )
+  )
   sealed trait DealCmd
 
   @Bean
   case class CloseDeal(@JsonProperty("dealId") dealId: DealId) extends DealCmd
 
-
   @Bean
-  case class OpenDeal(@JsonProperty("dealId") dealId: DealId, @JsonProperty("productId") productId: ProductId, @JsonProperty("price") price: Price, @JsonProperty("quantity") quantity: Quantity) extends DealCmd
+  case class OpenDeal(
+    @JsonProperty("dealId") dealId: DealId,
+    @JsonProperty("productId") productId: ProductId,
+    @JsonProperty("price") price: Price,
+    @JsonProperty("quantity") quantity: Quantity
+  ) extends DealCmd
 
   // Events
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
@@ -57,16 +59,17 @@ object API {
   case object InvalidQuantity extends RejectReason
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-  @JsonSubTypes(Array
-  (
-    new JsonSubTypes.Type(value = classOf[DealClosed], name = "dealClosed"),
-    new JsonSubTypes.Type(value = classOf[DealOpened], name = "dealOpened"),
-    new JsonSubTypes.Type(value = classOf[CommandRejected], name = "CommandRejected")
-  ))
+  @JsonSubTypes(
+    Array(
+      new JsonSubTypes.Type(value = classOf[DealClosed], name = "dealClosed"),
+      new JsonSubTypes.Type(value = classOf[DealOpened], name = "dealOpened"),
+      new JsonSubTypes.Type(value = classOf[CommandRejected], name = "CommandRejected")
+    )
+  )
   @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
   sealed trait DealEvent
 
-  case class DealOpened(  id: DealId, productId: ProductId, price: Price, quantity: Quantity) extends DealEvent
+  case class DealOpened(id: DealId, productId: ProductId, price: Price, quantity: Quantity) extends DealEvent
 
   case class DealClosed(dealId: DealId) extends DealEvent
 

@@ -12,20 +12,18 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/
-
+ */
 
 package morphir.examples.booksandrecords.processor
 
-import morphir.examples.booksandrecords.API.{CloseDeal, DealCmd, DealEvent, OpenDeal}
+import morphir.examples.booksandrecords.API.{ CloseDeal, DealCmd, DealEvent, OpenDeal }
 import morphir.examples.booksandrecords.Logic._
 import morphir.examples.booksandrecords.repository.DealRepository
 
 object CmdProcessor {
-  def processCmd(cmd: DealCmd, dealRepository: DealRepository): DealEvent = {
+  def processCmd(cmd: DealCmd, dealRepository: DealRepository): DealEvent =
     cmd match {
-      case cmd: OpenDeal => openDeal(cmd, dealRepository)
+      case cmd: OpenDeal  => openDeal(cmd, dealRepository)
       case cmd: CloseDeal => closeDeal(cmd, dealRepository)
     }
-  }
 }

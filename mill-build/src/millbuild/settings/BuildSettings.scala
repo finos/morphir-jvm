@@ -1,5 +1,5 @@
 package millbuild.settings
-import zio.{ConfigProvider, Unsafe, Runtime}
+import zio.{ ConfigProvider, Unsafe, Runtime }
 import zio.config._
 import zio.config.magnolia.deriveConfig
 import zio.config.typesafe._
@@ -8,11 +8,11 @@ import com.typesafe.config.ConfigFactory
 import zio.Config
 
 final case class BuildSettings(
-    jvm: JvmBuildSettings = JvmBuildSettings(),
-    js: ScalaJsBuildSettings = ScalaJsBuildSettings(),
-    native: ScalaNativeBuildSettings = ScalaNativeBuildSettings(),
-    mill: MillSettings = MillSettings(),
-    scala: ScalaSettings = ScalaSettings()
+  jvm: JvmBuildSettings = JvmBuildSettings(),
+  js: ScalaJsBuildSettings = ScalaJsBuildSettings(),
+  native: ScalaNativeBuildSettings = ScalaNativeBuildSettings(),
+  mill: MillSettings = MillSettings(),
+  scala: ScalaSettings = ScalaSettings()
 )
 
 object BuildSettings {
@@ -31,15 +31,17 @@ object BuildSettings {
   lazy val propertiesFileConfigProvider: ConfigProvider =
     ConfigProvider.propsProvider.nested("morphir.build")
 
-    // .fromPropertiesFile((os.pwd / "build.user.properties").toIO)
+  // .fromPropertiesFile((os.pwd / "build.user.properties").toIO)
 
   lazy val buildUserYamlFileConfigProvider =
     ConfigProvider.fromYamlPath((os.pwd / "build.user.yaml").wrapped)
 
   def load(): BuildSettings = Unsafe.unsafe { implicit u =>
-    Runtime.default.unsafe.run(
-      loadSettings()
-    ).getOrThrowFiberFailure()
+    Runtime.default.unsafe
+      .run(
+        loadSettings()
+      )
+      .getOrThrowFiberFailure()
   }
 
   def loadSettings() =
