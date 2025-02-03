@@ -33,7 +33,7 @@ object Deps {
     }
 
     case object `47Deg` {
-        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
+      val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
     }
 
     case object geirsson {
@@ -273,7 +273,7 @@ object ScalaVersions {
   val all      = if (devMode) Seq(scala3x) else Seq(scala213, scala3x)
   def scala212 = "2.12.20"
   def scala213 = "2.13.15"
-  def scala3x  = "3.3.4"
+  def scala3x  = "3.3.5"
 
   def scalaJSVersion     = "1.17.0"
   def scalaNativeVersion = "0.5.5"
