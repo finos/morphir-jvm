@@ -33,7 +33,7 @@ object Deps {
     }
 
     case object `47Deg` {
-        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
+      val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
     }
 
     case object geirsson {
@@ -256,7 +256,7 @@ object Versions {
   val spire                      = "0.18.0"
   val `tasty-query`              = "0.5.6"
   val upickle                    = "4.0.2"
-  val zio                        = "2.1.9"
+  val zio                        = "2.1.16"
   val `zio-cli`                  = "0.5.0"
   val `zio-config`               = "4.0.2"
   val `zio-interop-cats`         = "23.1.0.0"
