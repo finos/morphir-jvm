@@ -8,5 +8,8 @@ object FormatVersion{
     formatVersion: morphir.sdk.Basics.Int,
     distribution: morphir.ir.Distribution.Distribution
   ){}
+  
+  def currentFormatVersion: morphir.sdk.Basics.Int =
+    morphir.sdk.Basics.Int(3)
 
 }

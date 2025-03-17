@@ -4,9 +4,6 @@ package morphir.ir
 */
 object Value{
 
-  implicit val nameOrdering: Ordering[Name.Name] =
-      (_: Name.Name, _: Name.Name) => 0
-
   final case class Definition[Ta, Va](
     inputTypes: morphir.sdk.List.List[(morphir.ir.Name.Name, Va, morphir.ir.Type.Type[Ta])],
     outputType: morphir.ir.Type.Type[Ta],
@@ -22,43 +19,43 @@ object Value{
   object Pattern{
 
     final case class AsPattern[A](
-      arg1: A,
-      arg2: morphir.ir.Value.Pattern[A],
-      arg3: morphir.ir.Name.Name
+      attrs: A,
+      pattern: morphir.ir.Value.Pattern[A],
+      name: morphir.ir.Name.Name
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class ConstructorPattern[A](
-      arg1: A,
-      arg2: morphir.ir.FQName.FQName,
-      arg3: morphir.sdk.List.List[morphir.ir.Value.Pattern[A]]
+      attrs: A,
+      constructorName: morphir.ir.FQName.FQName,
+      argumentPatterns: morphir.sdk.List.List[morphir.ir.Value.Pattern[A]]
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class EmptyListPattern[A](
-      arg1: A
+      attrs: A
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class HeadTailPattern[A](
-      arg1: A,
-      arg2: morphir.ir.Value.Pattern[A],
-      arg3: morphir.ir.Value.Pattern[A]
+      attrs: A,
+      headPattern: morphir.ir.Value.Pattern[A],
+      tailPattern: morphir.ir.Value.Pattern[A]
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class LiteralPattern[A](
-      arg1: A,
-      arg2: morphir.ir.Literal.Literal
+      attrs: A,
+      value: morphir.ir.Literal.Literal
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class TuplePattern[A](
-      arg1: A,
-      arg2: morphir.sdk.List.List[morphir.ir.Value.Pattern[A]]
+      attrs: A,
+      elementPatterns: morphir.sdk.List.List[morphir.ir.Value.Pattern[A]]
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class UnitPattern[A](
-      arg1: A
+      attrs: A
     ) extends morphir.ir.Value.Pattern[A]{}
 
     final case class WildcardPattern[A](
-      arg1: A
+      attrs: A
     ) extends morphir.ir.Value.Pattern[A]{}
 
   }
@@ -97,104 +94,104 @@ object Value{
   object Value{
 
     final case class Apply[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Value[Ta, Va],
-      arg3: morphir.ir.Value.Value[Ta, Va]
+      attrs: Va,
+      func: morphir.ir.Value.Value[Ta, Va],
+      argument: morphir.ir.Value.Value[Ta, Va]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Constructor[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.FQName.FQName
+      attrs: Va,
+      fullyQualifiedName: morphir.ir.FQName.FQName
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Destructure[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Pattern[Va],
-      arg3: morphir.ir.Value.Value[Ta, Va],
-      arg4: morphir.ir.Value.Value[Ta, Va]
+      attrs: Va,
+      pattern: morphir.ir.Value.Pattern[Va],
+      valueToDestruct: morphir.ir.Value.Value[Ta, Va],
+      inValue: morphir.ir.Value.Value[Ta, Va]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Field[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Value[Ta, Va],
-      arg3: morphir.ir.Name.Name
+      attrs: Va,
+      subjectValue: morphir.ir.Value.Value[Ta, Va],
+      fieldName: morphir.ir.Name.Name
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class FieldFunction[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Name.Name
+      attrs: Va,
+      fieldName: morphir.ir.Name.Name
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class IfThenElse[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Value[Ta, Va],
-      arg3: morphir.ir.Value.Value[Ta, Va],
-      arg4: morphir.ir.Value.Value[Ta, Va]
+      attrs: Va,
+      condition: morphir.ir.Value.Value[Ta, Va],
+      thenBranch: morphir.ir.Value.Value[Ta, Va],
+      elseBranch: morphir.ir.Value.Value[Ta, Va]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Lambda[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Pattern[Va],
-      arg3: morphir.ir.Value.Value[Ta, Va]
+      attrs: Va,
+      argumentPattern: morphir.ir.Value.Pattern[Va],
+      body: morphir.ir.Value.Value[Ta, Va]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class LetDefinition[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Name.Name,
-      arg3: morphir.ir.Value.Definition[Ta, Va],
-      arg4: morphir.ir.Value.Value[Ta, Va]
+      attrs: Va,
+      valueName: morphir.ir.Name.Name,
+      valueDefinition: morphir.ir.Value.Definition[Ta, Va],
+      inValue: morphir.ir.Value.Value[Ta, Va]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class LetRecursion[Ta, Va](
-      arg1: Va,
-      arg2: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Definition[Ta, Va]],
-      arg3: morphir.ir.Value.Value[Ta, Va]
+      attrs: Va,
+      valueDefinitions: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Definition[Ta, Va]],
+      inValue: morphir.ir.Value.Value[Ta, Va]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class List[Ta, Va](
-      arg1: Va,
-      arg2: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
+      attrs: Va,
+      items: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Literal[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Literal.Literal
+      attrs: Va,
+      value: morphir.ir.Literal.Literal
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class PatternMatch[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Value[Ta, Va],
-      arg3: morphir.sdk.List.List[(morphir.ir.Value.Pattern[Va], morphir.ir.Value.Value[Ta, Va])]
+      attrs: Va,
+      branchOutOn: morphir.ir.Value.Value[Ta, Va],
+      cases: morphir.sdk.List.List[(morphir.ir.Value.Pattern[Va], morphir.ir.Value.Value[Ta, Va])]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Record[Ta, Va](
-      arg1: Va,
-      arg2: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Value[Ta, Va]]
+      attrs: Va,
+      fields: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Value[Ta, Va]]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Reference[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.FQName.FQName
+      attrs: Va,
+      fullyQualifiedName: morphir.ir.FQName.FQName
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Tuple[Ta, Va](
-      arg1: Va,
-      arg2: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
+      attrs: Va,
+      elements: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Unit[Ta, Va](
-      arg1: Va
+      attrs: Va
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class UpdateRecord[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Value.Value[Ta, Va],
-      arg3: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Value[Ta, Va]]
+      attrs: Va,
+      valueToUpdate: morphir.ir.Value.Value[Ta, Va],
+      fieldsToUpdate: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Value[Ta, Va]]
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
     final case class Variable[Ta, Va](
-      arg1: Va,
-      arg2: morphir.ir.Name.Name
+      attrs: Va,
+      name: morphir.ir.Name.Name
     ) extends morphir.ir.Value.Value[Ta, Va]{}
 
   }
@@ -236,27 +233,27 @@ object Value{
   val Variable: morphir.ir.Value.Value.Variable.type  = morphir.ir.Value.Value.Variable
 
   def apply[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
-    function: morphir.ir.Value.Value[Ta, Va]
+    func: morphir.ir.Value.Value[Ta, Va]
   )(
     argument: morphir.ir.Value.Value[Ta, Va]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Apply(
-      attributes,
-      function,
+      attrs,
+      func,
       argument
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def asPattern[A](
-    attributes: A
+    attrs: A
   )(
     pattern: morphir.ir.Value.Pattern[A]
   )(
     name: morphir.ir.Name.Name
   ): morphir.ir.Value.Pattern[A] =
     (morphir.ir.Value.AsPattern(
-      attributes,
+      attrs,
       pattern,
       name
     ) : morphir.ir.Value.Pattern[A])
@@ -278,9 +275,9 @@ object Value{
       case morphir.ir.Value.AsPattern(a, p2, _) =>
         morphir.sdk.List.cons(a)(morphir.ir.Value.collectPatternAttributes(p2))
       case morphir.ir.Value.TuplePattern(a, elementPatterns) =>
-        morphir.sdk.List.cons(a)(morphir.sdk.List.concatMap(morphir.ir.Value.collectPatternAttributes[A])(elementPatterns))
+        morphir.sdk.List.cons(a)(morphir.sdk.List.concatMap(morphir.ir.Value.collectPatternAttributes)(elementPatterns))
       case morphir.ir.Value.ConstructorPattern(a, _, argumentPatterns) =>
-        morphir.sdk.List.cons(a)(morphir.sdk.List.concatMap(morphir.ir.Value.collectPatternAttributes[A])(argumentPatterns))
+        morphir.sdk.List.cons(a)(morphir.sdk.List.concatMap(morphir.ir.Value.collectPatternAttributes)(argumentPatterns))
       case morphir.ir.Value.EmptyListPattern(a) =>
         morphir.sdk.List(a)
       case morphir.ir.Value.HeadTailPattern(a, headPattern, tailPattern) =>
@@ -303,9 +300,9 @@ object Value{
       case morphir.ir.Value.AsPattern(_, subject, _) =>
         morphir.ir.Value.collectPatternReferences(subject)
       case morphir.ir.Value.TuplePattern(_, elemPatterns) =>
-        morphir.sdk.List.foldl(morphir.sdk.Set.union[FQName.FQName])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Value.collectPatternReferences[Va])(elemPatterns))
+        morphir.sdk.List.foldl(morphir.sdk.Set.union)(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Value.collectPatternReferences)(elemPatterns))
       case morphir.ir.Value.ConstructorPattern(_, fQName, argPatterns) =>
-        morphir.sdk.Set.insert(fQName)(morphir.sdk.List.foldl(morphir.sdk.Set.union[FQName.FQName])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Value.collectPatternReferences[Va])(argPatterns)))
+        morphir.sdk.Set.insert(fQName)(morphir.sdk.List.foldl(morphir.sdk.Set.union)(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Value.collectPatternReferences)(argPatterns)))
       case morphir.ir.Value.EmptyListPattern(_) =>
         morphir.sdk.Set.empty
       case morphir.ir.Value.HeadTailPattern(_, headPattern, tailPattern) =>
@@ -465,7 +462,7 @@ object Value{
     def collectUnion(
       values: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
     ): morphir.sdk.Set.Set[morphir.ir.Name.Name] =
-      morphir.sdk.List.foldl(morphir.sdk.Set.union[Name.Name])(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Value.collectVariables[Ta, Va])(values))
+      morphir.sdk.List.foldl(morphir.sdk.Set.union)(morphir.sdk.Set.empty)(morphir.sdk.List.map(morphir.ir.Value.collectVariables)(values))
 
     value match {
       case morphir.ir.Value.Tuple(_, elements) =>
@@ -491,7 +488,7 @@ object Value{
           inValue
         )))
       case morphir.ir.Value.LetRecursion(_, valueDefinitions, inValue) =>
-        morphir.sdk.List.foldl(morphir.sdk.Set.union[Name.Name])(morphir.sdk.Set.empty)(morphir.sdk.List.append(morphir.sdk.List(morphir.ir.Value.collectVariables(inValue)))(morphir.sdk.List.map(({
+        morphir.sdk.List.foldl(morphir.sdk.Set.union)(morphir.sdk.Set.empty)(morphir.sdk.List.append(morphir.sdk.List(morphir.ir.Value.collectVariables(inValue)))(morphir.sdk.List.map(({
           case (defName, _def) =>
             morphir.sdk.Set.insert(defName)(morphir.ir.Value.collectVariables(_def.body))
         } : ((morphir.ir.Name.Name, morphir.ir.Value.Definition[Ta, Va])) => morphir.sdk.Set.Set[morphir.ir.Name.Name]))(morphir.sdk.Dict.toList(valueDefinitions))))
@@ -507,7 +504,7 @@ object Value{
           elseBranch
         ))
       case morphir.ir.Value.PatternMatch(_, branchOutOn, cases) =>
-        morphir.sdk.Set.union(morphir.ir.Value.collectVariables(branchOutOn))(collectUnion(morphir.sdk.List.map(morphir.sdk.Tuple.second[Pattern[Va], Value[Ta, Va]])(cases)))
+        morphir.sdk.Set.union(morphir.ir.Value.collectVariables(branchOutOn))(collectUnion(morphir.sdk.List.map(morphir.sdk.Tuple.second)(cases)))
       case morphir.ir.Value.UpdateRecord(_, valueToUpdate, fieldsToUpdate) =>
         morphir.sdk.Set.union(morphir.ir.Value.collectVariables(valueToUpdate))(collectUnion(morphir.sdk.Dict.values(fieldsToUpdate)))
       case _ =>
@@ -516,24 +513,24 @@ object Value{
   }
 
   def constructor[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     fullyQualifiedName: morphir.ir.FQName.FQName
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Constructor(
-      attributes,
+      attrs,
       fullyQualifiedName
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def constructorPattern[A](
-    attributes: A
+    attrs: A
   )(
     constructorName: morphir.ir.FQName.FQName
   )(
     argumentPatterns: morphir.sdk.List.List[morphir.ir.Value.Pattern[A]]
   ): morphir.ir.Value.Pattern[A] =
     (morphir.ir.Value.ConstructorPattern(
-      attributes,
+      attrs,
       constructorName,
       argumentPatterns
     ) : morphir.ir.Value.Pattern[A])
@@ -560,7 +557,7 @@ object Value{
     _def.inputTypes match {
       case Nil =>
         _def.body
-      case (firstArgName, va, _) :: restOfArgs =>
+      case ((firstArgName, va, _) :: restOfArgs) =>
         (morphir.ir.Value.Lambda(
           va,
           (morphir.ir.Value.AsPattern(
@@ -572,31 +569,47 @@ object Value{
         ) : morphir.ir.Value.Value[Ta, Va])
     }
 
+  def destructure[Ta, Va](
+    attrs: Va
+  )(
+    pattern: morphir.ir.Value.Pattern[Va]
+  )(
+    valueToDestruct: morphir.ir.Value.Value[Ta, Va]
+  )(
+    inValue: morphir.ir.Value.Value[Ta, Va]
+  ): morphir.ir.Value.Value[Ta, Va] =
+    (morphir.ir.Value.Destructure(
+      attrs,
+      pattern,
+      valueToDestruct,
+      inValue
+    ) : morphir.ir.Value.Value[Ta, Va])
+
   def emptyListPattern[A](
-    attributes: A
+    attrs: A
   ): morphir.ir.Value.Pattern[A] =
-    (morphir.ir.Value.EmptyListPattern(attributes) : morphir.ir.Value.Pattern[A])
+    (morphir.ir.Value.EmptyListPattern(attrs) : morphir.ir.Value.Pattern[A])
 
   def field[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     subjectValue: morphir.ir.Value.Value[Ta, Va]
   )(
     fieldName: morphir.ir.Name.Name
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Field(
-      attributes,
+      attrs,
       subjectValue,
       fieldName
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def fieldFunction[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     fieldName: morphir.ir.Name.Name
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.FieldFunction(
-      attributes,
+      attrs,
       fieldName
     ) : morphir.ir.Value.Value[Ta, Va])
 
@@ -617,20 +630,20 @@ object Value{
   }
 
   def headTailPattern[A](
-    attributes: A
+    attrs: A
   )(
     headPattern: morphir.ir.Value.Pattern[A]
   )(
     tailPattern: morphir.ir.Value.Pattern[A]
   ): morphir.ir.Value.Pattern[A] =
     (morphir.ir.Value.HeadTailPattern(
-      attributes,
+      attrs,
       headPattern,
       tailPattern
     ) : morphir.ir.Value.Pattern[A])
 
   def ifThenElse[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     condition: morphir.ir.Value.Value[Ta, Va]
   )(
@@ -639,7 +652,7 @@ object Value{
     elseBranch: morphir.ir.Value.Value[Ta, Va]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.IfThenElse(
-      attributes,
+      attrs,
       condition,
       thenBranch,
       elseBranch
@@ -1022,20 +1035,20 @@ object Value{
     }
 
   def lambda[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     argumentPattern: morphir.ir.Value.Pattern[Va]
   )(
     body: morphir.ir.Value.Value[Ta, Va]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Lambda(
-      attributes,
+      attrs,
       argumentPattern,
       body
     ) : morphir.ir.Value.Value[Ta, Va])
 
-  def letDef[Ta, Va](
-    attributes: Va
+  def letDefinition[Ta, Va](
+    attrs: Va
   )(
     valueName: morphir.ir.Name.Name
   )(
@@ -1044,14 +1057,14 @@ object Value{
     inValue: morphir.ir.Value.Value[Ta, Va]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.LetDefinition(
-      attributes,
+      attrs,
       valueName,
       valueDefinition,
       inValue
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def letDestruct[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     pattern: morphir.ir.Value.Pattern[Va]
   )(
@@ -1060,52 +1073,52 @@ object Value{
     inValue: morphir.ir.Value.Value[Ta, Va]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Destructure(
-      attributes,
+      attrs,
       pattern,
       valueToDestruct,
       inValue
     ) : morphir.ir.Value.Value[Ta, Va])
 
-  def letRec[Ta, Va](
-    attributes: Va
+  def letRecursion[Ta, Va](
+    attrs: Va
   )(
     valueDefinitions: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Definition[Ta, Va]]
   )(
     inValue: morphir.ir.Value.Value[Ta, Va]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.LetRecursion(
-      attributes,
+      attrs,
       valueDefinitions,
       inValue
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def list[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     items: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.List(
-      attributes,
+      attrs,
       items
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def literal[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     value: morphir.ir.Literal.Literal
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Literal(
-      attributes,
+      attrs,
       value
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def literalPattern[A](
-    attributes: A
+    attrs: A
   )(
     value: morphir.ir.Literal.Literal
   ): morphir.ir.Value.Pattern[A] =
     (morphir.ir.Value.LiteralPattern(
-      attributes,
+      attrs,
       value
     ) : morphir.ir.Value.Pattern[A])
 
@@ -1116,12 +1129,14 @@ object Value{
   )(
     _def: morphir.ir.Value.Definition[Ta, Va]
   ): morphir.sdk.Result.Result[morphir.sdk.List.List[E], morphir.ir.Value.Definition[Ta, Va]] =
-    morphir.sdk.Result.map3(((inputTypes: morphir.sdk.List.List[(morphir.ir.Name.Name, Va, morphir.ir.Type.Type[Ta])], outputType: morphir.ir.Type.Type[Ta], body: morphir.ir.Value.Value[Ta, Va]) =>
-      (morphir.ir.Value.Definition(
-        inputTypes,
-        outputType,
-        body
-      ): morphir.ir.Value.Definition[Ta, Va])))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
+    morphir.sdk.Result.map3(((inputTypes: morphir.sdk.List.List[(morphir.ir.Name.Name, Va, morphir.ir.Type.Type[Ta])]) =>
+      ((outputType: morphir.ir.Type.Type[Ta]) =>
+        ((body: morphir.ir.Value.Value[Ta, Va]) =>
+          (morphir.ir.Value.Definition(
+            inputTypes,
+            outputType,
+            body
+          ) : morphir.ir.Value.Definition[Ta, Va])))))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
       case (name, attr, tpe) =>
         morphir.sdk.Result.map(((t: morphir.ir.Type.Type[Ta]) =>
           (name, attr, t)))(mapType(tpe))
@@ -1345,25 +1360,25 @@ object Value{
     }
 
   def patternMatch[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     branchOutOn: morphir.ir.Value.Value[Ta, Va]
   )(
     cases: morphir.sdk.List.List[(morphir.ir.Value.Pattern[Va], morphir.ir.Value.Value[Ta, Va])]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.PatternMatch(
-      attributes,
+      attrs,
       branchOutOn,
       cases
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def record[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     fields: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Value[Ta, Va]]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Record(
-      attributes,
+      attrs,
       fields
     ) : morphir.ir.Value.Value[Ta, Va])
 
@@ -1404,7 +1419,7 @@ object Value{
           morphir.ir.Value.reduceValueBottomUp(mapNode)(elseBranch)
         ))
       case morphir.ir.Value.PatternMatch(_, branchOutOn, cases) =>
-        mapNode(currentValue)(morphir.sdk.List.append(morphir.sdk.List(morphir.ir.Value.reduceValueBottomUp(mapNode)(branchOutOn)))(morphir.sdk.List.map(morphir.ir.Value.reduceValueBottomUp(mapNode))(morphir.sdk.List.map(morphir.sdk.Tuple.second[Pattern[ValueAttribute], Value[TypeAttribute, ValueAttribute]])(cases))))
+        mapNode(currentValue)(morphir.sdk.List.append(morphir.sdk.List(morphir.ir.Value.reduceValueBottomUp(mapNode)(branchOutOn)))(morphir.sdk.List.map(morphir.ir.Value.reduceValueBottomUp(mapNode))(morphir.sdk.List.map(morphir.sdk.Tuple.second)(cases))))
       case morphir.ir.Value.UpdateRecord(_, valueToUpdate, fieldsToUpdate) =>
         mapNode(currentValue)(morphir.sdk.List.append(morphir.sdk.List(morphir.ir.Value.reduceValueBottomUp(mapNode)(valueToUpdate)))(morphir.sdk.List.map(morphir.ir.Value.reduceValueBottomUp(mapNode))(morphir.sdk.Dict.values(fieldsToUpdate))))
       case _ =>
@@ -1414,12 +1429,12 @@ object Value{
     }
 
   def reference[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     fullyQualifiedName: morphir.ir.FQName.FQName
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Reference(
-      attributes,
+      attrs,
       fullyQualifiedName
     ) : morphir.ir.Value.Value[Ta, Va])
 
@@ -1441,7 +1456,7 @@ object Value{
   ): morphir.ir.Value.Value[Ta, Va] =
     morphir.ir.Value.rewriteValue(((_val: morphir.ir.Value.Value[Ta, Va]) =>
       _val match {
-        case morphir.ir.Value.Apply(tpe, morphir.ir.Value.Apply(_, morphir.ir.Value.Reference(_, ((("""morphir""" :: Nil) :: ("""s""" :: """d""" :: """k""" :: Nil) :: Nil),(("""maybe""" :: Nil) :: Nil), ("""with""" :: """default""" :: Nil))), defaultValue), morphir.ir.Value.Apply(maybetpe, morphir.ir.Value.Apply(_, morphir.ir.Value.Reference(_, ((("""morphir""" :: Nil) :: ("""s""" :: """d""" :: """k""" :: Nil) :: Nil), (("""maybe""" :: Nil) :: Nil), ("""map""" :: Nil))), mapLambda), inputMaybe)) =>
+        case morphir.ir.Value.Apply(tpe, morphir.ir.Value.Apply(_, morphir.ir.Value.Reference(_, ((("""morphir""" :: Nil) :: (("""s""" :: ("""d""" :: ("""k""" :: Nil))) :: Nil)), (("""maybe""" :: Nil) :: Nil), ("""with""" :: ("""default""" :: Nil)))), defaultValue), morphir.ir.Value.Apply(maybetpe, morphir.ir.Value.Apply(_, morphir.ir.Value.Reference(_, ((("""morphir""" :: Nil) :: (("""s""" :: ("""d""" :: ("""k""" :: Nil))) :: Nil)), (("""maybe""" :: Nil) :: Nil), ("""map""" :: Nil))), mapLambda), inputMaybe)) =>
           mapLambda match {
             case morphir.ir.Value.Lambda(_, argPattern, bodyValue) =>
               (morphir.sdk.Maybe.Just((morphir.ir.Value.PatternMatch(
@@ -1478,7 +1493,7 @@ object Value{
               ) : morphir.ir.Value.Value[Ta, Va])) : morphir.sdk.Maybe.Maybe[morphir.ir.Value.Value[Ta, Va]])
             case _ =>
               {
-                val argName: Name.Name = morphir.ir.Value.generateUniqueName(mapLambda)
+                val argName: T2 = morphir.ir.Value.generateUniqueName(mapLambda)
 
                 (morphir.sdk.Maybe.Just((morphir.ir.Value.PatternMatch(
                   tpe,
@@ -1730,13 +1745,13 @@ object Value{
             case morphir.ir.Value.Tuple(_, elems) =>
               morphir.sdk.String.concat(morphir.sdk.List(
                 """( """,
-                morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Value._toString[Ta, Va])(elems)),
+                morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Value._toString)(elems)),
                 """ )"""
               ))
             case morphir.ir.Value.List(_, items) =>
               morphir.sdk.String.concat(morphir.sdk.List(
                 """[ """,
-                morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Value._toString[Ta, Va])(items)),
+                morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Value._toString)(items)),
                 """ ]"""
               ))
             case morphir.ir.Value.Record(_, fields) =>
@@ -1884,22 +1899,22 @@ object Value{
   }
 
   def tuple[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     elements: morphir.sdk.List.List[morphir.ir.Value.Value[Ta, Va]]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Tuple(
-      attributes,
+      attrs,
       elements
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def tuplePattern[A](
-    attributes: A
+    attrs: A
   )(
     elementPatterns: morphir.sdk.List.List[morphir.ir.Value.Pattern[A]]
   ): morphir.ir.Value.Pattern[A] =
     (morphir.ir.Value.TuplePattern(
-      attributes,
+      attrs,
       elementPatterns
     ) : morphir.ir.Value.Pattern[A])
 
@@ -1918,7 +1933,6 @@ object Value{
       (body, bodyType) match {
         case (morphir.ir.Value.Lambda(va, morphir.ir.Value.AsPattern(_, morphir.ir.Value.WildcardPattern(_), argName), lambdaBody), morphir.ir.Type.Function(_, argType, returnType)) =>
           liftLambdaArguments(morphir.sdk.List.append(args)(morphir.sdk.List((argName, va, argType))))(returnType)(lambdaBody)
-          // TODO Morphir was unable to resolve ^ this `append` to List.append but rather resolved to Basics.append, why?
         case _ =>
           morphir.ir.Value.Definition(
             body = body,
@@ -1949,19 +1963,24 @@ object Value{
     }
 
   def unit[Ta, Va](
-    attributes: Va
+    attrs: Va
   ): morphir.ir.Value.Value[Ta, Va] =
-    (morphir.ir.Value.Unit(attributes) : morphir.ir.Value.Value[Ta, Va])
+    (morphir.ir.Value.Unit(attrs) : morphir.ir.Value.Value[Ta, Va])
 
-  def update[Ta, Va](
-    attributes: Va
+  def unitPattern[A](
+    attrs: A
+  ): morphir.ir.Value.Pattern[A] =
+    (morphir.ir.Value.UnitPattern(attrs) : morphir.ir.Value.Pattern[A])
+
+  def updateRecord[Ta, Va](
+    attrs: Va
   )(
     valueToUpdate: morphir.ir.Value.Value[Ta, Va]
   )(
     fieldsToUpdate: morphir.sdk.Dict.Dict[morphir.ir.Name.Name, morphir.ir.Value.Value[Ta, Va]]
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.UpdateRecord(
-      attributes,
+      attrs,
       valueToUpdate,
       fieldsToUpdate
     ) : morphir.ir.Value.Value[Ta, Va])
@@ -2009,18 +2028,18 @@ object Value{
     }
 
   def variable[Ta, Va](
-    attributes: Va
+    attrs: Va
   )(
     name: morphir.ir.Name.Name
   ): morphir.ir.Value.Value[Ta, Va] =
     (morphir.ir.Value.Variable(
-      attributes,
+      attrs,
       name
     ) : morphir.ir.Value.Value[Ta, Va])
 
   def wildcardPattern[A](
-    attributes: A
+    attrs: A
   ): morphir.ir.Value.Pattern[A] =
-    (morphir.ir.Value.WildcardPattern(attributes) : morphir.ir.Value.Pattern[A])
+    (morphir.ir.Value.WildcardPattern(attrs) : morphir.ir.Value.Pattern[A])
 
 }

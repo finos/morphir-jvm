@@ -15,7 +15,7 @@ env:
   JVM_OPTS: -XX:+PrintCommandLineFlags -Xss10M # for Java 8 only (sadly, it is not modern enough for JDK_JAVA_OPTIONS)
   scala_212_version: "2.12.20"
   scala_213_version: "2.13.16"
-  scala_3_version: "3.3.4"
+  scala_3_version: "3.3.5"
   SonatypeUrl: "https://finos.sonatype.app/platform/"
   SonatypeAppId: morphir-jvm
   SonatypeStage: "build"
@@ -38,7 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["11", "17"]
-        scala: ["2.12.20", "2.13.16", "3.3.4"]
+        scala: ["2.12.20", "2.13.16", "3.3.5"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["17"] # Note there is no need ro actually run this for multiple JVM versions for JS
-        scala: ["2.12.20", "2.13.16", "3.3.4"]
+        scala: ["2.12.20", "2.13.16", "3.3.5"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -113,7 +113,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ["11"] # Note there is no need ro actually run this for multiple JVM versions for native
-        scala: ["2.12.20", "2.13.16", "3.3.4"]
+        scala: ["2.12.20", "2.13.16", "3.3.5"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -263,9 +263,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            out/morphir/3.3.4/**/jvm/
-          key: ${{ runner.os }}-mill-jvm-11-3.3.4-${{ github.sha }}-${{ hashFiles('out') }}
-          restore-keys: ${{ runner.os }}-mill-jvm-11-3.3.4-${{ github.sha }}-
+            out/morphir/3.3.5/**/jvm/
+          key: ${{ runner.os }}-mill-jvm-11-3.3.5-${{ github.sha }}-${{ hashFiles('out') }}
+          restore-keys: ${{ runner.os }}-mill-jvm-11-3.3.5-${{ github.sha }}-
 
       - name: Restore Scala 2.12 JS Build Output From Cache
         uses: actions/cache/restore@v4
@@ -287,9 +287,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            out/morphir/3.3.4/**/js/
-          key: ${{ runner.os }}-mill-js-11-3.3.4-${{ github.sha }}-${{ hashFiles('out') }}
-          restore-keys: ${{ runner.os }}-mill-js-11-3.3.4-${{ github.sha }}-
+            out/morphir/3.3.5/**/js/
+          key: ${{ runner.os }}-mill-js-11-3.3.5-${{ github.sha }}-${{ hashFiles('out') }}
+          restore-keys: ${{ runner.os }}-mill-js-11-3.3.5-${{ github.sha }}-
 
       - name: Restore Scala 2.12 Native Build Output From Cache
         uses: actions/cache/restore@v4
@@ -311,9 +311,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            out/morphir/3.3.4/**/native/
-          key: ${{ runner.os }}-mill-native-11-3.3.4-${{ github.sha }}-${{ hashFiles('out') }}
-          restore-keys: ${{ runner.os }}-mill-native-11-3.3.4-${{ github.sha }}-
+            out/morphir/3.3.5/**/native/
+          key: ${{ runner.os }}-mill-native-11-3.3.5-${{ github.sha }}-${{ hashFiles('out') }}
+          restore-keys: ${{ runner.os }}-mill-native-11-3.3.5-${{ github.sha }}-
 
       - name: Publish artifacts to Sonatype
         run: ./mill -i -j 0 mill.scalalib.PublishModule/

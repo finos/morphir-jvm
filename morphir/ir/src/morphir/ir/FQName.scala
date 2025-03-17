@@ -37,7 +37,7 @@ object FQName{
     splitter: morphir.sdk.String.String
   ): morphir.ir.FQName.FQName =
     morphir.sdk.String.split(splitter)(fqNameString) match {
-      case moduleNameString :: packageNameString :: localNameString :: Nil => 
+      case (moduleNameString :: (packageNameString :: (localNameString :: Nil))) => 
         (morphir.ir.Path.fromString(moduleNameString), morphir.ir.Path.fromString(packageNameString), morphir.ir.Name.fromString(localNameString))
       case _ => 
         (morphir.sdk.List(morphir.sdk.List(
@@ -55,7 +55,7 @@ object FQName{
     separator: morphir.sdk.String.String
   ): morphir.sdk.Result.Result[morphir.sdk.String.String, morphir.ir.FQName.FQName] =
     morphir.sdk.String.split(separator)(fqNameString) match {
-      case moduleNameString :: packageNameString :: localNameString :: Nil => 
+      case (moduleNameString :: (packageNameString :: (localNameString :: Nil))) => 
         (morphir.sdk.Result.Ok((morphir.ir.Path.fromString(moduleNameString), morphir.ir.Path.fromString(packageNameString), morphir.ir.Name.fromString(localNameString))) : morphir.sdk.Result.Result[morphir.sdk.String.String, morphir.ir.FQName.FQName])
       case parts => 
         (morphir.sdk.Result.Err(morphir.sdk.String.concat(morphir.sdk.List(

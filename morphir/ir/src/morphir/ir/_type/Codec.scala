@@ -35,17 +35,17 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Type.Definition[A]] =
     ((definition: morphir.ir.Type.Definition[A]) =>
       definition match {
-        case morphir.ir.Type.CustomTypeDefinition(arg1, arg2) => 
+        case morphir.ir.Type.CustomTypeDefinition(typeParams, ctors) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""CustomTypeDefinition"""),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(arg1),
-            morphir.ir.accesscontrolled.Codec.encodeAccessControlled(morphir.ir._type.Codec.encodeConstructors(encodeA))(arg2)
+            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(typeParams),
+            morphir.ir.accesscontrolled.Codec.encodeAccessControlled(morphir.ir._type.Codec.encodeConstructors(encodeA))(ctors)
           )
-        case morphir.ir.Type.TypeAliasDefinition(arg1, arg2) => 
+        case morphir.ir.Type.TypeAliasDefinition(typeParams, typeExp) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""TypeAliasDefinition"""),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(arg1),
-            morphir.ir._type.Codec.encodeType(encodeA)(arg2)
+            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(typeParams),
+            morphir.ir._type.Codec.encodeType(encodeA)(typeExp)
           )
       })
   
@@ -73,28 +73,28 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Type.Specification[A]] =
     ((specification: morphir.ir.Type.Specification[A]) =>
       specification match {
-        case morphir.ir.Type.CustomTypeSpecification(arg1, arg2) => 
+        case morphir.ir.Type.CustomTypeSpecification(typeParams, ctors) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""CustomTypeSpecification"""),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(arg1),
-            morphir.ir._type.Codec.encodeConstructors(encodeA)(arg2)
+            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(typeParams),
+            morphir.ir._type.Codec.encodeConstructors(encodeA)(ctors)
           )
-        case morphir.ir.Type.DerivedTypeSpecification(arg1, arg2) => 
+        case morphir.ir.Type.DerivedTypeSpecification(typeParams, details) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""DerivedTypeSpecification"""),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(arg1),
-            morphir.ir._type.Codec.encodeDerivedTypeSpecificationDetails(encodeA)(arg2)
+            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(typeParams),
+            morphir.ir._type.Codec.encodeDerivedTypeSpecificationDetails(encodeA)(details)
           )
-        case morphir.ir.Type.OpaqueTypeSpecification(arg1) => 
+        case morphir.ir.Type.OpaqueTypeSpecification(typeParams) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""OpaqueTypeSpecification"""),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(arg1)
+            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(typeParams)
           )
-        case morphir.ir.Type.TypeAliasSpecification(arg1, arg2) => 
+        case morphir.ir.Type.TypeAliasSpecification(typeParams, typeExp) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""TypeAliasSpecification"""),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(arg1),
-            morphir.ir._type.Codec.encodeType(encodeA)(arg2)
+            morphir.sdk.list.Codec.encodeList(morphir.ir.name.Codec.encodeName)(typeParams),
+            morphir.ir._type.Codec.encodeType(encodeA)(typeExp)
           )
       })
   
@@ -103,49 +103,49 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Type.Type[A]] =
     ((_type: morphir.ir.Type.Type[A]) =>
       _type match {
-        case morphir.ir.Type.ExtensibleRecord(arg1, arg2, arg3) => 
+        case morphir.ir.Type.ExtensibleRecord(attrs, variableName, fieldTypes) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""ExtensibleRecord"""),
-            encodeA(arg1),
-            morphir.ir.name.Codec.encodeName(arg2),
-            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeField(encodeA))(arg3)
+            encodeA(attrs),
+            morphir.ir.name.Codec.encodeName(variableName),
+            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeField(encodeA))(fieldTypes)
           )
-        case morphir.ir.Type.Function(arg1, arg2, arg3) => 
+        case morphir.ir.Type.Function(attrs, argumentType, returnType) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Function"""),
-            encodeA(arg1),
-            morphir.ir._type.Codec.encodeType(encodeA)(arg2),
-            morphir.ir._type.Codec.encodeType(encodeA)(arg3)
+            encodeA(attrs),
+            morphir.ir._type.Codec.encodeType(encodeA)(argumentType),
+            morphir.ir._type.Codec.encodeType(encodeA)(returnType)
           )
-        case morphir.ir.Type.Record(arg1, arg2) => 
+        case morphir.ir.Type.Record(attrs, fieldTypes) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Record"""),
-            encodeA(arg1),
-            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeField(encodeA))(arg2)
+            encodeA(attrs),
+            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeField(encodeA))(fieldTypes)
           )
-        case morphir.ir.Type.Reference(arg1, arg2, arg3) => 
+        case morphir.ir.Type.Reference(attrs, typeName, typeParameters) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Reference"""),
-            encodeA(arg1),
-            morphir.ir.fqname.Codec.encodeFQName(arg2),
-            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeType(encodeA))(arg3)
+            encodeA(attrs),
+            morphir.ir.fqname.Codec.encodeFQName(typeName),
+            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeType(encodeA))(typeParameters)
           )
-        case morphir.ir.Type.Tuple(arg1, arg2) => 
+        case morphir.ir.Type.Tuple(attrs, elementTypes) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Tuple"""),
-            encodeA(arg1),
-            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeType(encodeA))(arg2)
+            encodeA(attrs),
+            morphir.sdk.list.Codec.encodeList(morphir.ir._type.Codec.encodeType(encodeA))(elementTypes)
           )
-        case morphir.ir.Type.Unit(arg1) => 
+        case morphir.ir.Type.Unit(attrs) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Unit"""),
-            encodeA(arg1)
+            encodeA(attrs)
           )
-        case morphir.ir.Type.Variable(arg1, arg2) => 
+        case morphir.ir.Type.Variable(attrs, name) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Variable"""),
-            encodeA(arg1),
-            morphir.ir.name.Codec.encodeName(arg2)
+            encodeA(attrs),
+            morphir.ir.name.Codec.encodeName(name)
           )
       })
   
@@ -184,19 +184,19 @@ object Codec{
         tag match {
           case """CustomTypeDefinition""" => 
             for {
-              arg1 <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
-              arg2 <- c.downN(2).as(morphir.ir.accesscontrolled.Codec.decodeAccessControlled(morphir.ir._type.Codec.decodeConstructors(decodeA)))
+              typeParams <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
+              ctors <- c.downN(2).as(morphir.ir.accesscontrolled.Codec.decodeAccessControlled(morphir.ir._type.Codec.decodeConstructors(decodeA)))
             }  yield morphir.ir.Type.CustomTypeDefinition(
-              arg1,
-              arg2
+              typeParams,
+              ctors
             )
           case """TypeAliasDefinition""" => 
             for {
-              arg1 <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
-              arg2 <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeA))
+              typeParams <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
+              typeExp <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeA))
             }  yield morphir.ir.Type.TypeAliasDefinition(
-              arg1,
-              arg2
+              typeParams,
+              typeExp
             )
         })))
   
@@ -235,31 +235,31 @@ object Codec{
         tag match {
           case """CustomTypeSpecification""" => 
             for {
-              arg1 <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
-              arg2 <- c.downN(2).as(morphir.ir._type.Codec.decodeConstructors(decodeA))
+              typeParams <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
+              ctors <- c.downN(2).as(morphir.ir._type.Codec.decodeConstructors(decodeA))
             }  yield morphir.ir.Type.CustomTypeSpecification(
-              arg1,
-              arg2
+              typeParams,
+              ctors
             )
           case """DerivedTypeSpecification""" => 
             for {
-              arg1 <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
-              arg2 <- c.downN(2).as(morphir.ir._type.Codec.decodeDerivedTypeSpecificationDetails(decodeA))
+              typeParams <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
+              details <- c.downN(2).as(morphir.ir._type.Codec.decodeDerivedTypeSpecificationDetails(decodeA))
             }  yield morphir.ir.Type.DerivedTypeSpecification(
-              arg1,
-              arg2
+              typeParams,
+              details
             )
           case """OpaqueTypeSpecification""" => 
             for {
-              arg1 <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
-            }  yield morphir.ir.Type.OpaqueTypeSpecification(arg1)
+              typeParams <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
+            }  yield morphir.ir.Type.OpaqueTypeSpecification(typeParams)
           case """TypeAliasSpecification""" => 
             for {
-              arg1 <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
-              arg2 <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeA))
+              typeParams <- c.downN(1).as(morphir.sdk.list.Codec.decodeList(morphir.ir.name.Codec.decodeName))
+              typeExp <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeA))
             }  yield morphir.ir.Type.TypeAliasSpecification(
-              arg1,
-              arg2
+              typeParams,
+              typeExp
             )
         })))
   
@@ -272,61 +272,61 @@ object Codec{
         tag match {
           case """ExtensibleRecord""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
-              arg3 <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeField(decodeA)))
+              attrs <- c.downN(1).as(decodeA)
+              variableName <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
+              fieldTypes <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeField(decodeA)))
             }  yield morphir.ir.Type.ExtensibleRecord(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              variableName,
+              fieldTypes
             )
           case """Function""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeA))
-              arg3 <- c.downN(3).as(morphir.ir._type.Codec.decodeType(decodeA))
+              attrs <- c.downN(1).as(decodeA)
+              argumentType <- c.downN(2).as(morphir.ir._type.Codec.decodeType(decodeA))
+              returnType <- c.downN(3).as(morphir.ir._type.Codec.decodeType(decodeA))
             }  yield morphir.ir.Type.Function(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              argumentType,
+              returnType
             )
           case """Record""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeField(decodeA)))
+              attrs <- c.downN(1).as(decodeA)
+              fieldTypes <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeField(decodeA)))
             }  yield morphir.ir.Type.Record(
-              arg1,
-              arg2
+              attrs,
+              fieldTypes
             )
           case """Reference""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
-              arg3 <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeType(decodeA)))
+              attrs <- c.downN(1).as(decodeA)
+              typeName <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
+              typeParameters <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeType(decodeA)))
             }  yield morphir.ir.Type.Reference(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              typeName,
+              typeParameters
             )
           case """Tuple""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeType(decodeA)))
+              attrs <- c.downN(1).as(decodeA)
+              elementTypes <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir._type.Codec.decodeType(decodeA)))
             }  yield morphir.ir.Type.Tuple(
-              arg1,
-              arg2
+              attrs,
+              elementTypes
             )
           case """Unit""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-            }  yield morphir.ir.Type.Unit(arg1)
+              attrs <- c.downN(1).as(decodeA)
+            }  yield morphir.ir.Type.Unit(attrs)
           case """Variable""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
+              attrs <- c.downN(1).as(decodeA)
+              name <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
             }  yield morphir.ir.Type.Variable(
-              arg1,
-              arg2
+              attrs,
+              name
             )
         })))
 
