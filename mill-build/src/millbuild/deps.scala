@@ -33,7 +33,7 @@ object Deps {
     }
 
     case object `47Deg` {
-        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
+      val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
     }
 
     case object geirsson {
@@ -234,7 +234,7 @@ object Versions {
       case _            => "4.8.11"
     }
 
-  val circe                      = "0.14.10"
+  val circe                      = "0.14.12"
   val coursier                   = "2.1.13"
   val expecty                    = "0.16.0"
   val fansi                      = "0.4.0"
