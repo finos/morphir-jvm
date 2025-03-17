@@ -185,7 +185,7 @@ object Deps {
         ivy"org.scala-lang::scala3-tasty-inspector::$scalaVersion"
 
       case object modules {
-        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.12.0"
+        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.13.0"
       }
     }
     case object scalameta {
