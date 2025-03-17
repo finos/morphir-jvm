@@ -248,7 +248,7 @@ object Versions {
   val mainargs                   = "0.5.0"
   val `os-lib`                   = "0.9.2"
   val paiges                     = "0.4.3"
-  val `scala-java-time`          = "2.5.0"
+  val `scala-java-time`          = "2.6.0"
   val `scala-native-crypto`      = "0.0.4"
   val `scalac-compat-annotation` = "0.1.3"
   val scribe                     = "3.15.0"
@@ -272,7 +272,7 @@ object ScalaVersions {
   import DevMode._
   val all      = if (devMode) Seq(scala3x) else Seq(scala213, scala3x)
   def scala212 = "2.12.20"
-  def scala213 = "2.13.15"
+  def scala213 = "2.13.16"
   def scala3x  = "3.3.4"
 
   def scalaJSVersion     = "1.17.0"

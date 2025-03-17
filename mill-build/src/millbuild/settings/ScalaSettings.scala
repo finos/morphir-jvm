@@ -21,7 +21,7 @@ object ScalaSettings {
   implicit val rw: upickle.default.ReadWriter[ScalaSettings] = upickle.default.macroRW
 
   val defaultScala212Version = "2.12.20"
-  val defaultScala213Version = "2.13.15"
+  val defaultScala213Version = "2.13.16"
   val defaultScala3xVersion  = "3.3.4"
   val defaultCrossScalaVersions: List[String] =
     if (devMode) List(defaultScala3xVersion)
