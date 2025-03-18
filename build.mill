@@ -29,7 +29,8 @@ object `package` extends RootModule {
   val morphirScalaVersion: String = interp.watchValue(buildSettings.scala.defaultVersion)
 
   object morphir extends Cross[MorphirModule](buildSettings.scala.crossScalaVersions) { morphirRoot =>
-    object frontend extends ScalaModule with CommonScalaModule with CommonCoursierModule {
+
+    object frontend extends MorphirScalaModule with MorphirPublishModule {
       def scalaVersion = scala3x 
       def ivyDeps = Agg(
         Deps.org.`scala-lang`.`scala3-tasty-inspector`(scalaVersion()),
