@@ -28,18 +28,24 @@ object `package` extends RootModule {
     */
   val morphirScalaVersion: String = interp.watchValue(buildSettings.scala.defaultVersion)
 
-  object morphir extends Cross[MorphirModule](buildSettings.scala.crossScalaVersions) {}
+  object morphir extends Cross[MorphirModule](buildSettings.scala.crossScalaVersions) { morphirRoot =>
+    object frontend extends ScalaModule with CommonScalaModule with CommonCoursierModule {
+      def scalaVersion = scala3x 
+      def ivyDeps = Agg(
+        Deps.org.`scala-lang`.`scala3-tasty-inspector`(scalaVersion()),
+      )
+      def moduleDeps = Seq(morphir(scala3x).ir.jvm)
+
+      object test extends ScalaTests with CommonZioTestModule {
+        def moduleDeps = Seq(morphir(scala3x).sdk.core.jvm.test)
+      }
+    }
+  }
 
   trait MorphirModule extends Cross.Module[String] with CrossPlatform {
     import DevMode._
 
-    trait CommonZioTestModule extends TestModule.ZioTest {
-      override def ivyDeps = super.ivyDeps() ++ Agg(
-        Deps.dev.zio.zio,
-        Deps.dev.zio.`zio-test`,
-        Deps.dev.zio.`zio-test-sbt`
-      )
-    }
+    
 
     trait MorphirCommonModule
         extends ScalaModule
@@ -159,6 +165,14 @@ object `package` extends RootModule {
     override def scalacOptions = T {
       super.scalacOptions().filterNot(Set("-Xlint:nullary-override"))
     }
+  }
+
+  trait CommonZioTestModule extends TestModule.ZioTest {
+      override def ivyDeps = super.ivyDeps() ++ Agg(
+        Deps.dev.zio.zio,
+        Deps.dev.zio.`zio-test`,
+        Deps.dev.zio.`zio-test-sbt`
+      )
   }
 
   trait MorphirScalafixModule extends ScalafixModule
