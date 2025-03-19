@@ -51,5 +51,5 @@ class TastyToMorphir(morphirPath: String) extends Inspector {
 
   val tastyFilesList = List(tastyFiles *)
   val tastyInspector = new TastyToMorphir(morphirIROutputPath)
-  TastyInspector.inspectTastyFiles(tastyFilesList)(tastyInspector)
+  val _ = TastyInspector.inspectTastyFiles(tastyFilesList)(tastyInspector)
 }

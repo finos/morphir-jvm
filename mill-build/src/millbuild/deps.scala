@@ -33,7 +33,7 @@ object Deps {
     }
 
     case object `47Deg` {
-        val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
+      val memeid4s = ivy"com.47deg::memeid4s:${Versions.`memeid4s`}"
     }
 
     case object geirsson {
@@ -185,7 +185,7 @@ object Deps {
         ivy"org.scala-lang::scala3-tasty-inspector::$scalaVersion"
 
       case object modules {
-        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.12.0"
+        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.13.0"
       }
     }
     case object scalameta {
@@ -248,7 +248,7 @@ object Versions {
   val mainargs                   = "0.5.0"
   val `os-lib`                   = "0.9.2"
   val paiges                     = "0.4.3"
-  val `scala-java-time`          = "2.5.0"
+  val `scala-java-time`          = "2.6.0"
   val `scala-native-crypto`      = "0.0.4"
   val `scalac-compat-annotation` = "0.1.3"
   val scribe                     = "3.15.0"
@@ -272,11 +272,11 @@ object ScalaVersions {
   import DevMode._
   val all      = if (devMode) Seq(scala3x) else Seq(scala213, scala3x)
   def scala212 = "2.12.20"
-  def scala213 = "2.13.15"
-  def scala3x  = "3.3.4"
+  def scala213 = "2.13.16"
+  def scala3x  = "3.3.5"
 
   def scalaJSVersion     = "1.17.0"
-  def scalaNativeVersion = "0.5.5"
+  def scalaNativeVersion = "0.5.7"
   def millScalaVersion   = "2.13.10"
 }
 
