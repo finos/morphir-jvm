@@ -49,18 +49,12 @@ object MorphUtils {
     def toType: Try[MorphType.Type[Unit]] = {
       name match {
         case "int" | "Int" | "java.lang.Integer" =>
-          val fQName = FQName.fqn("morphir.SDK")("basics")("int")
-          val reference = MorphType.Reference((), fQName, List.empty[MorphType.Type[Unit]])
-          Success(reference)
+          Success(StandardTypes.intReference)
         case "float" | "Float" | "java.lang.Float" =>
-          val fQName = FQName.fqn("morphir.SDK")("basics")("float")
-          val reference = MorphType.Reference((), fQName, List.empty[MorphType.Type[Unit]])
-          Success(reference)
+          Success(StandardTypes.floatReference)
         case "string" | "String" =>
-          val fQName = FQName.fqn("morphir.SDK")("string")("string")
-          val reference = MorphType.Reference((), fQName, List.empty[MorphType.Type[Unit]])
-          Success(reference)
-        case _ => Failure(UnsupportedOperationException(s"Type name is not supported: ${name}"))
+          Success(StandardTypes.stringReference)
+        case _ => Failure(UnsupportedOperationException(s"Type name is not supported: $name"))
       }
     }
 

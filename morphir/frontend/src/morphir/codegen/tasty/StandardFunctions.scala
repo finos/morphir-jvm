@@ -14,6 +14,7 @@ object StandardFunctions {
       case "+" => Success(FQName.fqn("morphir.SDK")("basics")("add"))
       case "-" => Success(FQName.fqn("morphir.SDK")("basics")("subtract"))
       case "*" => Success(FQName.fqn("morphir.SDK")("basics")("multiply"))
+      case "/" if argumentType == StandardTypes.intReference => Success(FQName.fqn("morphir.SDK")("basics")("integerDivide"))
       case "/" => Success(FQName.fqn("morphir.SDK")("basics")("divide"))
     }
 

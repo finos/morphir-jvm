@@ -38,7 +38,49 @@ object `package` extends RootModule {
       def moduleDeps = Seq(morphir(scala3x).ir.jvm)
 
       object test extends ScalaTests with CommonZioTestModule {
-        def moduleDeps = Seq(morphir(scala3x).sdk.core.jvm.test)
+        def moduleDeps = super.moduleDeps ++ Seq(morphir(scala3x).sdk.core.jvm.test)
+      }
+
+      object codegentest extends Module {
+        object algo extends ScalaModule {
+          def scalaVersion = scala3x
+        }
+
+        object generated extends ScalaModule {
+          def scalaVersion = scala3x
+          def moduleDeps  = Seq(algo, morphir(scala3x).sdk.core.jvm)
+
+          def generatedSources: T[Seq[PathRef]] = Task {
+            val modulePath = generated.millSourcePath.toNIO.toAbsolutePath.toString
+            val morphirIrPath = Task.dest.toNIO.toAbsolutePath.toString + java.io.File.separator + "morphir-ir.json"
+
+            val frontendLibClassPath = frontend.compileClasspath().map(_.path.toNIO.toAbsolutePath.toString).mkString(java.io.File.pathSeparator)
+            val frontendOutputClassPath = frontend.compile().classes.path.toNIO.toAbsolutePath.toString
+            val classpath = frontendOutputClassPath + java.io.File.pathSeparator + frontendLibClassPath
+            val algoTastyFilePath = algo.compile().classes.path.toNIO.toAbsolutePath.toString + "/test/model/Algo.tasty"
+            os.proc(
+              "java",
+              "-cp",
+              classpath,
+              "morphir.codegen.tasty.tastyToMorphirIR",
+              morphirIrPath,
+              algoTastyFilePath
+            ).call()
+
+            val morphirElm = "/tmp/morphir/node_modules/morphir-elm/cli/morphir-elm.js"
+            val morphirGenOut = Task.dest.toNIO.toAbsolutePath.toString
+            os.proc(
+              morphirElm,
+              "gen",
+              "-i", morphirIrPath,
+              "-o", morphirGenOut
+            ).call()
+
+            Seq(PathRef(Task.dest))
+          }
+
+          object test extends ScalaTests with CommonZioTestModule
+        }
       }
     }
   }
