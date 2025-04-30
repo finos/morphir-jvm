@@ -28,53 +28,53 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Value.Pattern[A]] =
     ((pattern: morphir.ir.Value.Pattern[A]) =>
       pattern match {
-        case morphir.ir.Value.AsPattern(arg1, arg2, arg3) => 
+        case morphir.ir.Value.AsPattern(attrs, pattern, name) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""AsPattern"""),
-            encodeA(arg1),
-            morphir.ir.value.Codec.encodePattern(encodeA)(arg2),
-            morphir.ir.name.Codec.encodeName(arg3)
+            encodeA(attrs),
+            morphir.ir.value.Codec.encodePattern(encodeA)(pattern),
+            morphir.ir.name.Codec.encodeName(name)
           )
-        case morphir.ir.Value.ConstructorPattern(arg1, arg2, arg3) => 
+        case morphir.ir.Value.ConstructorPattern(attrs, constructorName, argumentPatterns) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""ConstructorPattern"""),
-            encodeA(arg1),
-            morphir.ir.fqname.Codec.encodeFQName(arg2),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.value.Codec.encodePattern(encodeA))(arg3)
+            encodeA(attrs),
+            morphir.ir.fqname.Codec.encodeFQName(constructorName),
+            morphir.sdk.list.Codec.encodeList(morphir.ir.value.Codec.encodePattern(encodeA))(argumentPatterns)
           )
-        case morphir.ir.Value.EmptyListPattern(arg1) => 
+        case morphir.ir.Value.EmptyListPattern(attrs) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""EmptyListPattern"""),
-            encodeA(arg1)
+            encodeA(attrs)
           )
-        case morphir.ir.Value.HeadTailPattern(arg1, arg2, arg3) => 
+        case morphir.ir.Value.HeadTailPattern(attrs, headPattern, tailPattern) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""HeadTailPattern"""),
-            encodeA(arg1),
-            morphir.ir.value.Codec.encodePattern(encodeA)(arg2),
-            morphir.ir.value.Codec.encodePattern(encodeA)(arg3)
+            encodeA(attrs),
+            morphir.ir.value.Codec.encodePattern(encodeA)(headPattern),
+            morphir.ir.value.Codec.encodePattern(encodeA)(tailPattern)
           )
-        case morphir.ir.Value.LiteralPattern(arg1, arg2) => 
+        case morphir.ir.Value.LiteralPattern(attrs, value) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""LiteralPattern"""),
-            encodeA(arg1),
-            morphir.ir.literal.Codec.encodeLiteral(arg2)
+            encodeA(attrs),
+            morphir.ir.literal.Codec.encodeLiteral(value)
           )
-        case morphir.ir.Value.TuplePattern(arg1, arg2) => 
+        case morphir.ir.Value.TuplePattern(attrs, elementPatterns) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""TuplePattern"""),
-            encodeA(arg1),
-            morphir.sdk.list.Codec.encodeList(morphir.ir.value.Codec.encodePattern(encodeA))(arg2)
+            encodeA(attrs),
+            morphir.sdk.list.Codec.encodeList(morphir.ir.value.Codec.encodePattern(encodeA))(elementPatterns)
           )
-        case morphir.ir.Value.UnitPattern(arg1) => 
+        case morphir.ir.Value.UnitPattern(attrs) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""UnitPattern"""),
-            encodeA(arg1)
+            encodeA(attrs)
           )
-        case morphir.ir.Value.WildcardPattern(arg1) => 
+        case morphir.ir.Value.WildcardPattern(attrs) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""WildcardPattern"""),
-            encodeA(arg1)
+            encodeA(attrs)
           )
       })
   
@@ -107,197 +107,197 @@ object Codec{
   ): io.circe.Encoder[morphir.ir.Value.Value[Ta, Va]] =
     ((value: morphir.ir.Value.Value[Ta, Va]) =>
       value match {
-        case morphir.ir.Value.Apply(arg1, arg2, arg3) => 
+        case morphir.ir.Value.Apply(attrs, func, argument) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Apply"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg2),
+            )(func),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg3)
+            )(argument)
           )
-        case morphir.ir.Value.Constructor(arg1, arg2) => 
+        case morphir.ir.Value.Constructor(attrs, fullyQualifiedName) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Constructor"""),
-            encodeVa(arg1),
-            morphir.ir.fqname.Codec.encodeFQName(arg2)
+            encodeVa(attrs),
+            morphir.ir.fqname.Codec.encodeFQName(fullyQualifiedName)
           )
-        case morphir.ir.Value.Destructure(arg1, arg2, arg3, arg4) => 
+        case morphir.ir.Value.Destructure(attrs, pattern, valueToDestruct, inValue) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Destructure"""),
-            encodeVa(arg1),
-            morphir.ir.value.Codec.encodePattern(encodeVa)(arg2),
+            encodeVa(attrs),
+            morphir.ir.value.Codec.encodePattern(encodeVa)(pattern),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg3),
+            )(valueToDestruct),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg4)
+            )(inValue)
           )
-        case morphir.ir.Value.Field(arg1, arg2, arg3) => 
+        case morphir.ir.Value.Field(attrs, subjectValue, fieldName) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Field"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg2),
-            morphir.ir.name.Codec.encodeName(arg3)
+            )(subjectValue),
+            morphir.ir.name.Codec.encodeName(fieldName)
           )
-        case morphir.ir.Value.FieldFunction(arg1, arg2) => 
+        case morphir.ir.Value.FieldFunction(attrs, fieldName) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""FieldFunction"""),
-            encodeVa(arg1),
-            morphir.ir.name.Codec.encodeName(arg2)
+            encodeVa(attrs),
+            morphir.ir.name.Codec.encodeName(fieldName)
           )
-        case morphir.ir.Value.IfThenElse(arg1, arg2, arg3, arg4) => 
+        case morphir.ir.Value.IfThenElse(attrs, condition, thenBranch, elseBranch) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""IfThenElse"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg2),
+            )(condition),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg3),
+            )(thenBranch),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg4)
+            )(elseBranch)
           )
-        case morphir.ir.Value.Lambda(arg1, arg2, arg3) => 
+        case morphir.ir.Value.Lambda(attrs, argumentPattern, body) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Lambda"""),
-            encodeVa(arg1),
-            morphir.ir.value.Codec.encodePattern(encodeVa)(arg2),
+            encodeVa(attrs),
+            morphir.ir.value.Codec.encodePattern(encodeVa)(argumentPattern),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg3)
+            )(body)
           )
-        case morphir.ir.Value.LetDefinition(arg1, arg2, arg3, arg4) => 
+        case morphir.ir.Value.LetDefinition(attrs, valueName, valueDefinition, inValue) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""LetDefinition"""),
-            encodeVa(arg1),
-            morphir.ir.name.Codec.encodeName(arg2),
+            encodeVa(attrs),
+            morphir.ir.name.Codec.encodeName(valueName),
             morphir.ir.value.Codec.encodeDefinition(
               encodeTa,
               encodeVa
-            )(arg3),
+            )(valueDefinition),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg4)
+            )(inValue)
           )
-        case morphir.ir.Value.LetRecursion(arg1, arg2, arg3) => 
+        case morphir.ir.Value.LetRecursion(attrs, valueDefinitions, inValue) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""LetRecursion"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.sdk.dict.Codec.encodeDict(
               morphir.ir.name.Codec.encodeName,
               morphir.ir.value.Codec.encodeDefinition(
                 encodeTa,
                 encodeVa
               )
-            )(arg2),
+            )(valueDefinitions),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg3)
+            )(inValue)
           )
-        case morphir.ir.Value.List(arg1, arg2) => 
+        case morphir.ir.Value.List(attrs, items) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""List"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.sdk.list.Codec.encodeList(morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            ))(arg2)
+            ))(items)
           )
-        case morphir.ir.Value.Literal(arg1, arg2) => 
+        case morphir.ir.Value.Literal(attrs, value) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Literal"""),
-            encodeVa(arg1),
-            morphir.ir.literal.Codec.encodeLiteral(arg2)
+            encodeVa(attrs),
+            morphir.ir.literal.Codec.encodeLiteral(value)
           )
-        case morphir.ir.Value.PatternMatch(arg1, arg2, arg3) => 
+        case morphir.ir.Value.PatternMatch(attrs, branchOutOn, cases) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""PatternMatch"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg2),
-            morphir.sdk.list.Codec.encodeList(((arg3: (morphir.ir.Value.Pattern[Va], morphir.ir.Value.Value[Ta, Va])) =>
+            )(branchOutOn),
+            morphir.sdk.list.Codec.encodeList(((cases: (morphir.ir.Value.Pattern[Va], morphir.ir.Value.Value[Ta, Va])) =>
               io.circe.Json.arr(
-                morphir.ir.value.Codec.encodePattern(encodeVa)(arg3._1),
+                morphir.ir.value.Codec.encodePattern(encodeVa)(cases._1),
                 morphir.ir.value.Codec.encodeValue(
                   encodeTa,
                   encodeVa
-                )(arg3._2)
-              )))(arg3)
+                )(cases._2)
+              )))(cases)
           )
-        case morphir.ir.Value.Record(arg1, arg2) => 
+        case morphir.ir.Value.Record(attrs, fields) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Record"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.sdk.dict.Codec.encodeDict(
               morphir.ir.name.Codec.encodeName,
               morphir.ir.value.Codec.encodeValue(
                 encodeTa,
                 encodeVa
               )
-            )(arg2)
+            )(fields)
           )
-        case morphir.ir.Value.Reference(arg1, arg2) => 
+        case morphir.ir.Value.Reference(attrs, fullyQualifiedName) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Reference"""),
-            encodeVa(arg1),
-            morphir.ir.fqname.Codec.encodeFQName(arg2)
+            encodeVa(attrs),
+            morphir.ir.fqname.Codec.encodeFQName(fullyQualifiedName)
           )
-        case morphir.ir.Value.Tuple(arg1, arg2) => 
+        case morphir.ir.Value.Tuple(attrs, elements) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Tuple"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.sdk.list.Codec.encodeList(morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            ))(arg2)
+            ))(elements)
           )
-        case morphir.ir.Value.Unit(arg1) => 
+        case morphir.ir.Value.Unit(attrs) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Unit"""),
-            encodeVa(arg1)
+            encodeVa(attrs)
           )
-        case morphir.ir.Value.UpdateRecord(arg1, arg2, arg3) => 
+        case morphir.ir.Value.UpdateRecord(attrs, valueToUpdate, fieldsToUpdate) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""UpdateRecord"""),
-            encodeVa(arg1),
+            encodeVa(attrs),
             morphir.ir.value.Codec.encodeValue(
               encodeTa,
               encodeVa
-            )(arg2),
+            )(valueToUpdate),
             morphir.sdk.dict.Codec.encodeDict(
               morphir.ir.name.Codec.encodeName,
               morphir.ir.value.Codec.encodeValue(
                 encodeTa,
                 encodeVa
               )
-            )(arg3)
+            )(fieldsToUpdate)
           )
-        case morphir.ir.Value.Variable(arg1, arg2) => 
+        case morphir.ir.Value.Variable(attrs, name) => 
           io.circe.Json.arr(
             io.circe.Json.fromString("""Variable"""),
-            encodeVa(arg1),
-            morphir.ir.name.Codec.encodeName(arg2)
+            encodeVa(attrs),
+            morphir.ir.name.Codec.encodeName(name)
           )
       })
   
@@ -333,62 +333,62 @@ object Codec{
         tag match {
           case """AsPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeA))
-              arg3 <- c.downN(3).as(morphir.ir.name.Codec.decodeName)
+              attrs <- c.downN(1).as(decodeA)
+              pattern <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeA))
+              name <- c.downN(3).as(morphir.ir.name.Codec.decodeName)
             }  yield morphir.ir.Value.AsPattern(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              pattern,
+              name
             )
           case """ConstructorPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
-              arg3 <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodePattern(decodeA)))
+              attrs <- c.downN(1).as(decodeA)
+              constructorName <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
+              argumentPatterns <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodePattern(decodeA)))
             }  yield morphir.ir.Value.ConstructorPattern(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              constructorName,
+              argumentPatterns
             )
           case """EmptyListPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-            }  yield morphir.ir.Value.EmptyListPattern(arg1)
+              attrs <- c.downN(1).as(decodeA)
+            }  yield morphir.ir.Value.EmptyListPattern(attrs)
           case """HeadTailPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeA))
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodePattern(decodeA))
+              attrs <- c.downN(1).as(decodeA)
+              headPattern <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeA))
+              tailPattern <- c.downN(3).as(morphir.ir.value.Codec.decodePattern(decodeA))
             }  yield morphir.ir.Value.HeadTailPattern(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              headPattern,
+              tailPattern
             )
           case """LiteralPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.ir.literal.Codec.decodeLiteral)
+              attrs <- c.downN(1).as(decodeA)
+              value <- c.downN(2).as(morphir.ir.literal.Codec.decodeLiteral)
             }  yield morphir.ir.Value.LiteralPattern(
-              arg1,
-              arg2
+              attrs,
+              value
             )
           case """TuplePattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-              arg2 <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodePattern(decodeA)))
+              attrs <- c.downN(1).as(decodeA)
+              elementPatterns <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodePattern(decodeA)))
             }  yield morphir.ir.Value.TuplePattern(
-              arg1,
-              arg2
+              attrs,
+              elementPatterns
             )
           case """UnitPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-            }  yield morphir.ir.Value.UnitPattern(arg1)
+              attrs <- c.downN(1).as(decodeA)
+            }  yield morphir.ir.Value.UnitPattern(attrs)
           case """WildcardPattern""" => 
             for {
-              arg1 <- c.downN(1).as(decodeA)
-            }  yield morphir.ir.Value.WildcardPattern(arg1)
+              attrs <- c.downN(1).as(decodeA)
+            }  yield morphir.ir.Value.WildcardPattern(attrs)
         })))
   
   implicit val decodeRawValue: io.circe.Decoder[morphir.ir.Value.RawValue] = morphir.ir.value.Codec.decodeValue(
@@ -427,165 +427,165 @@ object Codec{
         tag match {
           case """Apply""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              func <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
+              argument <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
             }  yield morphir.ir.Value.Apply(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              func,
+              argument
             )
           case """Constructor""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
+              attrs <- c.downN(1).as(decodeVa)
+              fullyQualifiedName <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
             }  yield morphir.ir.Value.Constructor(
-              arg1,
-              arg2
+              attrs,
+              fullyQualifiedName
             )
           case """Destructure""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeVa))
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              pattern <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeVa))
+              valueToDestruct <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg4 <- c.downN(4).as(morphir.ir.value.Codec.decodeValue(
+              inValue <- c.downN(4).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
             }  yield morphir.ir.Value.Destructure(
-              arg1,
-              arg2,
-              arg3,
-              arg4
+              attrs,
+              pattern,
+              valueToDestruct,
+              inValue
             )
           case """Field""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              subjectValue <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg3 <- c.downN(3).as(morphir.ir.name.Codec.decodeName)
+              fieldName <- c.downN(3).as(morphir.ir.name.Codec.decodeName)
             }  yield morphir.ir.Value.Field(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              subjectValue,
+              fieldName
             )
           case """FieldFunction""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
+              attrs <- c.downN(1).as(decodeVa)
+              fieldName <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
             }  yield morphir.ir.Value.FieldFunction(
-              arg1,
-              arg2
+              attrs,
+              fieldName
             )
           case """IfThenElse""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              condition <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
+              thenBranch <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg4 <- c.downN(4).as(morphir.ir.value.Codec.decodeValue(
+              elseBranch <- c.downN(4).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
             }  yield morphir.ir.Value.IfThenElse(
-              arg1,
-              arg2,
-              arg3,
-              arg4
+              attrs,
+              condition,
+              thenBranch,
+              elseBranch
             )
           case """Lambda""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeVa))
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              argumentPattern <- c.downN(2).as(morphir.ir.value.Codec.decodePattern(decodeVa))
+              body <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
             }  yield morphir.ir.Value.Lambda(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              argumentPattern,
+              body
             )
           case """LetDefinition""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodeDefinition(
+              attrs <- c.downN(1).as(decodeVa)
+              valueName <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
+              valueDefinition <- c.downN(3).as(morphir.ir.value.Codec.decodeDefinition(
                 decodeTa,
                 decodeVa
               ))
-              arg4 <- c.downN(4).as(morphir.ir.value.Codec.decodeValue(
+              inValue <- c.downN(4).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
             }  yield morphir.ir.Value.LetDefinition(
-              arg1,
-              arg2,
-              arg3,
-              arg4
+              attrs,
+              valueName,
+              valueDefinition,
+              inValue
             )
           case """LetRecursion""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.sdk.dict.Codec.decodeDict(
+              attrs <- c.downN(1).as(decodeVa)
+              valueDefinitions <- c.downN(2).as(morphir.sdk.dict.Codec.decodeDict(
                 morphir.ir.name.Codec.decodeName,
                 morphir.ir.value.Codec.decodeDefinition(
                   decodeTa,
                   decodeVa
                 )
               ))
-              arg3 <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
+              inValue <- c.downN(3).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
             }  yield morphir.ir.Value.LetRecursion(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              valueDefinitions,
+              inValue
             )
           case """List""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              items <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               )))
             }  yield morphir.ir.Value.List(
-              arg1,
-              arg2
+              attrs,
+              items
             )
           case """Literal""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.literal.Codec.decodeLiteral)
+              attrs <- c.downN(1).as(decodeVa)
+              value <- c.downN(2).as(morphir.ir.literal.Codec.decodeLiteral)
             }  yield morphir.ir.Value.Literal(
-              arg1,
-              arg2
+              attrs,
+              value
             )
           case """PatternMatch""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              branchOutOn <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg3 <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(((c: io.circe.HCursor) =>
+              cases <- c.downN(3).as(morphir.sdk.list.Codec.decodeList(((c: io.circe.HCursor) =>
                 for {
                   arg1 <- c.downN(0).as(morphir.ir.value.Codec.decodePattern(decodeVa))
                   arg2 <- c.downN(1).as(morphir.ir.value.Codec.decodeValue(
@@ -594,14 +594,14 @@ object Codec{
                   ))
                 }  yield (arg1, arg2))))
             }  yield morphir.ir.Value.PatternMatch(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              branchOutOn,
+              cases
             )
           case """Record""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.sdk.dict.Codec.decodeDict(
+              attrs <- c.downN(1).as(decodeVa)
+              fields <- c.downN(2).as(morphir.sdk.dict.Codec.decodeDict(
                 morphir.ir.name.Codec.decodeName,
                 morphir.ir.value.Codec.decodeValue(
                   decodeTa,
@@ -609,40 +609,40 @@ object Codec{
                 )
               ))
             }  yield morphir.ir.Value.Record(
-              arg1,
-              arg2
+              attrs,
+              fields
             )
           case """Reference""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
+              attrs <- c.downN(1).as(decodeVa)
+              fullyQualifiedName <- c.downN(2).as(morphir.ir.fqname.Codec.decodeFQName)
             }  yield morphir.ir.Value.Reference(
-              arg1,
-              arg2
+              attrs,
+              fullyQualifiedName
             )
           case """Tuple""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              elements <- c.downN(2).as(morphir.sdk.list.Codec.decodeList(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               )))
             }  yield morphir.ir.Value.Tuple(
-              arg1,
-              arg2
+              attrs,
+              elements
             )
           case """Unit""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-            }  yield morphir.ir.Value.Unit(arg1)
+              attrs <- c.downN(1).as(decodeVa)
+            }  yield morphir.ir.Value.Unit(attrs)
           case """UpdateRecord""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
+              attrs <- c.downN(1).as(decodeVa)
+              valueToUpdate <- c.downN(2).as(morphir.ir.value.Codec.decodeValue(
                 decodeTa,
                 decodeVa
               ))
-              arg3 <- c.downN(3).as(morphir.sdk.dict.Codec.decodeDict(
+              fieldsToUpdate <- c.downN(3).as(morphir.sdk.dict.Codec.decodeDict(
                 morphir.ir.name.Codec.decodeName,
                 morphir.ir.value.Codec.decodeValue(
                   decodeTa,
@@ -650,17 +650,17 @@ object Codec{
                 )
               ))
             }  yield morphir.ir.Value.UpdateRecord(
-              arg1,
-              arg2,
-              arg3
+              attrs,
+              valueToUpdate,
+              fieldsToUpdate
             )
           case """Variable""" => 
             for {
-              arg1 <- c.downN(1).as(decodeVa)
-              arg2 <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
+              attrs <- c.downN(1).as(decodeVa)
+              name <- c.downN(2).as(morphir.ir.name.Codec.decodeName)
             }  yield morphir.ir.Value.Variable(
-              arg1,
-              arg2
+              attrs,
+              name
             )
         })))
 

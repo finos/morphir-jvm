@@ -23,7 +23,7 @@ object QName{
     qNameString: morphir.sdk.String.String
   ): morphir.sdk.Maybe.Maybe[morphir.ir.QName.QName] =
     morphir.sdk.String.split(""":""")(qNameString) match {
-      case packageNameString :: localNameString :: Nil => 
+      case (packageNameString :: (localNameString :: Nil)) => 
         (morphir.sdk.Maybe.Just((morphir.ir.QName.QName(
           morphir.ir.Path.fromString(packageNameString),
           morphir.ir.Name.fromString(localNameString)

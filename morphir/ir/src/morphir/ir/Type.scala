@@ -19,13 +19,13 @@ object Type{
   object Definition{
   
     final case class CustomTypeDefinition[A](
-      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-      arg2: morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[A]]
+      typeParams: morphir.sdk.List.List[morphir.ir.Name.Name],
+      ctors: morphir.ir.AccessControlled.AccessControlled[morphir.ir.Type.Constructors[A]]
     ) extends morphir.ir.Type.Definition[A]{}
     
     final case class TypeAliasDefinition[A](
-      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-      arg2: morphir.ir.Type.Type[A]
+      typeParams: morphir.sdk.List.List[morphir.ir.Name.Name],
+      typeExp: morphir.ir.Type.Type[A]
     ) extends morphir.ir.Type.Definition[A]{}
   
   }
@@ -54,22 +54,22 @@ object Type{
   object Specification{
   
     final case class CustomTypeSpecification[A](
-      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-      arg2: morphir.ir.Type.Constructors[A]
+      typeParams: morphir.sdk.List.List[morphir.ir.Name.Name],
+      ctors: morphir.ir.Type.Constructors[A]
     ) extends morphir.ir.Type.Specification[A]{}
     
     final case class DerivedTypeSpecification[A](
-      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-      arg2: morphir.ir.Type.DerivedTypeSpecificationDetails[A]
+      typeParams: morphir.sdk.List.List[morphir.ir.Name.Name],
+      details: morphir.ir.Type.DerivedTypeSpecificationDetails[A]
     ) extends morphir.ir.Type.Specification[A]{}
     
     final case class OpaqueTypeSpecification[A](
-      arg1: morphir.sdk.List.List[morphir.ir.Name.Name]
+      typeParams: morphir.sdk.List.List[morphir.ir.Name.Name]
     ) extends morphir.ir.Type.Specification[A]{}
     
     final case class TypeAliasSpecification[A](
-      arg1: morphir.sdk.List.List[morphir.ir.Name.Name],
-      arg2: morphir.ir.Type.Type[A]
+      typeParams: morphir.sdk.List.List[morphir.ir.Name.Name],
+      typeExp: morphir.ir.Type.Type[A]
     ) extends morphir.ir.Type.Specification[A]{}
   
   }
@@ -91,40 +91,40 @@ object Type{
   object Type{
   
     final case class ExtensibleRecord[A](
-      arg1: A,
-      arg2: morphir.ir.Name.Name,
-      arg3: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
+      attrs: A,
+      variableName: morphir.ir.Name.Name,
+      fieldTypes: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Function[A](
-      arg1: A,
-      arg2: morphir.ir.Type.Type[A],
-      arg3: morphir.ir.Type.Type[A]
+      attrs: A,
+      argumentType: morphir.ir.Type.Type[A],
+      returnType: morphir.ir.Type.Type[A]
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Record[A](
-      arg1: A,
-      arg2: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
+      attrs: A,
+      fieldTypes: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Reference[A](
-      arg1: A,
-      arg2: morphir.ir.FQName.FQName,
-      arg3: morphir.sdk.List.List[morphir.ir.Type.Type[A]]
+      attrs: A,
+      typeName: morphir.ir.FQName.FQName,
+      typeParameters: morphir.sdk.List.List[morphir.ir.Type.Type[A]]
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Tuple[A](
-      arg1: A,
-      arg2: morphir.sdk.List.List[morphir.ir.Type.Type[A]]
+      attrs: A,
+      elementTypes: morphir.sdk.List.List[morphir.ir.Type.Type[A]]
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Unit[A](
-      arg1: A
+      attrs: A
     ) extends morphir.ir.Type.Type[A]{}
     
     final case class Variable[A](
-      arg1: A,
-      arg2: morphir.ir.Name.Name
+      attrs: A,
+      name: morphir.ir.Name.Name
     ) extends morphir.ir.Type.Type[A]{}
   
   }
@@ -272,6 +272,16 @@ object Type{
         ) : morphir.ir.Type.Specification[A])
     }
   
+  def derivedTypeSpecification[A](
+    typeParams: morphir.sdk.List.List[morphir.ir.Name.Name]
+  )(
+    details: morphir.ir.Type.DerivedTypeSpecificationDetails[A]
+  ): morphir.ir.Type.Specification[A] =
+    (morphir.ir.Type.DerivedTypeSpecification(
+      typeParams,
+      details
+    ) : morphir.ir.Type.Specification[A])
+  
   def eraseAttributes[A](
     typeDef: morphir.ir.Type.Definition[A]
   ): morphir.ir.Type.Definition[scala.Unit] =
@@ -314,27 +324,27 @@ object Type{
     }
   
   def extensibleRecord[A](
-    attributes: A
+    attrs: A
   )(
     variableName: morphir.ir.Name.Name
   )(
     fieldTypes: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
   ): morphir.ir.Type.Type[A] =
     (morphir.ir.Type.ExtensibleRecord(
-      attributes,
+      attrs,
       variableName,
       fieldTypes
     ) : morphir.ir.Type.Type[A])
   
   def function[A](
-    attributes: A
+    attrs: A
   )(
     argumentType: morphir.ir.Type.Type[A]
   )(
     returnType: morphir.ir.Type.Type[A]
   ): morphir.ir.Type.Type[A] =
     (morphir.ir.Type.Function(
-      attributes,
+      attrs,
       argumentType,
       returnType
     ) : morphir.ir.Type.Type[A])
@@ -361,7 +371,7 @@ object Type{
             case (ctorName, ctorArgs) => 
               morphir.sdk.Result.map(morphir.sdk.Tuple.pair[Name.Name, ConstructorArgs[B]](ctorName))(morphir.sdk.ResultList.keepAllErrors(morphir.sdk.List.map(({
                 case (argName, argType) => 
-                  morphir.sdk.Result.map[E, Type[B], (Name.Name, Type[B])](morphir.sdk.Tuple.pair(argName))(f(argType))
+                  morphir.sdk.Result.map[E,Type[B], (Name.Name, Type[B])](morphir.sdk.Tuple.pair(argName))(f(argType))
               } : ((morphir.ir.Name.Name, morphir.ir.Type.Type[A])) => morphir.sdk.Result.Result[E, (morphir.ir.Name.Name, morphir.ir.Type.Type[B])]))(ctorArgs)))
           } : ((morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[A])])) => morphir.sdk.Result.Result[morphir.sdk.List.List[E], (morphir.ir.Name.Name, morphir.sdk.List.List[(morphir.ir.Name.Name, morphir.ir.Type.Type[B])])]))(morphir.sdk.Dict.toList(constructors.value)))))
           
@@ -506,24 +516,24 @@ object Type{
     (morphir.ir.Type.OpaqueTypeSpecification(typeParams) : morphir.ir.Type.Specification[A])
   
   def record[A](
-    attributes: A
+    attrs: A
   )(
     fieldTypes: morphir.sdk.List.List[morphir.ir.Type.Field[A]]
   ): morphir.ir.Type.Type[A] =
     (morphir.ir.Type.Record(
-      attributes,
+      attrs,
       fieldTypes
     ) : morphir.ir.Type.Type[A])
   
   def reference[A](
-    attributes: A
+    attrs: A
   )(
     typeName: morphir.ir.FQName.FQName
   )(
     typeParameters: morphir.sdk.List.List[morphir.ir.Type.Type[A]]
   ): morphir.ir.Type.Type[A] =
     (morphir.ir.Type.Reference(
-      attributes,
+      attrs,
       typeName,
       typeParameters
     ) : morphir.ir.Type.Type[A])
@@ -534,7 +544,7 @@ object Type{
     original: morphir.ir.Type.Type[Ta]
   ): morphir.ir.Type.Type[Ta] =
     original match {
-      case morphir.ir.Type.Variable(_, varName) =>
+      case morphir.ir.Type.Variable(a, varName) => 
         morphir.sdk.Maybe.withDefault(original)(morphir.sdk.Dict.get(varName)(mapping))
       case morphir.ir.Type.Reference(a, fQName, typeArgs) => 
         (morphir.ir.Type.Reference(
@@ -590,12 +600,12 @@ object Type{
             morphir.ir.Name.toTitleCase(localName)
           ))
           
-          morphir.sdk.String.join(""" """)(morphir.sdk.List.cons(referenceName)(morphir.sdk.List.map(morphir.ir.Type._toString[A])(args)))
+          morphir.sdk.String.join(""" """)(morphir.sdk.List.cons(referenceName)(morphir.sdk.List.map(morphir.ir.Type._toString)(args)))
         }
       case morphir.ir.Type.Tuple(_, elems) => 
         morphir.sdk.String.concat(morphir.sdk.List(
           """( """,
-          morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Type._toString[A])(elems)),
+          morphir.sdk.String.join(""", """)(morphir.sdk.List.map(morphir.ir.Type._toString)(elems)),
           """ )"""
         ))
       case morphir.ir.Type.Record(_, fields) => 
@@ -640,12 +650,12 @@ object Type{
     }
   
   def tuple[A](
-    attributes: A
+    attrs: A
   )(
     elementTypes: morphir.sdk.List.List[morphir.ir.Type.Type[A]]
   ): morphir.ir.Type.Type[A] =
     (morphir.ir.Type.Tuple(
-      attributes,
+      attrs,
       elementTypes
     ) : morphir.ir.Type.Type[A])
   
@@ -690,17 +700,17 @@ object Type{
     }
   
   def unit[A](
-    attributes: A
+    attrs: A
   ): morphir.ir.Type.Type[A] =
-    (morphir.ir.Type.Unit(attributes) : morphir.ir.Type.Type[A])
+    (morphir.ir.Type.Unit(attrs) : morphir.ir.Type.Type[A])
   
   def variable[A](
-    attributes: A
+    attrs: A
   )(
     name: morphir.ir.Name.Name
   ): morphir.ir.Type.Type[A] =
     (morphir.ir.Type.Variable(
-      attributes,
+      attrs,
       name
     ) : morphir.ir.Type.Type[A])
 

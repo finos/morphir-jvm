@@ -29,7 +29,7 @@ object Path{
         true
       case (_, Nil) => 
         false
-      case (pathHead :: pathTail, prefixHead :: prefixTail) => 
+      case ((pathHead :: pathTail), (prefixHead :: prefixTail)) => 
         if (morphir.sdk.Basics.equal(prefixHead)(pathHead)) {
           morphir.ir.Path.isPrefixOf(prefixTail)(pathTail)
         } else {

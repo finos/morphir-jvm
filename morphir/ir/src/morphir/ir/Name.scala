@@ -36,7 +36,7 @@ object Name{
     morphir.ir.Name.toList(name) match {
       case Nil => 
         """"""
-      case head :: tail => 
+      case (head :: tail) => 
         morphir.sdk.String.join("""""")(morphir.sdk.List.cons(head)(morphir.sdk.List.map(morphir.ir.Name.capitalize)(tail)))
     }
   
@@ -65,7 +65,7 @@ object Name{
             } else {
               morphir.sdk.List.append(prefix)(morphir.sdk.List(join(abbrev)))
             }
-          case first :: rest => 
+          case (first :: rest) => 
             if (morphir.sdk.Basics.equal(morphir.sdk.String.length(first))(morphir.sdk.Basics.Int(1))) {
               process(prefix)(morphir.sdk.List.append(abbrev)(morphir.sdk.List(first)))(rest)
             } else {
@@ -86,7 +86,7 @@ object Name{
         }
       
       name match {
-        case word :: Nil => 
+        case (word :: Nil) => 
           if (morphir.sdk.Basics.equal(morphir.sdk.String.length(word))(morphir.sdk.Basics.Int(1))) {
             name
           } else {
@@ -110,7 +110,7 @@ object Name{
     name: morphir.ir.Name.Name
   ): morphir.sdk.List.List[morphir.sdk.String.String] =
     morphir.ir.Name.toHumanWords(name) match {
-      case firstWord :: rest => 
+      case (firstWord :: rest) => 
         morphir.sdk.List.cons(morphir.ir.Name.capitalize(firstWord))(rest)
       case Nil => 
         morphir.sdk.List(

@@ -13,27 +13,27 @@ object Literal{
   object Literal{
   
     final case class BoolLiteral(
-      arg1: morphir.sdk.Basics.Bool
+      value: morphir.sdk.Basics.Bool
     ) extends morphir.ir.Literal.Literal{}
     
     final case class CharLiteral(
-      arg1: morphir.sdk.Char.Char
+      value: morphir.sdk.Char.Char
     ) extends morphir.ir.Literal.Literal{}
     
     final case class DecimalLiteral(
-      arg1: morphir.sdk.Decimal.Decimal
+      value: morphir.sdk.Decimal.Decimal
     ) extends morphir.ir.Literal.Literal{}
     
     final case class FloatLiteral(
-      arg1: morphir.sdk.Basics.Float
+      value: morphir.sdk.Basics.Float
     ) extends morphir.ir.Literal.Literal{}
     
     final case class StringLiteral(
-      arg1: morphir.sdk.String.String
+      value: morphir.sdk.String.String
     ) extends morphir.ir.Literal.Literal{}
     
     final case class WholeNumberLiteral(
-      arg1: morphir.sdk.Basics.Int
+      value: morphir.sdk.Basics.Int
     ) extends morphir.ir.Literal.Literal{}
   
   }
@@ -60,19 +60,24 @@ object Literal{
   ): morphir.ir.Literal.Literal =
     (morphir.ir.Literal.CharLiteral(value) : morphir.ir.Literal.Literal)
   
+  def decimalLiteral(
+    value: morphir.sdk.Decimal.Decimal
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.DecimalLiteral(value) : morphir.ir.Literal.Literal)
+  
   def floatLiteral(
     value: morphir.sdk.Basics.Float
   ): morphir.ir.Literal.Literal =
     (morphir.ir.Literal.FloatLiteral(value) : morphir.ir.Literal.Literal)
   
-  def intLiteral(
-    value: morphir.sdk.Basics.Int
-  ): morphir.ir.Literal.Literal =
-    (morphir.ir.Literal.WholeNumberLiteral(value) : morphir.ir.Literal.Literal)
-  
   def stringLiteral(
     value: morphir.sdk.String.String
   ): morphir.ir.Literal.Literal =
     (morphir.ir.Literal.StringLiteral(value) : morphir.ir.Literal.Literal)
+  
+  def wholeNumberLiteral(
+    value: morphir.sdk.Basics.Int
+  ): morphir.ir.Literal.Literal =
+    (morphir.ir.Literal.WholeNumberLiteral(value) : morphir.ir.Literal.Literal)
 
 }
