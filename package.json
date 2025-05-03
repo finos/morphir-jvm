@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "morphir-elm": "^2.94.0"
+  }
+}

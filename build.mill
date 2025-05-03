@@ -67,10 +67,9 @@ object `package` extends RootModule {
               algoTastyFilePath
             ).call()
 
-            val morphirElm = "/tmp/morphir/node_modules/morphir-elm/cli/morphir-elm.js"
             val morphirGenOut = Task.dest.toNIO.toAbsolutePath.toString
             os.proc(
-              morphirElm,
+              "morphir-elm",
               "gen",
               "-i", morphirIrPath,
               "-o", morphirGenOut
