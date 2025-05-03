@@ -41,7 +41,14 @@ object `package` extends RootModule {
         def moduleDeps = super.moduleDeps ++ Seq(morphir(scala3x).sdk.core.jvm.test)
       }
 
+      // The following workflow is executed:
+      // 1. Compile the algo module to TASTy
+      // 2. Use the TastyToMorphir class to convert the TASTy file to Morphir IR
+      // 3. Use the morphir-elm CLI to convert the Morphir IR to Scala code
+      // 4. Compile the generated Scala code
+      // 5. Run predefined unit tests on the generated Scala code
       object codegentest extends Module {
+        // 1. Compile the algo module to TASTy
         object algo extends ScalaModule {
           def scalaVersion = scala3x
         }
@@ -51,9 +58,9 @@ object `package` extends RootModule {
           def moduleDeps  = Seq(algo, morphir(scala3x).sdk.core.jvm)
 
           def generatedSources: T[Seq[PathRef]] = Task {
-            val modulePath = generated.millSourcePath.toNIO.toAbsolutePath.toString
             val morphirIrPath = Task.dest.toNIO.toAbsolutePath.toString + java.io.File.separator + "morphir-ir.json"
 
+            // 2. Use the TastyToMorphir class to convert the TASTy file to Morphir IR
             val frontendLibClassPath = frontend.compileClasspath().map(_.path.toNIO.toAbsolutePath.toString).mkString(java.io.File.pathSeparator)
             val frontendOutputClassPath = frontend.compile().classes.path.toNIO.toAbsolutePath.toString
             val classpath = frontendOutputClassPath + java.io.File.pathSeparator + frontendLibClassPath
@@ -67,6 +74,7 @@ object `package` extends RootModule {
               algoTastyFilePath
             ).call()
 
+            // 3. Use the morphir-elm CLI to convert the Morphir IR to Scala code
             val projectRoot = Task.workspace.toNIO.toAbsolutePath.toString
             val morphirElm = s"$projectRoot/node_modules/morphir-elm/cli/morphir-elm.js"
             val morphirGenOut = Task.dest.toNIO.toAbsolutePath.toString
@@ -77,9 +85,11 @@ object `package` extends RootModule {
               "-o", morphirGenOut
             ).call()
 
+            // 4. Compile the generated Scala code
             Seq(PathRef(Task.dest))
           }
 
+          // 5. Run predefined unit tests on the generated Scala code
           object test extends ScalaTests with CommonZioTestModule
         }
       }

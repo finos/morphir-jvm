@@ -17,8 +17,6 @@ class TastyToMorphir(morphirPath: String) extends Inspector {
 
     for (tasty <- tastys) {
       val tree = tasty.ast
-      println(s"tree = $tree")
-
       tree match {
         case tr: dotty.tools.dotc.ast.Trees.Tree[?] =>
           tr.toVersionedDistribution match {
@@ -42,9 +40,6 @@ class TastyToMorphir(morphirPath: String) extends Inspector {
 }
 
 @main def tastyToMorphirIR(morphirIROutputPath: String, tastyFiles: String*): Unit = {
-  println(s"IR Output Path: $morphirIROutputPath")
-  println(s"TASTy files: $tastyFiles")
-
   if (tastyFiles.size > 1) {
     throw new UnsupportedOperationException(s"Currently only 1 TASTy file can be parsed, but ${tastyFiles.size} was provided")
   }
