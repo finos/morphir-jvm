@@ -163,7 +163,7 @@ object Package{
               } else {
                 (morphir.sdk.Maybe.Nothing : morphir.sdk.Maybe.Maybe[morphir.ir.Path.Path])
               }
-          } : ((morphir.ir.Path.Path, morphir.ir.Path.Path)) => morphir.sdk.Maybe.Maybe[morphir.ir.Path.Path]))(morphir.sdk.Set.toList(morphir.ir.Module.dependsOnModules(mDef.value))))))(morphir.sdk.Dict.get(currentModuleName)(packageDef.modules))))(morphir.sdk.Set.toList(current)))
+          } : ((morphir.ir.Path.Path, morphir.ir.Path.Path)) => morphir.sdk.Maybe.Maybe[morphir.ir.Path.Path]))(morphir.sdk.Set.toList(morphir.ir.Module.dependsOnModules(mDef.value[Name.Name]))))))(morphir.sdk.Dict.get(currentModuleName)(packageDef.modules))))(morphir.sdk.Set.toList(current[Name.Name])))
 
     val expandedModulesToInclude: morphir.sdk.Set.Set[morphir.ir.Module.ModuleName] = morphir.sdk.Set.union(findAllDependencies(modulesToInclude))(modulesToInclude)
 
