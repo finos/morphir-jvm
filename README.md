@@ -6,6 +6,14 @@ This repo contains tools to work with the Morphir IR on the JVM. It will include
 
 Morphir-jvm use [mill]("http://www.lihaoyi.com/mill/) as its build tool.
 
+### BSP Setup
+
+If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
+
+```bash
+./mill mill.bsp.BSP/install
+```
+
 ### IntelliJ Setup for Linux
 
 If you are using IntelliJ IDEA to edit morphir-jvm's Scala code, you can create the
@@ -15,15 +23,9 @@ IntelliJ project files via:
 ./mill mill.scalalib.GenIdea/idea
 ```
 
-### BSP Setup
-
-If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
-
-```bash
-./mill mill.contrib.Bloop/install
-```
-
 ### Run Tests
+
+Run all tests:
 
 ```bash
 ./mill __.test
@@ -65,7 +67,7 @@ IntelliJ project files via:
 If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
 
 ```
-.\mill mill.contrib.Bloop/install
+.\mill mill.bsp.BSP/install
 ```
 
 ### Run Tests
