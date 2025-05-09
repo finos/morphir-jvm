@@ -15,7 +15,7 @@ env:
   JVM_OPTS: -XX:+PrintCommandLineFlags -Xss10M # for Java 8 only (sadly, it is not modern enough for JDK_JAVA_OPTIONS)
   scala_212_version: "2.12.20"
   scala_213_version: "2.13.16"
-  scala_3_version: "3.3.5"
+  scala_3_version: "3.3.6"
   SonatypeUrl: "https://finos.sonatype.app/platform/"
   SonatypeAppId: morphir-jvm
   SonatypeStage: "build"
