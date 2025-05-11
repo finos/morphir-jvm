@@ -171,63 +171,64 @@ jobs:
             out/morphir/${{matrix.scala}}/**/native/
           key: ${{ runner.os }}-mill-native-${{matrix.java}}-${{ matrix.scala }}-${{ github.sha }}-${{ hashFiles('out') }}
 
-  ###########################
-  ## Sonatype SCA Scanning ##
-  ###########################
-  sonatype-scan:
-    if: github.repository_owner == 'finos'
-    needs: [ci]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache scala dependencies
-        uses: coursier/cache-action@v6
+  # ###########################
+  # ## Sonatype SCA Scanning ##
+  # ###########################
+  # sonatype-scan:
+  #   if: github.repository_owner == 'finos'
+  #   needs: [ci]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Cache scala dependencies
+  #       uses: coursier/cache-action@v6
 
-      - name: Get OUT cache
-        uses: actions/cache/restore@v4
-        with:
-          path: out/
-          key: ${{ runner.os }}-*
+  #     - name: Get OUT cache
+  #       uses: actions/cache/restore@v4
+  #       with:
+  #         path: out/
+  #         key: ${{ runner.os }}-*
 
-      - name: Copy Cache for SCA Scan
-        run: |
-          mkdir depCache/ #Create local copy of cache for Sonatype Scanner
-          cp -r /home/runner/.cache/coursier/ depCache/
-      # - name: Save resolvedIvyDeps.json
-      #   run: ./mill show __.resolvedIvyDeps > depCache/resolvedIvyDeps.json
+  #     - name: Copy Cache for SCA Scan
+  #       run: |
+  #         mkdir depCache/ #Create local copy of cache for Sonatype Scanner
+  #         cp -r /home/runner/.cache/coursier/ depCache/
+  #     # - name: Save resolvedIvyDeps.json
+  #     #   run: ./mill show __.resolvedIvyDeps > depCache/resolvedIvyDeps.json
 
-      # - name: Upload Dependency Cache (optional)
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: Dependency Cache
-      #     path: depCache/
+  #     # - name: Upload Dependency Cache (optional)
+  #     #   uses: actions/upload-artifact@v4
+  #     #   with:
+  #     #     name: Dependency Cache
+  #     #     path: depCache/
 
-      - name: Sonatype Lifecycle SCA Scan
-        uses: sonatype/actions/evaluate@v1
-        with:
-          iq-server-url: ${{ env.SonatypeUrl }}
-          username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
-          password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
-          application-id: ${{ env.SonatypeAppId }}
-          stage: ${{ env.SonatypeStage }}
-          scan-targets: ${{ env.SonatypeScanTarget }}
-          module-exclude: ${{ env.ExcludeDirectory }}
+  #     - name: Sonatype Lifecycle SCA Scan
+  #       uses: sonatype/actions/evaluate@v1
+  #       with:
+  #         iq-server-url: ${{ env.SonatypeUrl }}
+  #         username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
+  #         password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+  #         application-id: ${{ env.SonatypeAppId }}
+  #         stage: ${{ env.SonatypeStage }}
+  #         scan-targets: ${{ env.SonatypeScanTarget }}
+  #         module-exclude: ${{ env.ExcludeDirectory }}
 
-      - name: Save Sonatype SBOM
-        uses: sonatype/actions/fetch-sbom@v1
-        if: always() && steps.evaluate.outputs.scan-id
-        with:
-          iq-server-url: https://finos.sonatype.app/platform/
-          username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
-          password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
-          application-id: ${{ env.SonatypeAppId }}
-          scan-id: ${{ steps.evaluate.outputs.scan-id }}
-          sbom-standard: spdx
-          sbom-version: 2.3
-          artifact-name: ${{ env.SonatypeAppId }}-bom
+  #     - name: Save Sonatype SBOM
+  #       uses: sonatype/actions/fetch-sbom@v1
+  #       if: always() && steps.evaluate.outputs.scan-id
+  #       with:
+  #         iq-server-url: https://finos.sonatype.app/platform/
+  #         username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
+  #         password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+  #         application-id: ${{ env.SonatypeAppId }}
+  #         scan-id: ${{ steps.evaluate.outputs.scan-id }}
+  #         sbom-standard: spdx
+  #         sbom-version: 2.3
+  #         artifact-name: ${{ env.SonatypeAppId }}-bom
     
 
   cd:
-    needs: [sonatype-scan, ci]
+    # needs: [sonatype-scan, ci]
+    needs: [ci]
     runs-on: ubuntu-latest
     # when in primary repo: all commits to main branch and all additional tags
     if: github.repository == 'finos/morphir-jvm' && ( github.ref == 'refs/heads/main' || (github.ref != 'refs/heads/main' && startsWith( github.ref, 'refs/tags/') ) )
