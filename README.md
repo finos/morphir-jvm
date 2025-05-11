@@ -2,6 +2,14 @@
 
 This repo contains tools to work with the Morphir IR on the JVM. It will include data models for the IR, JSON serialization and developer tooling.
 
+## Prerequisites
+
+Install [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) on your system, then in the root of the project run:
+
+```bash
+npm install morphir-elm
+```
+
 ## How to build and test
 
 Morphir-jvm use [mill]("http://www.lihaoyi.com/mill/) as its build tool.
