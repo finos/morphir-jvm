@@ -18,7 +18,7 @@ object LiteralMorph {
         } yield
           Value.Value.Literal(
             morphirType,
-            MorphLiteral.intLiteral(value)
+            MorphLiteral.wholeNumberLiteral(value)
           )
 
       case Literal(Constant(value: Float)) =>
