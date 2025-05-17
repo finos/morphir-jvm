@@ -16,6 +16,7 @@ object ApplyMorph {
   def toValue(apl: Apply[?])(using Quotes)(using Contexts.Context): Try[Value.Value.Apply[Unit, MorphType.Type[Unit]]] = {
     apl match {
       case Apply(sel@Select(qualifier, name), args) =>
+        // This is used for operators such as +, -, /, *
         for {
           argument <- getFunctionArgument(args)
           returnType <- getReturnType(apl)
@@ -28,6 +29,7 @@ object ApplyMorph {
           )
 
       case Apply(functionId: Ident[?], args) =>
+        // This is used for function calls
         for {
           returnType <- getReturnType(apl)
           theApply <- toValue(functionId, returnType, args.reverse)
@@ -38,6 +40,26 @@ object ApplyMorph {
     }
   }
 
+  // This method creates applies recursively.
+  // In case of the following example:
+  //   def subroutine(a: String, b: Float, c: Int): Int
+  // When the Scala code calls the above method, the following structure is created:
+  //   Apply(
+  //     return type: int
+  //     body: Apply(
+  //             return type: (int => int)
+  //             body: Apply(
+  //                     return type: (float => (int => int))
+  //                     body: Reference(
+  //                             type: (string => (float => (int => int)))
+  //                             fully qualified name: subroutine
+  //                           )
+  //                     param: a
+  //                   )
+  //             param: b
+  //           )
+  //     param: c
+  //   )
   def toValue(functionId: Ident[?],
               returnType: MorphType.Type[Unit],
               argsReversed: List[Trees.Tree[?]])(using Quotes)(using Contexts.Context): Try[Value.Value.Apply[Unit, MorphType.Type[Unit]]] = {
