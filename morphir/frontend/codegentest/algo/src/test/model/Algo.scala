@@ -20,4 +20,7 @@ object Algo:
   // Current limitation: 2f must be used instead of 2 to force float literal instead of integer
   def circlePerimeter(radius: Float): Float = 2f * 3.14f * radius
 
-  // def intToString(a: Int): String = "a: " + a
+  def threeTypes(a: String, b: Float, c: Int): Int = c
+
+  def useThreeTypes(a: String, b: Float, c: Int, d: Int) =
+    threeTypes(a, b, c + d) * (divide(d, c) + identity(c))

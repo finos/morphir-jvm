@@ -34,6 +34,8 @@ object `package` extends RootModule {
       def scalaVersion = scala3x 
       def ivyDeps = Agg(
         Deps.org.`scala-lang`.`scala3-tasty-inspector`(scalaVersion()),
+        Deps.com.typesafe.`scala-logging`,
+        Deps.org.slf4j.`slf4j-simple`,
       )
       def moduleDeps = Seq(morphir(scala3x).ir.jvm)
 

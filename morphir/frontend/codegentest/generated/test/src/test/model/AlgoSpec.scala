@@ -31,6 +31,9 @@ object AlgoSpec extends ZIOSpecDefault {
     },
     test("Algo.plus") {
       assertTrue(Algo.plus(1, 2, 3) == 1 + 2 + 3)
+    },
+    test("Algo.useThreeTypes") {
+      assertTrue(Algo.useThreeTypes("anything", 3.14, 2, 6) == (2 + 6) * (6/2 + 2))
     }
   )
 }

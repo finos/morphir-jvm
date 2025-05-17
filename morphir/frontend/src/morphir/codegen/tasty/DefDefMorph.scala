@@ -1,44 +1,50 @@
 package morphir.codegen.tasty
 
 import dotty.tools.dotc.ast.Trees.{Apply, DefDef, Ident, ValDef}
-import dotty.tools.dotc.core.Contexts
+import dotty.tools.dotc.core.{Contexts, Names}
 import morphir.codegen.tasty.MorphUtils.*
-import morphir.ir.{AccessControlled, Documented, Module, Name, Path, Value, Type as MorphType}
+import morphir.ir.{AccessControlled, Documented, Name, Value, Type as MorphType}
 import morphir.sdk.List as MorphList
 
 import scala.quoted.Quotes
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 object DefDefMorph {
 
   def toValue(dd: DefDef[?])(using Quotes)(using Contexts.Context): Try[(Name.Name, AccessControlled.AccessControlled[Documented.Documented[Value.Definition[Unit, MorphType.Type[Unit]]]])] = {
     dd match {
       case DefDef(methodName, valDefs: List[List[?]] @unchecked, Ident(outputTypeName), preRhs) =>
-        for {
-          inputTypes <- getInputTypes(valDefs)
-          outputType <- outputTypeName.toType
-          body <- getBody(preRhs)
-        } yield {
-          val valueDef = Value.Definition(
-            inputTypes = inputTypes,
-            outputType = outputType,
-            body = body
-          )
+        toMethodDefinition(methodName, valDefs, outputTypeName, preRhs)
 
-          val valueDoc = Documented.Documented(
-            doc = "",
-            value = valueDef
-          )
+      case DefDef(methodName, valDefs: List[List[?]] @unchecked, tree, preRhs) =>
+        val outputTypeName = tree.typeOpt.typeSymbol.name
+        toMethodDefinition(methodName, valDefs, outputTypeName, preRhs)
+    }
+  }
 
-          val valueAccessControlled = AccessControlled.AccessControlled(
-            access = AccessControlled.Access.Public,
-            value = valueDoc
-          )
+  private def toMethodDefinition(methodName: Names.TermName, valDefs: List[List[?]], outputTypeName: Names.Name, preRhs: AnyRef)(using Quotes)(using Contexts.Context): Try[(Name.Name, AccessControlled.AccessControlled[Documented.Documented[Value.Definition[Unit, MorphType.Type[Unit]]]])] = {
+    for {
+      inputTypes <- getInputTypes(valDefs)
+      outputType <- outputTypeName.toType
+      body <- getBody(preRhs)
+    } yield {
+      val valueDef = Value.Definition(
+        inputTypes = inputTypes,
+        outputType = outputType,
+        body = body
+      )
 
-          (Name.fromString(methodName.show), valueAccessControlled)
-        }
+      val valueDoc = Documented.Documented(
+        doc = "",
+        value = valueDef
+      )
 
-      case _ => Failure(Exception("DefDef could not be processed"))
+      val valueAccessControlled = AccessControlled.AccessControlled(
+        access = AccessControlled.Access.Public,
+        value = valueDoc
+      )
+
+      (Name.fromString(methodName.show), valueAccessControlled)
     }
   }
 

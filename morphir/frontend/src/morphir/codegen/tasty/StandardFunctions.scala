@@ -23,7 +23,11 @@ object StandardFunctions {
         MorphType.Function(
           (),
           argumentType,
-          returnType
+          MorphType.Function(
+            (),
+            argumentType,
+            returnType
+          )
         ),
         fQName
       )

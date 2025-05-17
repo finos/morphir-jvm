@@ -3,7 +3,7 @@ package morphir.codegen.tasty
 import dotty.tools.dotc.ast.Trees
 import dotty.tools.dotc.ast.Trees.{Apply, Ident, Literal, Select}
 import dotty.tools.dotc.core.Symbols.Symbol
-import dotty.tools.dotc.core.Types.{ConstantType, TypeRef}
+import dotty.tools.dotc.core.Types.{CachedTypeRef, ConstantType, TypeRef}
 import dotty.tools.dotc.core.{Contexts, Names}
 import morphir.codegen.tasty.MorphUtils.*
 import morphir.ir.{Value, Type as MorphType}
@@ -27,7 +27,58 @@ object ApplyMorph {
             argument
           )
 
+      case Apply(functionId: Ident[?], args) =>
+        for {
+          returnType <- getReturnType(apl)
+          theApply <- toValue(functionId, returnType, args.reverse)
+        } yield
+          theApply
+
       case x => Failure(Exception(s"Apply could not be processed: ${x.getClass}"))
+    }
+  }
+
+  def toValue(functionId: Ident[?],
+              returnType: MorphType.Type[Unit],
+              argsReversed: List[Trees.Tree[?]])(using Quotes)(using Contexts.Context): Try[Value.Value.Apply[Unit, MorphType.Type[Unit]]] = {
+    argsReversed match {
+      case head :: Nil =>
+        for {
+          argument <- getFunctionArgument(List(head))
+          argumentType <- argument.getType
+          functionFQN <- functionId.toFQN
+        } yield
+          Value.Value.Apply(
+            returnType,
+            Value.Value.Reference(
+              MorphType.Function(
+                (),
+                argumentType,
+                returnType
+              ),
+              functionFQN
+            ),
+            argument
+          )
+
+      case head :: tail =>
+        for {
+          argument <- getFunctionArgument(List(head))
+          argumentType <- argument.getType
+          nestedApplyReturnType = MorphType.Function(
+            (),
+            argumentType,
+            returnType
+          )
+          nestedApply <- toValue(functionId, nestedApplyReturnType, tail)
+        } yield
+          Value.Value.Apply(
+            returnType,
+            nestedApply,
+            argument
+          )
+
+      case x => Failure(Exception(s"Apply arguments is unexpected: $x"))
     }
   }
 
@@ -36,6 +87,7 @@ object ApplyMorph {
     apl.typeOpt match {
       case TypeRef(_, sbl: Symbol) => sbl.name.toType
       case ConstantType(const) => const.tpe.typeSymbol.name.toType
+      case tr: CachedTypeRef => tr.typeSymbol.name.toType
       case x => Failure(Exception(s"Return type not supported: ${x.getClass}"))
     }
   }

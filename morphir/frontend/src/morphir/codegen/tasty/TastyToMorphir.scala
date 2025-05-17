@@ -1,5 +1,6 @@
 package morphir.codegen.tasty
 
+import com.typesafe.scalalogging.{Logger, StrictLogging}
 import dotty.tools.dotc.ast.Trees.*
 import dotty.tools.dotc.core.Contexts
 import morphir.codegen.tasty.MorphUtils.*
@@ -10,8 +11,8 @@ import scala.quoted.*
 import scala.tasty.inspector.*
 import scala.util.{Failure, Success}
 
-class TastyToMorphir(morphirPath: String) extends Inspector {
-  def inspect(using Quotes)(tastys: List[Tasty[quotes.type]]): Unit = {
+class TastyToMorphir(morphirPath: String) extends Inspector with StrictLogging {
+  def inspect(using quotes: Quotes)(tastys: List[Tasty[quotes.type]]): Unit = {
 
     given Contexts.Context = quotes.asInstanceOf[runtime.impl.QuotesImpl].ctx
 
@@ -21,11 +22,9 @@ class TastyToMorphir(morphirPath: String) extends Inspector {
         case tr: dotty.tools.dotc.ast.Trees.Tree[?] =>
           tr.toVersionedDistribution match {
             case Success(distribution) =>
-              println(s"Distribution = $distribution")
               writeDistribution(distribution)
             case Failure(ex) =>
-              println(s"Failed to write IR: $ex")
-              ex.printStackTrace()
+              logger.error(ex.getMessage, ex)
           }
       }
     }
@@ -35,16 +34,20 @@ class TastyToMorphir(morphirPath: String) extends Inspector {
     val encodedPackageDef = morphir.ir.formatversion.Codec.encodeVersionedDistribution(distribution)
     val jsonBytes = encodedPackageDef.noSpaces.getBytes("UTF-8")
     Files.write(Paths.get(morphirPath), jsonBytes)
-    println(s"IR written to $morphirPath")
+    logger.info(s"IR written to $morphirPath")
   }
 }
 
 @main def tastyToMorphirIR(morphirIROutputPath: String, tastyFiles: String*): Unit = {
+  val logger = Logger("morphir.codegen.tasty.TastyToMorphir")
+  logger.info(s"Provided IR Output Path: $morphirIROutputPath")
+  logger.info(s"Provided TASTy files: $tastyFiles")
+
   if (tastyFiles.size > 1) {
     throw new UnsupportedOperationException(s"Currently only 1 TASTy file can be parsed, but ${tastyFiles.size} was provided")
   }
 
   val tastyFilesList = List(tastyFiles *)
   val tastyInspector = new TastyToMorphir(morphirIROutputPath)
-  val _ = TastyInspector.inspectTastyFiles(tastyFilesList)(tastyInspector)
+  TastyInspector.inspectTastyFiles(tastyFilesList)(tastyInspector)
 }

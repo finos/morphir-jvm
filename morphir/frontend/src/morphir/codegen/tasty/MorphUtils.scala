@@ -13,6 +13,9 @@ object MorphUtils {
     def toPath: Try[Path.Path] = IdentMorph.toPath(id)
 
   extension (id: Ident[?])(using Quotes)(using Contexts.Context)
+    def toFQN: Try[FQName.FQName] = IdentMorph.toFQN(id)
+
+  extension (id: Ident[?])(using Quotes)(using Contexts.Context)
     def toVariable: Try[Value.Value.Variable[Unit, MorphType.Type[Unit]]] = IdentMorph.toVariable(id)
 
   extension (t: dotty.tools.dotc.ast.Trees.Tree[?])(using Quotes)(using Contexts.Context)
@@ -35,9 +38,9 @@ object MorphUtils {
 
   // ** Utility functions **
 
-  def resolveNamespace(symbol: Symbols.Symbol)(using Quotes)(using Contexts.Context): List[Name.Name] = {
+  def resolveNamespace(symbol: Symbols.Symbol)(using Quotes)(using Contexts.Context): List[String] = {
     if (symbol.isRoot) List()
-    else Name.fromString(symbol.name.show) +: resolveNamespace(symbol.maybeOwner)
+    else symbol.name.show +: resolveNamespace(symbol.maybeOwner)
   }
 
   extension (name: Names.Name)(using Quotes)(using Contexts.Context)
