@@ -93,6 +93,10 @@ object Deps {
         val magnolia = ivy"com.softwaremill.magnolia1_3::magnolia::1.3.3"
       }
     }
+
+    case object typesafe {
+      val `scala-logging` = ivy"com.typesafe.scala-logging::scala-logging::3.9.5"
+    }
   }
   case object dev {
     case object zio {
@@ -188,12 +192,18 @@ object Deps {
         val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.13.0"
       }
     }
+
     case object scalameta {
       val munit: mill.scalalib.Dep = ivy"org.scalameta::munit::${Versions.munit}"
 
       val `munit-scalacheck` =
         ivy"org.scalameta::munit-scalacheck::${Versions.munit}"
 
+    }
+
+    case object slf4j {
+      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
     case object typelevel {
@@ -253,6 +263,7 @@ object Versions {
   val `scalac-compat-annotation` = "0.1.3"
   val scribe                     = "3.15.0"
   val silencer                   = "1.17.13"
+  val slf4j                      = "2.0.17"
   val spire                      = "0.18.0"
   val `tasty-query`              = "0.5.6"
   val upickle                    = "4.0.2"

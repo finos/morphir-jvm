@@ -2,9 +2,25 @@
 
 This repo contains tools to work with the Morphir IR on the JVM. It will include data models for the IR, JSON serialization and developer tooling.
 
+## Prerequisites
+
+Install [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) on your system, then in the root of the project run:
+
+```bash
+npm install morphir-elm
+```
+
 ## How to build and test
 
 Morphir-jvm use [mill]("http://www.lihaoyi.com/mill/) as its build tool.
+
+### BSP Setup
+
+If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
+
+```bash
+./mill mill.bsp.BSP/install
+```
 
 ### IntelliJ Setup for Linux
 
@@ -15,15 +31,9 @@ IntelliJ project files via:
 ./mill mill.scalalib.GenIdea/idea
 ```
 
-### BSP Setup
-
-If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
-
-```bash
-./mill mill.contrib.Bloop/install
-```
-
 ### Run Tests
+
+Run all tests:
 
 ```bash
 ./mill __.test
@@ -65,7 +75,7 @@ IntelliJ project files via:
 If you are using Visual Studio Code, IntelliJ, or any of the Editors which support BSP you can also generate BSP config files via:
 
 ```
-.\mill mill.contrib.Bloop/install
+.\mill mill.bsp.BSP/install
 ```
 
 ### Run Tests
