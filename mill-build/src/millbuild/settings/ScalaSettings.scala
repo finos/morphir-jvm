@@ -22,7 +22,7 @@ object ScalaSettings {
 
   val defaultScala212Version = "2.12.20"
   val defaultScala213Version = "2.13.16"
-  val defaultScala3xVersion  = "3.3.5"
+  val defaultScala3xVersion  = "3.3.6"
   val defaultCrossScalaVersions: List[String] =
     if (devMode) List(defaultScala3xVersion)
     else List(defaultScala3xVersion, defaultScala213Version, defaultScala212Version)
