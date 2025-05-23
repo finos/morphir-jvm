@@ -394,6 +394,68 @@ object Value{
     }
   }
 
+  def collectTypeReferences(
+                             typedValue: morphir.ir.Value.TypedValue
+                           ): morphir.sdk.Set.Set[morphir.ir.FQName.FQName] = {
+    def collectTypeReferencesFromDefinition(
+                                             _def: morphir.ir.Value.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]]
+                                           ): morphir.sdk.Set.Set[morphir.ir.FQName.FQName] =
+      morphir.sdk.Set.union(morphir.ir.Type.collectReferences(_def.outputType))(morphir.sdk.Set.union(morphir.sdk.List.foldl(({
+        case (_, _, pTpe) =>
+          ((refCollected: morphir.sdk.Set.Set[morphir.ir.FQName.FQName]) =>
+            morphir.sdk.Set.union(refCollected)(morphir.ir.Type.collectReferences(pTpe)))
+      } : ((morphir.ir.Name.Name, morphir.ir.Type.Type[scala.Unit], morphir.ir.Type.Type[scala.Unit])) => morphir.sdk.Set.Set[morphir.ir.FQName.FQName] => morphir.sdk.Set.Set[morphir.ir.FQName.FQName]))(morphir.sdk.Set.empty)(_def.inputTypes))(morphir.ir.Value.collectTypeReferences(_def.body)))
+
+    def collectUnionFromValues(
+                                values: morphir.sdk.List.List[morphir.ir.Value.TypedValue]
+                              ): morphir.sdk.Set.Set[morphir.ir.FQName.FQName] =
+      morphir.sdk.List.foldl(morphir.sdk.Set.union[morphir.ir.FQName.FQName])(morphir.sdk.Set.empty[morphir.ir.FQName.FQName])(morphir.sdk.List.map(morphir.ir.Value.collectTypeReferences)(values))
+
+    typedValue match {
+      case morphir.ir.Value.Tuple(tpe, elements) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Type.collectReferences(tpe))(collectUnionFromValues(elements))
+      case morphir.ir.Value.List(tpe, items) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Type.collectReferences(tpe))(collectUnionFromValues(items))
+      case morphir.ir.Value.Record(tpe, fields) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Type.collectReferences(tpe))(collectUnionFromValues(morphir.sdk.Dict.values(fields)))
+      case morphir.ir.Value.Reference(tpe, _) =>
+        morphir.ir.Type.collectReferences(tpe)
+      case morphir.ir.Value.Field(tpe, subjectValue, _) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Type.collectReferences(tpe))(morphir.ir.Value.collectTypeReferences(subjectValue))
+      case morphir.ir.Value.Apply(_, function, argument) =>
+        collectUnionFromValues(morphir.sdk.List(
+          function,
+          argument
+        ))
+      case morphir.ir.Value.Lambda(tpe, _, body) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Type.collectReferences(tpe))(morphir.ir.Value.collectTypeReferences(body))
+      case morphir.ir.Value.LetDefinition(_, _, valueDefinition, inValue) =>
+        morphir.sdk.Set.union(morphir.ir.Value.collectTypeReferences(inValue))(collectTypeReferencesFromDefinition(valueDefinition))
+      case morphir.ir.Value.LetRecursion(_, valueDefinitions, inValue) =>
+        morphir.sdk.List.foldl(morphir.sdk.Set.union[morphir.ir.FQName.FQName])(morphir.sdk.Set.empty[morphir.ir.FQName.FQName])(morphir.sdk.List.append(morphir.sdk.List(morphir.ir.Value.collectTypeReferences(inValue)))(morphir.sdk.List.map(({
+          case (_, _def) =>
+            collectTypeReferencesFromDefinition(_def)
+        } : ((morphir.ir.Name.Name, morphir.ir.Value.Definition[scala.Unit, morphir.ir.Type.Type[scala.Unit]])) => morphir.sdk.Set.Set[morphir.ir.FQName.FQName]))(morphir.sdk.Dict.toList(valueDefinitions))))
+      case morphir.ir.Value.Destructure(tpe, _, valueToDestruct, inValue) =>
+        morphir.sdk.Set.union(morphir.ir.Type.collectReferences(tpe))(collectUnionFromValues(morphir.sdk.List(
+          valueToDestruct,
+          inValue
+        )))
+      case morphir.ir.Value.IfThenElse(_, condition, thenBranch, elseBranch) =>
+        collectUnionFromValues(morphir.sdk.List(
+          condition,
+          thenBranch,
+          elseBranch
+        ))
+      case morphir.ir.Value.PatternMatch(_, branchOutOn, cases) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Value.collectTypeReferences(branchOutOn))(collectUnionFromValues(morphir.sdk.List.map(morphir.sdk.Tuple.second[morphir.ir.Value.Pattern[morphir.ir.Type.Type[scala.Unit]], morphir.ir.Value.TypedValue])(cases)))
+      case morphir.ir.Value.UpdateRecord(_, valueToUpdate, fieldsToUpdate) =>
+        morphir.sdk.Set.union[morphir.ir.FQName.FQName](morphir.ir.Value.collectTypeReferences(valueToUpdate))(collectUnionFromValues(morphir.sdk.Dict.values(fieldsToUpdate)))
+      case _ =>
+        morphir.sdk.Set.empty[morphir.ir.FQName.FQName]
+    }
+  }
+
   def collectValueAttributes[Ta, Va](
                                       v: morphir.ir.Value.Value[Ta, Va]
                                     ): morphir.sdk.List.List[Va] =
