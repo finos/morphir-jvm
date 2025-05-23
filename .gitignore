@@ -22,3 +22,4 @@ models/shared-domain/elm.json
 elm-stuff/
 .tmp/
 null/
+/node_modules/
