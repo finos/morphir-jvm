@@ -39,6 +39,7 @@ jobs:
       matrix:
         java: ["11", "17"]
         scala: ["2.12.20", "2.13.16", "3.3.6"]
+        node-version: ["20.x"]
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v4
@@ -51,10 +52,31 @@ jobs:
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: startsWith( matrix.scala, '3.' )
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Cache NPM
+        if: startsWith( matrix.scala, '3.' )
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Run JVM tests
         run: |
           ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.compile" + "morphir[${{matrix.scala}}].__.jvm.publishArtifacts" + "morphir[${{matrix.scala}}].__.jvm.__.test"
+
+      - name: Download morphir-elm dependencies
+        if: startsWith( matrix.scala, '3.' )
+        run: npm ci
+      - name: Run JVM Frontend tests
+        if: startsWith( matrix.scala, '3.' )
+        run: |
+          ./mill -i -k -j 0 "morphir.frontend.__.compile" + "morphir.frontend.__.publishArtifacts" + "morphir.frontend.__.test"
 
       - name: Lint Scala (JVM)
         run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.checkFormat"
