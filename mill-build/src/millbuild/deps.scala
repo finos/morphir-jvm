@@ -202,7 +202,7 @@ object Deps {
     }
 
     case object slf4j {
-      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-api`    = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
       val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
@@ -287,7 +287,7 @@ object ScalaVersions {
   def scala3x  = "3.3.6"
 
   def scalaJSVersion     = "1.17.0"
-  def scalaNativeVersion = "0.5.7"
+  def scalaNativeVersion = "0.5.8"
   def millScalaVersion   = "2.13.10"
 }
 
