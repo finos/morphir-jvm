@@ -19,8 +19,6 @@ trait CommonCoursierModule extends CoursierModule {
 
   def repositoriesTask = T.task {
     super.repositoriesTask() ++ Seq(
-      MavenRepository("https://oss.sonatype.org/content/repositories/releases"),
-      MavenRepository("https://oss.sonatype.org/content/repositories/snapshots"),
       MavenRepository("http://dl.bintray.com/spark-packages/maven")
     )
   }

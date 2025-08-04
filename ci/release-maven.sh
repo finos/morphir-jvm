@@ -21,5 +21,5 @@ rm gpg_key
     --awaitTimeout 3600000 \
     --release true \
     --signed  true \
-    --sonatypeUri https://s01.oss.sonatype.org/service/local \
-    --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots
+    --sonatypeUri https://central.sonatype.com/api/v1/publisher \
+    --sonatypeSnapshotUri https://central.sonatype.com/api/v1/publisher
