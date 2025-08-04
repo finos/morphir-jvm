@@ -340,16 +340,13 @@ jobs:
 
       - name: Publish artifacts to Sonatype
         run: |
-          ./mill -i -j 0 mill.scalalib.PublishModule/publishAll \
-            --sonatypeCreds "$MILL_SONATYPE_USERNAME:$MILL_SONATYPE_PASSWORD" \
+          ./mill -i -j 0 mill.javalib.SonatypeCentralPublishModule/publishAll \
             --gpgArgs --passphrase="$MILL_PGP_PASSPHRASE",--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
             --publishArtifacts __.publishArtifacts \
             --readTimeout 3600000 \
             --awaitTimeout 3600000 \
             --release true \
-            --signed true \
-            --sonatypeUri https://central.sonatype.com/api/v1/publisher \
-            --sonatypeSnapshotUri https://central.sonatype.com/api/v1/publisher
+            --signed true
 
   ci:
     runs-on: ubuntu-latest
