@@ -13,6 +13,7 @@ import millbuild.settings._
 import mill._, mill.scalalib._, mill.scalajslib._, mill.scalanativelib._, scalafmt._
 import mill.scalalib.publish.PublishInfo
 import mill.scalajslib.api.ModuleKind
+import mill.scalalib.SonatypeCentralPublishModule
 import mill.contrib.buildinfo.BuildInfo
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 
@@ -233,7 +234,7 @@ object `package` extends RootModule {
 
   trait MorphirScalafixModule extends ScalafixModule
 
-  trait MorphirPublishModule extends PublishModule with JavaModule {
+  trait MorphirPublishModule extends SonatypeCentralPublishModule with JavaModule {
     import mill.scalalib.publish._
     def packageDescription: String = s"The $artifactName package"
     def publishAsSnapshot = T.input {
