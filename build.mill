@@ -256,7 +256,7 @@ object `package` extends RootModule {
 
     def pomSettings = PomSettings(
       description = packageDescription,
-      organization = "org.morphir",
+      organization = "org.finos.morphir",
       url = "https://github.com/finos/morphir-jvm",
       licenses = Seq(License.`Apache-2.0`),
       versionControl = VersionControl.github("finos", "morphir-jvm"),
