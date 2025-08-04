@@ -13,13 +13,10 @@ rm gpg_key
 
 # Publish all artifacts
 ./mill -i \
-    mill.scalalib.PublishModule/publishAll \
-    --sonatypeCreds "$SONATYPE_USER":"$SONATYPE_PASSWORD" \
+    mill.javalib.SonatypeCentralPublishModule/publishAll \
     --gpgArgs --passphrase="$PGP_PASSWORD",--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
     --publishArtifacts __.publishArtifacts \
     --readTimeout  3600000 \
     --awaitTimeout 3600000 \
     --release true \
-    --signed  true \
-    --sonatypeUri https://central.sonatype.com/api/v1/publisher \
-    --sonatypeSnapshotUri https://central.sonatype.com/api/v1/publisher
+    --signed  true

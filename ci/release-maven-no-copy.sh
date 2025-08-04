@@ -2,8 +2,7 @@
 
 set -eux
 
-mill mill.scalalib.PublishModule/publishAll \
-    --sonatypeCreds $SONATYPE_USERNAME:$SONATYPE_PASSWORD \
+mill mill.javalib.SonatypeCentralPublishModule/publishAll \
     --gpgArgs --passphrase,$GPG_PASSWORD,--batch,--yes,-a,-b \
     --publishArtifacts __.publishArtifacts \
     --readTimeout 600000 \
