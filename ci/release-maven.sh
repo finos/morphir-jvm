@@ -13,8 +13,7 @@ rm gpg_key
 
 # Publish all artifacts
 ./mill -i \
-    mill.javalib.SonatypeCentralPublishModule/publishAll \
-    --gpgArgs --passphrase="$PGP_PASSWORD",--no-tty,--pinentry-mode,loopback,--batch,--yes,-a,-b \
+    mill.scalalib.SonatypeCentralPublishModule/publishAll \
     --publishArtifacts __.publishArtifacts \
     --readTimeout  3600000 \
     --awaitTimeout 3600000 \
