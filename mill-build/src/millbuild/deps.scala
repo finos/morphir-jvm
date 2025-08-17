@@ -202,7 +202,7 @@ object Deps {
     }
 
     case object slf4j {
-      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-api`    = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
       val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
@@ -267,7 +267,7 @@ object Versions {
   val spire                      = "0.18.0"
   val `tasty-query`              = "0.5.6"
   val upickle                    = "4.0.2"
-  val zio                        = "2.1.9"
+  val zio                        = "2.1.20"
   val `zio-cli`                  = "0.5.0"
   val `zio-config`               = "4.0.2"
   val `zio-interop-cats`         = "23.1.0.0"
