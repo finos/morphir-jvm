@@ -202,7 +202,7 @@ object Deps {
     }
 
     case object slf4j {
-      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-api`    = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
       val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
@@ -244,7 +244,7 @@ object Versions {
       case _            => "4.8.11"
     }
 
-  val circe                      = "0.14.10"
+  val circe                      = "0.14.14"
   val coursier                   = "2.1.13"
   val expecty                    = "0.16.0"
   val fansi                      = "0.4.0"
