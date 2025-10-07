@@ -202,7 +202,7 @@ object Deps {
     }
 
     case object slf4j {
-      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-api`    = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
       val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
@@ -283,7 +283,7 @@ object ScalaVersions {
   import DevMode._
   val all      = if (devMode) Seq(scala3x) else Seq(scala213, scala3x)
   def scala212 = "2.12.20"
-  def scala213 = "2.13.16"
+  def scala213 = "2.13.17"
   def scala3x  = "3.3.6"
 
   def scalaJSVersion     = "1.17.0"
