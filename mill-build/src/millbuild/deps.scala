@@ -189,7 +189,7 @@ object Deps {
         ivy"org.scala-lang::scala3-tasty-inspector::$scalaVersion"
 
       case object modules {
-        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.13.0"
+        val `scala-collection-compat` = ivy"org.scala-lang.modules::scala-collection-compat::2.14.0"
       }
     }
 
@@ -202,7 +202,7 @@ object Deps {
     }
 
     case object slf4j {
-      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-api`    = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
       val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
