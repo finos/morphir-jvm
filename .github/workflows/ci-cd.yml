@@ -51,7 +51,7 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v6
+        uses: coursier/cache-action@v7
       - name: Setup Node.js ${{ matrix.node-version }}
         if: startsWith( matrix.scala, '3.' )
         uses: actions/setup-node@v4
@@ -110,7 +110,7 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v6
+        uses: coursier/cache-action@v7
 
       - name: Run JS tests
         run: |
@@ -180,7 +180,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Cache scala dependencies
-  #       uses: coursier/cache-action@v6
+  #       uses: coursier/cache-action@v7
 
   #     - name: Get OUT cache
   #       uses: actions/cache/restore@v4
@@ -259,7 +259,7 @@ jobs:
           distribution: temurin
 
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v6
+        uses: coursier/cache-action@v7
 
       - name: Install libuv
         run: sudo apt-get update && sudo apt-get install -y libuv1-dev
