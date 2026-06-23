@@ -202,7 +202,7 @@ object Deps {
     }
 
     case object slf4j {
-      val `slf4j-api` = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
+      val `slf4j-api`    = ivy"org.slf4j:slf4j-api:${Versions.slf4j}"
       val `slf4j-simple` = ivy"org.slf4j:slf4j-simple:${Versions.slf4j}"
     }
 
@@ -263,7 +263,7 @@ object Versions {
   val `scalac-compat-annotation` = "0.1.3"
   val scribe                     = "3.15.0"
   val silencer                   = "1.17.13"
-  val slf4j                      = "2.0.17"
+  val slf4j                      = "2.0.18"
   val spire                      = "0.18.0"
   val `tasty-query`              = "0.5.6"
   val upickle                    = "4.0.2"
