@@ -95,7 +95,7 @@ object Deps {
     }
 
     case object typesafe {
-      val `scala-logging` = ivy"com.typesafe.scala-logging::scala-logging::3.9.5"
+      val `scala-logging` = ivy"com.typesafe.scala-logging::scala-logging::3.9.6"
     }
   }
   case object dev {
