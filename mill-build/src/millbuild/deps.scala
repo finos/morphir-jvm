@@ -244,7 +244,7 @@ object Versions {
       case _            => "4.8.11"
     }
 
-  val circe                      = "0.14.10"
+  val circe                      = "0.14.12"
   val coursier                   = "2.1.13"
   val expecty                    = "0.16.0"
   val fansi                      = "0.4.0"
