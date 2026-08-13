@@ -109,6 +109,8 @@ object Decimal extends DecimalModuleCompat {
   def thousand(n: morphir.sdk.Int.Int): Decimal =
     Decimal(n * 1000)
 
+  /** Converts a Decimal to a Float. Note: this conversion may lose precision.
+    */
   def toFloat(value: Decimal): morphir.sdk.Float.Float =
     morphir.sdk.Float.Float(value.toDouble)
 
