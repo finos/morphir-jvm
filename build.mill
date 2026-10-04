@@ -31,8 +31,8 @@ object `package` extends RootModule {
 
   object morphir extends Cross[MorphirModule](buildSettings.scala.crossScalaVersions) { morphirRoot =>
 
-    object frontend extends MorphirScalaModule with MorphirPublishModule {
-      def scalaVersion = scala3x 
+    object frontend extends MorphirScalaModule with MorphirPublishModule with ScalafmtModule {
+      def scalaVersion = scala3x
       def ivyDeps = Agg(
         Deps.org.`scala-lang`.`scala3-tasty-inspector`(scalaVersion()),
         Deps.com.typesafe.`scala-logging`,
@@ -40,60 +40,46 @@ object `package` extends RootModule {
       )
       def moduleDeps = Seq(morphir(scala3x).ir.jvm)
 
-      object test extends ScalaTests with CommonZioTestModule {
-        def moduleDeps = super.moduleDeps ++ Seq(morphir(scala3x).sdk.core.jvm.test)
+      def scalafmtConfig = T { Seq(PathRef(moduleDir / ".scalafmt.conf"), PathRef(T.workspace / ".scalafmt.conf")) }
+
+      object fixtures extends ScalaModule with ScalafmtModule {
+        def scalaVersion = scala3x
+        def sources = T.sources(frontend.moduleDir / "test-fixtures" / "scala" / "src" / "main" / "scala")
+        def scalafmtConfig = frontend.scalafmtConfig
       }
 
-      // The following workflow is executed:
-      // 1. Compile the algo module to TASTy
-      // 2. Use the TastyToMorphir class to convert the TASTy file to Morphir IR
-      // 3. Use the morphir-elm CLI to convert the Morphir IR to Scala code
-      // 4. Compile the generated Scala code
-      // 5. Run predefined unit tests on the generated Scala code
-      object codegentest extends Module {
-        // 1. Compile the algo module to TASTy
-        object algo extends ScalaModule {
-          def scalaVersion = scala3x
+      object examples extends ScalaModule with ScalafmtModule {
+        def scalaVersion = scala3x
+        def scalafmtConfig = frontend.scalafmtConfig
+      }
+
+      def elmFixtureInputs = T.sources(frontend.moduleDir / "test-fixtures" / "elm")
+      def elmCliInputs = T.sources(T.workspace / "package-lock.json", T.workspace / "node_modules" / "morphir-elm")
+
+      def generateElmIR = T {
+        val inputs = elmFixtureInputs().head.path
+        val cli = T.workspace / "node_modules" / "morphir-elm" / "cli" / "morphir-elm.js"
+        elmCliInputs()
+        require(os.exists(cli), "Run npm ci at the repository root before running frontend tests")
+        val copied = T.dest / "elm"
+        os.copy(inputs, copied)
+        val projects = os.walk(copied).filter(_.last == "morphir.json").map(_ / os.up).sortBy(_.toString)
+        projects.foreach { project =>
+          os.proc("node", cli, "make", "-f").call(cwd = project)
+          require(os.exists(project / "morphir-ir.json"), s"No IR generated for $project")
         }
+        PathRef(copied)
+      }
 
-        object generated extends ScalaModule {
-          def scalaVersion = scala3x
-          def moduleDeps  = Seq(algo, morphir(scala3x).sdk.core.jvm)
-
-          def generatedSources: T[Seq[PathRef]] = Task {
-            val morphirIrPath = Task.dest.toNIO.toAbsolutePath.toString + java.io.File.separator + "morphir-ir.json"
-
-            // 2. Use the TastyToMorphir class to convert the TASTy file to Morphir IR
-            val frontendLibClassPath = frontend.compileClasspath().map(_.path.toNIO.toAbsolutePath.toString).mkString(java.io.File.pathSeparator)
-            val frontendOutputClassPath = frontend.compile().classes.path.toNIO.toAbsolutePath.toString
-            val classpath = frontendOutputClassPath + java.io.File.pathSeparator + frontendLibClassPath
-            val algoTastyFilePath = algo.compile().classes.path.toNIO.toAbsolutePath.toString + "/test/model/Algo.tasty"
-            os.proc(
-              "java",
-              "-cp",
-              classpath,
-              "morphir.codegen.tasty.tastyToMorphirIR",
-              morphirIrPath,
-              algoTastyFilePath
-            ).call()
-
-            // 3. Use the morphir-elm CLI to convert the Morphir IR to Scala code
-            val projectRoot = Task.workspace.toNIO.toAbsolutePath.toString
-            val morphirElm = s"$projectRoot/node_modules/morphir-elm/cli/morphir-elm.js"
-            val morphirGenOut = Task.dest.toNIO.toAbsolutePath.toString
-            os.proc(
-              morphirElm,
-              "gen",
-              "-i", morphirIrPath,
-              "-o", morphirGenOut
-            ).call()
-
-            // 4. Compile the generated Scala code
-            Seq(PathRef(Task.dest))
-          }
-
-          // 5. Run predefined unit tests on the generated Scala code
-          object test extends ScalaTests with CommonZioTestModule
+      object test extends ScalaTests with CommonZioTestModule with ScalafmtModule {
+        def moduleDeps = super.moduleDeps ++ Seq(morphir(scala3x).sdk.core.jvm.test)
+        def scalafmtConfig = frontend.scalafmtConfig
+        override def forkArgs = T {
+          super.forkArgs() ++ Seq(
+            s"-Dtest.fixtures.scala.classes=${fixtures.compile().classes.path}",
+            s"-Dtest.fixtures.elm.root=${generateElmIR().path}",
+            s"-Dtest.examples.classes=${examples.compile().classes.path}"
+          )
         }
       }
     }
