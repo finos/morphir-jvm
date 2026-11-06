@@ -76,7 +76,8 @@ jobs:
       - name: Run JVM Frontend tests
         if: startsWith( matrix.scala, '3.' )
         run: |
-          ./mill -i -k -j 0 "morphir.frontend.__.compile" + "morphir.frontend.__.publishArtifacts" + "morphir.frontend.__.test"
+          ./mill -i -k -j 0 "morphir.frontend.__.compile" + "morphir.frontend.publishArtifacts" + "morphir.frontend.__.test"
+          ./mill -i -k -j 0 "morphir.frontend.__.checkFormat"
 
       - name: Lint Scala (JVM)
         run: ./mill -i -k -j 0 "morphir[${{matrix.scala}}].__.jvm.__.checkFormat"
